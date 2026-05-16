@@ -1,0 +1,319 @@
+================================================================
+  EL BÚNKER — AUDITORÍA TÉCNICA: THE VAULT (Fotos & Eras)
+  Módulos analizados: GoogleDriveService.js · VaultContext.jsx · Vault.jsx
+  Fecha: Mayo 2026 | Schema: v3.0.0
+================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. GESTIÓN DE DATOS: ERAS en la DB JSON de Drive
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ESQUEMA DE LA DB (EMPTY_DB en GoogleDriveService.js)
+  ──────────────────────────────────────────────────────
+  El archivo "the_vault_database.json" vive en appDataFolder de Drive.
+  La clave "eras" es un array de objetos con este shape real:
+
+    {
+      id:          string (uuid v4),
+      name:        string,
+      description: string,
+      start_date:  ISO string,
+      end_date:    ISO string | null,
+      color:       string (hex),
+      cover_image: string | null,   ← URL o base64. Aún SIN subida real.
+      created_at:  ISO string
+    }
+
+  FLUJO COMPLETO de fetchData() para Eras
+  ──────────────────────────────────────────────────────
+  Paso 1 → fetchData() llama a _findDatabaseFile()
+           Busca en appDataFolder el archivo con name = 'the_vault_database.json'
+           Cachea el fileId en _state.dbFileId para no repetir la query.
+
+  Paso 2 → _readDatabaseFile(fileId)
+           Llama a drive.files.get({ fileId, alt: "media" })
+           Parsea el body como JSON.
+           Retorna el objeto completo, incluyendo el array db.eras.
+
+  Paso 3 → VaultContext recibe el objeto en initDatabase() / refreshDb()
+           Lo guarda en el estado React `db`.
+           Vault.jsx lee `db.eras` directamente vía prop db.
+
+  Escritura de Eras (addEra / updateEra):
+  ──────────────────────────────────────────────────────
+  addEra(eraData)  → updateData(updater)
+                   → read-modify-write: lee la DB, hace spread, escribe.
+                   → PATCH multipart al endpoint de Drive API v3.
+
+  updateEra(eraId, patch) → mismo patrón read-modify-write.
+
+  VEREDICTO: La lógica de persistencia de Eras en Drive está
+  COMPLETAMENTE IMPLEMENTADA y es funcional.
+  El campo cover_image existe en el schema, pero su valor
+  se guarda como URL/string — no hay lógica de subida binaria
+  de imágenes a Drive todavía (ver sección 4).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. FUNCIONALIDAD OPERATIVA DE VAULT.JSX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  QUÉ PUEDE HACER EL USUARIO HOY (operativo):
+  ──────────────────────────────────────────────────────
+  ✅ Ver el slider horizontal de Eras (con datos reales de db.eras)
+  ✅ Seleccionar una Era activa (estado local React, setActiveEraId)
+  ✅ Drag-to-scroll en desktop sobre el slider de Eras
+  ✅ Ver el panel EraDetailPanel con contadores de entradas/fotos/notas/hitos
+     (filtra db.entries por era_id — datos reales de la DB)
+  ✅ Ver las últimas 3 entradas de la Era activa en el panel de detalle
+  ✅ Ver el AdventureCounter (lee db.adventures_start_date — dato real)
+  ✅ Ver el HeartbeatWidget con estado visual (lee db.heartbeat — dato real)
+  ✅ Pulsar "+ ERA" (dispara la prop onAddEra — operativo si el padre lo implementa)
+  ✅ Pulsar sobre una Era (dispara la prop onOpenEra — operativo si el padre lo implementa)
+
+  QUÉ NO PUEDE HACER EL USUARIO HOY en Vault.jsx:
+  ──────────────────────────────────────────────────────
+  ❌ Subir fotos (no hay input file, no hay llamada a Drive Files.create)
+  ❌ Crear Eras desde dentro del componente (onAddEra es solo un callback vacío por defecto)
+  ❌ Editar la portada (cover_image) de una Era
+  ❌ Ver/crear Cápsulas del Tiempo reales (ver sección 3)
+  ❌ Abrir el detalle de una Era en vista completa dentro del componente
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. REAL vs DEMO — DATOS HARDCODED EN VAULT.JSX
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ELEMENTO 1: displayEras (Eras del slider)
+  ──────────────────────────────────────────────────────
+  ESTADO: HÍBRIDO — SEMI-DEMO
+
+  Lógica:
+    const eras = (db?.eras ?? []).map(...)
+    const displayEras = eras.length > 0 ? eras : [ DEMO_ERAS ]
+
+  Si db.eras tiene datos reales → muestra datos reales. ✅
+  Si db.eras está vacío (usuario nuevo) → cae en los tres objetos
+  hardcoded: "ORIGEN", "TORMENTA", "RENACIMIENTO". ❌ DEMO
+  Estos datos demo NO se guardan en Drive. Son puramente visuales.
+  El usuario los ve, interactúa con ellos, pero no existe botón para
+  convertirlos en Eras reales.
+
+  Líneas afectadas en Vault.jsx (bloque displayEras):
+    [ id: "demo-1", name: "ORIGEN", ... ]
+    [ id: "demo-2", name: "TORMENTA", ... ]
+    [ id: "demo-3", name: "RENACIMIENTO", ... ]
+
+  ──────────────────────────────────────────────────────
+  ELEMENTO 2: demoTimeCapsules (Cápsulas del Tiempo)
+  ──────────────────────────────────────────────────────
+  ESTADO: 100% HARDCODED — DEMO PURO ❌
+
+  El array demoTimeCapsules está declarado directamente en el
+  render de Vault.jsx y no tiene ninguna conexión con la DB:
+
+    const demoTimeCapsules = [
+      { id: "tc-1", title: "CARTA AL FUTURO",    unlockDate: Date.now() + 90d },
+      { id: "tc-2", title: "PRIMER ANIVERSARIO", unlockDate: Date.now() - 10d },
+    ]
+
+  - No se lee de db.entries (donde vivirían con type: "letter" o similar)
+  - No se guarda en Drive
+  - El unlock ya está desbloqueado en "tc-2" solo visualmente
+  - No hay forma de que el usuario cree, edite o borre cápsulas reales
+  - El contenido del unlocked ("Ya pasó un año. Lo logramos.") es texto fijo
+
+  IMPACTO: Toda la sección de Cápsulas del Tiempo es decorativa.
+
+  ──────────────────────────────────────────────────────
+  ELEMENTO 3: db prop = null (fallback)
+  ──────────────────────────────────────────────────────
+  ESTADO: FALLBACK CONTROLADO — NO ROMPE ✅
+
+  AdventureCounter: usa db?.adventures_start_date ?? Date.now()-500d
+  HeartbeatWidget:  usa db?.heartbeat ?? new Date().toISOString()
+  EraDetailPanel:   usa db?.entries ?? []
+
+  Los fallbacks son seguros y no muestran datos inventados como si
+  fueran reales. Correcto comportamiento defensivo.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. INTEGRIDAD DEL SISTEMA HEARTBEAT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  HEARTBEAT DE CUENTA PRINCIPAL (db.heartbeat)
+  ──────────────────────────────────────────────────────
+  ¿Es real o solo visual? → REAL Y FUNCIONAL ✅
+
+  Mecanismo completo verificado:
+
+  1. Al hacer login → requestAccessToken() llama a _triggerHeartbeat()
+     automáticamente tras obtener el token.
+
+  2. VaultContext._scheduleHeartbeat() → setInterval de 20 min
+     que llama a triggerHeartbeat() mientras la sesión está activa.
+
+  3. Page Visibility API → cuando el usuario vuelve a la pestaña
+     (visibilitychange = "visible"), se dispara heartbeat() manual.
+
+  4. _triggerHeartbeat() en GoogleDriveService:
+     - Tiene throttle real de 15 min (HEARTBEAT_THROTTLE_MS)
+     - Lee la DB de Drive, actualiza el campo `heartbeat` con
+       new Date().toISOString(), y escribe de vuelta con PATCH.
+     - Falla silenciosamente (console.warn) para no crashear la UI.
+
+  5. HeartbeatWidget lee db.heartbeat (dato real) y calcula
+     monthsSince() para determinar si está en riesgo.
+     El umbral visual (20 meses) está alineado con la lógica
+     de bibliotecas (LIBRARY_AT_RISK_MONTHS = 18 meses en Config).
+     ⚠ Discrepancia menor: el widget usa 20 meses como umbral visual,
+     pero el servicio marca at_risk a los 18. Sincronizar.
+
+  HEARTBEAT DE BIBLIOTECAS (last_heartbeat_check)
+  ──────────────────────────────────────────────────────
+  ¿Protege realmente las cuentas de fotos? → PARCIALMENTE REAL ⚠
+
+  Lo que SÍ funciona:
+  ✅ markLibraryHeartbeat(id) → escribe last_heartbeat_check en Drive
+  ✅ _calcLibraryStatus() calcula at_risk/lost solo con aritmética de fechas
+  ✅ librariesAtRisk y librariesLost se derivan automáticamente en el contexto
+  ✅ refreshLibraryCapacity() llama a Drive API real para medir uso en GB
+  ✅ listLibraryContents() pagina automáticamente carpetas compartidas reales
+
+  Lo que NO funciona / falta:
+  ❌ No hay UI en Vault.jsx para mostrar las bibliotecas ni su estado
+  ❌ No hay alerta visual cuando librariesAtRisk.length > 0 en este módulo
+  ❌ El admin debe pulsar manualmente "acabo de entrar a esta cuenta" —
+     no hay verificación automática de que la cuenta siga activa
+  ❌ checkLibraryCapacity no se llama automáticamente al arrancar
+     (solo cuando el usuario lo solicita explícitamente)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. MÓDULO DE FOTOS — LISTA DE ESTADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ════════════════════════════════════════════
+  ✅ FUNCIONES OPERATIVAS (listas para usar)
+  ════════════════════════════════════════════
+
+  [F-01] Registro de metadatos de foto en DB
+         addEntry({ type: "photo", era_id, content: { title, url } })
+         Escribe en db.entries y persiste en Drive.
+         Estado: IMPLEMENTADO en GoogleDriveService.js
+
+  [F-02] Contador de fotos por Era
+         EraDetailPanel filtra entries donde type === "photo" y cuenta.
+         Lee de db.entries real. Estado: OPERATIVO en Vault.jsx
+
+  [F-03] Listado de archivos en carpeta de biblioteca
+         listLibraryContents(sharedFolderId) → Drive API paginada.
+         Estado: IMPLEMENTADO y funcional en GoogleDriveService.js
+
+  [F-04] Cálculo de uso de almacenamiento de fotos
+         calculateLibraryUsage() suma bytes de todos los archivos.
+         checkLibraryCapacity() calcula % y flag near_full.
+         Estado: IMPLEMENTADO en GoogleDriveService.js
+
+  [F-05] Estado de capacidad en memoria
+         libraryCapacity en VaultContext cachea { used_gb, used_pct, near_full }
+         por biblioteca. Estado: OPERATIVO en VaultContext.jsx
+
+  [F-06] Alertas de biblioteca casi llena (>85%)
+         librariesNearFull derivado en VaultContext.
+         Estado: LÓGICA LISTA — falta UI para mostrarla
+
+  [F-07] Schema de entry para foto
+         { id, era_id, type:"photo", content:{}, from, to, created_at }
+         cover_image en Era: { id, ..., cover_image: string|null }
+         Estado: DEFINIDO en EMPTY_DB y addEntry/addEra
+
+  ════════════════════════════════════════════
+  ❌ PENDIENTES DE CONEXIÓN (no implementado)
+  ════════════════════════════════════════════
+
+  [P-01] Subida binaria de foto a Google Drive
+         FALTA: No existe ninguna función en GoogleDriveService.js
+         que suba un archivo binario (imagen) a Drive.
+         Drive Files.create con uploadType=multipart/resumable
+         para archivos > 5MB. Necesita scope drive.file (ya incluido).
+         PRIORIDAD: CRÍTICA
+
+  [P-02] Obtención de URL de visualización para fotos subidas
+         FALTA: Tras subir, se necesita un webContentLink o
+         generar un thumbnail via Drive API para guardar en
+         entry.content.url o era.cover_image.
+         PRIORIDAD: CRÍTICA (bloqueada por P-01)
+
+  [P-03] UI de subida de foto en Vault.jsx / EraDetailPanel
+         FALTA: No hay <input type="file">, no hay dropzone,
+         no hay progress bar de subida.
+         PRIORIDAD: ALTA
+
+  [P-04] Edición de cover_image de una Era
+         FALTA: No hay botón/modal en EraCard ni en EraDetailPanel
+         para seleccionar/subir la portada de una Era.
+         El campo cover_image existe en DB pero nunca se escribe
+         con un valor real.
+         PRIORIDAD: ALTA
+
+  [P-05] Galería de fotos por Era
+         FALTA: No hay componente que renderice las entries de
+         type="photo" con sus imágenes en una cuadrícula o lista.
+         EraDetailPanel solo muestra el contador y 3 entradas
+         sin preview visual de foto.
+         PRIORIDAD: ALTA
+
+  [P-06] Cápsulas del Tiempo conectadas a Drive
+         FALTA: demoTimeCapsules debe reemplazarse por lectura de
+         db.entries donde type === "letter" (o type nuevo "capsule")
+         con un campo unlock_date.
+         El servicio ya tiene addEntry() — solo falta el type y la UI.
+         PRIORIDAD: MEDIA
+
+  [P-07] UI de creación de Era desde Vault.jsx
+         FALTA: El botón "+ ERA" llama a onAddEra() pero el modal
+         de creación (nombre, color, fecha, cover) debe existir
+         en el padre o dentro del componente.
+         PRIORIDAD: MEDIA
+
+  [P-08] Alerta visual de biblioteca at_risk / near_full en Vault
+         FALTA: librariesAtRisk y librariesNearFull están calculados
+         en VaultContext pero Vault.jsx no los consume ni muestra banner.
+         PRIORIDAD: MEDIA
+
+  [P-09] Discriminación de fotos por propietario (from/to)
+         FALTA: addEntry ya soporta from:"edu"|"david" y to:"edu"|"david"|"both"
+         pero la UI de fotos aún no expone estos campos al crear entradas.
+         myEntries en VaultContext ya filtra correctamente — falta UI.
+         PRIORIDAD: BAJA (preparado en back, falta en front)
+
+  [P-10] Sincronizar umbral visual HeartbeatWidget con CONFIG
+         Widget usa 20 meses como umbral visual de "at_risk".
+         CONFIG usa LIBRARY_AT_RISK_MONTHS = 18 meses.
+         Extraer el umbral a una constante compartida.
+         PRIORIDAD: BAJA (cosmética / consistencia)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  RESUMEN EJECUTIVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  La capa de datos (GoogleDriveService + VaultContext) está
+  sólidamente construida: Eras, Entries y Bibliotecas se
+  persisten correctamente en Drive. El Heartbeat es real y
+  funcional. El schema está versionado con migraciones.
+
+  El cuello de botella está en la capa de presentación:
+  Vault.jsx es casi un demo glorificado para el módulo de fotos.
+  El trabajo urgente son P-01 a P-05: sin subida real de imágenes
+  a Drive y sin galería visual, el módulo de fotos no tiene
+  utilidad real para el usuario.
+
+  ORDEN DE ATAQUE RECOMENDADO:
+    1. P-01 + P-02: función uploadPhotoToDrive() en GoogleDriveService
+    2. P-03: UI de subida (input file + progress) en EraDetailPanel
+    3. P-05: Galería de fotos por Era
+    4. P-04: Edición de cover_image de Era
+    5. P-07: Modal real de creación de Era
+    6. P-06: Cápsulas del Tiempo desde DB
+
+================================================================
+  FIN DEL INFORME
+================================================================

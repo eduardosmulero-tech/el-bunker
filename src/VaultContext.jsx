@@ -1,0 +1,569 @@
+// ============================================================
+//  EL BÚNKER — VaultContext.jsx
+//  Global State Provider · Google Drive Sync · Heartbeat Engine
+//  v3.0.0 — Multi-usuario · Bibliotecas · Alertas de capacidad
+// ============================================================
+
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
+import GoogleDriveService, {
+  initGoogleServices,
+  requestAccessToken,
+  signOut,
+  isAuthenticated,
+  onAuthChange,
+  initDatabase,
+  fetchData,
+  updateData,
+  triggerHeartbeat,
+  // Control de acceso
+  resolveUser,
+  isAuthorizedEmail,
+  // Bibliotecas
+  addLibrary   as svcAddLibrary,
+  updateLibrary as svcUpdateLibrary,
+  removeLibrary as svcRemoveLibrary,
+  markLibraryHeartbeat as svcMarkLibraryHeartbeat,
+  listLibraryContents,
+  checkLibraryCapacity,
+  _calcLibraryStatus,
+} from "./GoogleDriveService";
+
+// ─── CONTEXT SHAPE ───────────────────────────────────────────
+/**
+ * VaultContextValue
+ * {
+ *   // Auth
+ *   user:            { name, email, avatar, role, id } | null,
+ *   isLoading:       boolean,
+ *   authStatus:      "idle"|"loading"|"authenticated"|"error"|"unauthorized",
+ *   bootError:       string | null,
+ *
+ *   // Database
+ *   db:              VaultDB | null,
+ *   dbStatus:        "OFFLINE"|"SYNCING"|"ONLINE"|"ERROR",
+ *   lastHeartbeat:   ISO string | null,
+ *
+ *   // Navegación
+ *   activeTab:       string,
+ *   setActiveTab:    (tab: string) => void,
+ *
+ *   // Música
+ *   masterVolume:    number,
+ *   setMasterVolume: (v: number) => void,
+ *
+ *   // Entradas filtradas por usuario actual
+ *   myEntries:       Entry[],   — entradas dirigidas al usuario actual (to === userId | "both")
+ *   myMessages:      Entry[],   — solo type "letter" dirigidas al usuario actual
+ *
+ *   // Bibliotecas (con status calculado automáticamente)
+ *   libraries:          Library[],
+ *   librariesAtRisk:    Library[],   — status "at_risk"
+ *   librariesLost:      Library[],   — status "lost"
+ *   librariesNearFull:  Library[],   — near_full según capacidad (requiere checkLibraryCapacity)
+ *
+ *   // Acciones core
+ *   login:           () => Promise<void>,
+ *   logout:          () => Promise<void>,
+ *   refreshDb:       () => Promise<void>,
+ *   patchDb:         (updater: fn) => Promise<void>,
+ *   heartbeat:       () => Promise<void>,
+ *
+ *   // Acciones de biblioteca
+ *   addLibrary:              (data) => Promise<Library>,
+ *   updateLibrary:           (id, patch) => Promise<Library>,
+ *   removeLibrary:           (id) => Promise<void>,
+ *   markLibraryHeartbeat:    (id) => Promise<Library>,
+ *   getLibraryContents:      (sharedFolderId) => Promise<File[]>,
+ *   refreshLibraryCapacity:  (library) => Promise<CapacityInfo>,
+ * }
+ */
+
+const VaultContext = createContext(null);
+
+// ─── BOOT PHASES ─────────────────────────────────────────────
+const BOOT = Object.freeze({
+  IDLE:          "idle",
+  INIT_SERVICES: "init_services",
+  INIT_DB:       "init_db",
+  READY:         "ready",
+  UNAUTHORIZED:  "unauthorized",  // ← NUEVO: email no en la lista blanca
+  ERROR:         "error",
+});
+
+// ─── PROVIDER ────────────────────────────────────────────────
+export function VaultProvider({ children }) {
+
+  // ── State ─────────────────────────────────────────────────
+  const [bootPhase,     setBootPhase]     = useState(BOOT.IDLE);
+  const [user,          setUser]          = useState(null);   // { name, email, avatar, role, id }
+  const [db,            setDb]            = useState(null);
+  const [dbStatus,      setDbStatus]      = useState("OFFLINE");
+  const [lastHeartbeat, setLastHeartbeat] = useState(null);
+  const [activeTab,     setActiveTab]     = useState("vault");
+  const [masterVolume,  setMasterVolume]  = useState(80);
+  const [bootError,     setBootError]     = useState(null);
+
+  // Cache de capacidad por biblioteca { [libraryId]: { used_gb, used_pct, near_full } }
+  const [libraryCapacity, setLibraryCapacity] = useState({});
+
+  const hbTimerRef = useRef(null);
+
+  // ── Derived: authStatus ───────────────────────────────────
+  const authStatus =
+    bootPhase === BOOT.IDLE          ? "idle"          :
+    bootPhase === BOOT.INIT_SERVICES ? "loading"       :
+    bootPhase === BOOT.INIT_DB       ? "loading"       :
+    bootPhase === BOOT.READY         ? "authenticated" :
+    bootPhase === BOOT.UNAUTHORIZED  ? "unauthorized"  :
+    "error";
+
+  const isLoadingApp =
+    bootPhase === BOOT.INIT_SERVICES ||
+    bootPhase === BOOT.INIT_DB;
+
+  // ── Derived: bibliotecas con status recalculado ───────────
+  /**
+   * Recalcula el status de cada biblioteca en cada render
+   * basándose únicamente en fechas (sin red).
+   */
+  const libraries = useMemo(() => {
+    if (!db?.libraries) return [];
+    return db.libraries.map((lib) => ({
+      ...lib,
+      status: _calcLibraryStatus(lib.last_heartbeat_check),
+    }));
+  }, [db?.libraries]);
+
+  /** Bibliotecas en riesgo de inactividad (18-22 meses sin heartbeat). */
+  const librariesAtRisk = useMemo(
+    () => libraries.filter((l) => l.status === "at_risk"),
+    [libraries]
+  );
+
+  /** Bibliotecas presumiblemente cerradas por Google (≥23 meses). */
+  const librariesLost = useMemo(
+    () => libraries.filter((l) => l.status === "lost"),
+    [libraries]
+  );
+
+  /**
+   * Bibliotecas con capacidad casi agotada.
+   * Solo las que tengamos en el cache de capacidad.
+   */
+  const librariesNearFull = useMemo(
+    () => libraries.filter((l) => libraryCapacity[l.id]?.near_full === true),
+    [libraries, libraryCapacity]
+  );
+
+  // ── Derived: entradas filtradas por usuario actual ────────
+  /**
+   * myEntries — todas las entradas dirigidas al usuario actual
+   * (to === userId || to === "both")
+   */
+  const myEntries = useMemo(() => {
+    if (!db?.entries || !user) return [];
+    return db.entries.filter(
+      (e) => e.to === "both" || e.to === user.id
+    );
+  }, [db?.entries, user?.id]);
+
+  /**
+   * myMessages — solo type "letter" dirigidas al usuario actual
+   * (cartas de Edu a David y viceversa)
+   */
+  const myMessages = useMemo(
+    () => myEntries.filter((e) => e.type === "letter"),
+    [myEntries]
+  );
+
+  // ── Step 1: Init Google Services on mount ─────────────────
+  useEffect(() => {
+    let cancelled = false;
+
+    const boot = async () => {
+      setBootPhase(BOOT.INIT_SERVICES);
+      try {
+        await initGoogleServices();
+        if (cancelled) return;
+
+        onAuthChange(({ event, token, error }) => {
+          if (event === "SIGNED_IN"  && !cancelled) _onSignedIn(token);
+          if (event === "SIGNED_OUT" && !cancelled) _onSignedOut();
+          if (event === "AUTH_ERROR" && !cancelled) {
+            console.error("[Búnker] Auth error:", error);
+            setBootPhase(BOOT.ERROR);
+            setBootError(error?.error_description ?? "Error de autenticación");
+          }
+        });
+
+        if (isAuthenticated()) {
+          await _fetchUserAndDb();
+        } else {
+          setBootPhase(BOOT.IDLE);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error("[Búnker] Boot failed:", err);
+          setBootPhase(BOOT.ERROR);
+          setBootError(err.message ?? "No se pudieron cargar los servicios de Google.");
+        }
+      }
+    };
+
+    boot();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Step 2: Fetch user info + DB ──────────────────────────
+  const _fetchUserAndDb = useCallback(async (token) => {
+    setBootPhase(BOOT.INIT_DB);
+    setDbStatus("SYNCING");
+
+    try {
+      const profile = await _fetchGoogleProfile(token);
+
+      // ── Control de acceso ───────────────────────────────────
+      // Solo los tres emails autorizados pueden continuar.
+      if (!isAuthorizedEmail(profile.email)) {
+        console.warn(`[Búnker] Acceso denegado para: ${profile.email}`);
+        // Cerramos la sesión inmediatamente para no dejar token activo
+        await signOut();
+        setBootPhase(BOOT.UNAUTHORIZED);
+        setBootError(
+          `El email ${profile.email} no tiene acceso al Búnker.`
+        );
+        return;
+      }
+
+      // Enriquecemos el perfil con el rol interno
+      const bunkerProfile = resolveUser(profile.email);
+      const fullUser = {
+        ...profile,
+        role: bunkerProfile.role,
+        id:   bunkerProfile.id,
+        name: bunkerProfile.name, // usamos el nombre del Búnker, no el de Google
+      };
+      setUser(fullUser);
+
+      const data = await initDatabase();
+      setDb(data);
+      setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
+      setDbStatus("ONLINE");
+      setBootPhase(BOOT.READY);
+
+      _scheduleHeartbeat();
+    } catch (err) {
+      console.error("[Búnker] DB init failed:", err);
+      setDbStatus("ERROR");
+      setBootPhase(BOOT.ERROR);
+      setBootError(err.message ?? "Error al inicializar la base de datos.");
+    }
+  }, []);
+
+  // ── Auth event handlers ───────────────────────────────────
+  const _onSignedIn = useCallback(async (token) => {
+    await _fetchUserAndDb(token);
+  }, [_fetchUserAndDb]);
+
+  const _onSignedOut = useCallback(() => {
+    setUser(null);
+    setDb(null);
+    setDbStatus("OFFLINE");
+    setLastHeartbeat(null);
+    setLibraryCapacity({});
+    setBootPhase(BOOT.IDLE);
+    _clearHeartbeat();
+  }, []);
+
+  // ── Google profile helper ─────────────────────────────────
+  const _fetchGoogleProfile = async (accessToken) => {
+    try {
+      const token = accessToken ?? window.gapi?.client?.getToken?.()?.access_token;
+      if (!token) throw new Error("No hay token disponible");
+
+      const res = await fetch(
+        "https://www.googleapis.com/drive/v3/about?fields=user",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error(`Drive about failed: ${res.status}`);
+      const json = await res.json();
+      return {
+        name:   json.user?.displayName ?? "Usuario",
+        email:  json.user?.emailAddress ?? "",
+        avatar: json.user?.photoLink    ?? null,
+      };
+    } catch (err) {
+      throw new Error("[Búnker] No se pudo obtener el perfil: " + (err?.message ?? err));
+    }
+  };
+
+  // ── Heartbeat scheduler ───────────────────────────────────
+  const _scheduleHeartbeat = useCallback(() => {
+    _clearHeartbeat();
+    hbTimerRef.current = setInterval(async () => {
+      try {
+        await triggerHeartbeat();
+        setLastHeartbeat(new Date().toISOString());
+      } catch (e) {
+        console.warn("[Búnker] Scheduled heartbeat failed:", e);
+      }
+    }, 20 * 60 * 1000);
+  }, []);
+
+  const _clearHeartbeat = useCallback(() => {
+    if (hbTimerRef.current) {
+      clearInterval(hbTimerRef.current);
+      hbTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => _clearHeartbeat(), [_clearHeartbeat]);
+
+  // ── PUBLIC ACTIONS: Auth ──────────────────────────────────
+
+  const login = useCallback(async () => {
+    setBootPhase(BOOT.INIT_SERVICES);
+    try {
+      await requestAccessToken(true);
+      // _onSignedIn se dispara vía onAuthChange
+    } catch (err) {
+      console.error("[Búnker] Login error:", err);
+      setBootPhase(BOOT.ERROR);
+      setBootError(err.message);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await signOut();
+    } catch (e) {
+      console.warn("[Búnker] Sign out error:", e);
+    }
+    _onSignedOut();
+  }, [_onSignedOut]);
+
+  const refreshDb = useCallback(async () => {
+    if (!isAuthenticated()) return;
+    setDbStatus("SYNCING");
+    try {
+      const fresh = await fetchData();
+      setDb(fresh);
+      setLastHeartbeat(fresh.heartbeat ?? new Date().toISOString());
+      setDbStatus("ONLINE");
+    } catch (err) {
+      console.error("[Búnker] refreshDb failed:", err);
+      setDbStatus("ERROR");
+    }
+  }, []);
+
+  /**
+   * patchDb(updater)
+   * Actualización optimista local + persistencia en Drive.
+   * updater = (currentDb) => newDb
+   */
+  const patchDb = useCallback(async (updater) => {
+    if (!isAuthenticated()) return;
+    setDbStatus("SYNCING");
+    try {
+      setDb((prev) => updater(prev));
+      await updateData(updater);
+      setDbStatus("ONLINE");
+    } catch (err) {
+      console.error("[Búnker] patchDb failed:", err);
+      setDbStatus("ERROR");
+      await refreshDb();
+    }
+  }, [refreshDb]);
+
+  const heartbeat = useCallback(async () => {
+    try {
+      await triggerHeartbeat();
+      setLastHeartbeat(new Date().toISOString());
+    } catch (e) {
+      console.warn("[Búnker] Manual heartbeat failed:", e);
+    }
+  }, []);
+
+  // ── Page Visibility: heartbeat al volver de background ────
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && bootPhase === BOOT.READY) {
+        heartbeat();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [bootPhase, heartbeat]);
+
+  // ── PUBLIC ACTIONS: Bibliotecas ───────────────────────────
+
+  /**
+   * addLibrary(data)
+   * Añade una biblioteca y actualiza el estado local optimistamente.
+   */
+  const addLibrary = useCallback(async (data) => {
+    const newLib = await svcAddLibrary(data);
+    setDb((prev) => ({
+      ...prev,
+      libraries: [...(prev?.libraries ?? []), newLib],
+    }));
+    return newLib;
+  }, []);
+
+  /**
+   * updateLibrary(id, patch)
+   * Actualiza una biblioteca y sincroniza el estado local.
+   */
+  const updateLibrary = useCallback(async (id, patch) => {
+    const updated = await svcUpdateLibrary(id, patch);
+    setDb((prev) => ({
+      ...prev,
+      libraries: (prev?.libraries ?? []).map((l) => (l.id === id ? updated : l)),
+    }));
+    return updated;
+  }, []);
+
+  /**
+   * removeLibrary(id)
+   * Elimina una biblioteca y limpia su cache de capacidad.
+   */
+  const removeLibrary = useCallback(async (id) => {
+    await svcRemoveLibrary(id);
+    setDb((prev) => ({
+      ...prev,
+      libraries: (prev?.libraries ?? []).filter((l) => l.id !== id),
+    }));
+    setLibraryCapacity((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }, []);
+
+  /**
+   * markLibraryHeartbeat(id)
+   * El admin confirma que acaba de entrar a la cuenta biblioteca.
+   */
+  const markLibraryHeartbeat = useCallback(async (id) => {
+    const updated = await svcMarkLibraryHeartbeat(id);
+    setDb((prev) => ({
+      ...prev,
+      libraries: (prev?.libraries ?? []).map((l) => (l.id === id ? updated : l)),
+    }));
+    return updated;
+  }, []);
+
+  /**
+   * getLibraryContents(sharedFolderId)
+   * Lista los archivos de una carpeta compartida.
+   */
+  const getLibraryContents = useCallback(
+    (sharedFolderId) => listLibraryContents(sharedFolderId),
+    []
+  );
+
+  /**
+   * refreshLibraryCapacity(library)
+   * Calcula el uso actual de una biblioteca y actualiza el cache.
+   * Llama a Drive API — úsalo con moderación.
+   *
+   * @param {{ id, shared_folder_id, capacity_gb }} library
+   * @returns {Promise<{ used_gb, used_pct, near_full, file_count }>}
+   */
+  const refreshLibraryCapacity = useCallback(async (library) => {
+    const info = await checkLibraryCapacity(library);
+    setLibraryCapacity((prev) => ({ ...prev, [library.id]: info }));
+
+    // Si la biblioteca está casi llena, actualizamos su status a "full" en la DB
+    if (info.used_pct >= 100) {
+      await svcUpdateLibrary(library.id, { status: "full" });
+      setDb((prev) => ({
+        ...prev,
+        libraries: (prev?.libraries ?? []).map((l) =>
+          l.id === library.id ? { ...l, status: "full" } : l
+        ),
+      }));
+    }
+
+    return info;
+  }, []);
+
+  // ── Context Value ─────────────────────────────────────────
+  const value = {
+    // Auth
+    user,
+    isLoading: isLoadingApp,
+    authStatus,
+    bootPhase,
+    bootError,
+
+    // Database
+    db,
+    dbStatus,
+    lastHeartbeat,
+
+    // Navegación
+    activeTab,
+    setActiveTab,
+
+    // Música
+    masterVolume,
+    setMasterVolume,
+
+    // Entradas filtradas por usuario
+    myEntries,
+    myMessages,
+
+    // Bibliotecas
+    libraries,
+    librariesAtRisk,
+    librariesLost,
+    librariesNearFull,
+    libraryCapacity,
+
+    // Acciones core
+    login,
+    logout,
+    refreshDb,
+    patchDb,
+    heartbeat,
+
+    // Acciones de biblioteca
+    addLibrary,
+    updateLibrary,
+    removeLibrary,
+    markLibraryHeartbeat,
+    getLibraryContents,
+    refreshLibraryCapacity,
+
+    // Servicio raw para usos avanzados
+    driveService: GoogleDriveService,
+  };
+
+  return (
+    <VaultContext.Provider value={value}>
+      {children}
+    </VaultContext.Provider>
+  );
+}
+
+// ─── HOOK ─────────────────────────────────────────────────────
+export function useVault() {
+  const ctx = useContext(VaultContext);
+  if (!ctx) throw new Error("[useVault] Must be used inside <VaultProvider>");
+  return ctx;
+}
+
+// ─── BOOT PHASE EXPORT ────────────────────────────────────────
+export { BOOT };
+
+export default VaultContext;

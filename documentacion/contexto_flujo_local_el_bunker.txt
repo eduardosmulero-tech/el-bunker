@@ -1,0 +1,46 @@
+╔══════════════════════════════════════════════════════════════╗
+║         PROMPT DE CONTEXTO: FLUJO DE TRABAJO IA LOCAL        ║
+║                PROYECTO: EL BÚNKER (MAYO 2026)               ║
+╚══════════════════════════════════════════════════════════════╝
+
+Este documento complementa a 'el_bunker_contexto_v2.txt' y 'auditoria_vault_el_bunker.txt'. 
+Resume la infraestructura de desarrollo establecida en la sesión actual.
+
+## 1. PERFIL DE HARDWARE (EL BÚNKER LOCAL)
+El entorno de desarrollo corre en una máquina con alta capacidad de cómputo local:
+- CPU: Intel Core i5-13400F (13ª Gen).
+- RAM: 32 GB.
+- GPU: NVIDIA GeForce RTX 4070 (12 GB VRAM) -> Pieza clave para el flujo local.
+- Almacenamiento: SSD WD Blue SN570 1TB.
+
+## 2. INFRAESTRUCTURA DE IA LOCAL (PRESUPUESTO $0)
+Se ha configurado un entorno de "Picador de Código" totalmente independiente de APIs externas:
+- Motor: Ollama (corriendo sobre la RTX 4070).
+- Modelo principal: qwen2.5-coder:14b (optimizado para programación, cargado íntegramente en VRAM).
+- Interfaz: Extensión 'Continue' en VS Code.
+- Archivo de configuración: config.yaml (ubicado en ~/.continue/config.yaml).
+
+## 3. NUEVO FLUJO DE TRABAJO: ARQUITECTO VS. PICADOR
+Se ha definido un sistema de trabajo en dos capas para maximizar la eficiencia y evitar cortes en las respuestas:
+
+A. CLAUDE (El Arquitecto):
+   - Rol: Análisis de alto nivel, diseño de lógica compleja, resolución de problemas de arquitectura y generación de prompts específicos.
+   - Función: Claude recibe el contexto global y dicta las instrucciones exactas que debe ejecutar la IA local.
+
+B. QWEN2.5-CODER / OLLAMA (El Picador de Código):
+   - Rol: Ejecución técnica, edición de archivos y autocompletado.
+   - Función: Trabaja directamente sobre el sistema de archivos de VS Code (usando Ctrl+L para chat de archivo o Ctrl+I para edición en línea). No tiene límites de tokens de salida porque edita el archivo directamente.
+
+## 4. ESTADO ACTUAL Y PRIMEROS PASOS
+- Contexto de App: El Búnker (App privada de memoria, React + Tailwind v3 + Google Drive API).
+- Auditoría: Se ha realizado una auditoría técnica completa del módulo 'The Vault'.
+- Tarea inmediata: Limpieza del Bug 1 (Esquinas decorativas en Vault.jsx) para validar el flujo local.
+- Próximo hito crítico: Implementación de la subida binaria (P-01) en GoogleDriveService.js.
+
+## 5. INSTRUCCIONES PARA CLAUDE EN PRÓXIMAS SESIONES
+Cuando se solicite una nueva funcionalidad:
+1. No escribas todo el código del archivo (para evitar cortes).
+2. Diseña la lógica y entrega un 'Pliego de Condiciones' o Prompt específico.
+3. El usuario pegará ese prompt en su 'Picador Local' para que este realice la modificación física en el código.
+
+── FIN DEL DOCUMENTO ──────────────────────────────────────────
