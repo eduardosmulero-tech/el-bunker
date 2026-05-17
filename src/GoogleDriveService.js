@@ -378,7 +378,7 @@ const _updateDatabaseFile = async (data, fileId) => {
     await window.gapi.client.request({
       path:    `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
       method:  "PATCH",
-      params:  { uploadType: "multipart" },
+      params:  { uploadType: "multipart", supportsAllDrives: true },
       headers: { "Content-Type": `multipart/related; boundary="${boundary}"` },
       body:    multipartBody,
     });
