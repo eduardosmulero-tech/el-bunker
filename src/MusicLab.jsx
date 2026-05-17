@@ -1112,6 +1112,7 @@ export default function MusicLab({
   const [pendingDrop,  setPendingDrop]  = useState(null);
   const [localTracks,  setLocalTracks]  = useState(rawTracks);
   const [localDrops,   setLocalDrops]   = useState(rawDrops);
+  const [toast,        setToast]        = useState(null);
 
   // Check for unseen drops on mount (simulates JSON load check)
   useEffect(() => {
@@ -1134,6 +1135,8 @@ export default function MusicLab({
     setLocalTracks((p) => [...p, trackData]);
     onAddTrack?.(trackData);
     setShowAdd(false);
+    setToast("TRACK AÑADIDO");
+    setTimeout(() => setToast(null), 2500);
   };
 
   const handleDropSend = (dropData) => {
@@ -1156,6 +1159,34 @@ export default function MusicLab({
 
   return (
     <>
+      {/* ── Toast feedback ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.25 }}
+            style={{
+              position: "fixed",
+              top: 20,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: `${ACID}18`,
+              border: `1px solid ${ACID}55`,
+              color: ACID,
+              fontFamily: FONT_MONO,
+              fontSize: 11,
+              letterSpacing: "0.25em",
+              padding: "8px 20px",
+              borderRadius: 2,
+              zIndex: 9999,
+            }}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* ── Incoming Drop Modal ── */}
       <DropAlertModal
         drop={pendingDrop}

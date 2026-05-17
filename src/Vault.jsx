@@ -121,18 +121,18 @@ const AdventureCounter = ({ startDate }) => {
 /**
  * HeartbeatWidget
  *
- * "Safe" state  (heartbeat < 20 months ago) → slow, calm pulse, acid green
- * "At-risk" state (>20 months) → fast, erratic pulse, red + warning glyph
+ * "Safe" state  (heartbeat < 18 months ago) → slow, calm pulse, acid green
+ * "At-risk" state (>18 months) → fast, erratic pulse, red + warning glyph
  */
 const HeartbeatWidget = ({ lastHeartbeat }) => {
   const monthsAgo = monthsSince(lastHeartbeat);
-  const atRisk    = monthsAgo >= 20;
+  const atRisk    = monthsAgo >= 18;
   const color     = atRisk ? "#ff3b3b" : ACID;
 
   // Beat speed: 1.2s (safe) → 0.35s (at-risk)
   const beatDuration = atRisk
     ? 0.35
-    : Math.max(1.2, 1.2 - (monthsAgo / 20) * 0.85);
+    : Math.max(1.2, 1.2 - (monthsAgo / 18) * 0.85);
 
   return (
     <motion.div
@@ -648,33 +648,8 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
         </motion.section>
       )}
 
-      {/* ══ SECTION 4: Time Capsules ═════════════════════════════ */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
-        <div className="flex items-center gap-2 mb-3 px-1">
-          <span style={{ color: PURPLE }}>⧖</span>
-          <h2
-            className="text-xs tracking-[0.35em] uppercase font-bold"
-            style={{ color: PURPLE }}
-          >
-            CÁPSULAS DEL TIEMPO
-          </h2>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {demoTimeCapsules.map((capsule) => (
-            <TimeCapsule
-              key={capsule.id}
-              title={capsule.title}
-              unlockDate={capsule.unlockDate}
-              content={capsule.content}
-            />
-          ))}
-        </div>
-      </motion.section>
+      {/* ══ SECTION 4: Time Capsules — OCULTO hasta implementación real ══ */}
+      {/* {demoTimeCapsules} eliminado — no mostrar datos demo en producción */}
 
       {/* ══ SECTION 5: System Status ═════════════════════════════ */}
       <motion.footer
