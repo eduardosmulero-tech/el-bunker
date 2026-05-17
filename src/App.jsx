@@ -178,8 +178,18 @@ const MusicPage = () => {
           },
         }));
       }}
-      masterVolume={masterVolume}
       onMasterVolumeChange={setMasterVolume}
+      onMarkDropSeen={async (dropId) => {
+        await patchDb((prev) => ({
+          ...prev,
+          music_lab: {
+            ...prev.music_lab,
+            drops: (prev.music_lab?.drops ?? []).map((d) =>
+              d.id === dropId ? { ...d, seen: true } : d
+            ),
+          },
+        }));
+      }}
     />
   );
 };
