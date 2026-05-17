@@ -6,8 +6,9 @@
 
 ## ARQUITECTURA
 
-**Sin base de datos externa**
-Todo persiste en Google Drive appDataFolder. Decisión inamovible. No proponer Firebase, Supabase ni ningún backend externo.
+**Sin base de datos externa (ADR-001: Propiedad de la Base de Datos)**
+Todo persiste en Google Drive mediante un único archivo JSON. No proponer Firebase, Supabase ni ningún backend externo. 
+*Actualización 16 Mayo 2026:* Se abandona el uso de `appDataFolder` debido a su naturaleza estrictamente privada que impide el acceso cruzado entre cuentas. La base de datos vive ahora en una carpeta estándar del Drive de `thebunker.admin` compartida explícitamente con los usuarios. Requiere la variable `VITE_GOOGLE_SHARED_FOLDER_ID`.
 
 **Solo 3 usuarios autorizados**
 No hay registro público. La whitelist es fija en CONFIG.USERS de GoogleDriveService.js.
@@ -38,9 +39,9 @@ No usar la librería legacy de Google Sign-In. GIS es la implementación actual 
 openid
 email
 profile
-https://www.googleapis.com/auth/drive.appdata
+[https://www.googleapis.com/auth/drive.file](https://www.googleapis.com/auth/drive.file)
 ```
-Eliminar cualquiera de estos scopes rompe la autenticación o el acceso a Drive.
+*Nota:* El scope `drive.appdata` se reemplazó por `drive.file` a raíz de la migración ADR-001. Eliminar cualquiera de estos scopes rompe la autenticación o el acceso a Drive.
 
 ---
 

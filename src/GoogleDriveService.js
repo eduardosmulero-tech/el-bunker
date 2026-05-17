@@ -284,14 +284,23 @@ export const isAuthorizedEmail = (email) => Boolean(resolveUser(email));
 // ─── SECTION 3: DRIVE FILE OPERATIONS ────────────────────────
 
 const _findDatabaseFile = async () => {
+  const folderId = import.meta.env.VITE_GOOGLE_SHARED_FOLDER_ID;
+  if (!folderId) {
+    throw _vaultError("MISSING_FOLDER_ID", "VITE_GOOGLE_SHARED_FOLDER_ID no está configurada. Revisa el .env.");
+  }
   if (_state.dbFileId) return _state.dbFileId;
 
+  console.info(`[Búnker] Buscando DB en carpeta compartida: ${folderId}`);
+
   try {
-    const response = await window.gapi.client.drive.files.list({
-      spaces: "appDataFolder",
-      q:      `name = '${CONFIG.DB_FILENAME}' and trashed = false`,
+    const params = {
+      spaces: "drive",
+      q:      `'${folderId}' in parents and name = '${CONFIG.DB_FILENAME}' and trashed = false`,
       fields: "files(id, name, modifiedTime)",
-    });
+      includeItemsFromAllDrives: true,
+      supportsAllDrives:         true,
+    };
+    const response = await window.gapi.client.drive.files.list(params);
 
     const files = response.result.files ?? [];
     if (files.length === 0) return null;
@@ -309,11 +318,15 @@ const _findDatabaseFile = async () => {
 };
 
 const _createDatabaseFile = async (data) => {
+  const folderId = import.meta.env.VITE_GOOGLE_SHARED_FOLDER_ID;
+  if (!folderId) {
+    throw _vaultError("MISSING_FOLDER_ID", "VITE_GOOGLE_SHARED_FOLDER_ID no está configurada. Revisa el .env.");
+  }
   try {
     const metadata = {
       name:     CONFIG.DB_FILENAME,
       mimeType: CONFIG.DB_MIME,
-      parents:  ["appDataFolder"],
+      parents:  [folderId],
     };
 
     const body          = JSON.stringify(data, null, 2);
@@ -333,7 +346,7 @@ const _createDatabaseFile = async (data) => {
     const response = await window.gapi.client.request({
       path:    "https://www.googleapis.com/upload/drive/v3/files",
       method:  "POST",
-      params:  { uploadType: "multipart", fields: "id" },
+      params:  { uploadType: "multipart", fields: "id", supportsAllDrives: true },
       headers: { "Content-Type": `multipart/related; boundary="${boundary}"` },
       body:    multipartBody,
     });

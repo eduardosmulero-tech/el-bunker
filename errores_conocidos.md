@@ -27,12 +27,11 @@
 
 ---
 
-## ERROR 4 — Login admin bloqueado (SIN RESOLVER — 15 mayo 2026)
-**Síntoma:** La cuenta thebunker.admin@gmail.com no puede hacer login. Las cuentas de usuario (bansovi.py, dcgdozt) sí entran.
-**Sesión invertida:** 4 horas el 15 mayo sin resolver. Se modificaron GoogleDriveService.js y VaultContext.jsx sin encontrar la causa.
-**Archivos modificados en esa sesión:** GoogleDriveService.js (+15 bytes), VaultContext.jsx (+132 bytes).
-**Estado:** Pendiente. Es el primer bug a resolver con metodología correcta (protocolo Sherlock + Network abierto).
-**Hipótesis NO confirmadas:** Múltiples intentos sin datos de Network → descartar todo lo intentado y empezar desde cero con error HTTP exacto.
+## ERROR 4 — Login admin bloqueado (RESUELTO — 16 mayo 2026)
+**Síntoma:** La cuenta thebunker.admin@gmail.com no podía hacer login o veía la base de datos a 0, mientras que las cuentas de usuario (bansovi.py, dcgdozt) sí entraban correctamente. Ocurrió inicialmente probando en Opera GX.
+**Causa real:** Dos factores. Primero, posible conflicto de caché/Service Worker antiguo en Opera GX. Segundo y más importante, limitación arquitectónica: la DB original se creó en el `appDataFolder` del primer usuario que ingresó (bansovi.py). Como el `appDataFolder` es estrictamente privado y no compartible, el admin al entrar tenía un entorno vacío y se le creaba una DB nueva.
+**Solución aplicada:** Se tomó la decisión arquitectónica (ADR-001) de migrar la base de datos desde `appDataFolder` a una carpeta de Drive estándar compartida. Redactados PLIEGOS 001, 002 y 003 para aplicar la migración.
+**NO hacer:** Intentar forzar acceso cruzado usando `appDataFolder`. 
 
 ---
 
@@ -48,6 +47,6 @@
 **Síntoma:** La app solo funciona en localhost:5173.
 **Causa real:** No se ha realizado el deploy todavía.
 **Consideraciones para el deploy:**
-- VITE_GOOGLE_CLIENT_ID debe configurarse como variable de entorno en Vercel, no en el repo.
+- VITE_GOOGLE_CLIENT_ID y VITE_GOOGLE_SHARED_FOLDER_ID deben configurarse como variables de entorno en Vercel, no en el repo.
 - La URL de producción debe añadirse a los orígenes autorizados en Google Cloud Console antes de que OAuth funcione.
 - El Service Worker solo funciona en HTTPS, que Vercel provee por defecto.

@@ -7,36 +7,34 @@
 
 ## ESTADO ACTUAL (16 Mayo 2026)
 
-- App funciona en local (localhost:5173) con bansovi.py y dcgdozt. Admin bloqueado (ver ERROR 4).
+- App funciona en local (localhost:5173). 
+- Diagnóstico de ERROR 4 completado: el problema de acceso cruzado a la DB requiere abandonar `appDataFolder`.
+- Decisión arquitectónica tomada (ADR-001): Mover la DB a una carpeta compartida en el Drive del admin.
+- Pliegos 001, 002 y 003 generados y listos para ejecutar con Qwen vía Cline para realizar la migración.
 - Git inicializado. Commit inicial: `fc98830` — estado 15 mayo.
-- OAuth funcional para Edu y David. Admin sin resolver.
 - Deploy a Vercel/GitHub pendiente.
-- PWA pendiente de instalar en los dos Android (después del deploy).
 - WSL2 pendiente de instalar (sesión dedicada, sin presión de proyecto).
 
 ---
 
-## PRÓXIMO PLIEGO DISPONIBLE: 001
+## PRÓXIMO PLIEGO DISPONIBLE: 004
 
 ---
 
 ## BUGS ACTIVOS (por orden de prioridad)
 
-**Bug 1 — Login admin bloqueado** ← PRIORIDAD MÁXIMA
-Ver ERROR 4 en errores_conocidos.md. Atacar con Network abierto y protocolo Sherlock. No repetir los intentos del 15 mayo.
-
-**Bug 2 — markDropSeen nunca se llama** ← CRÍTICO para experiencia Edu/David
+**Bug 1 — markDropSeen nunca se llama** ← CRÍTICO para experiencia Edu/David
 `onMarkDropSeen` no está cableado en App.jsx. El mismo Drop aparece cada vez que se abre la app.
 Ver ROADMAP.md para el fix exacto (10 líneas en App.jsx).
 
-**Bug 3 — HeartbeatWidget usa umbral 20 meses, CONFIG usa 18**
+**Bug 2 — HeartbeatWidget usa umbral 20 meses, CONFIG usa 18**
 Inconsistencia menor. Vault.jsx vs GoogleDriveService.js. Fix: extraer constante al contexto.
 
-**Bug 4 — Esquinas decorativas en recuadros**
+**Bug 3 — Esquinas decorativas en recuadros**
 Todos los recuadros tienen un cuadradito en cada esquina. Eliminar del diseño.
 Archivos probables: Layout.jsx, App.css o clases Tailwind en componentes visuales.
 
-**Bug 5 — MusicLab sin feedback visual al añadir track**
+**Bug 4 — MusicLab sin feedback visual al añadir track**
 El reproductor no muestra progreso cuando se añade un track. El usuario no sabe cuándo está listo.
 Archivo: MusicLab.jsx
 
@@ -44,9 +42,12 @@ Archivo: MusicLab.jsx
 
 ## INFRAESTRUCTURA PENDIENTE
 
+- [ ] (CRÍTICO) Crear carpeta compartida `el_bunker_db` en el Drive de thebunker.admin, invitar a bansovi.py y dcgdozt como Editores.
+- [ ] Añadir `VITE_GOOGLE_SHARED_FOLDER_ID` al `.env` local con el ID de la carpeta compartida.
+- [ ] Aplicar PLIEGOS 001, 002 y 003 (en el mismo commit) y hacer Clear Site Data en el navegador antes de probar.
 - [ ] Crear repositorio privado en GitHub y conectarlo al repo local
 - [ ] Verificar configuración de Google Cloud Console (3 usuarios de prueba, scopes correctos)
-- [ ] Deploy en Vercel con VITE_GOOGLE_CLIENT_ID como variable de entorno
+- [ ] Deploy en Vercel con VITE_GOOGLE_CLIENT_ID y VITE_GOOGLE_SHARED_FOLDER_ID como variables de entorno
 - [ ] Añadir URL de producción a orígenes autorizados en Google Cloud Console
 - [ ] Instalar PWA en Android de Edu
 - [ ] Instalar PWA en Android de David
