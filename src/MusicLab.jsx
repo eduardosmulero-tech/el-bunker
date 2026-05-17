@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { fetchQueue, saveQueue } from "./GoogleDriveService";
+import { fetchQueue, saveQueue, fetchPlaylists, createPlaylist, addTrackToPlaylist } from "./GoogleDriveService";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { CornerBrackets, ACID, PURPLE, BG } from "./Layout";
 
@@ -492,9 +492,9 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 };
-
 // ─── WINAMP BUTTON ───────────────────────────────────────────
 const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size = "md" }) => (
   <motion.button
@@ -546,11 +546,69 @@ const VibeTagBar = ({ activeVibe, onVibeChange }) => (
 );
 
 // ─── TRACK CARD ──────────────────────────────────────────────
-const TrackCard = ({ track, isActive, onClick, onDrop }) => {
+const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist }) => {
   const vibe = getVibeConfig(track.vibe);
   const ytId = extractYouTubeId(track.url ?? "");
+  const pressTimer  = useRef(null);
+  const [showCtx, setShowCtx] = useState(false);
+
+  const handleTouchStart = () => {
+    pressTimer.current = setTimeout(() => setShowCtx(true), 500);
+  };
+  const handleTouchEnd = () => {
+    clearTimeout(pressTimer.current);
+  };
 
   return (
+    <>
+    <AnimatePresence>
+      {showCtx && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={{ duration: 0.15 }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 9998,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          onClick={() => setShowCtx(false)}
+        >
+          <motion.div
+            style={{
+              background: "#0a0a0a",
+              border: `1px solid ${ACID}33`,
+              borderRadius: 2,
+              padding: "8px 0",
+              minWidth: 220,
+              fontFamily: FONT_MONO,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              padding: "8px 16px 12px",
+              borderBottom: `1px solid ${ACID}15`,
+              color: ACID, fontSize: 11,
+              letterSpacing: "0.2em", opacity: 0.6,
+            }}>
+              {track.title}
+            </div>
+            <button
+              style={{
+                display: "block", width: "100%", padding: "10px 16px",
+                textAlign: "left", color: ACID, fontSize: 11,
+                letterSpacing: "0.2em", background: "transparent",
+                border: "none", cursor: "pointer",
+              }}
+              onClick={() => { onAddToPlaylist?.(track); setShowCtx(false); }}
+            >
+              ◎ AÑADIR A PLAYLIST
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
     <motion.div
       layout
       initial={{ opacity: 0, x: -12 }}
@@ -558,6 +616,9 @@ const TrackCard = ({ track, isActive, onClick, onDrop }) => {
       exit={{ opacity: 0, x: 12 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onContextMenu={(e) => { e.preventDefault(); setShowCtx(true); }}
       className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
       style={{
         background: isActive ? `${vibe?.color ?? ACID}10` : GLASS_BG,
@@ -1135,6 +1196,9 @@ export default function MusicLab({
   const [localTracks,  setLocalTracks]  = useState(rawTracks);
   const [localDrops,   setLocalDrops]   = useState(rawDrops);
   const [syncStatus,   setSyncStatus]   = useState("idle");
+  const [localPlaylists,    setLocalPlaylists]    = useState([]);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [pendingTrack,      setPendingTrack]      = useState(null);
 
   // Check for unseen drops on mount (simulates JSON load check)
   useEffect(() => {
@@ -1174,6 +1238,52 @@ export default function MusicLab({
         setTimeout(() => setSyncStatus("idle"), 4000);
       });
   }, [activeTrack?.id, userId]);
+  // Cargar playlists desde Drive al montar
+  useEffect(() => {
+    if (!db) return;
+    fetchPlaylists()
+      .then(setLocalPlaylists)
+      .catch((err) => console.warn("[Búnker] fetchPlaylists falló:", err));
+  }, [db]);
+
+  const handleAddToPlaylist = (track) => {
+    setPendingTrack(track);
+    setShowPlaylistModal(true);
+  };
+
+  const handleSelectPlaylist = async (playlistId) => {
+    if (!pendingTrack) return;
+    try {
+      const updated = await addTrackToPlaylist(playlistId, pendingTrack.id);
+      setLocalPlaylists((p) => p.map((pl) => pl.id === playlistId ? updated : pl));
+      setToast("AÑADIDO A PLAYLIST");
+      setTimeout(() => setToast(null), 2500);
+    } catch (err) {
+      console.warn("[Búnker] addTrackToPlaylist falló:", err);
+    } finally {
+      setShowPlaylistModal(false);
+      setPendingTrack(null);
+    }
+  };
+
+  const handleCreatePlaylist = async (name) => {
+    if (!name?.trim() || !userId) return;
+    try {
+      const newPl = await createPlaylist(name, userId);
+      setLocalPlaylists((p) => [...p, newPl]);
+      if (pendingTrack) {
+        const updated = await addTrackToPlaylist(newPl.id, pendingTrack.id);
+        setLocalPlaylists((p) => p.map((pl) => pl.id === newPl.id ? updated : pl));
+      }
+      setToast("PLAYLIST CREADA");
+      setTimeout(() => setToast(null), 2500);
+    } catch (err) {
+      console.warn("[Búnker] createPlaylist falló:", err);
+    } finally {
+      setShowPlaylistModal(false);
+      setPendingTrack(null);
+    }
+  };
 
   // Filtered tracks by vibe
   const filteredTracks = activeVibe === "all"
@@ -1275,6 +1385,7 @@ export default function MusicLab({
           {[
             { id: "tracks", label: "TRACKS", icon: "◎" },
             { id: "drops",  label: `DROPS ${localDrops.length > 0 ? `[${localDrops.length}]` : ""}`, icon: "⚡" },
+            { id: "playlists", label: "LISTS", icon: "◈" },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -1362,6 +1473,7 @@ export default function MusicLab({
                         track={track}
                         isActive={activeTrack?.id === track.id}
                         onClick={() => setActiveTrack(track)}
+                        onAddToPlaylist={handleAddToPlaylist}
                         onDrop={(t) => {
                           setActiveTrack(t);
                           // Trigger drop compose via player
@@ -1428,6 +1540,66 @@ export default function MusicLab({
               />
             </motion.div>
           )}
+          {/* ══ Modal Playlist ══ */}
+        <AnimatePresence>
+          {showPlaylistModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              style={{
+                position: "fixed", inset: 0, zIndex: 9999,
+                background: "rgba(0,0,0,0.85)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: 24,
+              }}
+              onClick={() => setShowPlaylistModal(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+                style={{
+                  background: "#0a0a0a",
+                  border: `1px solid ${ACID}33`,
+                  borderRadius: 2,
+                  width: "100%", maxWidth: 340,
+                  fontFamily: FONT_MONO,
+                  overflow: "hidden",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{
+                  padding: "12px 16px",
+                  borderBottom: `1px solid ${ACID}15`,
+                  color: ACID, fontSize: 11,
+                  letterSpacing: "0.25em",
+                }}>
+                  AÑADIR A PLAYLIST
+                </div>
+                {localPlaylists.map((pl) => (
+                  <button
+                    key={pl.id}
+                    style={{
+                      display: "block", width: "100%", padding: "10px 16px",
+                      textAlign: "left", color: ACID, fontSize: 11,
+                      letterSpacing: "0.2em", background: "transparent",
+                      border: "none", borderBottom: `1px solid ${ACID}10`,
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleSelectPlaylist(pl.id)}
+                  >
+                    ◎ {pl.name}
+                    <span style={{ opacity: 0.3, marginLeft: 8 }}>
+                      [{pl.track_ids.length}]
+                    </span>
+                  </button>
+                ))}
+                <PlaylistNameInput onConfirm={handleCreatePlaylist} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         </AnimatePresence>
 
         {/* ══ Footer ══ */}
@@ -1453,6 +1625,43 @@ export default function MusicLab({
     </>
   );
 }
+
+// ─── PLAYLIST NAME INPUT ─────────────────────────────────────
+const PlaylistNameInput = ({ onConfirm }) => {
+  const [name, setName] = useState("");
+  return (
+    <div style={{
+      padding: "10px 16px",
+      borderTop: `1px solid ${ACID}15`,
+      display: "flex", gap: 8,
+    }}>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) onConfirm(name); }}
+        placeholder="Nueva playlist..."
+        style={{
+          flex: 1, background: "transparent",
+          border: `1px solid ${ACID}33`, borderRadius: 2,
+          color: ACID, fontSize: 11, padding: "6px 10px",
+          fontFamily: FONT_MONO, letterSpacing: "0.15em",
+          outline: "none",
+        }}
+      />
+      <button
+        onClick={() => { if (name.trim()) onConfirm(name); }}
+        style={{
+          background: `${ACID}15`, border: `1px solid ${ACID}44`,
+          color: ACID, fontSize: 11, padding: "6px 10px",
+          borderRadius: 2, cursor: "pointer",
+          fontFamily: FONT_MONO, letterSpacing: "0.15em",
+        }}
+      >
+        OK
+      </button>
+    </div>
+  );
+};
 
 // ─── NAMED EXPORTS ───────────────────────────────────────────
 export {
