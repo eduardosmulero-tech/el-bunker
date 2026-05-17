@@ -24,7 +24,7 @@ const CONFIG = {
   HEARTBEAT_THROTTLE_MS: 15 * 60 * 1000,
 
   // Versión del esquema — permite migraciones futuras
-  SCHEMA_VERSION: "3.1.0",
+  SCHEMA_VERSION: "3.2.0",
 
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
@@ -60,6 +60,8 @@ const EMPTY_DB = () => ({
     // { id, era_id, title, artist, url, note, added_at }
     drops:  [],
     // { id, era_id, track_id, memory, mood, date, created_at }
+    playlists: [],
+    // { id, name, track_ids: [], created_by, created_at, updated_at }
   },
 
   // ── Entradas generales (diario, fotos, cartas...) ────────────
@@ -702,6 +704,17 @@ const _migrateSchema = (data) => {
       schema_version: "3.1.0",
     };
   }
+  // ── 3.1.0 → 3.2.0: campo playlists en music_lab ─────────────
+  if (migrated.schema_version === "3.1.0") {
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        playlists: migrated.music_lab?.playlists ?? [],
+      },
+      schema_version: "3.2.0",
+    };
+  }
   migrated.schema_version = CONFIG.SCHEMA_VERSION;
   migrated._wasMigrated   = true;
   return migrated;
@@ -1153,6 +1166,115 @@ const GoogleDriveService = {
   fetchQueue,
   saveQueue,
   clearQueue,
+  // Playlists
+  fetchPlaylists,
+  createPlaylist,
+  addTrackToPlaylist,
+  deletePlaylist,
+};
+// ─── SECTION 11: PLAYLISTS PUBLIC API ────────────────────────
+
+/**
+ * fetchPlaylists()
+ * Devuelve todas las playlists de la DB.
+ * @returns {Promise<Array>}
+ */
+export const fetchPlaylists = async () => {
+  const db = await fetchData();
+  return db.music_lab?.playlists ?? [];
 };
 
+/**
+ * createPlaylist(name, createdBy)
+ * Crea una playlist vacía.
+ * @param {string} name
+ * @param {string} createdBy — userId del creador
+ * @returns {Promise<object>} — la playlist creada
+ */
+export const createPlaylist = async (name, createdBy) => {
+  if (!name?.trim()) {
+    throw _vaultError("INVALID_PLAYLIST", "createPlaylist() requiere un nombre.");
+  }
+  const now = new Date().toISOString();
+  const newPlaylist = {
+    id:         uuid(),
+    name:       name.trim(),
+    track_ids:  [],
+    created_by: createdBy ?? "admin",
+    created_at: now,
+    updated_at: now,
+  };
+
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      playlists: [...(db.music_lab?.playlists ?? []), newPlaylist],
+    },
+  }));
+  return newPlaylist;
+};
+
+/**
+ * addTrackToPlaylist(playlistId, trackId)
+ * Añade un track a una playlist. Idempotente: no duplica si ya existe.
+ * @param {string} playlistId
+ * @param {string} trackId
+ * @returns {Promise<object>} — la playlist actualizada
+ */
+export const addTrackToPlaylist = async (playlistId, trackId) => {
+  let updated = null;
+
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      playlists: (db.music_lab?.playlists ?? []).map((pl) => {
+        if (pl.id !== playlistId) return pl;
+        if (pl.track_ids.includes(trackId)) return pl;
+        updated = {
+          ...pl,
+          track_ids:  [...pl.track_ids, trackId],
+          updated_at: new Date().toISOString(),
+        };
+        return updated;
+      }),
+    },
+  }));
+
+  if (!updated) throw _vaultError("PLAYLIST_NOT_FOUND", `Playlist ${playlistId} no encontrada`);
+  return updated;
+};
+
+/**
+ * deletePlaylist(playlistId, requestedBy)
+ * Elimina una playlist. Solo el creador puede borrarla y solo si está vacía.
+ * @param {string} playlistId
+ * @param {string} requestedBy — userId del que solicita el borrado
+ * @returns {Promise<void>}
+ */
+export const deletePlaylist = async (playlistId, requestedBy) => {
+  const db = await fetchData();
+  const playlist = (db.music_lab?.playlists ?? []).find((pl) => pl.id === playlistId);
+
+  if (!playlist) {
+    throw _vaultError("PLAYLIST_NOT_FOUND", `Playlist ${playlistId} no encontrada`);
+  }
+  if (playlist.created_by !== requestedBy) {
+    throw _vaultError("PLAYLIST_FORBIDDEN", "Solo el creador puede eliminar una playlist.");
+  }
+  if (playlist.track_ids.length > 0) {
+    throw _vaultError("PLAYLIST_NOT_EMPTY", "Vacía la playlist antes de eliminarla.");
+  }
+
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      playlists: (db.music_lab?.playlists ?? []).filter((pl) => pl.id !== playlistId),
+    },
+  }));
+};
+
+// ─── DEFAULT EXPORT ───────────────────────────────────────────
 export default GoogleDriveService;
