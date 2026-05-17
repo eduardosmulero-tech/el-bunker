@@ -207,6 +207,7 @@ const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
  */
 const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatus = "idle" }) => {
   const audioRef    = useRef(null);
+  const wakeLockRef = useRef(null);
   const [playing,   setPlaying]   = useState(false);
   const [progress,  setProgress]  = useState(0);   // 0-100
   const [volume,    setVolume]    = useState(80);   // 0-100
@@ -288,6 +289,51 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
       });
     };
   }, [track?.id, playing]);
+
+  // ── WakeLock API ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!("wakeLock" in navigator)) return;
+
+    const requestWakeLock = async () => {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request("screen");
+        wakeLockRef.current.addEventListener("release", () => {
+          console.info("[Búnker] WakeLock liberado");
+        });
+        console.info("[Búnker] WakeLock adquirido ✓");
+      } catch (err) {
+        console.warn("[Búnker] WakeLock no disponible:", err);
+      }
+    };
+
+    const releaseWakeLock = async () => {
+      if (wakeLockRef.current) {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+      }
+    };
+
+    // Re-solicitar WakeLock cuando la página vuelve a primer plano
+    // Android libera el WakeLock al apagar la pantalla
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && playing) {
+        requestWakeLock();
+      }
+    };
+
+    if (playing) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      releaseWakeLock();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [playing]);
 
   return (
     <motion.div
