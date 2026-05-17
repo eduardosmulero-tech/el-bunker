@@ -6,6 +6,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { fetchQueue, saveQueue } from "./GoogleDriveService";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { CornerBrackets, ACID, PURPLE, BG } from "./Layout";
 
@@ -204,7 +205,7 @@ const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
  * Custom audio player con estética Winamp retro-future.
  * Soporta: play/pause, prev/next, seek, volume, loop/shuffle.
  */
-const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend }) => {
+const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatus = "idle" }) => {
   const audioRef    = useRef(null);
   const [playing,   setPlaying]   = useState(false);
   const [progress,  setProgress]  = useState(0);   // 0-100
@@ -307,6 +308,26 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend }) => {
           <span className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: accentColor }}>
             MUSIC LAB
           </span>
+          {syncStatus === "syncing" && (
+            <motion.span
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 0.9, repeat: Infinity }}
+              className="text-xs"
+              style={{ color: "#ffcc00", marginLeft: 2 }}
+              title="Sincronizando cola..."
+            >
+              ◌
+            </motion.span>
+          )}
+          {syncStatus === "error" && (
+            <span
+              className="text-xs"
+              style={{ color: "#ff4444" }}
+              title="Error guardando cola"
+            >
+              ✕
+            </span>
+          )}
         </div>
         <div className="flex gap-2">
           {/* Vibe badge */}
@@ -1096,6 +1117,7 @@ const DropsHistory = ({ drops, tracks, onPlay }) => {
  */
 export default function MusicLab({
   db = null,
+  userId = null,
   onAddTrack,
   onAddDrop,
   onMarkDropSeen,
@@ -1125,6 +1147,33 @@ export default function MusicLab({
     const unseen = rawDrops.find((d) => !d.seen);
     if (unseen) setPendingDrop(unseen);
   }, []);
+
+  // Cargar cola desde Drive al montar (solo si hay usuario real)
+  useEffect(() => {
+    if (!userId) return;
+    fetchQueue(userId)
+      .then((trackIds) => {
+        if (trackIds.length === 0) return;
+        const first = rawTracks.find((t) => t.id === trackIds[0]);
+        if (first) setActiveTrack(first);
+      })
+      .catch((err) => {
+        console.warn("[Búnker] fetchQueue falló silenciosamente:", err);
+      });
+  }, [userId]);
+
+  // Guardar cola en Drive optimista al cambiar track activo
+  useEffect(() => {
+    if (!userId || !activeTrack) return;
+    setSyncStatus("syncing");
+    saveQueue(userId, [activeTrack.id])
+      .then(() => setSyncStatus("idle"))
+      .catch((err) => {
+        console.warn("[Búnker] saveQueue falló:", err);
+        setSyncStatus("error");
+        setTimeout(() => setSyncStatus("idle"), 4000);
+      });
+  }, [activeTrack?.id, userId]);
 
   // Filtered tracks by vibe
   const filteredTracks = activeVibe === "all"
@@ -1211,6 +1260,7 @@ export default function MusicLab({
             tracks={filteredTracks}
             onTrackChange={setActiveTrack}
             onDropSend={handleDropSend}
+            syncStatus={syncStatus}
           />
         </motion.section>
 
