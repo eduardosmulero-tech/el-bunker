@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useVault } from "./VaultContext";
 import {
   motion,
   AnimatePresence,
@@ -15,6 +16,8 @@ import {
 } from "framer-motion";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
+const ACID        = "#bfff00";
+const PURPLE      = "#bf00ff";
 const GLASS_BG    = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";
 const FONT_MONO   = "'JetBrains Mono', 'Courier New', monospace";
@@ -485,6 +488,25 @@ const EraDetailPanel = ({ era, entries = [] }) => {
  */
 export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
+  const { user } = useVault();
+   const [exporting, setExporting] = useState(false);
+
+   const handleExport = () => {
+     if (!db) return;
+     setExporting(true);
+     try {
+       const filename = `el_bunker_backup_${new Date().toISOString().slice(0, 10)}.json`;
+       const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+       const url  = URL.createObjectURL(blob);
+       const a    = document.createElement("a");
+       a.href     = url;
+       a.download = filename;
+       a.click();
+       URL.revokeObjectURL(url);
+     } finally {
+       setExporting(false);
+     }
+   };
   const sliderRef  = useRef(null);
   const isDragging = useRef(false);
   const startX     = useRef(0);
@@ -646,24 +668,43 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
       {/* {demoTimeCapsules} eliminado — no mostrar datos demo en producción */}
 
       {/* ══ SECTION 5: System Status ═════════════════════════════ */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="flex items-center justify-between pt-2 pb-4 px-1"
-      >
-        <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: ACID }}>
-          THE_VAULT v1.0
-        </span>
-        <motion.span
-          animate={{ opacity: [0.15, 0.4, 0.15] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="text-xs tracking-widest uppercase"
-          style={{ color: ACID }}
-        >
-          ◈ ENCRYPTED
-        </motion.span>
-      </motion.footer>
+       <motion.footer
+     initial={{ opacity: 0 }}
+     animate={{ opacity: 1 }}
+     transition={{ duration: 0.5, delay: 0.5 }}
+     className="flex items-center justify-between pt-2 pb-4 px-1"
+   >
+     <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: ACID }}>
+       THE_VAULT v1.0
+     </span>
+     <div className="flex items-center gap-3">
+       {user?.role === "admin" && (
+         <motion.button
+           whileTap={{ scale: 0.95 }}
+           onClick={handleExport}
+           disabled={exporting || !db}
+           className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm"
+           style={{
+             color: ACID,
+             border: `1px solid ${ACID}33`,
+             background: `${ACID}08`,
+             fontFamily: FONT_MONO,
+             opacity: (exporting || !db) ? 0.4 : 1,
+           }}
+         >
+           {exporting ? "EXPORTANDO..." : "↓ BACKUP JSON"}
+         </motion.button>
+       )}
+       <motion.span
+         animate={{ opacity: [0.15, 0.4, 0.15] }}
+         transition={{ duration: 3, repeat: Infinity }}
+         className="text-xs tracking-widest uppercase"
+         style={{ color: ACID }}
+       >
+         ◈ ENCRYPTED
+       </motion.span>
+     </div>
+   </motion.footer>
     </div>
   );
 }
