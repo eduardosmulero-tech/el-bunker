@@ -24,7 +24,7 @@ const CONFIG = {
   HEARTBEAT_THROTTLE_MS: 15 * 60 * 1000,
 
   // Versión del esquema — permite migraciones futuras
-  SCHEMA_VERSION: "3.0.0",
+  SCHEMA_VERSION: "3.1.0",
 
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
@@ -578,6 +578,23 @@ const _migrateSchema = (data) => {
     };
   }
 
+  // ── 3.0.0 → 3.1.0: campos vibe, thumbnail, play_count, last_played en tracks
+  if (migrated.schema_version === "3.0.0") {
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        tracks: (migrated.music_lab?.tracks ?? []).map((t) => ({
+          ...t,
+          vibe:        t.vibe        ?? null,
+          thumbnail:   t.thumbnail   ?? null,
+          play_count:  t.play_count  ?? 0,
+          last_played: t.last_played ?? null,
+        })),
+      },
+      schema_version: "3.1.0",
+    };
+  }
   migrated.schema_version = CONFIG.SCHEMA_VERSION;
   migrated._wasMigrated   = true;
   return migrated;
@@ -856,13 +873,17 @@ export const addEntry = async (entryData) => {
  */
 export const addTrack = async (trackData) => {
   const newTrack = {
-    id:       uuid(),
-    era_id:   trackData.era_id ?? null,
-    title:    trackData.title  ?? "Sin título",
-    artist:   trackData.artist ?? "",
-    url:      trackData.url    ?? "",
-    note:     trackData.note   ?? "",
-    added_at: new Date().toISOString(),
+    id:          uuid(),
+    era_id:      trackData.era_id      ?? null,
+    title:       trackData.title       ?? "Sin título",
+    artist:      trackData.artist      ?? "",
+    url:         trackData.url         ?? "",
+    vibe:        trackData.vibe        ?? null,
+    note:        trackData.note        ?? "",
+    thumbnail:   trackData.thumbnail   ?? null,
+    play_count:  0,
+    last_played: null,
+    added_at:    new Date().toISOString(),
   };
 
   await updateData((db) => ({
