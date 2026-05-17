@@ -5,8 +5,9 @@
 //  Version: 1.0.0
 // ============================================================
 
-const CACHE_NAME    = "bunker-v1";
-const RUNTIME_CACHE = "bunker-runtime-v1";
+const SW_VERSION    = self.__BUNKER_SW_VERSION__ ?? "dev";
+const CACHE_NAME    = `bunker-${SW_VERSION}`;
+const RUNTIME_CACHE = `bunker-runtime-${SW_VERSION}`;
 
 // ── Assets to pre-cache on install ───────────────────────────
 // These are the critical shell files for offline use.
