@@ -156,10 +156,11 @@ const VaultPage = () => {
 
 /** Wrapper para la pestaña MUSIC LAB */
 const MusicPage = () => {
-  const { db, patchDb, masterVolume, setMasterVolume } = useVault();
+  const { db, patchDb, user, masterVolume, setMasterVolume } = useVault();
   return (
     <MusicLab
       db={db}
+      userId={user?.id ?? null}
       onAddTrack={async (trackData) => {
         await patchDb((prev) => ({
           ...prev,
