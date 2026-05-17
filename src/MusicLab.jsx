@@ -1134,7 +1134,7 @@ export default function MusicLab({
   const [pendingDrop,  setPendingDrop]  = useState(null);
   const [localTracks,  setLocalTracks]  = useState(rawTracks);
   const [localDrops,   setLocalDrops]   = useState(rawDrops);
-  const [toast,        setToast]        = useState(null);
+  const [syncStatus,   setSyncStatus]   = useState("idle");
 
   // Check for unseen drops on mount (simulates JSON load check)
   useEffect(() => {
