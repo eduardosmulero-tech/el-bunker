@@ -88,8 +88,9 @@ const _state = {
   accessToken:   null,
   dbFileId:      null,
   gapiReady:     false,
-  lastHeartbeat: 0,
-  authListeners: [],
+  lastHeartbeat:  0,
+  queueFileIds:   {},   // { [userId]: fileId } — cacheado por sesión
+  authListeners:  [],
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────
@@ -401,7 +402,113 @@ const _readDatabaseFile = async (fileId) => {
   }
 };
 
+// ─── SECTION 3B: QUEUE FILE OPERATIONS ───────────────────────
+
+const _queueFilename = (userId) => `queue_${userId}.json`;
+
+const _findQueueFile = async (userId) => {
+  const folderId = import.meta.env.VITE_GOOGLE_SHARED_FOLDER_ID;
+  if (!folderId) {
+    throw _vaultError("MISSING_FOLDER_ID", "VITE_GOOGLE_SHARED_FOLDER_ID no está configurada.");
+  }
+  if (_state.queueFileIds[userId]) return _state.queueFileIds[userId];
+
+  const filename = _queueFilename(userId);
+  console.info(`[Búnker] Buscando cola de ${userId} en carpeta compartida`);
+
+  try {
+    const response = await window.gapi.client.drive.files.list({
+      spaces: "drive",
+      q:      `'${folderId}' in parents and name = '${filename}' and trashed = false`,
+      fields: "files(id, name)",
+      includeItemsFromAllDrives: true,
+      supportsAllDrives:         true,
+    });
+
+    const files = response.result.files ?? [];
+    if (files.length === 0) return null;
+
+    _state.queueFileIds[userId] = files[0].id;
+    return _state.queueFileIds[userId];
+  } catch (err) {
+    throw _vaultError("FIND_QUEUE", `Error buscando cola de ${userId} en Drive`, err);
+  }
+};
+
+const _createQueueFile = async (userId, data) => {
+  const folderId = import.meta.env.VITE_GOOGLE_SHARED_FOLDER_ID;
+  if (!folderId) {
+    throw _vaultError("MISSING_FOLDER_ID", "VITE_GOOGLE_SHARED_FOLDER_ID no está configurada.");
+  }
+
+  try {
+    const metadata = {
+      name:     _queueFilename(userId),
+      mimeType: CONFIG.DB_MIME,
+      parents:  [folderId],
+    };
+
+    const body           = JSON.stringify(data, null, 2);
+    const boundary       = "-------BunkerBoundary628318";
+    const delimiter      = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+
+    const multipartBody =
+      delimiter +
+      "Content-Type: application/json\r\n\r\n" +
+      JSON.stringify(metadata) +
+      delimiter +
+      `Content-Type: ${CONFIG.DB_MIME}\r\n\r\n` +
+      body +
+      closeDelimiter;
+
+    const response = await window.gapi.client.request({
+      path:    "https://www.googleapis.com/upload/drive/v3/files",
+      method:  "POST",
+      params:  { uploadType: "multipart", fields: "id", supportsAllDrives: true },
+      headers: { "Content-Type": `multipart/related; boundary="${boundary}"` },
+      body:    multipartBody,
+    });
+
+    _state.queueFileIds[userId] = response.result.id;
+    console.info(`[Búnker] Cola de ${userId} creada en Drive ✓`);
+    return _state.queueFileIds[userId];
+  } catch (err) {
+    throw _vaultError("CREATE_QUEUE", `Error creando cola de ${userId} en Drive`, err);
+  }
+};
+
+const _updateQueueFile = async (userId, data, fileId) => {
+  try {
+    const body           = JSON.stringify(data, null, 2);
+    const boundary       = "-------BunkerBoundary628318";
+    const delimiter      = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+
+    const multipartBody =
+      delimiter +
+      "Content-Type: application/json\r\n\r\n" +
+      JSON.stringify({ mimeType: CONFIG.DB_MIME }) +
+      delimiter +
+      `Content-Type: ${CONFIG.DB_MIME}\r\n\r\n` +
+      body +
+      closeDelimiter;
+
+    await window.gapi.client.request({
+      path:    `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+      method:  "PATCH",
+      params:  { uploadType: "multipart", supportsAllDrives: true },
+      headers: { "Content-Type": `multipart/related; boundary="${boundary}"` },
+      body:    multipartBody,
+    });
+  } catch (err) {
+    throw _vaultError("UPDATE_QUEUE", `Error actualizando cola de ${userId} en Drive`, err);
+  }
+};
+
 // ─── SECTION 4: PUBLIC CRUD API ──────────────────────────────
+
+---
 
 /**
  * initDatabase()
@@ -922,7 +1029,92 @@ export const addDrop = async (dropData) => {
   return newDrop;
 };
 
-// ─── DEFAULT EXPORT ───────────────────────────────────────────
+// ─── SECTION 10: QUEUE PUBLIC API ────────────────────────────
+
+/**
+ * fetchQueue(userId)
+ * Descarga la cola del usuario desde Drive.
+ * Si no existe el archivo, devuelve [] sin error.
+ *
+ * @param {string} userId — "edu" | "david" | "admin"
+ * @returns {Promise<string[]>} — array de track_ids
+ */
+export const fetchQueue = async (userId) => {
+  if (!isAuthenticated()) {
+    throw _vaultError("NOT_AUTH", "Usuario no autenticado.");
+  }
+  if (!userId) {
+    throw _vaultError("INVALID_USER", "fetchQueue() requiere un userId.");
+  }
+
+  try {
+    const fileId = await _findQueueFile(userId);
+    if (!fileId) return [];
+
+    const response = await window.gapi.client.drive.files.get({
+      fileId: fileId,
+      alt:    "media",
+    });
+
+    const raw  = typeof response.body === "string"
+      ? response.body
+      : JSON.stringify(response.result);
+    const data = JSON.parse(raw);
+    return Array.isArray(data.track_ids) ? data.track_ids : [];
+  } catch (err) {
+    if (err.code) throw err;
+    throw _vaultError("FETCH_QUEUE", `Error obteniendo cola de ${userId} desde Drive`, err);
+  }
+};
+
+/**
+ * saveQueue(userId, trackIds)
+ * Persiste la cola del usuario en Drive.
+ * Crea el archivo si no existe. Comportamiento optimista: el caller
+ * no espera esta promesa para actualizar la UI.
+ *
+ * @param {string}   userId   — "edu" | "david" | "admin"
+ * @param {string[]} trackIds — array ordenado de track_ids
+ * @returns {Promise<void>}
+ */
+export const saveQueue = async (userId, trackIds) => {
+  if (!isAuthenticated()) {
+    throw _vaultError("NOT_AUTH", "Usuario no autenticado.");
+  }
+  if (!userId) {
+    throw _vaultError("INVALID_USER", "saveQueue() requiere un userId.");
+  }
+
+  const data = {
+    user_id:    userId,
+    track_ids:  Array.isArray(trackIds) ? trackIds : [],
+    updated_at: new Date().toISOString(),
+  };
+
+  try {
+    let fileId = await _findQueueFile(userId);
+    if (!fileId) {
+      await _createQueueFile(userId, data);
+    } else {
+      await _updateQueueFile(userId, data, fileId);
+    }
+    console.info(`[Búnker] Cola de ${userId} guardada ✓ (${data.track_ids.length} tracks)`);
+  } catch (err) {
+    if (err.code) throw err;
+    throw _vaultError("SAVE_QUEUE", `Error guardando cola de ${userId} en Drive`, err);
+  }
+};
+
+/**
+ * clearQueue(userId)
+ * Vacía la cola del usuario (guarda array vacío, no borra el archivo).
+ *
+ * @param {string} userId
+ * @returns {Promise<void>}
+ */
+export const clearQueue = async (userId) => {
+  return saveQueue(userId, []);
+};
 
 const GoogleDriveService = {
   // Init
@@ -957,6 +1149,10 @@ const GoogleDriveService = {
   addEntry,
   addTrack,
   addDrop,
+  // Queue por usuario (ADR-002 Opción B)
+  fetchQueue,
+  saveQueue,
+  clearQueue,
 };
 
 export default GoogleDriveService;
