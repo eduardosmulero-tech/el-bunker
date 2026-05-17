@@ -13,7 +13,6 @@ import {
   animate,
   useAnimation,
 } from "framer-motion";
-import { CornerBrackets, ACID, PURPLE, BG } from "./Layout";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const GLASS_BG    = "rgba(191,255,0,0.03)";
@@ -75,7 +74,6 @@ const AdventureCounter = ({ startDate }) => {
         fontFamily: FONT_MONO,
       }}
     >
-      <CornerBrackets size={14} thickness={1} color={ACID} />
 
       {/* Label */}
       <p className="text-xs tracking-[0.35em] uppercase mb-3 opacity-40" style={{ color: ACID }}>
@@ -144,7 +142,6 @@ const HeartbeatWidget = ({ lastHeartbeat }) => {
         minHeight: 140,
       }}
     >
-      <CornerBrackets size={14} thickness={1} color={color} />
 
       {/* Heart SVG */}
       <motion.div
@@ -217,7 +214,6 @@ const TimeCapsule = ({ title, unlockDate, content, eraColor = PURPLE }) => {
       whileHover={{ scale: 1.01 }}
       transition={{ duration: 0.2 }}
     >
-      <CornerBrackets size={12} thickness={1} color={isLocked ? PURPLE : ACID} />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -318,7 +314,6 @@ const EraCard = ({ era, isActive, onClick }) => {
       whileTap={{ scale: 0.98 }}
     >
       {/* Corner brackets with era color */}
-      <CornerBrackets size={12} thickness={1} color={era.color ?? ACID} />
 
       {/* Cover image or gradient placeholder */}
       {era.cover_image ? (
@@ -424,7 +419,6 @@ const EraDetailPanel = ({ era, entries = [] }) => {
           fontFamily: FONT_MONO,
         }}
       >
-        <CornerBrackets size={14} thickness={1} color={era.color ?? ACID} />
 
         {/* Stats row */}
         <div className="flex gap-6 mb-5 pt-1">
