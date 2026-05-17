@@ -1,19 +1,16 @@
 // ============================================================
 //  EL BÚNKER — GoogleDriveService.js
 //  Motor de Datos · Google Drive API v3 + GIS OAuth2
-//  Arquitectura Serverless · appDataFolder + Shared Libraries
+//  Arquitectura Serverless · Carpeta Compartida Drive
 //  v3.0.0 — Multi-usuario, bibliotecas, alertas de capacidad
 // ============================================================
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const CONFIG = {
   CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-
-  // drive.appdata  → leer/escribir en appDataFolder (DB principal)
-  // drive.file     → acceso a archivos creados por esta app
+  // drive.file     → crear/modificar archivos en carpeta compartida (ADR-001)
   // drive.readonly → leer carpetas compartidas de cuentas biblioteca
   SCOPES: [
-    "https://www.googleapis.com/auth/drive.appdata",
     "https://www.googleapis.com/auth/drive.file",
     "https://www.googleapis.com/auth/drive.readonly",
     "https://www.googleapis.com/auth/userinfo.email",
