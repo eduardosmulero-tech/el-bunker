@@ -567,7 +567,6 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
         )}
       </AnimatePresence>
     </motion.div>
-    </>
   );
 };
 // ─── WINAMP BUTTON ───────────────────────────────────────────
