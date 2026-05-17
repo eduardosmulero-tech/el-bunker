@@ -510,8 +510,6 @@ const _updateQueueFile = async (userId, data, fileId) => {
 
 // ─── SECTION 4: PUBLIC CRUD API ──────────────────────────────
 
----
-
 /**
  * initDatabase()
  * Inicializa la DB: la crea si no existe, la migra si hay versión antigua.
