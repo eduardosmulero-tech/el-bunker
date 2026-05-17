@@ -783,6 +783,7 @@ const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist }) => {
         </motion.button>
       </div>
     </motion.div>
+    </>
   );
 };
 
