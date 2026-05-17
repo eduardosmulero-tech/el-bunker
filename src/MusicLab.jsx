@@ -260,6 +260,35 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
 
   const accentColor = vibeConf?.color ?? ACID;
 
+  // ── MediaSession API ─────────────────────────────────────────
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    if (!track) return;
+
+    const ytId = extractYouTubeId(track.url ?? "");
+    const artwork = ytId
+      ? [{ src: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, sizes: "480x360", type: "image/jpeg" }]
+      : [];
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title:  track.title  ?? "Sin título",
+      artist: track.artist ?? "",
+      album:  "el búnker",
+      artwork,
+    });
+
+    navigator.mediaSession.setActionHandler("play",          () => { audioRef.current?.play(); setPlaying(true);  });
+    navigator.mediaSession.setActionHandler("pause",         () => { audioRef.current?.pause(); setPlaying(false); });
+    navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
+    navigator.mediaSession.setActionHandler("nexttrack",     () => skip(1));
+
+    return () => {
+      ["play", "pause", "previoustrack", "nexttrack"].forEach((action) => {
+        try { navigator.mediaSession.setActionHandler(action, null); } catch (_) {}
+      });
+    };
+  }, [track?.id, playing]);
+
   return (
     <motion.div
       className="relative rounded-sm overflow-hidden"
