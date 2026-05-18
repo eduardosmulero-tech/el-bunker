@@ -1347,5 +1347,11 @@ export const uploadMusicFile = async (file) => {
   console.info(`[Búnker] Archivo de música subido ✓ (fileId: ${result.id})`);
   return result.id;
 };
+export const getStreamUrl = (fileId) => {
+  const token = window.gapi.client.getToken()?.access_token;
+  if (!token || !fileId) return null;
+  return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${token}`;
+};
+
 // ─── DEFAULT EXPORT ───────────────────────────────────────────────────────────
 export default GoogleDriveService;
