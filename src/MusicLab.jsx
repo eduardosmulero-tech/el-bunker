@@ -1274,6 +1274,7 @@ export default function MusicLab({
   const [localPlaylists,    setLocalPlaylists]    = useState([]);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [pendingTrack,      setPendingTrack]      = useState(null);
+  const [toast,             setToast]             = useState(null);
 
   // Check for unseen drops on mount (simulates JSON load check)
   useEffect(() => {
