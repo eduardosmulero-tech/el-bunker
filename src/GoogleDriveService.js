@@ -23,7 +23,7 @@ const CONFIG = {
   HEARTBEAT_THROTTLE_MS: 15 * 60 * 1000,
 
   // Versión del esquema — permite migraciones futuras
-  SCHEMA_VERSION: "3.2.0",
+  SCHEMA_VERSION: "3.3.0",
 
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
@@ -722,8 +722,7 @@ const _migrateSchema = (data) => {
       schema_version: "3.1.0",
     };
   }
-  // ── 3.2.0 → 3.3.0: campos type y drive_file_id en tracks ─────
-if (migrated.schema_version === "3.1.0") {
+  if (migrated.schema_version === "3.1.0") {
     migrated = {
       ...migrated,
       music_lab: {
