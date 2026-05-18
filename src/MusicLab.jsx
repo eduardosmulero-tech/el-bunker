@@ -207,6 +207,7 @@ const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
  */
 const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatus = "idle" }) => {
   const audioRef    = useRef(null);
+  const iframeRef   = useRef(null);
   const wakeLockRef = useRef(null);
   const [playing,   setPlaying]   = useState(false);
   const [progress,  setProgress]  = useState(0);   // 0-100
@@ -227,10 +228,24 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
     setCurrentT(0);
   }, [track?.id]);
 
+  const isYouTube = track?.type === "youtube" || (!track?.type && track?.url);
+
+  const sendYTCommand = (cmd) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: cmd, args: [] }),
+      "*"
+    );
+  };
+
   const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (playing) { audioRef.current.pause(); setPlaying(false); }
-    else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
+    if (isYouTube) {
+      if (playing) { sendYTCommand("pauseVideo"); setPlaying(false); }
+      else         { sendYTCommand("playVideo");  setPlaying(true);  }
+    } else {
+      if (!audioRef.current) return;
+      if (playing) { audioRef.current.pause(); setPlaying(false); }
+      else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
+    }
   };
 
   const seekTo = (pct) => {
@@ -368,8 +383,9 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
       {(track?.type === "youtube" || (!track?.type && track?.url)) && (
         <iframe
           key={track?.id}
+          ref={iframeRef}
           style={{ display: "none" }}
-          src={`https://www.youtube.com/embed/${extractYouTubeId(track?.youtube_url ?? track?.url ?? "")}?autoplay=${playing ? 1 : 0}&enablejsapi=1`}
+          src={`https://www.youtube.com/embed/${extractYouTubeId(track?.youtube_url ?? track?.url ?? "")}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
           allow="autoplay"
           title="yt-player"
         />
