@@ -722,8 +722,8 @@ const _migrateSchema = (data) => {
       schema_version: "3.1.0",
     };
   }
-  // ── 3.1.0 → 3.2.0: campo playlists en music_lab ─────────────
-  if (migrated.schema_version === "3.1.0") {
+  // ── 3.2.0 → 3.3.0: campos type y drive_file_id en tracks ─────
+if (migrated.schema_version === "3.1.0") {
     migrated = {
       ...migrated,
       music_lab: {
@@ -731,6 +731,22 @@ const _migrateSchema = (data) => {
         playlists: migrated.music_lab?.playlists ?? [],
       },
       schema_version: "3.2.0",
+    };
+  }
+  // ── 3.2.0 → 3.3.0: campos type y drive_file_id en tracks ─────
+  if (migrated.schema_version === "3.2.0") {
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        tracks: (migrated.music_lab?.tracks ?? []).map((t) => ({
+          ...t,
+          type:          t.type          ?? "youtube",
+          drive_file_id: t.drive_file_id ?? null,
+          youtube_url:   t.youtube_url   ?? t.url ?? null,
+        })),
+      },
+      schema_version: "3.3.0",
     };
   }
   migrated.schema_version = CONFIG.SCHEMA_VERSION;
@@ -1011,18 +1027,21 @@ export const addEntry = async (entryData) => {
  */
 export const addTrack = async (trackData) => {
   const newTrack = {
-    id:          uuid(),
-    era_id:      trackData.era_id      ?? null,
-    title:       trackData.title       ?? "Sin título",
-    artist:      trackData.artist      ?? "",
-    url:         trackData.url         ?? "",
-    vibe:        trackData.vibe        ?? null,
-    note:        trackData.note        ?? "",
-    thumbnail:   trackData.thumbnail   ?? null,
-    play_count:  0,
-    last_played: null,
-    added_at:    new Date().toISOString(),
-  };
+  id:            uuid(),
+  era_id:        trackData.era_id        ?? null,
+  title:         trackData.title         ?? "Sin título",
+  artist:        trackData.artist        ?? "",
+  url:           trackData.url           ?? "",
+  youtube_url:   trackData.youtube_url   ?? null,
+  type:          trackData.type          ?? "youtube",
+  drive_file_id: trackData.drive_file_id ?? null,
+  vibe:          trackData.vibe          ?? null,
+  note:          trackData.note          ?? "",
+  thumbnail:     trackData.thumbnail     ?? null,
+  play_count:    0,
+  last_played:   null,
+  added_at:      new Date().toISOString(),
+};
 
   await updateData((db) => ({
     ...db,
@@ -1294,5 +1313,40 @@ export const deletePlaylist = async (playlistId, requestedBy) => {
   }));
 };
 
-// ─── DEFAULT EXPORT ───────────────────────────────────────────
+export const uploadMusicFile = async (file) => {
+  const folderId = import.meta.env.VITE_GOOGLE_SHARED_FOLDER_ID;
+  if (!folderId) throw _vaultError("MISSING_FOLDER_ID", "VITE_GOOGLE_SHARED_FOLDER_ID no configurada.");
+
+  const token = window.gapi.client.getToken()?.access_token;
+  if (!token) throw _vaultError("NO_TOKEN", "No hay token OAuth2 activo.");
+
+  const metadata = {
+    name:    file.name,
+    mimeType: file.type || "audio/mpeg",
+    parents: [folderId],
+  };
+
+  const form = new FormData();
+  form.append("metadata", new Blob([JSON.stringify(metadata)], { type: "application/json" }));
+  form.append("file", file);
+
+  const response = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
+    {
+      method:  "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body:    form,
+    }
+  );
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw _vaultError("UPLOAD_MUSIC", `Error subiendo archivo a Drive: ${response.status}`, err);
+  }
+
+  const result = await response.json();
+  console.info(`[Búnker] Archivo de música subido ✓ (fileId: ${result.id})`);
+  return result.id;
+};
+// ─── DEFAULT EXPORT ───────────────────────────────────────────────────────────
 export default GoogleDriveService;
