@@ -11,8 +11,7 @@ const CONFIG = {
   // drive.file     → crear/modificar archivos en carpeta compartida (ADR-001)
   // drive.readonly → leer carpetas compartidas de cuentas biblioteca
   SCOPES: [
-    "https://www.googleapis.com/auth/drive.file",
-    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
   ].join(" "),
