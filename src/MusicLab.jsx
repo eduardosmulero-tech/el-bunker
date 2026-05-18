@@ -788,8 +788,11 @@ const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist }) => {
 };
 
 // ─── ADD TRACK FORM ──────────────────────────────────────────
-const AddTrackForm = ({ onAdd, onClose }) => {
-  const [form, setForm] = useState({ title: "", artist: "", url: "", note: "", vibe: "gaming" });
+const AddTrackForm = ({ onAdd, onClose, initialData = null }) => {
+  const [form, setForm] = useState(initialData
+    ? { title: initialData.title ?? "", artist: initialData.artist ?? "", url: initialData.url ?? "", note: initialData.note ?? "", vibe: initialData.vibe ?? "gaming" }
+    : { title: "", artist: "", url: "", note: "", vibe: "gaming" }
+  );
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
@@ -836,7 +839,7 @@ const AddTrackForm = ({ onAdd, onClose }) => {
       <CornerBrackets size={12} thickness={1} color={ACID} />
 
       <p className="text-xs tracking-[0.3em] uppercase font-bold mb-4" style={{ color: ACID }}>
-        ◈ ADD TRACK
+        {initialData ? "✎ EDITAR TRACK" : "◈ AÑADIR TRACK"}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -1267,6 +1270,8 @@ export default function MusicLab({
   const [activeTrack,  setActiveTrack]  = useState(rawTracks[0] ?? null);
   const [showAdd,      setShowAdd]      = useState(false);
   const [showDelete,   setShowDelete]   = useState(false);
+  const [showEdit,     setShowEdit]     = useState(false);
+  const [editingTrack, setEditingTrack] = useState(null);
   const [activeTab,    setActiveTab]    = useState("tracks"); // "tracks" | "drops"
   const [pendingDrop,  setPendingDrop]  = useState(null);
   const [localTracks,  setLocalTracks]  = useState(rawTracks);
@@ -1373,6 +1378,25 @@ export default function MusicLab({
     setShowAdd(false);
     setToast("TRACK AÑADIDO");
     setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleEditTrack = (trackId) => {
+    const track = localTracks.find((t) => t.id === trackId);
+    if (!track) return;
+    setEditingTrack(track);
+    setShowEdit(true);
+    setShowDelete(false);
+    setShowAdd(false);
+  };
+
+  const handleSaveEdit = (updatedData) => {
+    setLocalTracks((p) => p.map((t) => t.id === editingTrack.id ? { ...t, ...updatedData } : t));
+    onEditTrack?.({ ...editingTrack, ...updatedData });
+    if (activeTrack?.id === editingTrack.id) setActiveTrack((t) => ({ ...t, ...updatedData }));
+    setToast("TRACK ACTUALIZADO");
+    setTimeout(() => setToast(null), 2500);
+    setShowEdit(false);
+    setEditingTrack(null);
   };
 
   const handleDeleteTrack = (trackId) => {
@@ -1543,7 +1567,19 @@ export default function MusicLab({
                   </motion.button>
                   <motion.button
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => { setShowDelete((p) => !p); setShowAdd(false); }}
+                    onClick={() => { setShowEdit((p) => !p); setShowDelete(false); setShowAdd(false); setEditingTrack(null); }}
+                    className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+                    style={{
+                      color: PURPLE,
+                      border: `1px solid ${showEdit ? PURPLE + "66" : PURPLE + "33"}`,
+                      background: showEdit ? `${PURPLE}12` : `${PURPLE}06`,
+                    }}
+                  >
+                    {showEdit ? "✕ CANCEL" : "✎ EDITAR"}
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => { setShowDelete((p) => !p); setShowAdd(false); setShowEdit(false); setEditingTrack(null); }}
                     className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
                     style={{
                       color: "#ff4444",
@@ -1560,6 +1596,48 @@ export default function MusicLab({
               <AnimatePresence>
                 {showAdd && (
                   <AddTrackForm onAdd={handleAddTrack} onClose={() => setShowAdd(false)} />
+                )}
+              </AnimatePresence>
+              {/* Edit Track Modal */}
+              <AnimatePresence>
+                {showEdit && !editingTrack && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="flex flex-col gap-2 p-3 rounded-sm"
+                    style={{ background: "rgba(191,0,255,0.04)", border: `1px solid ${PURPLE}22`, fontFamily: FONT_MONO }}
+                  >
+                    <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: PURPLE }}>
+                      ✎ EDITAR TRACK
+                    </p>
+                    {localTracks.length === 0 ? (
+                      <p className="text-xs opacity-40" style={{ color: PURPLE }}>NO HAY TRACKS</p>
+                    ) : (
+                      localTracks.map((track) => (
+                        <motion.div
+                          key={track.id}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => handleEditTrack(track.id)}
+                          className="flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer"
+                          style={{ background: "rgba(191,0,255,0.03)", border: `1px solid ${PURPLE}18` }}
+                        >
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-xs font-bold truncate" style={{ color: PURPLE }}>{track.title}</span>
+                            <span className="text-xs opacity-40 truncate" style={{ color: PURPLE }}>{track.artist}</span>
+                          </div>
+                          <span className="ml-3 flex-shrink-0 text-xs opacity-40" style={{ color: PURPLE }}>→</span>
+                        </motion.div>
+                      ))
+                    )}
+                  </motion.div>
+                )}
+                {showEdit && editingTrack && (
+                  <AddTrackForm
+                    onAdd={handleSaveEdit}
+                    onClose={() => { setShowEdit(false); setEditingTrack(null); }}
+                    initialData={editingTrack}
+                  />
                 )}
               </AnimatePresence>
               {/* Delete Track Modal */}
