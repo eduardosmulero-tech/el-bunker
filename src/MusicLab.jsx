@@ -1266,6 +1266,7 @@ export default function MusicLab({
   const [activeVibe,   setActiveVibe]   = useState("all");
   const [activeTrack,  setActiveTrack]  = useState(rawTracks[0] ?? null);
   const [showAdd,      setShowAdd]      = useState(false);
+  const [showDelete,   setShowDelete]   = useState(false);
   const [activeTab,    setActiveTab]    = useState("tracks"); // "tracks" | "drops"
   const [pendingDrop,  setPendingDrop]  = useState(null);
   const [localTracks,  setLocalTracks]  = useState(rawTracks);
@@ -1372,6 +1373,15 @@ export default function MusicLab({
     setShowAdd(false);
     setToast("TRACK AÑADIDO");
     setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleDeleteTrack = (trackId) => {
+    setLocalTracks((p) => p.filter((t) => t.id !== trackId));
+    onDeleteTrack?.(trackId);
+    if (activeTrack?.id === trackId) setActiveTrack(localTracks.find((t) => t.id !== trackId) ?? null);
+    setToast("TRACK ELIMINADO");
+    setTimeout(() => setToast(null), 2500);
+    setShowDelete(false);
   };
 
   const handleDropSend = (dropData) => {
@@ -1518,24 +1528,78 @@ export default function MusicLab({
                     [{String(filteredTracks.length).padStart(2, "0")}]
                   </span>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => setShowAdd((p) => !p)}
-                  className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
-                  style={{
-                    color: ACID,
-                    border: `1px solid ${showAdd ? ACID + "66" : ACID + "33"}`,
-                    background: showAdd ? `${ACID}12` : `${ACID}06`,
-                  }}
-                >
-                  {showAdd ? "✕ CANCEL" : "+ ADD"}
-                </motion.button>
+                <div className="flex gap-2">
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => { setShowAdd((p) => !p); setShowDelete(false); }}
+                    className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+                    style={{
+                      color: ACID,
+                      border: `1px solid ${showAdd ? ACID + "66" : ACID + "33"}`,
+                      background: showAdd ? `${ACID}12` : `${ACID}06`,
+                    }}
+                  >
+                    {showAdd ? "✕ CANCEL" : "+ AÑADIR"}
+                  </motion.button>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => { setShowDelete((p) => !p); setShowAdd(false); }}
+                    className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+                    style={{
+                      color: "#ff4444",
+                      border: `1px solid ${showDelete ? "#ff444466" : "#ff444433"}`,
+                      background: showDelete ? "#ff444412" : "#ff444406",
+                    }}
+                  >
+                    {showDelete ? "✕ CANCEL" : "− ELIMINAR"}
+                  </motion.button>
+                </div>
               </div>
 
               {/* Add Track Form */}
               <AnimatePresence>
                 {showAdd && (
                   <AddTrackForm onAdd={handleAddTrack} onClose={() => setShowAdd(false)} />
+                )}
+              </AnimatePresence>
+              {/* Delete Track Modal */}
+              <AnimatePresence>
+                {showDelete && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="flex flex-col gap-2 p-3 rounded-sm"
+                    style={{ background: "rgba(255,68,68,0.04)", border: "1px solid #ff444422", fontFamily: FONT_MONO }}
+                  >
+                    <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}>
+                      ◈ ELIMINAR TRACK
+                    </p>
+                    {localTracks.length === 0 ? (
+                      <p className="text-xs opacity-40" style={{ color: "#ff4444" }}>NO HAY TRACKS</p>
+                    ) : (
+                      localTracks.map((track) => (
+                        <div
+                          key={track.id}
+                          className="flex items-center justify-between px-3 py-2 rounded-sm"
+                          style={{ background: "rgba(255,68,68,0.03)", border: "1px solid #ff444418" }}
+                        >
+                          <div className="flex flex-col gap-0.5 min-w-0">
+                            <span className="text-xs font-bold truncate" style={{ color: "#ff6666" }}>{track.title}</span>
+                            <span className="text-xs opacity-40 truncate" style={{ color: "#ff4444" }}>{track.artist}</span>
+                          </div>
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => handleDeleteTrack(track.id)}
+                            className="ml-3 flex-shrink-0 text-xs tracking-widest uppercase px-2 py-1 rounded-sm"
+                            style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}
+                          >
+                            ✕
+                          </motion.button>
+                        </div>
+                      ))
+                    )}
+                  </motion.div>
                 )}
               </AnimatePresence>
 
