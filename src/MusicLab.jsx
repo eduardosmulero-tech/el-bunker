@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { fetchQueue, saveQueue, fetchPlaylists, createPlaylist, addTrackToPlaylist } from "./GoogleDriveService";
+import { fetchQueue, saveQueue, fetchPlaylists, createPlaylist, addTrackToPlaylist, getStreamUrl } from "./GoogleDriveService";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { CornerBrackets, ACID, PURPLE, BG } from "./Layout";
 
@@ -350,11 +350,11 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
     >
       <CornerBrackets size={12} thickness={1} color={accentColor} />
 
-      {/* Hidden audio element */}
-      {track?.url && (
+      {/* Audio element — solo para type drive */}
+      {track?.type === "drive" && track?.drive_file_id && (
         <audio
           ref={audioRef}
-          src={track.url}
+          src={getStreamUrl(track.drive_file_id)}
           loop={loop}
           onTimeUpdate={(e) => {
             setCurrentT(e.target.currentTime);
@@ -362,6 +362,16 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
           }}
           onLoadedMetadata={(e) => setDuration(e.target.duration)}
           onEnded={() => { if (!loop) skip(1); }}
+        />
+      )}
+      {/* YouTube iframe — solo para type youtube */}
+      {(track?.type === "youtube" || (!track?.type && track?.url)) && (
+        <iframe
+          key={track?.id}
+          style={{ display: "none" }}
+          src={`https://www.youtube.com/embed/${extractYouTubeId(track?.youtube_url ?? track?.url ?? "")}?autoplay=${playing ? 1 : 0}&enablejsapi=1`}
+          allow="autoplay"
+          title="yt-player"
         />
       )}
 
