@@ -359,7 +359,21 @@ const _createDatabaseFile = async (data) => {
   }
 };
 
-const _updateDatabaseFile = async (data, fileId) => {
+const _withTokenRetry = async (fn) => {
+    try {
+      return await fn();
+    } catch (err) {
+      const status = err?.status ?? err?.result?.error?.code ?? err?.code;
+      if (status === 401) {
+        console.info("[Búnker] Token expirado — renovando silenciosamente…");
+        await requestAccessToken(false);
+        return await fn();
+      }
+      throw err;
+    }
+  };
+
+  const _updateDatabaseFile = async (data, fileId) => {
   try {
     const body          = JSON.stringify(data, null, 2);
     const boundary      = "-------BunkerBoundary271828";
@@ -375,32 +389,36 @@ const _updateDatabaseFile = async (data, fileId) => {
       body +
       closeDelimiter;
 
-    await window.gapi.client.request({
-      path:    `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-      method:  "PATCH",
-      params:  { uploadType: "multipart", supportsAllDrives: true },
-      headers: { "Content-Type": `multipart/related; boundary="${boundary}"` },
-      body:    multipartBody,
-    });
-  } catch (err) {
-    throw _vaultError("UPDATE_FILE", "Error actualizando el archivo DB en Drive", err);
+    await _withTokenRetry(() =>
+        window.gapi.client.request({
+          path:    `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
+          method:  "PATCH",
+          params:  { uploadType: "multipart", supportsAllDrives: true },
+          headers: { "Content-Type": `multipart/related; boundary="${boundary}"` },
+          body:    multipartBody,
+        })
+      );
+    } catch (err) {
+      throw _vaultError("UPDATE_FILE", "Error actualizando el archivo DB en Drive", err);
   }
 };
 
 const _readDatabaseFile = async (fileId) => {
   try {
-    const response = await window.gapi.client.drive.files.get({
-      fileId: fileId,
-      alt:    "media",
-    });
+    const response = await _withTokenRetry(() =>
+        window.gapi.client.drive.files.get({
+          fileId: fileId,
+          alt:    "media",
+        })
+      );
 
-    const raw = typeof response.body === "string"
-      ? response.body
-      : JSON.stringify(response.result);
+      const raw = typeof response.body === "string"
+        ? response.body
+        : JSON.stringify(response.result);
 
-    return JSON.parse(raw);
-  } catch (err) {
-    throw _vaultError("READ_FILE", "Error leyendo el archivo DB desde Drive", err);
+      return JSON.parse(raw);
+    } catch (err) {
+      throw _vaultError("READ_FILE", "Error leyendo el archivo DB desde Drive", err);
   }
 };
 
@@ -419,13 +437,16 @@ const _findQueueFile = async (userId) => {
   console.info(`[Búnker] Buscando cola de ${userId} en carpeta compartida`);
 
   try {
-    const response = await window.gapi.client.drive.files.list({
-      spaces: "drive",
-      q:      `'${folderId}' in parents and name = '${filename}' and trashed = false`,
-      fields: "files(id, name)",
-      includeItemsFromAllDrives: true,
-      supportsAllDrives:         true,
-    });
+    const response = await _withTokenRetry(() =>
+        window.gapi.client.drive.files.list({
+          spaces: "drive",
+          q:      `'${folderId}' in parents and name = '${filename}' and trashed = false`,
+          fields: "files(id, name)",
+          includeItemsFromAllDrives: true,
+          supportsAllDrives:         true,
+        })
+      );
+
 
     const files = response.result.files ?? [];
     if (files.length === 0) return null;
