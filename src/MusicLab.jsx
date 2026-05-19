@@ -1542,20 +1542,6 @@ export default function MusicLab({
     setLocalQueue((q) => q.filter((t) => t.id !== trackId));
   };
 
-  const handleAddToQueue = (track) => {
-    if (!track) return;
-    setLocalQueue((q) => {
-      if (q.find((t) => t.id === track.id)) return q;
-      return [...q, track];
-    });
-    setToast("AÑADIDO A COLA");
-    setTimeout(() => setToast(null), 2500);
-  };
-
-  const handleRemoveFromQueue = (trackId) => {
-    setLocalQueue((q) => q.filter((t) => t.id !== trackId));
-  };
-
   const handleDropSend = (dropData) => {
     const toUserId = userId === "edu" ? "david" : "edu";
     const newDrop = { ...dropData, id: uuid(), from: userId, to: toUserId, seen: false, created_at: new Date().toISOString() };
