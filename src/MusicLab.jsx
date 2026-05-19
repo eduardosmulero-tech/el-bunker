@@ -1365,6 +1365,42 @@ const DropsHistory = ({ drops, tracks, onPlay, onMarkSeen }) => {
  *   onAddDrop     — (dropData) => void   (calls GoogleDriveService.addDrop)
  *   onMarkDropSeen— (dropId) => void
  */
+// ─── PLAYLIST NAME INPUT ─────────────────────────────────────
+const PlaylistNameInput = ({ onConfirm }) => {
+  const [name, setName] = useState("");
+  return (
+    <div style={{
+      padding: "10px 16px",
+      borderTop: `1px solid ${ACID}15`,
+      display: "flex", gap: 8,
+    }}>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) onConfirm(name); }}
+        placeholder="Nueva playlist..."
+        style={{
+          flex: 1, background: "transparent",
+          border: `1px solid ${ACID}33`, borderRadius: 2,
+          color: ACID, fontSize: 11, padding: "6px 10px",
+          fontFamily: FONT_MONO, letterSpacing: "0.15em",
+          outline: "none",
+        }}
+      />
+      <button
+        onClick={() => { if (name.trim()) onConfirm(name); }}
+        style={{
+          background: `${ACID}15`, border: `1px solid ${ACID}44`,
+          color: ACID, fontSize: 11, padding: "6px 10px",
+          borderRadius: 2, cursor: "pointer",
+          fontFamily: FONT_MONO, letterSpacing: "0.15em",
+        }}
+      >
+        OK
+      </button>
+    </div>
+  );
+};
 export default function MusicLab({
   db = null,
   userId = null,
@@ -2069,43 +2105,6 @@ export default function MusicLab({
     </>
   );
 }
-
-// ─── PLAYLIST NAME INPUT ─────────────────────────────────────
-const PlaylistNameInput = ({ onConfirm }) => {
-  const [name, setName] = useState("");
-  return (
-    <div style={{
-      padding: "10px 16px",
-      borderTop: `1px solid ${ACID}15`,
-      display: "flex", gap: 8,
-    }}>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) onConfirm(name); }}
-        placeholder="Nueva playlist..."
-        style={{
-          flex: 1, background: "transparent",
-          border: `1px solid ${ACID}33`, borderRadius: 2,
-          color: ACID, fontSize: 11, padding: "6px 10px",
-          fontFamily: FONT_MONO, letterSpacing: "0.15em",
-          outline: "none",
-        }}
-      />
-      <button
-        onClick={() => { if (name.trim()) onConfirm(name); }}
-        style={{
-          background: `${ACID}15`, border: `1px solid ${ACID}44`,
-          color: ACID, fontSize: 11, padding: "6px 10px",
-          borderRadius: 2, cursor: "pointer",
-          fontFamily: FONT_MONO, letterSpacing: "0.15em",
-        }}
-      >
-        OK
-      </button>
-    </div>
-  );
-};
 
 // ─── NAMED EXPORTS ───────────────────────────────────────────
 export {
