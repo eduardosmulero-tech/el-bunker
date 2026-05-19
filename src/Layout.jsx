@@ -95,17 +95,10 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus }) => {
         >
           EL BÚNKER
         </span>
-        <span className="text-xs opacity-30" style={{ color: ACID }}>v1.0</span>
-      </div>
-
-      {/* CENTER: DB Status */}
-      <div className="flex items-center gap-2 text-xs opacity-40" style={{ color: ACID }}>
-        <span>◈</span>
-        <span className="tracking-widest uppercase">{dbStatus}</span>
       </div>
 
       {/* RIGHT: Clock */}
-      <div className="flex items-center gap-4 text-xs" style={{ color: ACID, opacity: 0.5 }}>
+      <div className="flex items-center gap-4 text-xs whitespace-nowrap" style={{ color: ACID, opacity: 0.5 }}>
         <span className="tracking-wider">{dateStr}</span>
         <span
           className="font-bold tracking-widest tabular-nums"
@@ -113,6 +106,13 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus }) => {
         >
           {timeStr}
         </span>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-xs tracking-widest uppercase px-2 py-1 rounded-sm transition-all"
+          style={{ border: `1px solid ${ACID}33`, opacity: 1 }}
+        >
+          ↺
+        </button>
       </div>
     </motion.header>
   );
