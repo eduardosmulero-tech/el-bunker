@@ -258,14 +258,14 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
     if (audioRef.current) audioRef.current.volume = v / 100;
   };
 
-  const skip = (dir) => {
+  const skip = useCallback((dir) => {
     const idx = tracks.findIndex((t) => t.id === track?.id);
     if (idx < 0) return;
     let nextIdx;
     if (shuffle) nextIdx = Math.floor(Math.random() * tracks.length);
     else         nextIdx = (idx + dir + tracks.length) % tracks.length;
     onTrackChange?.(tracks[nextIdx]);
-  };
+  }, [tracks, track?.id, loop, shuffle, onTrackChange]);
 
   const fmtTime = (s) => {
     if (!s || isNaN(s)) return "0:00";
@@ -303,7 +303,7 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
         try { navigator.mediaSession.setActionHandler(action, null); } catch (_) {}
       });
     };
-  }, [track?.id, playing]);
+  }, [track?.id, playing, skip]);
 
   // ── WakeLock API ─────────────────────────────────────────────
   useEffect(() => {
