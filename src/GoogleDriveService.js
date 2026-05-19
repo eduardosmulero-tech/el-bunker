@@ -207,7 +207,9 @@ export const requestAccessToken = (forceConsent = false) =>
 
       _state.accessToken = tokenResponse.access_token;
       window.gapi.client.setToken({ access_token: tokenResponse.access_token });
-
+      const expiresAt = Date.now() + (tokenResponse.expires_in ?? 3600) * 1000;
+      localStorage.setItem("bunker_token", tokenResponse.access_token);
+      localStorage.setItem("bunker_token_exp", String(expiresAt));
       _notifyAuthListeners("SIGNED_IN", { token: tokenResponse.access_token });
       console.info("[Búnker] Token OAuth2 obtenido ✓");
 
@@ -235,12 +237,33 @@ export const signOut = () => {
     });
   }
   _state.accessToken = null;
+  localStorage.removeItem("bunker_token");
+  localStorage.removeItem("bunker_token_exp");
   _state.dbFileId    = null;
   window.gapi.client.setToken(null);
   _notifyAuthListeners("SIGNED_OUT");
 };
 
 /** @returns {boolean} */
+export const restoreToken = () => {
+  try {
+    const token = localStorage.getItem("bunker_token");
+    const exp   = Number(localStorage.getItem("bunker_token_exp") ?? 0);
+    if (!token || Date.now() > exp) {
+      localStorage.removeItem("bunker_token");
+      localStorage.removeItem("bunker_token_exp");
+      return false;
+    }
+    _state.accessToken = token;
+    window.gapi.client.setToken({ access_token: token });
+    console.info("[Búnker] Token restaurado desde localStorage ✓");
+    return true;
+  } catch (err) {
+    console.warn("[Búnker] No se pudo restaurar el token:", err);
+    return false;
+  }
+};
+
 export const isAuthenticated = () => Boolean(_state.accessToken);
 
 /**

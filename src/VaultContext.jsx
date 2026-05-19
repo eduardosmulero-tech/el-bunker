@@ -16,6 +16,7 @@ import {
 import GoogleDriveService, {
   initGoogleServices,
   requestAccessToken,
+  restoreToken,  
   signOut,
   isAuthenticated,
   onAuthChange,
@@ -205,6 +206,8 @@ export function VaultProvider({ children }) {
         });
 
         if (isAuthenticated()) {
+          await _fetchUserAndDb();
+        } else if (restoreToken()) {
           await _fetchUserAndDb();
         } else {
           setBootPhase(BOOT.IDLE);
