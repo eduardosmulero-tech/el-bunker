@@ -1316,7 +1316,7 @@ export default function MusicLab({
       return () => clearTimeout(timer);
     }
     // Real mode: find first unseen drop
-    const unseen = rawDrops.find((d) => !d.seen);
+    const unseen = rawDrops.find((d) => !d.seen && d.to === userId);
     if (unseen) setPendingDrop(unseen);
   }, []);
 
@@ -1435,7 +1435,8 @@ export default function MusicLab({
   };
 
   const handleDropSend = (dropData) => {
-    const newDrop = { ...dropData, id: uuid(), from: "YO", seen: false, created_at: new Date().toISOString() };
+    const toUserId = userId === "edu" ? "david" : "edu";
+    const newDrop = { ...dropData, id: uuid(), from: userId, to: toUserId, seen: false, created_at: new Date().toISOString() };
     setLocalDrops((p) => [...p, newDrop]);
     onAddDrop?.(newDrop);
   };
