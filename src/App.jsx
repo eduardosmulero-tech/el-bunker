@@ -179,6 +179,26 @@ const MusicPage = () => {
           },
         }));
       }}
+      onDeleteTrack={async (trackId) => {
+        await patchDb((prev) => ({
+          ...prev,
+          music_lab: {
+            ...prev.music_lab,
+            tracks: (prev.music_lab?.tracks ?? []).filter((t) => t.id !== trackId),
+          },
+        }));
+      }}
+      onEditTrack={async (updatedTrack) => {
+        await patchDb((prev) => ({
+          ...prev,
+          music_lab: {
+            ...prev.music_lab,
+            tracks: (prev.music_lab?.tracks ?? []).map((t) =>
+              t.id === updatedTrack.id ? { ...t, ...updatedTrack } : t
+            ),
+          },
+        }));
+      }}
       onMasterVolumeChange={setMasterVolume}
       onMarkDropSeen={async (dropId) => {
         await patchDb((prev) => ({
