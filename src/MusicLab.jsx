@@ -1582,7 +1582,7 @@ export default function MusicLab({
                 <div className="flex gap-2">
                   <motion.button
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => { setShowAdd((p) => !p); setShowDelete(false); }}
+                    onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
                     className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
                     style={{
                       color: ACID,
