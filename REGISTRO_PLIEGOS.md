@@ -647,7 +647,7 @@ Errores adicionales detectados en la misma sesión de consola (no bloqueantes):
 PLIEGO-015 — fix(auth): token refresh automático en expiración (401)
 Fecha: 18 mayo 2026
 Modelo recomendado: qwen3-14b-think + revisión cruzada post-Cline
-Estado: En proceso (Seguir por aqui, comprobando cambios en Powershell)
+Estado: Completado
 
 ARCHIVO: src/GoogleDriveService.js
 RESTRICCIONES: No tocar requestAccessToken, signOut, ni el flujo de login.
@@ -767,3 +767,213 @@ REPLACE:
           supportsAllDrives:         true,
         })
       );
+
+PLIEGO-016 — fix(auth): scope drive.file → drive
+Fecha: 18 mayo 2026
+Modelo recomendado: qwen3-8b-nothink
+
+ARCHIVO: src/GoogleDriveService.js
+LÍNEAS AFECTADAS: ~15-17 (bloque SCOPES en CONFIG)
+RESTRICCIONES: No tocar ninguna otra línea del CONFIG.
+               No eliminar drive.readonly ni los scopes de userinfo.
+               Solo sustituir drive.file por drive.
+
+CAMBIO A REALIZAR:
+Reemplazar el scope drive.file por el scope drive completo.
+
+SEARCH:
+    "https://www.googleapis.com/auth/drive.file",
+    "https://www.googleapis.com/auth/drive.readonly",
+
+REPLACE:
+    "https://www.googleapis.com/auth/drive",
+
+CRITERIO DE ÉXITO:
+Añadir un track → no aparece 403 en Network → el track persiste al recargar.
+El heartbeat deja de fallar en consola.
+
+RIESGO:
+El cambio de scope invalida el token en caché — el usuario verá el popup de
+permisos de Google en el siguiente login. Es comportamiento esperado, no un bug.
+drive.readonly queda eliminado — la lógica de Bibliotecas (congelada) usaba ese
+scope. No afecta funcionalidad activa, pero documentar en decisiones_tecnicas.md.
+
+PLIEGO-015b — fix(sw): bypass YouTube en Service Worker
+Fecha: 18 mayo 2026
+Modelo recomendado: qwen3-8b-nothink
+
+ARCHIVO: public/sw.js
+
+LÍNEAS AFECTADAS: bloque BYPASS_PATTERNS (aprox. líneas 26-31)
+
+RESTRICCIONES: No tocar ninguna otra parte del SW. No modificar las estrategias de caché. No alterar el orden de los patrones existentes.
+
+CAMBIO A REALIZAR:
+
+Añadir tres patrones al array BYPASS_PATTERNS, después de /gstatic\.com/:
+
+javascriptconst BYPASS_PATTERNS = [
+  /googleapis\.com/,
+  /accounts\.google\.com/,
+  /gstatic\.com/,
+  /youtube\.com/,
+  /ytimg\.com/,
+  /googlevideo\.com/,
+  /chrome-extension/,
+];
+
+CRITERIO DE ÉXITO:
+
+Al pulsar play en MusicLab, el player de YouTube inicializa correctamente, muestra duración real y reproduce audio. En Network tab, las peticiones a youtube.com no tienen sw.js como iniciador.
+
+RIESGO:
+
+sw.js es archivo crítico. Si el cambio se aplica mal, el SW puede quedar en estado inválido — síntoma: app en blanco o sin caché offline. Detectar con Clear site data + recarga. Revisión cruzada obligatoria antes de confirmar.
+
+---
+
+## PLIEGO-015c — feat(drive): uploadMusicFile + schema migration 3.3.0
+Fecha: 18 mayo 2026
+Estado: ✅ APLICADO Y VERIFICADO EN PRODUCCIÓN
+Modelo usado: qwen3-14b-think
+
+ARCHIVO: src/GoogleDriveService.js
+CAMBIOS REALIZADOS:
+1. CONFIG.SCHEMA_VERSION actualizado de "3.2.0" a "3.3.0"
+2. Migración 3.2.0 → 3.3.0 añadida al bloque de migraciones (después de 3.1.0 → 3.2.0): añade campos type, drive_file_id y youtube_url a todos los tracks existentes con valores por defecto.
+3. addTrack() actualizado para persistir type, drive_file_id y youtube_url en tracks nuevos.
+4. Nueva función exportada uploadMusicFile(file): sube un archivo MP3 a la carpeta compartida de Drive usando fetch + FormData + Bearer token. Devuelve el fileId del archivo creado.
+5. export default GoogleDriveService restaurado al final del archivo (se perdió en Ctrl+H y se restituyó manualmente).
+
+INCIDENCIAS DURANTE APLICACIÓN:
+- El bloque de migración 3.2.0→3.3.0 se insertó antes del bloque 3.1.0→3.2.0 en el primer intento — orden invertido. Corregido con segundo Ctrl+H.
+- CONFIG.SCHEMA_VERSION no se actualizó en el primer commit — la migración nunca se ejecutaba. Detectado al verificar el JSON de backup (schema_version seguía en "3.2.0"). Corregido en commit de fix.
+- export default GoogleDriveService eliminado accidentalmente por Ctrl+H demasiado amplio. Restaurado manualmente.
+
+VERIFICACIÓN: Backup JSON descargado desde la app confirma schema_version "3.3.0" y ambos tracks con type: "youtube", drive_file_id: null, youtube_url poblado.
+
+---
+
+## PLIEGO-016b — feat(drive): getStreamUrl para reproducción desde Drive
+Fecha: pendiente
+Estado: ⏳ PENDIENTE
+Modelo recomendado: qwen3-14b-think
+
+ARCHIVO: src/GoogleDriveService.js
+DESCRIPCIÓN: Función getStreamUrl(driveFileId) que devuelve una URL de descarga directa desde Drive para reproducción con <audio> nativo. Prerequisito de PLIEGO-017b.
+BLOQUEADO POR: REDISEÑO-MUSICLAB-001 — decisión de diseño pendiente.
+
+---
+
+## REDISEÑO-MUSICLAB-001 — Restructura completa UI/UX MusicLab
+Fecha: 18 mayo 2026
+Estado: ⏳ PENDIENTE DE DECISIÓN DE DISEÑO
+Archivos afectados: src/MusicLab.jsx (principal), src/GoogleDriveService.js (schema drops)
+
+DECISIÓN PENDIENTE ANTES DE DESCOMPONER EN PLIEGOS:
+¿Los botones Editar/Eliminar actúan sobre el item actualmente seleccionado/activo (modelo global), o cada card tiene sus propios botones inline?
+
+Recomendación arquitecto: modelo global para Tracks y Lists, inline para Cola.
+Sin confirmación de Edu no se generan Pliegos.
+
+PESTAÑAS POST-REDISEÑO (orden y visibilidad):
+1. Cola — nueva. Invisible si vacía. Primera si tiene tracks.
+2. Tracks — existente. Siempre visible.
+3. Lists — existente. Siempre visible.
+4. Drops — existente, rediseñado. Invisible si vacía y sin favoritos. Última si tiene drops pendientes o favoritos.
+
+BOTONES POR PESTAÑA:
+- Cola: + Añadir a cola · Editar (reordenar + eliminar por track, inline)
+- Tracks: + Añadir · Editar · Eliminar
+- Lists: + Añadir · Editar · Eliminar
+- Drops: marcar/desmarcar favorito por drop
+
+DROPS — SCHEMA 3.3.0 → 3.4.0:
+- Nuevo campo favorited: boolean (default false)
+- Nuevo campo favorited_by: userId | null
+- Pestaña Drops muestra: drops pendientes + drops favoritos (enviados y recibidos)
+
+MENÚ CONTEXTUAL LONG PRESS — ELIMINADO:
+El menú de long press en TrackCard se elimina. Era incómodo en Android. Toda la funcionalidad migra a botones explícitos.
+
+TEXTOS A TRADUCIR AL ESPAÑOL (pendiente PLIEGO-018):
+- Botón eliminar track (nuevo)
+- Botón editar track (nuevo)
+- Botón añadir a cola (nuevo)
+- Botón añadir playlist en pestaña Lists (mover y traducir)
+- Cualquier string en inglés que aparezca durante el rediseño
+
+PLIEGOS QUE GENERA ESTE REDISEÑO (pendientes de confirmación de diseño):
+- PLIEGO-R01 — GoogleDriveService.js: migración 3.3.0→3.4.0 (drops favoritos) + removeTrack() + updateTrack()
+- PLIEGO-R02 — MusicLab.jsx: restructura de pestañas + visibilidad condicional Cola y Drops
+- PLIEGO-R03 — MusicLab.jsx: botones Añadir/Editar/Eliminar en Tracks y Lists
+- PLIEGO-R04 — MusicLab.jsx: pestaña Cola con botón añadir y edición inline
+- PLIEGO-R05 — MusicLab.jsx: drops favoritos UI
+
+NOTA: PLIEGO-017b (AddTrackForm + WinampPlayer) se integra en este rediseño como PLIEGO-R06 para no reescribir MusicLab.jsx dos veces.
+
+---
+
+## PLIEGOS SESIÓN 9
+
+### PLIEGO-016b — getStreamUrl en GoogleDriveService.js
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/GoogleDriveService.js
+CAMBIO: Añadir función exportada getStreamUrl(fileId) que construye URL de stream de Drive con token OAuth2 activo.
+RESULTADO: Aplicado y verificado con PowerShell. Commit en master.
+
+---
+
+### PLIEGO-016c — Player youtube/drive con iframe y getStreamUrl
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/MusicLab.jsx
+CAMBIO: Import de getStreamUrl. Elemento audio solo para type drive con drive_file_id. Iframe YouTube oculto para type youtube con enablejsapi=1.
+RESULTADO: Aplicado y verificado con PowerShell. Commit en master.
+
+---
+
+### PLIEGO-017b — Play/pause YouTube via postMessage + iframeRef
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/MusicLab.jsx
+CAMBIO: iframeRef añadido. isYouTube y sendYTCommand. togglePlay con lógica youtube/drive separada. iframe con ref y origin correcto.
+RESULTADO: Aplicado y verificado con PowerShell. Commit en master.
+
+---
+
+### PLIEGO-018 — Modal eliminar track con lista inline
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/MusicLab.jsx
+CAMBIO: Estado showDelete. Handler handleDeleteTrack. Botón ELIMINAR junto a AÑADIR. Modal con lista completa y botón ✕ inline por track.
+RESULTADO: Aplicado y verificado con PowerShell. Commit en master.
+
+---
+
+### PLIEGO-026 — feat(layout): botón EXIT en StatusBar
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/Layout.jsx
+CAMBIO: Prop `onSignOut` añadida a `StatusBar` y a `Layout`. Botón EXIT en rojo apagado junto al ↺ en el header. Condicional — solo renderiza si `onSignOut` está definido.
+RESULTADO: Aplicado con Workflow B. Verificado en disco.
+
+---
+
+### PLIEGO-027 — feat(app): conectar logout al botón EXIT
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/App.jsx
+CAMBIO: `logout` añadido al destructuring de `useVault` en el componente principal. Pasado como `onSignOut={logout}` al `<Layout>`.
+RESULTADO: Aplicado con Workflow B. Verificado en disco. Push a master.
+
+---
+
+### PLIEGO-019 — Modal editar track con formulario precargado
+Fecha: 2026-05-19
+Estado: ✅ aplicado
+ARCHIVO: src/MusicLab.jsx
+CAMBIO: Estados showEdit y editingTrack. Handlers handleEditTrack y handleSaveEdit. Botón EDITAR junto a ELIMINAR. Modal lista → selección → AddTrackForm precargado con initialData.
+RESULTADO: Aplicado y verificado con PowerShell. Commit en master.
+DEUDA TÉCNICA CONOCIDA: handleSaveEdit no persiste en Drive (ERROR 25). onEditTrack no implementado en VaultContext ni GoogleDriveService.

@@ -2,16 +2,14 @@
 
 ---
 
-## ESTADO ACTUAL (18 Mayo 2026 — fin de sesión 6)
+## ESTADO ACTUAL (19 Mayo 2026 — sesión 11 terminada al 90%.)
 
-## ESTADO ACTUAL (18 Mayo 2026 — sesión 7 en curso)
-
-- **APP EN PRODUCCIÓN.** Deploy completado y verificado en Android.
-- PWA instalada correctamente en Android de Edu y David(modo standalone, sin barra de Chrome).
-- Login funcionando en producción con las 3 cuentas.
-- MusicLab operativo tras PLIEGO-014 (toast ReferenceError resuelto).
-- Testing activo con Edu. Checklist ejecutado parcialmente — ver resultados abajo.
-- Funcionalidad real estimada en ~5-10% (Vault sin fotos = solo navegación de eras; MusicLab sin música cargada; Smoke sin persistencia completa).
+- **APP EN PRODUCCIÓN.** Deploy activo en https://el-bunker-beige.vercel.app
+- Botón EXIT de cierre de sesión añadido al header (StatusBar) — rojo apagado, junto al ↺.
+- `logout` conectado desde VaultContext a Layout vía App.jsx — cierra sesión sin recargar.
+- Commits realizados en la sesión:
+    "PLIEGO-026: feat(layout): botón EXIT en StatusBar"
+    "PLIEGO-027: feat(app): conectar logout al botón EXIT"
 ---
 
 ## INFRAESTRUCTURA COMPLETADA
@@ -104,8 +102,8 @@ David no recibe el drop lanzado por Edu. David no ve el track añadido por Edu. 
 **BUG-NUEVO-05 — Textos de MusicLab mezclados en inglés/español y despersonalizados** ← PRIORIDAD BAJA
 Textos como "add track" en inglés y "lanzar drop" en español conviven en la misma UI. Además, el tono es genérico — los textos deberían reflejar el lenguaje que Edu usaría hacia David. Requiere un Pliego de revisión completa de strings en MusicLab.jsx. Sin urgencia funcional pero impacta directamente en la identidad del proyecto.
 
-**Bug B — Sin persistencia OAuth2 entre recargas** ← PRIORIDAD 5
-Confirmado en testing sesión 7. Pide permisos de Google en cada recarga. Primera opción: silent refresh con `prompt: ''` en GoogleDriveService.js. Archivo crítico → qwen3-14b-think + revisión cruzada.
+**Bug B — Sin persistencia OAuth2 entre recargas** ✅ RESUELTO — sesión 10
+Se corrigió usando un guardado explícito del Token y la fecha de expiración en `localStorage`, restaurándolo de forma silenciosa en el arranque (`restoreToken`) desde el `VaultContext`.
 
 **BUG-POST-02 — Corner brackets en LoginScreen.jsx** ← PRIORIDAD 3
 Confirmado en testing. AccessButton tiene implementación propia con `<span>` y bordes CSS, nunca tocada por PLIEGO-007. Pliego simple, qwen3-8b-nothink.
@@ -113,8 +111,8 @@ Confirmado en testing. AccessButton tiene implementación propia con `<span>` y 
 **BUG-NUEVO-02 — Frases duplicadas en LoginScreen** ← NUEVO
 Detectado en testing sesión 7. Texto duplicado visible en pantalla de login. Sin análisis aún. Podría ser render doble por AnimatePresence mal configurado (relacionado con Bug A).
 
-**BUG-NUEVO-03 — Header muestra "v1.0", "Online" y fecha con salto de línea** ← NUEVO, COSMÉTICO
-Texto "v1.0" y "Online" innecesarios. "El bunker" y "18 de mayo" aparecen en líneas separadas. Fix CSS/JSX en Layout.jsx o componente de header.
+**BUG-NUEVO-03 — Header muestra "v1.0", "Online" y fecha con salto de línea** ✅ RESUELTO — sesión 10
+Strings eliminados. Layout reparado en Flex añadiendo un botón "↺" de re-render al final del componente `Layout.jsx`.
 
 **BUG-NUEVO-04 — Volumen master en SmokeSession estático al 80%**
 El control de volumen master no funciona. Confirmado en testing sesión 7.
@@ -134,13 +132,64 @@ Confirmado en testing sesión 7: el botón "↓ BACKUP JSON" SÍ aparece con cue
 **PLIEGO-014** — fix(musiclab): declare toast state — ReferenceError causing blank screen ✅ APLICADO
 Archivo: src/MusicLab.jsx. Una línea: `const [toast, setToast] = useState(null);` después de pendingTrack.
 
-**PLIEGO-015** — Diagnóstico + fix persistencia de tracks/drops en MusicLab (BUG-CRÍTICO-02)
-Pendiente de datos de Network tab (filtrar drive/v3 al guardar track). No generar hasta confirmar si el 403 de heartbeat es la causa raíz o hay otra ruta de escritura fallando.
+**PLIEGO-015b** ✅ — fix(sw): bypass YouTube domains — APLICADO
+**PLIEGO-015c** ✅ — feat(drive): uploadMusicFile + schema 3.3.0 — APLICADO Y VERIFICADO
 
-**PLIEGO-016** — Diagnóstico + fix reproducción de audio 0:00-0:00 (BUG-CRÍTICO-03)
-Pendiente de error de consola al intentar reproducir. Probable en la lógica de extracción de videoId o inicialización del player.
+**PLIEGO-016b** — feat(drive): getStreamUrl para reproducción de MP3 desde Drive con <audio> nativo. Prerequisito de PLIEGO-017b. Modelo: qwen3-14b-think.
 
-**PLIEGO-017** — Silent refresh OAuth2 (Bug B)
+**PLIEGO-016c** — CANCELADO. Absorbido por rediseño completo de MusicLab UI (ver REDISEÑO-MUSICLAB-001 abajo).
+
+---
+
+## REDISEÑO-MUSICLAB-001 — Restructura completa de UI/UX de MusicLab
+**Estado:** Pendiente de decisión de diseño antes de descomponer en Pliegos.
+**Archivos afectados:** src/MusicLab.jsx (principal), src/GoogleDriveService.js (schema drops favoritos)
+
+### PESTAÑAS POST-REDISEÑO
+Orden y visibilidad:
+1. **Cola** — nueva. Invisible si vacía. Primera si tiene tracks. Botones: + Añadir a cola, Editar (reordenar y eliminar tracks de la cola).
+2. **Tracks** — existente. Siempre visible. Botones: + Añadir, Editar, Eliminar.
+3. **Lists** — existente (antes "Lists/Playlists"). Siempre visible. Botones: + Añadir, Editar, Eliminar.
+4. **Drops** — existente pero rediseñado. Invisible si vacía Y sin favoritos. Última si tiene drops sin entregar o favoritos. Incluye drops enviados y recibidos marcados como favoritos. Botones: marcar/desmarcar favorito por drop.
+
+### DROPS — CAMBIOS DE SCHEMA
+Requiere migración 3.3.0 → 3.4.0:
+- Añadir campo `favorited: boolean` a cada drop (default: false)
+- Añadir campo `favorited_by: userId | null` (quién lo marcó)
+- La pestaña Drops muestra: drops pendientes de entrega + drops favoritos (enviados o recibidos)
+
+### BOTONES DE ACCIÓN
+Tracks:
+- `+ AÑADIR` — abre AddTrackForm (existente, pendiente de rediseño en PLIEGO-017b)
+- `EDITAR` — edita el track seleccionado/activo. Abre mismo formulario de AddTrackForm con datos precargados.
+- `ELIMINAR` — elimina el track seleccionado/activo de la DB permanentemente.
+
+Lists:
+- `+ AÑADIR` — crea nueva playlist (lógica existente, mover botón)
+- `EDITAR` — edita nombre/descripción de la playlist seleccionada
+- `ELIMINAR` — elimina playlist (lógica existente: solo creador, solo si vacía)
+
+Cola:
+- `+ AÑADIR A COLA` — añade track seleccionado a la cola del usuario
+- `EDITAR` — modo reordenación drag-and-drop + botón eliminar por track dentro de la cola
+
+### MENÚ CONTEXTUAL (long press) — ELIMINADO
+El menú contextual de long press en TrackCard se elimina. Era incómodo en Android (selecciona texto, difícil de activar con títulos largos). Toda la funcionalidad migra a botones explícitos en la UI de cada pestaña.
+
+### DECISIÓN PENDIENTE ANTES DE PLIEGOS
+**¿Los botones Editar/Eliminar actúan sobre el item actualmente seleccionado/activo, o cada card tiene sus propios botones inline?**
+
+Impacto:
+- Item seleccionado global → botones en header de pestaña, menos JSX, UX más limpia en móvil
+- Botones inline por card → más clics, más JSX, pero más explícito y sin ambigüedad de "qué estoy editando"
+
+Recomendación del arquitecto: **item seleccionado global** para Tracks y Lists (ya hay concepto de track activo). Para Cola, botones inline por track (la cola es una lista de acciones, no tiene concepto de "seleccionado").
+
+Sin esta decisión no se generan Pliegos de rediseño.
+
+**PLIEGO-017b** — feat(musiclab): reescribir AddTrackForm (selector MP3, autorellenar desde YouTube, portada automática ytimg + opción cambiar por imagen de dispositivo o galería de Vault) + WinampPlayer (detectar type: drive vs youtube, reproducir desde Drive stream URL o iframe YouTube). Modelo: qwen3-14b-nothink. BLOQUEADO hasta REDISEÑO-MUSICLAB-001 resuelto.
+
+**PLIEGO-017c** — Silent refresh OAuth2 (Bug B). Modelo: qwen3-14b-think. Archivo crítico.
 Archivo: src/GoogleDriveService.js. `prompt: ''` en el callback de tokenClient. Modelo: qwen3-14b-think. Desbloquear después de BUG-CRÍTICO-02 (pueden estar relacionados).
 
 **PLIEGO-018** — Revisión y personalización de strings en MusicLab (BUG-NUEVO-05)
@@ -165,6 +214,13 @@ Archivo: src/LoginScreen.jsx. Modelo: qwen3-8b-nothink.
 
 ---
 
+## BUGS RESUELTOS EN SESIÓN 8
+
+- **PLIEGO-015b** — SW bypass YouTube: añadidos youtube.com, ytimg.com, googlevideo.com a BYPASS_PATTERNS. El SW ya no intercepta peticiones del player.
+- **PLIEGO-015c** — uploadMusicFile + schema 3.3.0: nueva función de subida de MP3 a Drive vía fetch+FormData. Migración automática de tracks existentes a type/drive_file_id/youtube_url. CONFIG.SCHEMA_VERSION actualizado. Verificado en producción con backup JSON.
+
+---
+
 ## PRÓXIMO PASO
 
 1. **Diagnóstico BUG-CRÍTICO-02 (persistencia MusicLab)** — Abrir DevTools → Network tab → filtrar `drive/v3` → añadir un track → capturar si hay 403/404/sin llamada al guardar. Sin estos datos no se genera Pliego.
@@ -174,6 +230,51 @@ Archivo: src/LoginScreen.jsx. Modelo: qwen3-8b-nothink.
 5. **Diagnóstico BUG-CRÍTICO-01 (+ Era en Vault)** — DevTools → Console → pulsar "+ Era" → error exacto → PLIEGO-019.
 6. PLIEGO-020 (corner brackets LoginScreen) — quick win, hacer en paralelo cuando haya pausa.
 
+---
+
+## ESTADO ACTUAL (19 Mayo 2026 — sesión 10 terminada.)
+
+- **APP EN PRODUCCIÓN.** Deploy completado y verificado en Android.
+- Reproductor de música estabilizado con comportamientos corregidos (WinampPlayer: skip/shuffle/loop ok).
+- Persistencia silenciosa de OAuth2 conseguida; el login no se pierde al recargar gracias al `localStorage`.
+- Bloqueos críticos de login causados por la validación del sistema de Drops reparados.
+- Funciones extra de UI nativa consolidadas con CSS y Layouts purificados (sin selección de texto web, pull-to-refresh desactivado y con recargas forzables desde header).
+
+### PLIEGOS EJECUTADOS EN SESIÓN 10
+- PLIEGO-020 ✅ — fix drop: campo to, from real y filtro por destinatario (ERROR 32/31)
+- PLIEGO-021 ✅ — fix skip stale closure con useCallback + MediaSession deps (ERROR 27/28)
+- PLIEGO-022 ✅ — persistencia OAuth2: recuperar token boot/localStorage (Bug B)
+- PLIEGO-023 ✅ — fix modales mutuamente excluyentes (ERROR 24)
+- PLIEGO-024 ✅ — feat: onEditTrack y onDeleteTrack en App.jsx (ERROR 25)
+- PLIEGO-025a/b ✅ — CSS global overscroll/select y limpieza del Header + botón reload
+
+### PLIEGOS EJECUTADOS EN SESIÓN 11
+- PLIEGO-026 ✅ — feat(layout): botón EXIT en StatusBar
+- PLIEGO-027 ✅ — feat(app): conectar logout al botón EXIT
+
+### TESTING SESIÓN 10 — BUGS ACTIVOS / PENDIENTES
+- ERROR 29 — Play en drop lleva a MusicLab en lugar de reproducir inline
+- ERROR 30 — Drops no se limpian tras ser recibidos (limpieza de drops en cache local)
+- ERROR 33 — Drops solo se detectan al entrar a MusicLab (detección global del Drop entrante)
+- ERROR 34 — Color de vibe en TrackCard solo activo en track que suena
+- BUG-CRÍTICO-01 — Módulo Vault
+
+### TESTING SESIÓN 11 — BUGS ACTIVOS / PENDIENTES
+- Sin nuevos bugs introducidos en sesión 11.
+
+### CONFIRMACIONES DE SESIÓN 10
+- Rama git confirmada: master (no main).
+- Se revierte la eliminación del long-press en TrackCard; se mantiene usando `user-select: none` global para mitigar problemas nativos de Android.
+- El sistema de Drops ya es plenamente seguro y funcional entre usuarios sin provocar bloqueos de renderizado en el login screen.
+
+### PRÓXIMA SESIÓN (12)
+Objetivo: Favoritos en drops + limpieza post-recepción + play inline en drop.
+1. Favoritos en drops — marcar/desmarcar para guardar un drop (schema 3.3.0→3.4.0 + UI)
+2. ERROR 30 — limpiar drops no favoritos tras ser recibidos
+3. ERROR 29 — play inline en drop (sin navegar a MusicLab)
+4. ERROR 33 — detección global de drops entrantes (mover fuera de MusicLab)
+5. ERROR 34 — color de vibe en TrackCard
+6. BUG-CRÍTICO-01 — botón "+ Era" en Vault
 ---
 
 ## FEATURES CONFIRMADAS (orden de implementación)
