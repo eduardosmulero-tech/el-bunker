@@ -265,20 +265,22 @@ const TAB_MAP = {
 // ─── AUTHENTICATED APP ───────────────────────────────────────
 const AuthenticatedApp = () => {
   const {
-    user, db, dbStatus, lastHeartbeat,
-    activeTab, setActiveTab,
-    masterVolume,
-  } = useVault();
+      user, db, dbStatus, lastHeartbeat,
+      activeTab, setActiveTab,
+      masterVolume,
+      logout,
+    } = useVault();
 
   const ActivePage = TAB_MAP[activeTab] ?? VaultPage;
 
   return (
     <Layout
-      isAuthenticated
-      dbStatus={dbStatus}
-      lastHeartbeat={lastHeartbeat}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
+        isAuthenticated
+        dbStatus={dbStatus}
+        lastHeartbeat={lastHeartbeat}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onSignOut={logout}
     >
       <AnimatePresence mode="wait">
         <motion.div
