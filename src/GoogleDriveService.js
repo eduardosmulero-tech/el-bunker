@@ -23,7 +23,7 @@ const CONFIG = {
   HEARTBEAT_THROTTLE_MS: 15 * 60 * 1000,
 
   // Versión del esquema — permite migraciones futuras
-  SCHEMA_VERSION: "3.3.0",
+  SCHEMA_VERSION: "3.4.0",
 
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
@@ -771,6 +771,24 @@ const _migrateSchema = (data) => {
       schema_version: "3.3.0",
     };
   }
+    // ── 3.3.0 → 3.4.0: campos favorited y favorited_by en drops ──
+  if (migrated.schema_version === "3.3.0") {
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        drops: (migrated.music_lab?.drops ?? []).map((d) => ({
+          ...d,
+          from:         d.from         ?? null,
+          to:           d.to           ?? null,
+          favorited:    d.favorited    ?? false,
+          favorited_by: d.favorited_by ?? null,
+        })),
+      },
+      schema_version: "3.4.0",
+    };
+  }
+
   migrated.schema_version = CONFIG.SCHEMA_VERSION;
   migrated._wasMigrated   = true;
   return migrated;
@@ -1101,7 +1119,47 @@ export const addDrop = async (dropData) => {
   return newDrop;
 };
 
-// ─── SECTION 10: QUEUE PUBLIC API ────────────────────────────
+/**
+ * removeTrack(trackId)
+ * Elimina un track del Music Lab por id.
+ */
+export const removeTrack = async (trackId) => {
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      tracks: (db.music_lab?.tracks ?? []).filter((t) => t.id !== trackId),
+    },
+  }));
+  console.info(`[Búnker] Track ${trackId} eliminado`);
+};
+
+/**
+ * updateTrack(trackId, patch)
+ * Actualiza campos sueltos de un track existente.
+ *
+ * @param {string} trackId
+ * @param {object} patch
+ * @returns {Promise<object>} — el track actualizado
+ */
+export const updateTrack = async (trackId, patch) => {
+  let updatedTrack = null;
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      tracks: (db.music_lab?.tracks ?? []).map((t) => {
+        if (t.id !== trackId) return t;
+        updatedTrack = { ...t, ...patch, id: trackId };
+        return updatedTrack;
+      }),
+    },
+  }));
+  if (!updatedTrack) throw _vaultError("TRACK_NOT_FOUND", `Track ${trackId} no encontrado`);
+  return updatedTrack;
+};
+
+// ─── SECTION 10: QUEUE PUBLIC API ────────────────────────────────────────────
 
 /**
  * fetchQueue(userId)
