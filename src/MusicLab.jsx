@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, fetchPlaylists, createPlaylist, addTrackToPlaylist, getStreamUrl } from "./GoogleDriveService";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, BG } from "./Layout";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
@@ -252,6 +252,15 @@ const audioRef    = useRef(null);
     }, 500);
   };
 
+  const skip = useCallback((dir) => {
+    const idx = tracks.findIndex((t) => t.id === track?.id);
+    if (idx < 0) return;
+    let nextIdx;
+    if (shuffle) nextIdx = Math.floor(Math.random() * tracks.length);
+    else         nextIdx = (idx + dir + tracks.length) % tracks.length;
+    onTrackChange?.(tracks[nextIdx]);
+  }, [tracks, track?.id, loop, shuffle, onTrackChange]);
+
   const initYTPlayer = useCallback(() => {
     if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }
     setYtReady(false);
@@ -336,15 +345,6 @@ const audioRef    = useRef(null);
     if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(v); }
     else           { if (audioRef.current) audioRef.current.volume = v / 100; }
   };
-
-  const skip = useCallback((dir) => {
-    const idx = tracks.findIndex((t) => t.id === track?.id);
-    if (idx < 0) return;
-    let nextIdx;
-    if (shuffle) nextIdx = Math.floor(Math.random() * tracks.length);
-    else         nextIdx = (idx + dir + tracks.length) % tracks.length;
-    onTrackChange?.(tracks[nextIdx]);
-  }, [tracks, track?.id, loop, shuffle, onTrackChange]);
 
   const fmtTime = (s) => {
     if (!s || isNaN(s)) return "0:00";
