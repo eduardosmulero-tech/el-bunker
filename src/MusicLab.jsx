@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, fetchPlaylists, createPlaylist, addTrackToPlaylist, getStreamUrl } from "./GoogleDriveService";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
-import { CornerBrackets, ACID, PURPLE, BG } from "./Layout";
+import { ACID, PURPLE, BG } from "./Layout";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const GLASS_BG     = "rgba(191,255,0,0.03)";
@@ -206,9 +206,11 @@ const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
  * Soporta: play/pause, prev/next, seek, volume, loop/shuffle.
  */
 const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatus = "idle" }) => {
-  const audioRef    = useRef(null);
+const audioRef    = useRef(null);
   const iframeRef   = useRef(null);
   const wakeLockRef = useRef(null);
+  const ytPlayerRef = useRef(null);
+  const pollingRef  = useRef(null);
   const [playing,   setPlaying]   = useState(false);
   const [progress,  setProgress]  = useState(0);   // 0-100
   const [volume,    setVolume]    = useState(80);   // 0-100
@@ -217,6 +219,7 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
   const [loop,      setLoop]      = useState(false);
   const [shuffle,   setShuffle]   = useState(false);
   const [showDrop,  setShowDrop]  = useState(false);
+  const [ytReady,   setYtReady]   = useState(false);
 
   const vibeConf = getVibeConfig(track?.vibe);
   const ytId     = extractYouTubeId(track?.url ?? "");
@@ -226,21 +229,89 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
     setPlaying(false);
     setProgress(0);
     setCurrentT(0);
+    setDuration(0);
+    setYtReady(false);
   }, [track?.id]);
 
   const isYouTube = track?.type === "youtube" || (!track?.type && track?.url);
 
-  const sendYTCommand = (cmd) => {
-    iframeRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func: cmd, args: [] }),
-      "*"
-    );
+  const stopPolling = () => {
+    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
   };
+
+  const startPolling = () => {
+    stopPolling();
+    pollingRef.current = setInterval(() => {
+      const p = ytPlayerRef.current;
+      if (!p || typeof p.getCurrentTime !== "function") return;
+      const ct = p.getCurrentTime() || 0;
+      const dur = p.getDuration() || 0;
+      setCurrentT(ct);
+      setDuration(dur);
+      setProgress(dur > 0 ? (ct / dur) * 100 : 0);
+    }, 500);
+  };
+
+  const initYTPlayer = useCallback(() => {
+    if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }
+    setYtReady(false);
+    const divId = `yt-player-div`;
+    ytPlayerRef.current = new window.YT.Player(divId, {
+      events: {
+        onReady: (e) => {
+          setDuration(e.target.getDuration() || 0);
+          e.target.setVolume(volume);
+          setYtReady(true);
+        },
+        onStateChange: (e) => {
+          const s = e.data;
+          if (s === window.YT.PlayerState.PLAYING) {
+            setPlaying(true);
+            startPolling();
+          } else if (s === window.YT.PlayerState.PAUSED) {
+            setPlaying(false);
+            stopPolling();
+          } else if (s === window.YT.PlayerState.ENDED) {
+            setPlaying(false);
+            stopPolling();
+            if (loop) {
+              ytPlayerRef.current.seekTo(0, true);
+              ytPlayerRef.current.playVideo();
+            } else {
+              skip(1);
+            }
+          }
+        },
+      },
+    });
+  }, [loop, skip, volume]);
+
+  useEffect(() => {
+    if (!isYouTube) return;
+    const setup = () => initYTPlayer();
+    if (window.YT && window.YT.Player) {
+      setup();
+    } else {
+      if (!document.getElementById("yt-api-script")) {
+        const tag = document.createElement("script");
+        tag.id = "yt-api-script";
+        tag.src = "https://www.youtube.com/iframe_api";
+        document.head.appendChild(tag);
+      }
+      window.onYouTubeIframeAPIReady = setup;
+    }
+    return () => {
+      stopPolling();
+      if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }
+      setYtReady(false);
+    };
+  }, [track?.id, isYouTube]);
 
   const togglePlay = () => {
     if (isYouTube) {
-      if (playing) { sendYTCommand("pauseVideo"); setPlaying(false); }
-      else         { sendYTCommand("playVideo");  setPlaying(true);  }
+      if (!ytPlayerRef.current) return;
+      if (playing) { ytPlayerRef.current.pauseVideo(); }
+      else         { ytPlayerRef.current.playVideo();  }
     } else {
       if (!audioRef.current) return;
       if (playing) { audioRef.current.pause(); setPlaying(false); }
@@ -249,13 +320,19 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
   };
 
   const seekTo = (pct) => {
-    if (!audioRef.current || !duration) return;
-    audioRef.current.currentTime = (pct / 100) * duration;
+    if (isYouTube) {
+      if (!ytPlayerRef.current || !duration) return;
+      ytPlayerRef.current.seekTo((pct / 100) * duration, true);
+    } else {
+      if (!audioRef.current || !duration) return;
+      audioRef.current.currentTime = (pct / 100) * duration;
+    }
   };
 
   const changeVolume = (v) => {
     setVolume(v);
-    if (audioRef.current) audioRef.current.volume = v / 100;
+    if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(v); }
+    else           { if (audioRef.current) audioRef.current.volume = v / 100; }
   };
 
   const skip = useCallback((dir) => {
@@ -363,8 +440,6 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
     >
-      <CornerBrackets size={12} thickness={1} color={accentColor} />
-
       {/* Audio element — solo para type drive */}
       {track?.type === "drive" && track?.drive_file_id && (
         <audio
@@ -379,15 +454,12 @@ const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatu
           onEnded={() => { if (!loop) skip(1); }}
         />
       )}
-      {/* YouTube iframe — solo para type youtube */}
-      {(track?.type === "youtube" || (!track?.type && track?.url)) && (
-        <iframe
-          key={track?.id}
-          ref={iframeRef}
+      {/* YouTube div — YT.Player monta aquí */}
+      {isYouTube && (
+        <div
+          id="yt-player-div"
           style={{ display: "none" }}
-          src={`https://www.youtube.com/embed/${extractYouTubeId(track?.youtube_url ?? track?.url ?? "")}?enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
-          allow="autoplay"
-          title="yt-player"
+          data-videoid={extractYouTubeId(track?.youtube_url ?? track?.url ?? "")}
         />
       )}
 
@@ -727,7 +799,6 @@ const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist }) => {
         fontFamily: FONT_MONO,
       }}
     >
-      <CornerBrackets size={10} thickness={1} color={isActive ? (vibe?.color ?? ACID) : GLASS_BORDER} />
 
       {/* Active bar */}
       {isActive && (
@@ -862,7 +933,6 @@ const AddTrackForm = ({ onAdd, onClose, initialData = null }) => {
         fontFamily: FONT_MONO,
       }}
     >
-      <CornerBrackets size={12} thickness={1} color={ACID} />
 
       <p className="text-xs tracking-[0.3em] uppercase font-bold mb-4" style={{ color: ACID }}>
         {initialData ? "✎ EDITAR TRACK" : "◈ AÑADIR TRACK"}
@@ -961,7 +1031,6 @@ const DropComposeModal = ({ track, onClose, onSend }) => {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <CornerBrackets size={14} thickness={1} color={PURPLE} />
 
         <p
           className="text-xs tracking-[0.35em] uppercase font-bold mb-1"
@@ -1080,7 +1149,6 @@ const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
               fontFamily: FONT_MONO,
             }}
           >
-            <CornerBrackets size={16} thickness={2} color={PURPLE} />
 
             {/* Scanline top */}
             <div
