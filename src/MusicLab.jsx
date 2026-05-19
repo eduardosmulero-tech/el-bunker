@@ -1369,6 +1369,8 @@ export default function MusicLab({
   db = null,
   userId = null,
   onAddTrack,
+  onEditTrack,
+  onDeleteTrack,
   onAddDrop,
   onMarkDropSeen,
 }) {
