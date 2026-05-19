@@ -54,7 +54,7 @@ const CornerBrackets = ({ color = ACID, size = 20, thickness = 2 }) => {
 };
 
 // ─── TOP STATUS BAR ──────────────────────────────────────────
-const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus }) => {
+const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut }) => {
   const [tick, setTick] = useState(new Date());
 
   useEffect(() => {
@@ -113,6 +113,15 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus }) => {
         >
           ↺
         </button>
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="text-xs tracking-widest uppercase px-2 py-1 rounded-sm transition-all"
+            style={{ border: `1px solid #ff3b3b44`, color: "#ff3b3b", opacity: 0.7 }}
+          >
+            EXIT
+          </button>
+        )}
       </div>
     </motion.header>
   );
@@ -224,6 +233,7 @@ export default function Layout({
   lastHeartbeat = null,
   activeTab = "vault",
   onTabChange = () => {},
+  onSignOut,
 }) {
   return (
     <div
@@ -243,6 +253,7 @@ export default function Layout({
         isAuthenticated={isAuthenticated}
         lastHeartbeat={lastHeartbeat}
         dbStatus={dbStatus}
+        onSignOut={onSignOut}
       />
 
       {/* ── Layer 3: Page Content ── */}
