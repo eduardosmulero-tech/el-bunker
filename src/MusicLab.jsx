@@ -1302,7 +1302,7 @@ const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
 };
 
 // ─── DROPS HISTORY ───────────────────────────────────────────
-const DropsHistory = ({ drops, tracks, onPlay }) => {
+const DropsHistory = ({ drops, tracks, onPlay, onMarkSeen }) => {
   if (!drops.length) return (
     <p className="text-xs opacity-20 tracking-widest text-center py-6 uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
       — sin drops aún —
@@ -1324,7 +1324,11 @@ const DropsHistory = ({ drops, tracks, onPlay }) => {
               border: `1px solid ${PURPLE_BORDER}`,
               fontFamily: FONT_MONO,
             }}
-            onClick={() => track && onPlay(track)}
+            onClick={() => {
+              if (!track) return;
+              onMarkSeen?.(drop.id);
+              onPlay(track);
+            }}
           >
             <span style={{ color: PURPLE, fontSize: 16 }}>⚡</span>
             <div className="flex-1 min-w-0">
@@ -1981,7 +1985,12 @@ export default function MusicLab({
                 tracks={localTracks}
                 onPlay={(track) => {
                   setActiveTrack(track);
-                  setActiveTab("tracks");
+                }}
+                onMarkSeen={(dropId) => {
+                  setLocalDrops((prev) =>
+                    prev.map((d) => d.id === dropId ? { ...d, seen: true } : d)
+                  );
+                  onMarkDropSeen?.(dropId);
                 }}
               />
             </motion.div>
