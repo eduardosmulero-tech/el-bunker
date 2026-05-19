@@ -1373,6 +1373,7 @@ export default function MusicLab({
   onDeleteTrack,
   onAddDrop,
   onMarkDropSeen,
+  onMasterVolumeChange,
 }) {
   // ── Data ─────────────────────────────────────────────────
   const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
