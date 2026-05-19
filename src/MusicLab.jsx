@@ -720,7 +720,7 @@ const VibeTagBar = ({ activeVibe, onVibeChange }) => (
 );
 
 // ─── TRACK CARD ──────────────────────────────────────────────
-const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist }) => {
+const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue }) => {
   const vibe = getVibeConfig(track.vibe);
   const ytId = extractYouTubeId(track.url ?? "");
   const pressTimer  = useRef(null);
@@ -768,6 +768,17 @@ const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist }) => {
             }}>
               {track.title}
             </div>
+            <button
+              style={{
+                display: "block", width: "100%", padding: "10px 16px",
+                textAlign: "left", color: ACID, fontSize: 11,
+                letterSpacing: "0.2em", background: "transparent",
+                border: "none", cursor: "pointer",
+              }}
+              onClick={() => { onAddToQueue?.(track); setShowCtx(false); }}
+            >
+              ◈ AÑADIR A COLA
+            </button>
             <button
               style={{
                 display: "block", width: "100%", padding: "10px 16px",
@@ -1377,6 +1388,7 @@ export default function MusicLab({
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [pendingTrack,      setPendingTrack]      = useState(null);
   const [toast,             setToast]             = useState(null);
+  const [localQueue,        setLocalQueue]        = useState([]);
 
   // Check for unseen drops on mount (simulates JSON load check)
   useEffect(() => {
@@ -1396,26 +1408,34 @@ export default function MusicLab({
     fetchQueue(userId)
       .then((trackIds) => {
         if (trackIds.length === 0) return;
-        const first = rawTracks.find((t) => t.id === trackIds[0]);
-        if (first) setActiveTrack(first);
+        const queueTracks = trackIds
+          .map((id) => rawTracks.find((t) => t.id === id))
+          .filter(Boolean);
+        if (queueTracks.length === 0) return;
+        setLocalQueue(queueTracks);
+        setActiveTrack(queueTracks[0]);
       })
       .catch((err) => {
         console.warn("[Búnker] fetchQueue falló silenciosamente:", err);
       });
   }, [userId]);
 
-  // Guardar cola en Drive optimista al cambiar track activo
+// Persistir cola en Drive cuando cambia
   useEffect(() => {
-    if (!userId || !activeTrack) return;
+    if (!userId) return;
+    const ids = activeTrack
+      ? [activeTrack.id, ...localQueue.filter((t) => t.id !== activeTrack.id).map((t) => t.id)]
+      : localQueue.map((t) => t.id);
+    if (ids.length === 0) return;
     setSyncStatus("syncing");
-    saveQueue(userId, [activeTrack.id])
+    saveQueue(userId, ids)
       .then(() => setSyncStatus("idle"))
       .catch((err) => {
         console.warn("[Búnker] saveQueue falló:", err);
         setSyncStatus("error");
         setTimeout(() => setSyncStatus("idle"), 4000);
       });
-  }, [activeTrack?.id, userId]);
+  }, [activeTrack?.id, localQueue, userId]);
   // Cargar playlists desde Drive al montar
   useEffect(() => {
     if (!db) return;
@@ -1504,6 +1524,34 @@ export default function MusicLab({
     setShowDelete(false);
   };
 
+  const handleAddToQueue = (track) => {
+    if (!track) return;
+    setLocalQueue((q) => {
+      if (q.find((t) => t.id === track.id)) return q;
+      return [...q, track];
+    });
+    setToast("AÑADIDO A COLA");
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleRemoveFromQueue = (trackId) => {
+    setLocalQueue((q) => q.filter((t) => t.id !== trackId));
+  };
+
+  const handleAddToQueue = (track) => {
+    if (!track) return;
+    setLocalQueue((q) => {
+      if (q.find((t) => t.id === track.id)) return q;
+      return [...q, track];
+    });
+    setToast("AÑADIDO A COLA");
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleRemoveFromQueue = (trackId) => {
+    setLocalQueue((q) => q.filter((t) => t.id !== trackId));
+  };
+
   const handleDropSend = (dropData) => {
     const toUserId = userId === "edu" ? "david" : "edu";
     const newDrop = { ...dropData, id: uuid(), from: userId, to: toUserId, seen: false, created_at: new Date().toISOString() };
@@ -1590,9 +1638,10 @@ export default function MusicLab({
           style={{ border: `1px solid ${GLASS_BORDER}` }}
         >
           {[
+            ...(localQueue.length > 0 ? [{ id: "queue", label: `COLA [${localQueue.length}]`, icon: "▶" }] : []),
             { id: "tracks", label: "TRACKS", icon: "◎" },
-            { id: "drops",  label: `DROPS ${localDrops.length > 0 ? `[${localDrops.length}]` : ""}`, icon: "⚡" },
             { id: "playlists", label: "LISTS", icon: "◈" },
+            ...(localDrops.length > 0 ? [{ id: "drops", label: `DROPS [${localDrops.length}]`, icon: "⚡" }] : []),
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -1788,6 +1837,7 @@ export default function MusicLab({
                         track={track}
                         isActive={activeTrack?.id === track.id}
                         onClick={() => setActiveTrack(track)}
+                        onAddToQueue={handleAddToQueue}
                         onAddToPlaylist={handleAddToPlaylist}
                         onDrop={(t) => {
                           setActiveTrack(t);
@@ -1807,6 +1857,87 @@ export default function MusicLab({
                   )}
                 </AnimatePresence>
               </div>
+            </motion.div>
+          )}
+
+          {activeTab === "queue" && (
+            <motion.div
+              key="queue"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <span style={{ color: ACID }}>▶</span>
+                  <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>
+                    COLA
+                  </span>
+                  <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
+                    [{String(localQueue.length).padStart(2, "0")}]
+                  </span>
+                </div>
+              </div>
+
+              {/* Track activo */}
+              {activeTrack && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>
+                    ahora
+                  </span>
+                  <div
+                    className="flex items-center gap-3 p-3 rounded-sm"
+                    style={{
+                      background: `${ACID}10`,
+                      border: `1px solid ${ACID}44`,
+                      fontFamily: FONT_MONO,
+                    }}
+                  >
+                    <span style={{ color: ACID, fontSize: 14 }}>◉</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold truncate" style={{ color: ACID }}>{activeTrack.title}</p>
+                      <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{activeTrack.artist}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Siguientes */}
+              {localQueue.filter((t) => t.id !== activeTrack?.id).length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>
+                    siguientes
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    {localQueue.filter((t) => t.id !== activeTrack?.id).map((track) => (
+                      <div
+                        key={track.id}
+                        className="flex items-center gap-3 p-3 rounded-sm"
+                        style={{
+                          background: GLASS_BG,
+                          border: `1px solid ${GLASS_BORDER}`,
+                          fontFamily: FONT_MONO,
+                        }}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
+                          <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                        </div>
+                        <motion.button
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => handleRemoveFromQueue(track.id)}
+                          className="ml-3 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                          style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}
+                        >
+                          ✕
+                        </motion.button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
