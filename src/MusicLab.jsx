@@ -257,6 +257,8 @@ const audioRef    = useRef(null);
     setYtReady(false);
     const divId = `yt-player-div`;
     ytPlayerRef.current = new window.YT.Player(divId, {
+      videoId: extractYouTubeId(track?.youtube_url ?? track?.url ?? ""),
+      playerVars: { autoplay: 0, controls: 0, rel: 0 },
       events: {
         onReady: (e) => {
           setDuration(e.target.getDuration() || 0);
