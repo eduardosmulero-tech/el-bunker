@@ -19,7 +19,14 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
   );
 
   const set    = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+  const isPlaylistUrl = (url) =>
+    /[?&]list=/.test(url) && !/[?&]v=/.test(url) && !/youtu\.be\//.test(url);
+
   const submit = () => {
+    if (isPlaylistUrl(form.url)) {
+      alert("⚠ Esa URL es una playlist de YouTube, no una canción.\nCopia el enlace de un track individual.");
+      return;
+    }
     if (!form.title.trim()) return;
     onAdd(initialData
       ? { ...initialData, ...form }
