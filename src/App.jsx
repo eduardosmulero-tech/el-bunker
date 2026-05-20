@@ -189,15 +189,14 @@ const MusicPage = () => {
         }));
       }}
       onEditTrack={async (updatedTrack) => {
-        await patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            tracks: (prev.music_lab?.tracks ?? []).map((t) =>
-              t.id === updatedTrack.id ? { ...t, ...updatedTrack } : t
-            ),
-          },
-        }));
+        console.log("[DEBUG] onEditTrack:", JSON.stringify(updatedTrack));
+        await patchDb((prev) => {
+          const mapped = (prev.music_lab?.tracks ?? []).map((t) =>
+            t.id === updatedTrack.id ? { ...t, ...updatedTrack } : t
+          );
+          console.log("[DEBUG] match encontrado:", mapped.some((t) => t.id === updatedTrack.id));
+          return { ...prev, music_lab: { ...prev.music_lab, tracks: mapped } };
+        });
       }}
       onMasterVolumeChange={setMasterVolume}
       onMarkDropSeen={async (dropId) => {
