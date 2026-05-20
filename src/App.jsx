@@ -331,7 +331,7 @@ const UnauthorizedScreen = ({ userEmail }) => {
 
 // ─── APP CORE (consumes VaultContext) ────────────────────────
 const AppCore = () => {
-  const { authStatus, bootPhase, bootError, isLoading, login, user } = useVault();
+  const { authStatus, bootPhase, bootError, isLoading, login, user, db } = useVault();
 
   if (isLoading) return <GlobalLoadingScreen phase={bootPhase} />;
 
