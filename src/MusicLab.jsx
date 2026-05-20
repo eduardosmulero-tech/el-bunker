@@ -81,7 +81,7 @@ export default function MusicLab({
   const [localTracks,       setLocalTracks]        = useState(rawTracks);
   const [localDrops,        setLocalDrops]         = useState(rawDrops);
   const [syncStatus,        setSyncStatus]         = useState("idle");
-  const [localPlaylists,    setLocalPlaylists]     = useState([]);
+  const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
   const [showPlaylistModal, setShowPlaylistModal]  = useState(false);
   const [pendingTrack,      setPendingTrack]       = useState(null);
   const [toast,             setToast]              = useState(null);
@@ -216,6 +216,12 @@ export default function MusicLab({
     setLocalQueue((q) => q.filter((t) => t.id !== trackId));
   };
 
+  const handleQueueAdvance = (track) => {
+    setLocalQueue((q) => q.filter((t) => t.id !== track.id));
+    setActiveTrack(track);
+    setAutoPlay(true);
+  };
+
   // ── Handlers Drops ───────────────────────────────────────
   const handleDropSend = (dropData) => {
     const toUserId = userId === "edu" ? "david" : "edu";
@@ -275,7 +281,9 @@ export default function MusicLab({
           <WinampPlayer
             track={activeTrack}
             tracks={filteredTracks}
-            onTrackChange={(t) => { setActiveTrack(t); setAutoPlay(false); }}
+            queue={localQueue.filter((t) => t.id !== activeTrack?.id)}
+            onTrackChange={(t) => { setActiveTrack(t); setAutoPlay(true); }}
+            onQueueAdvance={handleQueueAdvance}
             onDropSend={handleDropSend}
             syncStatus={syncStatus}
             VIBE_TAGS={VIBE_TAGS}
@@ -333,6 +341,12 @@ export default function MusicLab({
                       <p className="text-xs font-bold truncate" style={{ color: ACID }}>{activeTrack.title}</p>
                       <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{activeTrack.artist}</p>
                     </div>
+                    <motion.button whileTap={{ scale: 0.9 }}
+                      onClick={() => { handleRemoveFromQueue(activeTrack.id); setActiveTrack(null); }}
+                      className="ml-3 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                      style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
+                      ✕
+                    </motion.button>
                   </div>
                 </div>
               )}
@@ -472,7 +486,7 @@ export default function MusicLab({
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.vibe)}
-                        onClick={() => setActiveTrack(track)}
+                        onClick={() => { setActiveTrack(track); setAutoPlay(true); }}
                         onAddToQueue={handleAddToQueue}
                         onAddToPlaylist={handleAddToPlaylist}
                         onDrop={(t) => setActiveTrack(t)}

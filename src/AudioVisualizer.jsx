@@ -36,6 +36,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
       animFrameRef.current = requestAnimationFrame(draw);
       const W = canvas.width;
       const H = canvas.height;
+      if (!W || !H) return;
       ctx.clearRect(0, 0, W, H);
 
       let dataArray;
@@ -93,13 +94,22 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
     };
 
     const resize = () => {
-      canvas.width  = canvas.offsetWidth  * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w === 0 || h === 0) return;
+      canvas.width  = w * window.devicePixelRatio;
+      canvas.height = h * window.devicePixelRatio;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     };
     resize();
+    requestAnimationFrame(resize);
+    window.addEventListener("resize", resize);
     draw();
-    return () => cancelAnimationFrame(animFrameRef.current);
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      window.removeEventListener("resize", resize);
+    };
   }, [isPlaying, accentColor]);
 
   useEffect(() => {

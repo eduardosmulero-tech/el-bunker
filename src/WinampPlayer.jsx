@@ -37,7 +37,7 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
 );
 
 // ─── WINAMP PLAYER ───────────────────────────────────────────
-export const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, syncStatus = "idle", VIBE_TAGS }) => {
+export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, onQueueAdvance, onDropSend, syncStatus = "idle", autoPlay = false, VIBE_TAGS }) => {
   const audioRef    = useRef(null);
   const iframeRef   = useRef(null);
   const wakeLockRef = useRef(null);
@@ -95,13 +95,16 @@ export const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, sy
   };
 
   const skip = useCallback((dir) => {
+    if (dir === 1 && queue.length > 0) {
+      onQueueAdvance?.(queue[0]); return;
+    }
     const idx = tracks.findIndex((t) => t.id === track?.id);
     if (idx < 0) return;
     let nextIdx;
     if (shuffle) nextIdx = Math.floor(Math.random() * tracks.length);
     else         nextIdx = (idx + dir + tracks.length) % tracks.length;
     onTrackChange?.(tracks[nextIdx]);
-  }, [tracks, track?.id, loop, shuffle, onTrackChange]);
+  }, [tracks, queue, track?.id, loop, shuffle, onTrackChange, onQueueAdvance]);
 
   const initYTPlayer = useCallback(() => {
     if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }

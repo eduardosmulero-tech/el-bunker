@@ -78,7 +78,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
         <motion.button whileTap={{ scale: 0.95 }} onClick={submit}
           className="flex-1 py-2 text-xs tracking-widest uppercase font-bold rounded-sm"
           style={{ background: `${ACID}18`, border: `1px solid ${ACID}44`, color: ACID, textShadow: `0 0 8px ${ACID}66` }}>
-          + ADD
+          {initialData ? "✎ GUARDAR" : "+ ADD"}
         </motion.button>
         <motion.button whileTap={{ scale: 0.95 }} onClick={onClose}
           className="px-4 py-2 text-xs tracking-widest uppercase rounded-sm opacity-40 hover:opacity-70 transition-opacity"

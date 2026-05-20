@@ -88,8 +88,8 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         onContextMenu={(e) => { e.preventDefault(); setShowCtx(true); }}
         className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
         style={{
-          background: isActive ? `${vibe?.color ?? ACID}10` : GLASS_BG,
-          border: `1px solid ${isActive ? (vibe?.color ?? ACID) + "44" : GLASS_BORDER}`,
+          background: isActive ? `${vibe?.color ?? ACID}10` : `${vibe?.color ?? ACID}06`,
+          border: `1px solid ${isActive ? (vibe?.color ?? ACID) + "44" : (vibe?.color ?? ACID) + "18"}`,
           boxShadow: isActive ? `0 0 16px ${vibe?.color ?? ACID}22` : "none",
           fontFamily: FONT_MONO,
         }}
@@ -113,7 +113,8 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold truncate"
-            style={{ color: isActive ? vibe?.color ?? ACID : ACID,
+            style={{ color: isActive ? vibe?.color ?? ACID : vibe?.color ?? ACID,
+              opacity: isActive ? 1 : 0.55,
               textShadow: isActive ? `0 0 8px ${vibe?.color ?? ACID}88` : "none" }}>
             {track.title}
           </p>
