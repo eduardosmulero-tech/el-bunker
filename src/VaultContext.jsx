@@ -111,6 +111,7 @@ export function VaultProvider({ children }) {
   const [activeTab,     setActiveTab]     = useState("vault");
   const [masterVolume,  setMasterVolume]  = useState(80);
   const [bootError,     setBootError]     = useState(null);
+  const [pendingDrop,   setPendingDrop]   = useState(null);
 
   // Cache de capacidad por biblioteca { [libraryId]: { used_gb, used_pct, near_full } }
   const [libraryCapacity, setLibraryCapacity] = useState({});
@@ -331,6 +332,30 @@ export function VaultProvider({ children }) {
 
   useEffect(() => () => _clearHeartbeat(), [_clearHeartbeat]);
 
+  // ── Drop polling global (ERROR 33) ────────────────────────
+  // Detecta drops entrantes independientemente de la ruta activa.
+  useEffect(() => {
+    if (!user || !db) return;
+    const checkDrops = () => {
+      const drops = db?.music_lab?.drops ?? [];
+      const unseen = drops.find((d) => !d.seen && d.to === user.id);
+      if (unseen) setPendingDrop(unseen);
+    };
+    checkDrops();
+    const interval = setInterval(async () => {
+      try {
+        const fresh = await fetchData();
+        const unseen = (fresh?.music_lab?.drops ?? []).find(
+          (d) => !d.seen && d.to === user.id
+        );
+        if (unseen) setPendingDrop(unseen);
+      } catch (e) {
+        console.warn("[Búnker] Drop polling falló silenciosamente:", e);
+      }
+    }, 30 * 1000);
+    return () => clearInterval(interval);
+  }, [user?.id, db?.music_lab?.drops]);
+
   // ── PUBLIC ACTIONS: Auth ──────────────────────────────────
 
   const login = useCallback(async () => {
@@ -547,6 +572,23 @@ export function VaultProvider({ children }) {
     markLibraryHeartbeat,
     getLibraryContents,
     refreshLibraryCapacity,
+
+    // Drops globales (ERROR 33)
+    pendingDrop,
+    clearPendingDrop: (dropId) => {
+      setPendingDrop(null);
+      if (dropId) {
+        patchDb((db) => ({
+          ...db,
+          music_lab: {
+            ...db.music_lab,
+            drops: (db.music_lab?.drops ?? []).map((d) =>
+              d.id === dropId ? { ...d, seen: true } : d
+            ),
+          },
+        }));
+      }
+    },
 
     // Servicio raw para usos avanzados
     driveService: GoogleDriveService,

@@ -93,6 +93,20 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
       }
     };
 
+    let drawStarted = false;
+    const tryStart = () => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w === 0 || h === 0) {
+        requestAnimationFrame(tryStart);
+        return;
+      }
+      canvas.width  = w * window.devicePixelRatio;
+      canvas.height = h * window.devicePixelRatio;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      if (!drawStarted) { drawStarted = true; draw(); }
+    };
     const resize = () => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
@@ -102,10 +116,8 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     };
-    resize();
-    requestAnimationFrame(resize);
+    tryStart();
     window.addEventListener("resize", resize);
-    draw();
     return () => {
       cancelAnimationFrame(animFrameRef.current);
       window.removeEventListener("resize", resize);
