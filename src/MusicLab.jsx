@@ -104,34 +104,6 @@ export default function MusicLab({
     if (unseen) setPendingDrop(unseen);
   }, []);
 
-  useEffect(() => {
-    if (!userId) return;
-    fetchQueue(userId)
-      .then((trackIds) => {
-        if (trackIds.length === 0) return;
-        const queueTracks = trackIds.map((id) => rawTracks.find((t) => t.id === id)).filter(Boolean);
-        if (queueTracks.length === 0) return;
-        setLocalQueue(queueTracks);
-        setActiveTrack(queueTracks[0]);
-      })
-      .catch((err) => console.warn("[Búnker] fetchQueue falló silenciosamente:", err));
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) return;
-    const ids = activeTrack
-      ? [activeTrack.id, ...localQueue.filter((t) => t.id !== activeTrack.id).map((t) => t.id)]
-      : localQueue.map((t) => t.id);
-    if (ids.length === 0) return;
-    setSyncStatus("syncing");
-    saveQueue(userId, ids)
-      .then(() => setSyncStatus("idle"))
-      .catch((err) => {
-        console.warn("[Búnker] saveQueue falló:", err);
-        setSyncStatus("error");
-        setTimeout(() => setSyncStatus("idle"), 4000);
-      });
-  }, [activeTrack?.id, localQueue, userId]);
 
   useEffect(() => {
     if (!db) return;

@@ -211,25 +211,6 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     };
   }, [track?.id, playing, skip]);
 
-  useEffect(() => {
-    if (!("wakeLock" in navigator)) return;
-    const requestWakeLock = async () => {
-      try {
-        wakeLockRef.current = await navigator.wakeLock.request("screen");
-        wakeLockRef.current.addEventListener("release", () => console.info("[Búnker] WakeLock liberado"));
-      } catch (err) { console.warn("[Búnker] WakeLock no disponible:", err); }
-    };
-    const releaseWakeLock = async () => {
-      if (wakeLockRef.current) { await wakeLockRef.current.release(); wakeLockRef.current = null; }
-    };
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && playing) requestWakeLock();
-    };
-    if (playing) { requestWakeLock(); } else { releaseWakeLock(); }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => { releaseWakeLock(); document.removeEventListener("visibilitychange", handleVisibilityChange); };
-  }, [playing]);
-
   return (
     <motion.div
       className="relative rounded-sm overflow-hidden"
