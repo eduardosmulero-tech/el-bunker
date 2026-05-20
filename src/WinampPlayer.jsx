@@ -64,6 +64,19 @@ export const WinampPlayer = ({ track, tracks = [], onTrackChange, onDropSend, sy
     setYtReady(false);
   }, [track?.id]);
 
+  useEffect(() => {
+    if (!autoPlay || !track) return;
+    const timer = setTimeout(() => {
+      if (isYouTube) {
+        ytPlayerRef.current?.playVideo();
+      } else {
+        audioRef.current?.play().catch(() => {});
+        setPlaying(true);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [track?.id, autoPlay]);
+
   const stopPolling = () => {
     if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
   };

@@ -86,6 +86,7 @@ export default function MusicLab({
   const [pendingTrack,      setPendingTrack]       = useState(null);
   const [toast,             setToast]              = useState(null);
   const [localQueue,        setLocalQueue]         = useState([]);
+  const [autoPlay,          setAutoPlay]           = useState(false);
 
   // ── Efectos de carga ─────────────────────────────────────
   useEffect(() => {
@@ -224,7 +225,7 @@ export default function MusicLab({
   };
 
   const handleDropPlay = (track) => {
-    if (track) setActiveTrack(track);
+    if (track) { setActiveTrack(track); setAutoPlay(true); }
     setPendingDrop(null);
     onMarkDropSeen?.(pendingDrop?.id);
     setActiveTab("tracks");
@@ -274,10 +275,11 @@ export default function MusicLab({
           <WinampPlayer
             track={activeTrack}
             tracks={filteredTracks}
-            onTrackChange={setActiveTrack}
+            onTrackChange={(t) => { setActiveTrack(t); setAutoPlay(false); }}
             onDropSend={handleDropSend}
             syncStatus={syncStatus}
             VIBE_TAGS={VIBE_TAGS}
+            autoPlay={autoPlay}
           />
         </motion.section>
 
