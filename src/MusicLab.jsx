@@ -7,7 +7,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "./Layout";
-import { fetchQueue, saveQueue, fetchPlaylists, createPlaylist, addTrackToPlaylist } from "./GoogleDriveService";
+import { usePlayer } from "./PlayerContext";
+import { fetchPlaylists, createPlaylist, addTrackToPlaylist } from "./GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
@@ -24,11 +25,11 @@ const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
 // ─── VIBE TAGS CONFIG ────────────────────────────────────────
 const VIBE_TAGS = [
-  { id: "all",         label: "ALL",        icon: "◈", color: ACID   },
-  { id: "gaming",      label: "GAMING",     icon: "◉", color: "#00ffcc" },
-  { id: "420_chill",   label: "420 CHILL",  icon: "◎", color: "#aaff44" },
-  { id: "dnb",         label: "DnB",        icon: "⚡", color: "#ff6b35" },
-  { id: "romantiqueo", label: "ROMANTIQUEO",icon: "♥", color: PURPLE  },
+  { id: "all",         label: "ALL",    icon: "◈", color: "#ffffff"  },
+  { id: "gaming",      label: "GAMING", icon: "◉", color: "#00ffcc" },
+  { id: "420_chill",   label: "420",    icon: "◎", color: "#aaff44" },
+  { id: "dnb",         label: "DnB",    icon: "⚡", color: "#ff6b35" },
+  { id: "romantiqueo", label: "♥",      icon: "♥", color: PURPLE    },
 ];
 
 // ─── DEMO DATA ───────────────────────────────────────────────
@@ -70,8 +71,8 @@ export default function MusicLab({
   const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
   const rawDrops  = db?.music_lab?.drops  ?? [];
 
+  // ── Estado local (UI solamente) ───────────────────────────
   const [activeVibe,        setActiveVibe]        = useState("all");
-  const [activeTrack,       setActiveTrack]        = useState(rawTracks[0] ?? null);
   const [showAdd,           setShowAdd]            = useState(false);
   const [showDelete,        setShowDelete]         = useState(false);
   const [showEdit,          setShowEdit]           = useState(false);
@@ -80,13 +81,18 @@ export default function MusicLab({
   const [pendingDrop,       setPendingDrop]        = useState(null);
   const [localTracks,       setLocalTracks]        = useState(rawTracks);
   const [localDrops,        setLocalDrops]         = useState(rawDrops);
-  const [syncStatus,        setSyncStatus]         = useState("idle");
   const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
   const [showPlaylistModal, setShowPlaylistModal]  = useState(false);
   const [pendingTrack,      setPendingTrack]       = useState(null);
   const [toast,             setToast]              = useState(null);
-  const [localQueue,        setLocalQueue]         = useState([]);
-  const [autoPlaySignal,    setAutoPlaySignal]      = useState(0);
+
+  // ── Estado de reproducción — viene de PlayerContext ───────
+  const {
+    activeTrack, setActiveTrack,
+    localQueue, addToQueue, removeFromQueue, playTrack,
+    autoPlaySignal, setAutoPlaySignal,
+    syncStatus,
+  } = usePlayer();
 
   // ── Efectos de carga ─────────────────────────────────────
   useEffect(() => {
@@ -207,19 +213,17 @@ export default function MusicLab({
   // ── Handlers Cola ────────────────────────────────────────
   const handleAddToQueue = (track) => {
     if (!track) return;
-    setLocalQueue((q) => q.find((t) => t.id === track.id) ? q : [...q, track]);
+    addToQueue(track);
     setToast("AÑADIDO A COLA");
     setTimeout(() => setToast(null), 2500);
   };
 
   const handleRemoveFromQueue = (trackId) => {
-    setLocalQueue((q) => q.filter((t) => t.id !== trackId));
+    removeFromQueue(trackId);
   };
 
   const handleQueueAdvance = (track) => {
-    setLocalQueue((q) => q.filter((t) => t.id !== track.id));
-    setActiveTrack(track);
-    setAutoPlaySignal((n) => n + 1);
+    playTrack(track);
   };
 
   // ── Handlers Drops ───────────────────────────────────────
@@ -394,27 +398,27 @@ export default function MusicLab({
                     [{String(filteredTracks.length).padStart(2, "0")}]
                   </span>
                 </div>
-                <div className="flex gap-2">
-                  <motion.button whileTap={{ scale: 0.9 }}
+                <div className="flex gap-1">
+                  <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
                     onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
-                    className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: ACID, border: `1px solid ${showAdd ? ACID + "66" : ACID + "33"}`,
-                      background: showAdd ? `${ACID}12` : `${ACID}06` }}>
-                    {showAdd ? "✕ CANCEL" : "+ AÑADIR"}
+                      background: showAdd ? `${ACID}15` : `${ACID}06` }}>
+                    {showAdd ? "✕" : "+"}
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.9 }}
+                  <motion.button whileTap={{ scale: 0.9 }} title="Editar track"
                     onClick={() => { setShowEdit((p) => !p); setShowDelete(false); setShowAdd(false); setEditingTrack(null); }}
-                    className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: PURPLE, border: `1px solid ${showEdit ? PURPLE + "66" : PURPLE + "33"}`,
-                      background: showEdit ? `${PURPLE}12` : `${PURPLE}06` }}>
-                    {showEdit ? "✕ CANCEL" : "✎ EDITAR"}
+                      background: showEdit ? `${PURPLE}15` : `${PURPLE}06` }}>
+                    {showEdit ? "✕" : "✎"}
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.9 }}
+                  <motion.button whileTap={{ scale: 0.9 }} title="Eliminar track"
                     onClick={() => { setShowDelete((p) => !p); setShowAdd(false); setShowEdit(false); setEditingTrack(null); }}
-                    className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: "#ff4444", border: `1px solid ${showDelete ? "#ff444466" : "#ff444433"}`,
-                      background: showDelete ? "#ff444412" : "#ff444406" }}>
-                    {showDelete ? "✕ CANCEL" : "− ELIMINAR"}
+                      background: showDelete ? "#ff444415" : "#ff444406" }}>
+                    {showDelete ? "✕" : "−"}
                   </motion.button>
                 </div>
               </div>
@@ -491,7 +495,7 @@ export default function MusicLab({
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.vibe)}
-                        onClick={() => { setActiveTrack(track); setAutoPlaySignal((n) => n + 1); }}
+                        onClick={() => { playTrack(track); }}
                         onAddToQueue={handleAddToQueue}
                         onAddToPlaylist={handleAddToPlaylist}
                         onDrop={(t) => setActiveTrack(t)}
@@ -562,11 +566,18 @@ export default function MusicLab({
                 style={{ color: PURPLE, background: PURPLE_BG, border: `1px solid ${PURPLE_BORDER}`, fontFamily: FONT_MONO }}>
                 Cuando lanzas un Drop, aparece como una alerta intrusiva la próxima vez que tu persona abra el Búnker. Selecciona un track y toca ⚡ LANZAR DROP.
               </div>
-              <DropsHistory drops={localDrops} tracks={localTracks}
-                onPlay={(track) => setActiveTrack(track)}
+              <DropsHistory drops={localDrops} tracks={localTracks} userId={userId}
+                onPlay={(track) => playTrack(track)}
                 onMarkSeen={(dropId) => {
                   setLocalDrops((prev) => prev.map((d) => d.id === dropId ? { ...d, seen: true } : d));
                   onMarkDropSeen?.(dropId);
+                }}
+                onSaveDropSeen={(dropId) => {
+                  setLocalDrops((prev) => prev.map((d) => d.id === dropId ? { ...d, favorited: true, seen: true } : d));
+                  onMarkDropSeen?.(dropId);
+                }}
+                onDeleteDrop={(dropId) => {
+                  setLocalDrops((prev) => prev.filter((d) => d.id !== dropId));
                 }}
               />
             </motion.div>

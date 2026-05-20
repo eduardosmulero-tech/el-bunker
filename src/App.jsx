@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { VaultProvider, useVault, BOOT } from "./VaultContext";
+import { PlayerProvider }                from "./PlayerContext";
 import Layout                            from "./Layout";
 import LoginScreen                       from "./LoginScreen";
 import Vault                             from "./Vault";
@@ -347,7 +348,12 @@ const AppCore = () => {
     return <LoginScreen onLogin={login} isLoading={false} error={bootError} />;
   }
 
-  return <AuthenticatedApp />;
+  const tracks = db?.music_lab?.tracks ?? [];
+  return (
+    <PlayerProvider userId={user?.id ?? null} tracks={tracks}>
+      <AuthenticatedApp />
+    </PlayerProvider>
+  );
 };
 
 // ─── ROOT EXPORT ─────────────────────────────────────────────

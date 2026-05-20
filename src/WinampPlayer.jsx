@@ -4,6 +4,7 @@ import { ACID, PURPLE, BG } from "./Layout";
 import { getStreamUrl } from "./GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
+import { usePlayer } from "./PlayerContext";
 
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
@@ -37,18 +38,23 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
 );
 
 // ─── WINAMP PLAYER ───────────────────────────────────────────
-export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, onQueueAdvance, onDropSend, syncStatus = "idle", autoPlaySignal = 0, VIBE_TAGS }) => {  const audioRef    = useRef(null);
+export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
+  const {
+    activeTrack: track, setActiveTrack,
+    isPlaying: playing, setIsPlaying: setPlaying,
+    localQueue: queue,
+    loop, setLoop, shuffle, setShuffle,
+    autoPlaySignal, syncStatus,
+    audioRef, ytPlayerRef, pollingRef,
+    isYouTube: isYouTubeCtx,
+    skip, startPolling, stopPolling,
+  } = usePlayer();
+
   const iframeRef   = useRef(null);
-  const wakeLockRef = useRef(null);
-  const ytPlayerRef = useRef(null);
-  const pollingRef  = useRef(null);
-  const [playing,  setPlaying]  = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume,   setVolume]   = useState(80);
   const [duration, setDuration] = useState(0);
   const [currentT, setCurrentT] = useState(0);
-  const [loop,     setLoop]     = useState(false);
-  const [shuffle,  setShuffle]  = useState(false);
   const [showDrop, setShowDrop] = useState(false);
   const [ytReady,  setYtReady]  = useState(false);
 
@@ -78,34 +84,18 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
     return () => clearTimeout(timer);
   }, [autoPlaySignal]);
 
-  const stopPolling = () => {
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-  };
-
-  const startPolling = () => {
-    stopPolling();
-    pollingRef.current = setInterval(() => {
-      const p = ytPlayerRef.current;
-      if (!p || typeof p.getCurrentTime !== "function") return;
-      const ct  = p.getCurrentTime() || 0;
-      const dur = p.getDuration()    || 0;
+  // startPolling/stopPolling vienen de PlayerContext
+  // Adaptador local que actualiza el estado visual de este componente
+  const startPollingLocal = () => {
+    startPolling((ct, dur) => {
       setCurrentT(ct);
       setDuration(dur);
       setProgress(dur > 0 ? (ct / dur) * 100 : 0);
-    }, 500);
+    });
   };
 
-  const skip = useCallback((dir) => {
-    if (dir === 1 && queue.length > 0) {
-      onQueueAdvance?.(queue[0]); return;
-    }
-    const idx = tracks.findIndex((t) => t.id === track?.id);
-    if (idx < 0) return;
-    let nextIdx;
-    if (shuffle) nextIdx = Math.floor(Math.random() * tracks.length);
-    else         nextIdx = (idx + dir + tracks.length) % tracks.length;
-    onTrackChange?.(tracks[nextIdx]);
-  }, [tracks, queue, track?.id, loop, shuffle, onTrackChange, onQueueAdvance]);
+  // skip viene de PlayerContext — wrapeamos para pasar tracks filtrados si hay filtro activo
+  const skipDir = useCallback((dir) => skip(dir, tracks), [skip, tracks]);
 
   const initYTPlayer = useCallback(() => {
     if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }
@@ -122,12 +112,12 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
         },
         onStateChange: (e) => {
           const s = e.data;
-          if (s === window.YT.PlayerState.PLAYING) { setPlaying(true);  startPolling(); }
+          if (s === window.YT.PlayerState.PLAYING) { setPlaying(true);  startPollingLocal(); }
           else if (s === window.YT.PlayerState.PAUSED)  { setPlaying(false); stopPolling(); }
           else if (s === window.YT.PlayerState.ENDED)   {
             setPlaying(false); stopPolling();
             if (loop) { ytPlayerRef.current.seekTo(0, true); ytPlayerRef.current.playVideo(); }
-            else { skip(1); }
+            else { skipDir(1); }
           }
         },
       },
@@ -167,13 +157,17 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
   };
 
   const seekTo = (pct) => {
+    const targetTime = (pct / 100) * duration;
     if (isYouTube) {
       if (!ytPlayerRef.current || !duration) return;
-      ytPlayerRef.current.seekTo((pct / 100) * duration, true);
+      ytPlayerRef.current.seekTo(targetTime, true);
     } else {
       if (!audioRef.current || !duration) return;
-      audioRef.current.currentTime = (pct / 100) * duration;
+      audioRef.current.currentTime = targetTime;
     }
+    // BUG-NUEVO-06: actualizar visual aunque esté en pausa
+    setCurrentT(targetTime);
+    setProgress(pct);
   };
 
   const changeVolume = (v) => {
@@ -208,8 +202,8 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
       if (isYouTube) { ytPlayerRef.current?.pauseVideo?.(); }
       else { audioRef.current?.pause(); setPlaying(false); }
     });
-    navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
-    navigator.mediaSession.setActionHandler("nexttrack",     () => skip(1));
+    navigator.mediaSession.setActionHandler("previoustrack", () => skipDir(-1));
+    navigator.mediaSession.setActionHandler("nexttrack",     () => skipDir(1));
     return () => {
       ["play", "pause", "previoustrack", "nexttrack"].forEach((action) => {
         try { navigator.mediaSession.setActionHandler(action, null); } catch (_) {}
@@ -351,14 +345,14 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
           <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" />
         </div>
         <div className="flex items-center gap-3">
-          <WinampBtn label="◀◀" color={accentColor} onClick={() => skip(-1)} title="Prev" size="sm" />
+          <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" size="sm" />
           <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
             style={{ background: `${accentColor}22`, border: `2px solid ${accentColor}66`, color: accentColor,
               boxShadow: playing ? `0 0 16px ${accentColor}55` : "none", textShadow: `0 0 8px ${accentColor}` }}>
             {playing ? "⏸" : "▶"}
           </motion.button>
-          <WinampBtn label="▶▶" color={accentColor} onClick={() => skip(1)} title="Next" size="sm" />
+          <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>

@@ -140,40 +140,79 @@ export const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
   );
 };
 
-export const DropsHistory = ({ drops, tracks, onPlay, onMarkSeen }) => {
-  if (!drops.length) return (
+const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }) => (
+  <motion.div key={drop.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
+    className="flex items-start gap-3 p-3 rounded-sm"
+    style={{ background: PURPLE_BG, border: `1px solid ${PURPLE_BORDER}`, fontFamily: FONT_MONO }}>
+    <span style={{ color: PURPLE, fontSize: 16 }}>⚡</span>
+    <div className="flex-1 min-w-0">
+      {track && (
+        <p className="text-xs font-bold truncate cursor-pointer" style={{ color: PURPLE }}
+          onClick={() => { if (!track) return; onMarkSeen?.(drop.id); onPlay(track); }}>
+          {track.title} — {track.artist}
+        </p>
+      )}
+      {drop.memory && (
+        <p className="text-xs mt-0.5 opacity-60 italic leading-relaxed" style={{ color: PURPLE }}>
+          "{drop.memory}"
+        </p>
+      )}
+      <p className="text-xs mt-1 opacity-25 tracking-wider" style={{ color: PURPLE }}>
+        {new Date(drop.created_at).toLocaleDateString("es", { day: "2-digit", month: "short" })}
+        {" · "}{drop.from ?? "DROP"}
+      </p>
+    </div>
+    <div className="flex flex-col gap-1 flex-shrink-0">
+      {onSave && !isSaved && (
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => onSave(drop.id)} title="Guardar drop"
+          className="w-6 h-6 flex items-center justify-center rounded-sm text-xs"
+          style={{ color: PURPLE, border: `1px solid ${PURPLE}44`, background: `${PURPLE}08` }}>★</motion.button>
+      )}
+      {isSaved && (
+        <span className="w-6 h-6 flex items-center justify-center text-xs" style={{ color: PURPLE }}>★</span>
+      )}
+      {onDelete && (
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => onDelete(drop.id)} title="Eliminar drop"
+          className="w-6 h-6 flex items-center justify-center rounded-sm text-xs"
+          style={{ color: "#ff444488", border: "1px solid #ff444422", background: "#ff444406" }}>✕</motion.button>
+      )}
+    </div>
+  </motion.div>
+);
+
+export const DropsHistory = ({ drops, tracks, userId, onPlay, onMarkSeen, onSaveDropSeen, onDeleteDrop }) => {
+  // BUG-054: filtrar drops enviados por el propio usuario (solo ver los recibidos)
+  const received = drops.filter((d) => d.from !== userId);
+  const pending  = received.filter((d) => !d.seen && !d.favorited);
+  const saved    = received.filter((d) => d.favorited);
+
+  if (!received.length) return (
     <p className="text-xs opacity-20 tracking-widest text-center py-6 uppercase"
-      style={{ color: ACID, fontFamily: FONT_MONO }}>— sin drops aún —</p>
+      style={{ color: ACID, fontFamily: FONT_MONO }}>— sin drops recibidos —</p>
   );
+
   return (
-    <div className="flex flex-col gap-2">
-      {[...drops].reverse().map((drop) => {
-        const track = tracks.find((t) => t.id === drop.track_id);
-        return (
-          <motion.div key={drop.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
-            className="flex items-start gap-3 p-3 rounded-sm cursor-pointer"
-            style={{ background: PURPLE_BG, border: `1px solid ${PURPLE_BORDER}`, fontFamily: FONT_MONO }}
-            onClick={() => { if (!track) return; onMarkSeen?.(drop.id); onPlay(track); }}>
-            <span style={{ color: PURPLE, fontSize: 16 }}>⚡</span>
-            <div className="flex-1 min-w-0">
-              {track && (
-                <p className="text-xs font-bold truncate" style={{ color: PURPLE }}>
-                  {track.title} — {track.artist}
-                </p>
-              )}
-              {drop.memory && (
-                <p className="text-xs mt-0.5 opacity-60 italic leading-relaxed" style={{ color: PURPLE }}>
-                  "{drop.memory}"
-                </p>
-              )}
-              <p className="text-xs mt-1 opacity-25 tracking-wider" style={{ color: PURPLE }}>
-                {new Date(drop.created_at).toLocaleDateString("es", { day: "2-digit", month: "short" })}
-                {" · "}{drop.from ?? "DROP"}
-              </p>
-            </div>
-          </motion.div>
-        );
-      })}
+    <div className="flex flex-col gap-4">
+      {pending.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: PURPLE }}>pendientes</span>
+          {[...pending].reverse().map((drop) => (
+            <DropCard key={drop.id} drop={drop} track={tracks.find((t) => t.id === drop.track_id)}
+              onPlay={onPlay} onMarkSeen={onMarkSeen}
+              onSave={onSaveDropSeen} onDelete={onDeleteDrop} isSaved={false} />
+          ))}
+        </div>
+      )}
+      {saved.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: PURPLE }}>guardados</span>
+          {[...saved].reverse().map((drop) => (
+            <DropCard key={drop.id} drop={drop} track={tracks.find((t) => t.id === drop.track_id)}
+              onPlay={onPlay} onMarkSeen={onMarkSeen}
+              onDelete={onDeleteDrop} isSaved={true} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };
