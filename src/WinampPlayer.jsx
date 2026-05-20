@@ -37,8 +37,7 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
 );
 
 // ─── WINAMP PLAYER ───────────────────────────────────────────
-export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, onQueueAdvance, onDropSend, syncStatus = "idle", autoPlay = false, VIBE_TAGS }) => {
-  const audioRef    = useRef(null);
+export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, onQueueAdvance, onDropSend, syncStatus = "idle", autoPlaySignal = 0, VIBE_TAGS }) => {  const audioRef    = useRef(null);
   const iframeRef   = useRef(null);
   const wakeLockRef = useRef(null);
   const ytPlayerRef = useRef(null);
@@ -65,17 +64,19 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
   }, [track?.id]);
 
   useEffect(() => {
-    if (!autoPlay || !track) return;
+    if (!autoPlaySignal || !track) return;
     const timer = setTimeout(() => {
       if (isYouTube) {
-        ytPlayerRef.current?.playVideo();
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === "function") {
+          ytPlayerRef.current.playVideo();
+        }
       } else {
         audioRef.current?.play().catch(() => {});
         setPlaying(true);
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [track?.id, autoPlay]);
+  }, [autoPlaySignal]);
 
   const stopPolling = () => {
     if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
@@ -199,8 +200,14 @@ export const WinampPlayer = ({ track, tracks = [], queue = [], onTrackChange, on
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title ?? "Sin título", artist: track.artist ?? "", album: "el búnker", artwork,
     });
-    navigator.mediaSession.setActionHandler("play",          () => { audioRef.current?.play(); setPlaying(true);  });
-    navigator.mediaSession.setActionHandler("pause",         () => { audioRef.current?.pause(); setPlaying(false); });
+    navigator.mediaSession.setActionHandler("play", () => {
+      if (isYouTube) { ytPlayerRef.current?.playVideo?.(); }
+      else { audioRef.current?.play(); setPlaying(true); }
+    });
+    navigator.mediaSession.setActionHandler("pause", () => {
+      if (isYouTube) { ytPlayerRef.current?.pauseVideo?.(); }
+      else { audioRef.current?.pause(); setPlaying(false); }
+    });
     navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
     navigator.mediaSession.setActionHandler("nexttrack",     () => skip(1));
     return () => {
