@@ -21,7 +21,10 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
   const set    = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
   const submit = () => {
     if (!form.title.trim()) return;
-    onAdd({ ...form, id: uuid(), era_id: null, added_at: new Date().toISOString() });
+    onAdd(initialData
+      ? { ...initialData, ...form }
+      : { ...form, id: uuid(), era_id: null, added_at: new Date().toISOString() }
+    );
   };
 
   const inputStyle = {
