@@ -63,6 +63,7 @@ export default function MusicLab({
 }) {
   const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
   const rawDrops  = db?.music_lab?.drops  ?? [];
+  const userDrops = userId ? rawDrops.filter((d) => d.to === userId || d.from === userId) : rawDrops;
 
   // ── Estado local (UI solamente) ───────────────────────────
   const [showAdd,           setShowAdd]            = useState(false);
@@ -71,7 +72,7 @@ export default function MusicLab({
   const [editingTrack,      setEditingTrack]       = useState(null);
   const [activeTab,         setActiveTab]          = useState("tracks");
   const [localTracks,       setLocalTracks]        = useState(rawTracks);
-  const [localDrops,        setLocalDrops]         = useState(rawDrops);
+  const [localDrops,        setLocalDrops]         = useState(userDrops);
   const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
   const [showPlaylistModal,  setShowPlaylistModal]  = useState(false);
   const [showPlaylistDetail, setShowPlaylistDetail] = useState(null); // playlist id
@@ -96,6 +97,14 @@ export default function MusicLab({
 
   // ── Handlers Playlist ────────────────────────────────────
   const handleAddToPlaylist = (track) => { setPendingTrack(track); setShowPlaylistModal(true); };
+
+  const handleEditPlaylist = (updatedPlaylists) => {
+    setLocalPlaylists(updatedPlaylists);
+  };
+
+  const handleDeletePlaylist = (updatedPlaylists) => {
+    setLocalPlaylists(updatedPlaylists);
+  };
 
   const handleSelectPlaylist = async (playlistId) => {
     if (!pendingTrack) return;
@@ -303,7 +312,7 @@ export default function MusicLab({
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>siguientes</span>
                   <div className="flex flex-col gap-2">
                     {localQueue.filter((t) => t.id !== activeTrack?.id).map((track) => (
-                      <div key={track.id} className="flex items-center gap-3 p-3 rounded-sm"
+                      <div key={`queue-next-${track.id}`} className="flex items-center gap-3 p-3 rounded-sm"
                         style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
@@ -556,13 +565,11 @@ export default function MusicLab({
                   const updated = localPlaylists.map((p) =>
                     p.id === plId ? { ...p, track_ids: p.track_ids.filter((id) => id !== trackId) } : p
                   );
-                  setLocalPlaylists(updated);
-                  onEditPlaylist?.(updated);
+                  handleEditPlaylist(updated);
                 }}
                 onDeletePlaylist={(plId) => {
                   const updated = localPlaylists.filter((p) => p.id !== plId);
-                  setLocalPlaylists(updated);
-                  onDeletePlaylist?.(updated);
+                  handleDeletePlaylist(updated);
                 }}
               />
             );
