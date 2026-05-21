@@ -17,8 +17,6 @@ const VIBE_COLORS = {
   dnb:         "#ff6b35",
   romantiqueo: "#bf00ff",
 };
-import { AudioVisualizer } from "./AudioVisualizer";
-
 const PlayerContext = createContext(null);
 
 export const usePlayer = () => {
@@ -92,21 +90,21 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   // ── Skip ─────────────────────────────────────────────────
   const skip = useCallback((dir, filteredTracks) => {
-    const list = filteredTracks ?? tracks;
+    // Cola es fuente de verdad única para dir=1
     if (dir === 1 && localQueue.length > 0) {
-      const next = localQueue.find((t) => t.id !== activeTrack?.id);
-      if (next) {
-        setLocalQueue((q) => q.filter((t) => t.id !== next.id));
-        setActiveTrack(next);
-        setAutoPlaySignal((n) => n + 1);
-        return;
-      }
+      const next = localQueue[0];
+      setLocalQueue((q) => q.slice(1));
+      setActiveTrack(next);
+      setAutoPlaySignal((n) => n + 1);
+      return;
     }
+    const list = filteredTracks ?? tracks;
+    if (!list.length) return;
     const idx = list.findIndex((t) => t.id === activeTrack?.id);
-    if (idx < 0) return;
+    const base = idx < 0 ? 0 : idx;
     const nextIdx = shuffle
       ? Math.floor(Math.random() * list.length)
-      : (idx + dir + list.length) % list.length;
+      : (base + dir + list.length) % list.length;
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
   }, [tracks, localQueue, activeTrack?.id, shuffle]);
@@ -160,6 +158,23 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     }
   }, [activeVibe]);
 
+  // ── onEnded centralizado ──────────────────────────────────────
+  const handleAudioEnded = useCallback(() => {
+    if (loop && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    } else {
+      skip(1);
+    }
+  }, [loop, skip]);
+
+  // ── src del audio: reactivo al track activo ───────────────────
+  const audioSrc = (!activeTrack || activeTrack.type === "youtube")
+    ? null
+    : activeTrack.drive_file_id
+      ? `https://www.googleapis.com/drive/v3/files/${activeTrack.drive_file_id}?alt=media`
+      : null;
+
   return (
     <PlayerContext.Provider value={{
       activeTrack, setActiveTrack,
@@ -176,6 +191,17 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       skip, addToQueue, removeFromQueue, playTrack,
       startPolling, stopPolling,
     }}>
+      {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
+      <audio
+        ref={audioRef}
+        src={audioSrc ?? undefined}
+        loop={false}
+        style={{ display: "none" }}
+        onEnded={handleAudioEnded}
+        onTimeUpdate={(e) => {
+          // WinampPlayer se suscribe a audioRef directamente para el progreso visual
+        }}
+      />
       {children}
     </PlayerContext.Provider>
   );

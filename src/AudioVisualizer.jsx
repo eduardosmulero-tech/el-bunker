@@ -55,9 +55,9 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
           const idx = Math.floor((i / BAR_COUNT) * dataArray.length);
           barH = (dataArray[idx] / 255) * H * 0.9;
         } else {
-          const base   = Math.sin(now * 1.2 + i * 0.35) * 0.35 + 0.38;
-          const ripple = Math.sin(now * 3.1 + i * 0.7)  * 0.08;
-          barH = (base + ripple) * H * 0.35;
+          const base   = Math.sin(now * 1.2 + i * 0.35) * 0.38 + 0.52;
+          const ripple = Math.sin(now * 3.1 + i * 0.7)  * 0.12;
+          barH = Math.max((base + ripple) * H * 0.72, H * 0.08);
         }
 
         const x    = i * (barW + 1.5);

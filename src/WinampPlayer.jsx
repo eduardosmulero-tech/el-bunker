@@ -178,6 +178,24 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     else           { if (audioRef.current)    audioRef.current.volume = v / 100; }
   };
 
+  // ── Suscripción a eventos del <audio> centralizado ───────────
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTimeUpdate = () => {
+      setCurrentT(audio.currentTime);
+      setDuration(audio.duration || 0);
+      setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
+    };
+    const onLoaded = () => setDuration(audio.duration || 0);
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    audio.addEventListener("loadedmetadata", onLoaded);
+    return () => {
+      audio.removeEventListener("timeupdate", onTimeUpdate);
+      audio.removeEventListener("loadedmetadata", onLoaded);
+    };
+  }, [audioRef.current]);
+
   useEffect(() => {
     if (masterVolume == null) return;
     setVolume(masterVolume);
@@ -233,18 +251,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
     >
-      {track?.type === "drive" && track?.drive_file_id && (
-        <audio
-          ref={audioRef}
-          src={getStreamUrl(track.drive_file_id)}
-          loop={loop}
-          onTimeUpdate={(e) => {
-            setCurrentT(e.target.currentTime);
-            setProgress((e.target.currentTime / e.target.duration) * 100 || 0);
-          }}
-          onLoadedMetadata={(e) => setDuration(e.target.duration)}
-          onEnded={() => { if (!loop) skip(1); }}
-        />
+      {/* <audio> movido a PlayerProvider — siempre montado, nunca se destruye al cambiar tab */}
+      {track?.type === "drive" && (
+        <span style={{ display: "none" }} data-audio-managed="PlayerContext" />
       )}
       {isYouTube && (
         <div
