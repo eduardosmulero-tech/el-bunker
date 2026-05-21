@@ -169,17 +169,15 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       const videoId = extractYouTubeId(activeTrack.youtube_url ?? activeTrack.url ?? "");
       // Si el player ya existe, solo cambiar video — nunca destroy() sobre div controlado por React
       if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === "function") {
-        setYtReady(false);
         ytPlayerRef.current.loadVideoById(videoId);
         return;
       }
-      setYtReady(false);
       ytPlayerRef.current = new window.YT.Player("yt-player-div", {
         videoId,
         playerVars: { autoplay: 0, controls: 0, rel: 0 },
         events: {
           onReady: (e) => {
-            e.target.setVolume(80);
+            e.target.setVolume(masterVolume ?? 80);
           },
           onStateChange: (e) => {
             const s = e.data;
