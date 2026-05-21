@@ -4,6 +4,7 @@
 //  Componentes extraídos a archivos propios (PLIEGO-035).
 // ============================================================
 
+import { useState, useEffect, useRef, useCallback } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "./Layout";
