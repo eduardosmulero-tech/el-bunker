@@ -62,10 +62,6 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   const isYouTube = activeTrack?.type === "youtube" || (!activeTrack?.type && activeTrack?.url);
 
-  // ref para que onStateChange de YT no tenga stale closure sobre skip
-  const skipRef = useRef(null);
-  useEffect(() => { skipRef.current = skip; }, [skip]);
-
   // ── Persistencia cola en Drive ────────────────────────────
   useEffect(() => {
     if (!userId) return;
@@ -126,6 +122,10 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
   }, [tracks, localQueue, activeTrack?.id, shuffle]);
+
+  // ref para que onStateChange de YT no tenga stale closure sobre skip
+  const skipRef = useRef(null);
+  useEffect(() => { skipRef.current = skip; }, [skip]);
 
   // ── Handlers cola ─────────────────────────────────────────
   const addToQueue = useCallback((track) => {
