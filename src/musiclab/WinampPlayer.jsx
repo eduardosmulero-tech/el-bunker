@@ -45,14 +45,13 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     localQueue: queue,
     loop, setLoop, shuffle, setShuffle,
     autoPlaySignal, syncStatus,
-    audioRef, ytPlayerRef, pollingRef,
+    audioRef, ytPlayerRef,
     isYouTube: isYouTubeCtx,
-    ytReady,
-    skip, startPolling, stopPolling,
+    skip,
     masterVolume, setMasterVolume,
   } = usePlayer();
 
-  const iframeRef   = useRef(null);
+  const ytPollingRef = useRef(null);
   const [progress, setProgress] = useState(0);
   const [volume,   setVolume]   = useState(masterVolume ?? 80);
   const [duration, setDuration] = useState(0);
@@ -84,29 +83,28 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     return () => clearTimeout(timer);
   }, [autoPlaySignal]);
 
-  // startPolling/stopPolling vienen de PlayerContext
-  // Adaptador local que actualiza el estado visual de este componente
-  const startPollingLocal = () => {
-    startPolling((ct, dur) => {
+  const skipDir = useCallback((dir) => skip(dir, tracks), [skip, tracks]);
+
+  // ── Polling YT — local, reactivo a isPlaying ──────────────
+  useEffect(() => {
+    if (!isYouTube) return;
+    if (!playing) {
+      if (ytPollingRef.current) { clearInterval(ytPollingRef.current); ytPollingRef.current = null; }
+      return;
+    }
+    ytPollingRef.current = setInterval(() => {
+      const p = ytPlayerRef.current;
+      if (!p || typeof p.getCurrentTime !== "function") return;
+      const ct  = p.getCurrentTime() || 0;
+      const dur = p.getDuration()    || 0;
       setCurrentT(ct);
       setDuration(dur);
       setProgress(dur > 0 ? (ct / dur) * 100 : 0);
-    });
-  };
-
-  // skip viene de PlayerContext — wrapeamos para pasar tracks filtrados si hay filtro activo
-  const skipDir = useCallback((dir) => skip(dir, tracks), [skip, tracks]);
-
-  // YT.Player se inicializa en PlayerProvider (ADR-004 Enmienda S21)
-  // WinampPlayer sincroniza estado visual cuando ytReady cambia a true
-  useEffect(() => {
-    if (!ytReady || !ytPlayerRef.current) return;
-    const p = ytPlayerRef.current;
-    try {
-      if (typeof p.getDuration === "function") setDuration(p.getDuration() || 0);
-      if (typeof p.setVolume === "function") p.setVolume(volume);
-    } catch (_) {}
-  }, [ytReady]);
+    }, 500);
+    return () => {
+      if (ytPollingRef.current) { clearInterval(ytPollingRef.current); ytPollingRef.current = null; }
+    };
+  }, [playing, track?.id, isYouTube]);
 
   const togglePlay = () => {
     if (isYouTube) {
@@ -157,7 +155,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("loadedmetadata", onLoaded);
     };
-  }, [audioRef.current]);
+  }, []);
 
   useEffect(() => {
     if (masterVolume == null) return;

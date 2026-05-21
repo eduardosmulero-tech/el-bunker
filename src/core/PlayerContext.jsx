@@ -53,11 +53,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeVibe,     setActiveVibe]     = useState("all");
   const [masterVolume,   setMasterVolume]   = useState(80);
 
-  const [ytReady, setYtReady] = useState(false);
-
   const audioRef    = useRef(null);
   const ytPlayerRef = useRef(null);
-  const pollingRef  = useRef(null);
   const wakeLockRef = useRef(null);
 
   const isYouTube = activeTrack?.type === "youtube" || (!activeTrack?.type && activeTrack?.url);
@@ -87,20 +84,6 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       .then(() => setSyncStatus("idle"))
       .catch(() => { setSyncStatus("error"); setTimeout(() => setSyncStatus("idle"), 4000); });
   }, [activeTrack?.id, localQueue, userId]);
-
-  // ── Polling YT ────────────────────────────────────────────
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) { clearInterval(pollingRef.current); pollingRef.current = null; }
-  }, []);
-
-  const startPolling = useCallback((onTick) => {
-    stopPolling();
-    pollingRef.current = setInterval(() => {
-      const p = ytPlayerRef.current;
-      if (!p || typeof p.getCurrentTime !== "function") return;
-      onTick(p.getCurrentTime() || 0, p.getDuration() || 0);
-    }, 500);
-  }, [stopPolling]);
 
   // ── Skip ─────────────────────────────────────────────────
   const skip = useCallback((dir, filteredTracks) => {
@@ -197,16 +180,12 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
         events: {
           onReady: (e) => {
             e.target.setVolume(80);
-            setYtReady(true);
           },
           onStateChange: (e) => {
             const s = e.data;
-            if (s === window.YT.PlayerState.PLAYING)      { setIsPlaying(true); }
-            else if (s === window.YT.PlayerState.PAUSED)  { setIsPlaying(false); stopPolling(); }
-            else if (s === window.YT.PlayerState.ENDED)   {
-              setIsPlaying(false); stopPolling();
-              skipRef.current?.(1);
-            }
+            if (s === window.YT.PlayerState.PLAYING)     { setIsPlaying(true); }
+            else if (s === window.YT.PlayerState.PAUSED) { setIsPlaying(false); }
+            else if (s === window.YT.PlayerState.ENDED)  { setIsPlaying(false); skipRef.current?.(1); }
           },
         },
       });
@@ -253,10 +232,9 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       syncStatus,
       activeVibe,   setActiveVibe,
       masterVolume, setMasterVolume,
-      audioRef, ytPlayerRef, pollingRef,
-      isYouTube, ytReady,
+      audioRef, ytPlayerRef,
+      isYouTube,
       skip, addToQueue, removeFromQueue, playTrack,
-      startPolling, stopPolling,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
