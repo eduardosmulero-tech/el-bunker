@@ -233,6 +233,15 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       ? `https://www.googleapis.com/drive/v3/files/${activeTrack.drive_file_id}?alt=media`
       : null;
 
+  // ── div YT fuera del árbol React — imperativo, nunca en JSX ──────────
+  useEffect(() => {
+    if (document.getElementById("yt-player-div")) return;
+    const div = document.createElement("div");
+    div.id = "yt-player-div";
+    div.style.display = "none";
+    document.body.appendChild(div);
+  }, []);
+
   return (
     <PlayerContext.Provider value={{
       activeTrack, setActiveTrack,
@@ -249,8 +258,6 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       skip, addToQueue, removeFromQueue, playTrack,
       startPolling, stopPolling,
     }}>
-      {/* div YT persistente — nunca se desmonta al cambiar de pestaña (ADR-004 Enmienda S21) */}
-      <div id="yt-player-div" style={{ display: "none" }} />
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
         ref={audioRef}

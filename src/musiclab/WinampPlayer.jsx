@@ -98,12 +98,14 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   const skipDir = useCallback((dir) => skip(dir, tracks), [skip, tracks]);
 
   // YT.Player se inicializa en PlayerProvider (ADR-004 Enmienda S21)
-  // WinampPlayer solo suscribe eventos visuales cuando ytReady cambia a true
+  // WinampPlayer sincroniza estado visual cuando ytReady cambia a true
   useEffect(() => {
     if (!ytReady || !ytPlayerRef.current) return;
     const p = ytPlayerRef.current;
-    if (typeof p.getDuration === "function") setDuration(p.getDuration() || 0);
-    p.setVolume(volume);
+    try {
+      if (typeof p.getDuration === "function") setDuration(p.getDuration() || 0);
+      if (typeof p.setVolume === "function") p.setVolume(volume);
+    } catch (_) {}
   }, [ytReady]);
 
   const togglePlay = () => {
