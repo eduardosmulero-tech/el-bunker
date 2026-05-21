@@ -67,7 +67,6 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     setProgress(0);
     setCurrentT(0);
     setDuration(0);
-    setYtReady(false);
   }, [track?.id]);
 
   useEffect(() => {
