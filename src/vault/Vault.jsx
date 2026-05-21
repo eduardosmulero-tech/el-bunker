@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useVault } from "./VaultContext";
+import { useVault } from "../core/VaultContext";
 import {
   motion,
   AnimatePresence,

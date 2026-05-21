@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, BG } from "./Layout";
-import { getStreamUrl } from "./GoogleDriveService";
+import { ACID, PURPLE, BG } from "../layout/Layout";
+import { getStreamUrl } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
-import { usePlayer } from "./PlayerContext";
+import { usePlayer } from "../core/PlayerContext";
 
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";

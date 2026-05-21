@@ -1,0 +1,269 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font-mono, 'JetBrains Mono', monospace); }
+  .wrap { padding: 8px 0; }
+  .phase-header { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; }
+  .phase-badge { font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 4px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .phase-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .phase-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
+
+  .file-block { border: 1px solid var(--color-border-tertiary); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+  .file-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--color-background-secondary); border-bottom: 1px solid var(--color-border-tertiary); cursor: pointer; user-select: none; }
+  .file-header:hover { background: var(--color-background-tertiary); }
+  .file-name { font-size: 12px; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-mono); flex: 1; }
+  .file-count { font-size: 10px; color: var(--color-text-tertiary); }
+  .chevron { font-size: 10px; color: var(--color-text-tertiary); transition: transform .2s; }
+  .chevron.open { transform: rotate(90deg); }
+
+  .items { padding: 6px 0; display: none; }
+  .items.open { display: block; }
+  .item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 12px; }
+  .item:hover { background: var(--color-background-secondary); }
+  .tag { font-size: 9px; font-weight: 500; padding: 2px 6px; border-radius: 3px; white-space: nowrap; letter-spacing: .1em; text-transform: uppercase; min-width: 54px; text-align: center; flex-shrink: 0; margin-top: 1px; }
+  .tag-bug { background: #FCEBEB; color: #791F1F; }
+  .tag-pliego { background: #E6F1FB; color: #0C447C; }
+  .tag-feat { background: #EAF3DE; color: #27500A; }
+  .tag-adr { background: #EEEDFE; color: #3C3489; }
+  @media (prefers-color-scheme: dark) {
+    .tag-bug { background: #501313; color: #F7C1C1; }
+    .tag-pliego { background: #042C53; color: #B5D4F4; }
+    .tag-feat { background: #173404; color: #C0DD97; }
+    .tag-adr { background: #26215C; color: #CECBF6; }
+  }
+  .item-label { font-size: 12px; color: var(--color-text-primary); line-height: 1.4; }
+  .item-sub { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.3; margin-top: 1px; }
+  .pliego-id { font-size: 10px; color: var(--color-text-tertiary); font-family: var(--font-mono); white-space: nowrap; flex-shrink: 0; padding-top: 3px; }
+
+  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; padding: 8px 12px; border: 1px solid var(--color-border-tertiary); border-radius: 6px; background: var(--color-background-secondary); }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--color-text-secondary); }
+
+  .divider { height: 1px; background: var(--color-border-tertiary); margin: 18px 0 4px; }
+</style>
+
+<div class="wrap">
+
+<div class="legend">
+  <div class="leg-item"><span class="tag tag-bug">bug</span> Bug confirmado</div>
+  <div class="leg-item"><span class="tag tag-pliego">pliego</span> Cambio técnico</div>
+  <div class="leg-item"><span class="tag tag-feat">feat</span> Feature nueva</div>
+  <div class="leg-item"><span class="tag tag-adr">adr</span> Decisión arquitectónica</div>
+</div>
+
+<!-- FASE 1 -->
+<div class="phase-header">
+  <span class="phase-badge" style="background:#FCEBEB;color:#791F1F;">Fase 1 — Crítico</span>
+  <div>
+    <div class="phase-title">Reproducción funcional</div>
+    <div class="phase-sub">Pliegos 041–045 · Bugs P1 + P2 que bloquean el uso real</div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron open">▶</span>
+    <span class="file-name">WinampPlayer.jsx</span>
+    <span class="file-count">4 items · PLIEGO-041</span>
+  </div>
+  <div class="items open">
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-036 — autoPlay como señal incremental</div><div class="item-sub">Reemplazar booleano estático por contador/timestamp para que useEffect se dispare en taps sucesivos</div></div><span class="pliego-id">041</span></div>
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-039 — Skip opera sobre allTracks, no filteredTracks</div><div class="item-sub">Recibir prop allTracks separada; la cola se resuelve sobre el conjunto completo independiente del filtro visual</div></div><span class="pliego-id">041</span></div>
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-002-003 — Race condition initYTPlayer</div><div class="item-sub">Guardar intento de autoPlay pendiente; ejecutar cuando ytPlayerRef.current esté listo</div></div><span class="pliego-id">041</span></div>
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">MediaSession para YouTube</div><div class="item-sub">Mapear action handlers (play/pause/next) a postMessage hacia iframe cuando audioRef es null</div></div><span class="pliego-id">041</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">MusicLab.jsx</span>
+    <span class="file-count">5 items · PLIEGO-042</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-041 — Borrar track activo avanza al siguiente</div><div class="item-sub">Antes de limpiar estado, buscar siguiente en cola o en lista; no dejar reproductor en null</div></div><span class="pliego-id">042</span></div>
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-035 — Track actual no debe añadirse a la cola</div><div class="item-sub">Separar lógica "reproducir ahora" de "encolar"; tap directo nunca muta queue</div></div><span class="pliego-id">042</span></div>
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R02 — Restructura de pestañas</div><div class="item-sub">Cola condicional primera; Drops condicional última; orden: Cola · Tracks · Lists · Drops</div></div><span class="pliego-id">042</span></div>
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R03 — Botones Añadir/Editar/Eliminar en Tracks y Lists</div><div class="item-sub">Actúan sobre item activo/seleccionado global, no inline por card</div></div><span class="pliego-id">042</span></div>
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-046 — Playlists creadas no aparecen en LISTS</div><div class="item-sub">Verificar lectura del array desde DB tras createPlaylist; forzar re-render</div></div><span class="pliego-id">042</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">AudioVisualizer.jsx</span>
+    <span class="file-count">1 item · PLIEGO-043</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-008 — Canvas negro en primer render</div><div class="item-sub">ResizeObserver con reintentos; no abortar draw loop si offsetWidth===0 en mount; reintentar hasta dimensiones válidas</div></div><span class="pliego-id">043</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">GoogleDriveService.js</span>
+    <span class="file-count">2 items · PLIEGO-044</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-024-PERSIST — Editar/eliminar track no persiste en Drive</div><div class="item-sub">Verificar que patchDb recibe payload correcto; confirmar que updateTrack/removeTrack del schema 3.4.0 están cableados</div></div><span class="pliego-id">044</span></div>
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-016b-v2 — Revisión getStreamUrl post-scope drive</div><div class="item-sub">Prerequisito de PLIEGO-R06; confirmar que stream MP3 desde Drive funciona con scope actual</div></div><span class="pliego-id">044</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">DropsManager.jsx / MusicLab.jsx</span>
+    <span class="file-count">2 items · PLIEGO-045</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">ERROR 33 — Drops solo detectados al entrar a MusicLab</div><div class="item-sub">Mover polling/detección de drops a VaultContext o App mount; no depender del ciclo de vida de MusicLab</div></div><span class="pliego-id">045</span></div>
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R05 — Drops favoritos UI</div><div class="item-sub">Toggle favorited/favorited_by en DropAlertModal y DropsHistory; schema 3.4.0 ya tiene los campos</div></div><span class="pliego-id">045</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FASE 2 -->
+<div class="phase-header">
+  <span class="phase-badge" style="background:#E6F1FB;color:#0C447C;">Fase 2 — Premium</span>
+  <div>
+    <div class="phase-title">Experiencia premium</div>
+    <div class="phase-sub">Pliegos 046–053 · Lo que hace que David abra MusicLab antes que YouTube Music</div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">VaultContext.jsx <span style="font-weight:400;color:var(--color-text-tertiary)">+ nuevo</span> PlayerContext.jsx</span>
+    <span class="file-count">3 items · PLIEGO-046 + PLIEGO-047</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-adr">adr</span><div><div class="item-label">ADR-004 — Elevar estado de reproducción a PlayerContext global</div><div class="item-sub">currentTrack, queue, isPlaying, progress salen de MusicLab y viven en un Context propio; MusicLab se convierte en consumidor</div></div><span class="pliego-id">046</span></div>
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Mini-Player global persistente</div><div class="item-sub">Barra inferior flotante visible en Vault y SmokeSession; estado de reproducción no muere al cambiar de módulo</div></div><span class="pliego-id">046</span></div>
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Sesión compartida (Listening Party)</div><div class="item-sub">Monitorear queue_[userId].json del otro usuario; botón "acoplarse" sincroniza track y posición</div></div><span class="pliego-id">047</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">WinampPlayer.jsx</span>
+    <span class="file-count">3 items · PLIEGO-048</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">PLIEGO-R06 — AddTrackForm rediseñado + type drive/youtube</div><div class="item-sub">Player bifurcado: iframe YT para youtube, audio nativo para drive; integra lógica 017b</div></div><span class="pliego-id">048</span></div>
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Radio Infinita — Autoplay inteligente por vibe</div><div class="item-sub">Al vaciar cola, seleccionar aleatoriamente tracks con mismo vibe o era que el último track; nunca silencio</div></div><span class="pliego-id">048</span></div>
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Crossfade y gapless entre tracks drive</div><div class="item-sub">Doble elemento audio en paralelo; fade-out/in de 2–4 s; solo aplica a type:drive</div></div><span class="pliego-id">048</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">MusicLab.jsx</span>
+    <span class="file-count">3 items · PLIEGO-049</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R04 — Cola táctil con drag & drop + swipe</div><div class="item-sub">Reordenamiento visual manteniendo pulsado; eliminación por swipe lateral; botón inline ✕ por track</div></div><span class="pliego-id">049</span></div>
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Play All en pestaña LISTS</div><div class="item-sub">Botón ▶ por playlist limpia cola manual e inyecta todos los tracks en orden; PLIEGO-PLAYLIST-C desbloqueado tras esto</div></div><span class="pliego-id">049</span></div>
+    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-005 — Shuffle funcional</div><div class="item-sub">Fisher-Yates sobre allTracks filtrados por vibe; respetar track activo como posición 0</div></div><span class="pliego-id">049</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">sw.js</span>
+    <span class="file-count">1 item · PLIEGO-050</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Modo Offline real — cache-first para MP3 de Drive</div><div class="item-sub">Interceptar getStreamUrl; cachear respuesta con Cache API; reproducción fluida sin cobertura</div></div><span class="pliego-id">050</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">SmokeSession.jsx</span>
+    <span class="file-count">1 item · PLIEGO-051</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Sleep Timer sincronizado con SmokeSession</div><div class="item-sub">Al finalizar sesión/ritual activo, fade-out y stop automático del reproductor vía PlayerContext</div></div><span class="pliego-id">051</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FASE 3 -->
+<div class="phase-header">
+  <span class="phase-badge" style="background:#EAF3DE;color:#27500A;">Fase 3 — Diferencial</span>
+  <div>
+    <div class="phase-title">Lo que ningún streamer puede dar</div>
+    <div class="phase-sub">Pliegos 052–058 · Features íntimas que solo tienen sentido para 2 usuarios</div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">nuevo BurningBoard.jsx</span>
+    <span class="file-count">2 items · PLIEGO-052</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">The Burning Board — panel de estadísticas de pareja</div><div class="item-sub">Musical Soulmate Index; contadores Edu vs David; alerta cuando ambos han quemado el mismo track</div></div><span class="pliego-id">052</span></div>
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">Schema 3.5.0 — campo play_count + last_played_by</div><div class="item-sub">Incrementar en cada play; migración automática desde 3.4.0</div></div><span class="pliego-id">052</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">WinampPlayer.jsx <span style="font-weight:400;color:var(--color-text-tertiary)">+ nuevo LyricsPanel.jsx</span></span>
+    <span class="file-count">1 item · PLIEGO-053</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Panel de letras embebido en el reproductor</div><div class="item-sub">Campo lyrics en schema; renderizado en panel deslizable desde WinampPlayer; edición inline por el admin</div></div><span class="pliego-id">053</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">WinampPlayer.jsx <span style="font-weight:400;color:var(--color-text-tertiary)">+ App.jsx</span></span>
+    <span class="file-count">1 item · PLIEGO-054</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Casteo nativo Chromecast</div><div class="item-sub">Google Cast SDK; botón cast en WinampPlayer; enviar stream URL o YouTube URL al dispositivo Cast</div></div><span class="pliego-id">054</span></div>
+  </div>
+</div>
+
+<div class="file-block">
+  <div class="file-header" onclick="toggle(this)">
+    <span class="chevron">▶</span>
+    <span class="file-name">Sin urgencia / strings</span>
+    <span class="file-count">2 items · PLIEGO-018-STRINGS</span>
+  </div>
+  <div class="items">
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-018-STRINGS — Textos al español, tono Edu→David</div><div class="item-sub">Pasada completa MusicLab + manifest.json (encoding roto BÃºnker). Tras estabilizar F1+F2</div></div><span class="pliego-id">—</span></div>
+    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-PLAYLIST-C — Borrado de playlist</div><div class="item-sub">Solo creador, solo si vacía. Desbloquear tras Play All (F2)</div></div><span class="pliego-id">—</span></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+function toggle(header) {
+  const items = header.nextElementSibling;
+  const ch = header.querySelector('.chevron');
+  const open = items.classList.toggle('open');
+  ch.classList.toggle('open', open);
+}
+document.querySelectorAll('.file-header').forEach(h => {
+  const items = h.nextElementSibling;
+  const ch = h.querySelector('.chevron');
+  if (items.classList.contains('open')) ch.classList.add('open');
+});
+</script>

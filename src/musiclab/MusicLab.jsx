@@ -7,9 +7,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "./Layout";
-import { usePlayer } from "./PlayerContext";
-import { fetchPlaylists, createPlaylist, addTrackToPlaylist } from "./GoogleDriveService";
+import { ACID, PURPLE } from "../layout/Layout";
+import { usePlayer } from "../core/PlayerContext";
+import { fetchPlaylists, createPlaylist, addTrackToPlaylist } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";

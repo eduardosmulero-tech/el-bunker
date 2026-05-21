@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID } from "./Layout";
+import { ACID } from "../layout/Layout";
 
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 const GLASS_BG  = "rgba(191,255,0,0.03)";

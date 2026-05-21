@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ACID } from "./Layout";
+import { ACID } from "../layout/Layout";
 
 const GLASS_BG     = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";

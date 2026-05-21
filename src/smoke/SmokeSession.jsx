@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { usePlayer } from "./PlayerContext";
+import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────

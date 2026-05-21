@@ -3,19 +3,17 @@
 //  Orquestador Principal · Router · State Orchestration
 //  Stack: React 18 + Framer Motion
 // ============================================================
-
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { VaultProvider, useVault, BOOT } from "./VaultContext";
-import { PlayerProvider, usePlayer }     from "./PlayerContext";
+import { VaultProvider, useVault, BOOT } from "../core/VaultContext";
+import { PlayerProvider, usePlayer }     from "../core/PlayerContext";
 import Layout                            from "./Layout";
 import LoginScreen                       from "./LoginScreen";
-import Vault                             from "./Vault";
-import MusicLab                          from "./MusicLab";
-import { DropAlertModal }               from "./DropsManager";
-import SmokeSession                      from "./SmokeSession";
-
+import Vault                             from "../vault/Vault";
+import MusicLab                          from "../musiclab/MusicLab";
+import { DropAlertModal }               from "../musiclab/DropsManager";
+import SmokeSession                      from "../smoke/SmokeSession";
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
 const ACID   = "#bfff00";
 const PURPLE = "#bf00ff";

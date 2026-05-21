@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
-import { ACID } from "./Layout";
+import { ACID } from "../layout/Layout";
 
 export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
   const canvasRef    = useRef(null);

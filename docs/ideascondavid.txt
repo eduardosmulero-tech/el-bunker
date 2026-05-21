@@ -1,0 +1,12 @@
+-Destacar canciones dentro de una playlist. 
+-Poder dar megusta en canciones de playlist 
+-qu eel megusta sea visible en la playlist. 
+-me gustas diferentes para Edu y david, visible para ambos mediante corazones de diferente color
+-Añadir dos botones en header que solo sea visible cuando se reproduce una playlist y tiene canciones con megusta. Al lado del tag.
+-cuando pulsas el boton de megusta con color de edu: La siguiente cancion de la playlist sera la siguiente en la lista con un megusta y apartir de ahi solo reproducira las que esten marcadas con megusta.
+-cuando pulsas el boton de megusta del color de david: lo mismo pero con los megusta de david.
+-Ambos botones de megusta son visibles para los dos uusuarios.
+-Modificar como los tracks registran los tags: 
+	-Cada track puede tener varios tags
+	-Cuando se añade o edita un track se puede pulsar un boton que enseñe una lista de botones con los tags y que permita seleccionar todos los que quiera.
+	-El primer tag señalado tendra efectos para señalar que es el principal y dara su vibe(colores y demas cambios que el vibe camia al reproducir un tag)
