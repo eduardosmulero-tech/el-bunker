@@ -382,18 +382,23 @@ const _createDatabaseFile = async (data) => {
 };
 
 const _withTokenRetry = async (fn) => {
-    try {
-      return await fn();
-    } catch (err) {
-      const status = err?.status ?? err?.result?.error?.code ?? err?.code;
-      if (status === 401) {
-        console.info("[Búnker] Token expirado — renovando silenciosamente…");
+  try {
+    return await fn();
+  } catch (err) {
+    const status = err?.status ?? err?.result?.error?.code ?? err?.code;
+    if (status === 401 || status === 403) {
+      console.info("[Búnker] Token rechazado (HTTP " + status + ") — renovando…");
+      try {
         await requestAccessToken(false);
-        return await fn();
+      } catch (_silentErr) {
+        console.warn("[Búnker] Silent refresh fallido — forzando popup de login…");
+        await requestAccessToken(true);
       }
-      throw err;
+      return await fn();
     }
-  };
+    throw err;
+  }
+};
 
   const _updateDatabaseFile = async (data, fileId) => {
   try {
