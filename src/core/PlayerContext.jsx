@@ -30,6 +30,18 @@ const extractYouTubeId = (url) => {
   return match ? match[1] : null;
 };
 
+const loadYTApi = (onReady) => {
+  if (window.YT && window.YT.Player) { onReady(); return; }
+  if (!document.getElementById("yt-api-script")) {
+    const tag = document.createElement("script");
+    tag.id  = "yt-api-script";
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+  }
+  const prev = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = () => { prev?.(); onReady(); };
+};
+
 export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeTrack,    setActiveTrack]    = useState(tracks[0] ?? null);
   const [isPlaying,      setIsPlaying]      = useState(false);
@@ -41,12 +53,18 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeVibe,     setActiveVibe]     = useState("all");
   const [masterVolume,   setMasterVolume]   = useState(80);
 
+  const [ytReady, setYtReady] = useState(false);
+
   const audioRef    = useRef(null);
   const ytPlayerRef = useRef(null);
   const pollingRef  = useRef(null);
   const wakeLockRef = useRef(null);
 
   const isYouTube = activeTrack?.type === "youtube" || (!activeTrack?.type && activeTrack?.url);
+
+  // ref para que onStateChange de YT no tenga stale closure sobre skip
+  const skipRef = useRef(null);
+  useEffect(() => { skipRef.current = skip; }, [skip]);
 
   // ── Persistencia cola en Drive ────────────────────────────
   useEffect(() => {
@@ -158,7 +176,45 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     }
   }, [activeVibe]);
 
-  // ── onEnded centralizado ──────────────────────────────────────
+   // ── Inicialización YT.Player persistente ─────────────────────────────
+  useEffect(() => {
+    if (!activeTrack) return;
+    const isYT = activeTrack.type === "youtube" || (!activeTrack.type && activeTrack.url);
+    if (!isYT) return;
+
+    const initPlayer = () => {
+      if (ytPlayerRef.current) {
+        try { ytPlayerRef.current.destroy(); } catch (_) {}
+        ytPlayerRef.current = null;
+      }
+      setYtReady(false);
+      ytPlayerRef.current = new window.YT.Player("yt-player-div", {
+        videoId: extractYouTubeId(activeTrack.youtube_url ?? activeTrack.url ?? ""),
+        playerVars: { autoplay: 0, controls: 0, rel: 0 },
+        events: {
+          onReady: (e) => {
+            e.target.setVolume(80);
+            setYtReady(true);
+          },
+          onStateChange: (e) => {
+            const s = e.data;
+            if (s === window.YT.PlayerState.PLAYING)  { setIsPlaying(true); }
+            else if (s === window.YT.PlayerState.PAUSED)  { setIsPlaying(false); stopPolling(); }
+            else if (s === window.YT.PlayerState.ENDED)   {
+              setIsPlaying(false); stopPolling();
+              // loop y skip se leen desde ref para evitar stale closure
+              skipRef.current?.(1);
+            }
+          },
+        },
+      });
+    };
+
+    loadYTApi(initPlayer);
+    // NO cleanup destroy aquí — el player debe sobrevivir cambios de pestaña
+  }, [activeTrack?.id]);
+
+  // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
     if (loop && audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -187,10 +243,12 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       activeVibe,   setActiveVibe,
       masterVolume, setMasterVolume,
       audioRef, ytPlayerRef, pollingRef,
-      isYouTube,
+      isYouTube, ytReady,
       skip, addToQueue, removeFromQueue, playTrack,
       startPolling, stopPolling,
     }}>
+      {/* div YT persistente — nunca se desmonta al cambiar de pestaña (ADR-004 Enmienda S21) */}
+      <div id="yt-player-div" style={{ display: "none" }} />
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
         ref={audioRef}

@@ -47,6 +47,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     autoPlaySignal, syncStatus,
     audioRef, ytPlayerRef, pollingRef,
     isYouTube: isYouTubeCtx,
+    ytReady,
     skip, startPolling, stopPolling,
     masterVolume, setMasterVolume,
   } = usePlayer();
@@ -57,7 +58,6 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   const [duration, setDuration] = useState(0);
   const [currentT, setCurrentT] = useState(0);
   const [showDrop, setShowDrop] = useState(false);
-  const [ytReady,  setYtReady]  = useState(false);
 
   const vibeConf  = getVibeConfig(track?.vibe, VIBE_TAGS);
   const isYouTube = track?.type === "youtube" || (!track?.type && track?.url);
@@ -98,52 +98,14 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   // skip viene de PlayerContext — wrapeamos para pasar tracks filtrados si hay filtro activo
   const skipDir = useCallback((dir) => skip(dir, tracks), [skip, tracks]);
 
-  const initYTPlayer = useCallback(() => {
-    if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }
-    setYtReady(false);
-    const divId = `yt-player-div`;
-    ytPlayerRef.current = new window.YT.Player(divId, {
-      videoId: extractYouTubeId(track?.youtube_url ?? track?.url ?? ""),
-      playerVars: { autoplay: 0, controls: 0, rel: 0 },
-      events: {
-        onReady: (e) => {
-          setDuration(e.target.getDuration() || 0);
-          e.target.setVolume(volume);
-          setYtReady(true);
-        },
-        onStateChange: (e) => {
-          const s = e.data;
-          if (s === window.YT.PlayerState.PLAYING) { setPlaying(true);  startPollingLocal(); }
-          else if (s === window.YT.PlayerState.PAUSED)  { setPlaying(false); stopPolling(); }
-          else if (s === window.YT.PlayerState.ENDED)   {
-            setPlaying(false); stopPolling();
-            if (loop) { ytPlayerRef.current.seekTo(0, true); ytPlayerRef.current.playVideo(); }
-            else { skipDir(1); }
-          }
-        },
-      },
-    });
-  }, [loop, skip, volume]);
-
+  // YT.Player se inicializa en PlayerProvider (ADR-004 Enmienda S21)
+  // WinampPlayer solo suscribe eventos visuales cuando ytReady cambia a true
   useEffect(() => {
-    if (!isYouTube) return;
-    const setup = () => initYTPlayer();
-    if (window.YT && window.YT.Player) { setup(); }
-    else {
-      if (!document.getElementById("yt-api-script")) {
-        const tag = document.createElement("script");
-        tag.id  = "yt-api-script";
-        tag.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(tag);
-      }
-      window.onYouTubeIframeAPIReady = setup;
-    }
-    return () => {
-      stopPolling();
-      if (ytPlayerRef.current) { try { ytPlayerRef.current.destroy(); } catch(_) {} ytPlayerRef.current = null; }
-      setYtReady(false);
-    };
-  }, [track?.id, isYouTube]);
+    if (!ytReady || !ytPlayerRef.current) return;
+    const p = ytPlayerRef.current;
+    if (typeof p.getDuration === "function") setDuration(p.getDuration() || 0);
+    p.setVolume(volume);
+  }, [ytReady]);
 
   const togglePlay = () => {
     if (isYouTube) {
@@ -251,17 +213,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
     >
-      {/* <audio> movido a PlayerProvider — siempre montado, nunca se destruye al cambiar tab */}
-      {track?.type === "drive" && (
-        <span style={{ display: "none" }} data-audio-managed="PlayerContext" />
-      )}
-      {isYouTube && (
-        <div
-          id="yt-player-div"
-          style={{ display: "none" }}
-          data-videoid={extractYouTubeId(track?.youtube_url ?? track?.url ?? "")}
-        />
-      )}
+      {/* div#yt-player-div y <audio> viven en PlayerProvider (ADR-004 Enmienda S21) */}
 
       {/* Title Bar */}
       <div
