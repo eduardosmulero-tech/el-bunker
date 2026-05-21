@@ -183,13 +183,16 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     if (!isYT) return;
 
     const initPlayer = () => {
-      if (ytPlayerRef.current) {
-        try { ytPlayerRef.current.destroy(); } catch (_) {}
-        ytPlayerRef.current = null;
+      const videoId = extractYouTubeId(activeTrack.youtube_url ?? activeTrack.url ?? "");
+      // Si el player ya existe, solo cambiar video — nunca destroy() sobre div controlado por React
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === "function") {
+        setYtReady(false);
+        ytPlayerRef.current.loadVideoById(videoId);
+        return;
       }
       setYtReady(false);
       ytPlayerRef.current = new window.YT.Player("yt-player-div", {
-        videoId: extractYouTubeId(activeTrack.youtube_url ?? activeTrack.url ?? ""),
+        videoId,
         playerVars: { autoplay: 0, controls: 0, rel: 0 },
         events: {
           onReady: (e) => {
@@ -198,11 +201,10 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
           },
           onStateChange: (e) => {
             const s = e.data;
-            if (s === window.YT.PlayerState.PLAYING)  { setIsPlaying(true); }
+            if (s === window.YT.PlayerState.PLAYING)      { setIsPlaying(true); }
             else if (s === window.YT.PlayerState.PAUSED)  { setIsPlaying(false); stopPolling(); }
             else if (s === window.YT.PlayerState.ENDED)   {
               setIsPlaying(false); stopPolling();
-              // loop y skip se leen desde ref para evitar stale closure
               skipRef.current?.(1);
             }
           },
