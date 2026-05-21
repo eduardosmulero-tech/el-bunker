@@ -6,6 +6,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { usePlayer } from "./PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
@@ -164,7 +165,10 @@ const VolumeFadeBar = ({ volume, isFading }) => (
  *   masterVolume      — number (0-100) from VaultContext
  *   onVolumeChange    — (vol: number) => void
  */
-export default function SmokeSession({ masterVolume = 80, onVolumeChange }) {
+export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeChange: onVolumeChangeProp }) {
+  const { masterVolume: ctxVolume, setMasterVolume } = usePlayer();
+  const masterVolume   = ctxVolume  ?? masterVolumeProp  ?? 80;
+  const onVolumeChange = setMasterVolume ?? onVolumeChangeProp;
   const [selectedPreset, setSelectedPreset] = useState(PRESETS[1]); // 30 min default
   const [customMinutes,  setCustomMinutes]  = useState(30);
   const [totalSeconds,   setTotalSeconds]   = useState(PRESETS[1].seconds);
