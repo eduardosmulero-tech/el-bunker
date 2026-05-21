@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, BG } from "../layout/Layout";
 import { getStreamUrl } from "../core/GoogleDriveService";
@@ -43,25 +43,35 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     activeTrack: track, setActiveTrack,
     isPlaying: playing, setIsPlaying: setPlaying,
     localQueue: queue,
-    loop, setLoop, shuffle, setShuffle,
+    loopMode, toggleLoopMode, shuffle, setShuffle,
     autoPlaySignal, syncStatus,
     audioRef, ytPlayerRef,
     isYouTube: isYouTubeCtx,
     skip,
     masterVolume, setMasterVolume,
+    activeVibe,
   } = usePlayer();
 
   const ytPollingRef = useRef(null);
+  const mountedRef   = useRef(false);
   const [progress, setProgress] = useState(0);
   const [volume,   setVolume]   = useState(masterVolume ?? 80);
   const [duration, setDuration] = useState(0);
   const [currentT, setCurrentT] = useState(0);
-  const [showDrop, setShowDrop] = useState(false);
+  const [showDrop,     setShowDrop]     = useState(false);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const titleRef = useRef(null);
 
-  const vibeConf  = getVibeConfig(track?.vibe, VIBE_TAGS);
+  // BUG-19: acento sigue filtro activo; si "all", usa vibe del track
+  const vibeConf  = getVibeConfig(
+    (activeVibe && activeVibe !== "all") ? activeVibe : (track?.vibe ?? "all"),
+    VIBE_TAGS
+  );
   const isYouTube = track?.type === "youtube" || (!track?.type && track?.url);
 
   useEffect(() => {
+    // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
+    if (!mountedRef.current) { mountedRef.current = true; return; }
     setPlaying(false);
     setProgress(0);
     setCurrentT(0);
@@ -83,7 +93,15 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     return () => clearTimeout(timer);
   }, [autoPlaySignal]);
 
-  const skipDir = useCallback((dir) => skip(dir, tracks), [skip, tracks]);
+  const skipDir = useCallback((dir) => {
+    if (dir === -1 && currentT < 3) {
+      // BUG-12: reiniciar track si han pasado menos de 3s
+      if (isYouTube) { ytPlayerRef.current?.seekTo(0, true); }
+      else if (audioRef.current) { audioRef.current.currentTime = 0; }
+      return;
+    }
+    skip(dir, tracks);
+  }, [skip, tracks, currentT, isYouTube]);
 
   // ── Polling YT — local, reactivo a isPlaying ──────────────
   useEffect(() => {
@@ -163,6 +181,12 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(masterVolume); }
     else           { if (audioRef.current)    audioRef.current.volume = masterVolume / 100; }
   }, [masterVolume]);
+
+  // BUG-13: scroll de título solo si el texto desborda el contenedor
+  useLayoutEffect(() => {
+    if (!titleRef.current) return;
+    setShouldScroll(titleRef.current.scrollWidth > titleRef.current.offsetWidth);
+  }, [track?.id, track?.title]);
 
   const fmtTime = (s) => {
     if (!s || isNaN(s)) return "0:00";
@@ -257,7 +281,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
       <div className="px-3 py-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
         <div className="overflow-hidden whitespace-nowrap" style={{ maxWidth: "100%" }}>
           <motion.p
-            animate={track ? { x: ["0%", "-40%", "0%"] } : {}}
+            ref={titleRef}
+            animate={shouldScroll ? { x: ["0%", "-40%", "0%"] } : {}}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             className="text-sm font-bold inline-block"
             style={{ color: accentColor, textShadow: `0 0 10px ${accentColor}66` }}
@@ -285,13 +310,19 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
               style={{ left: `calc(${progress}% - 6px)`, borderColor: accentColor, background: BG, boxShadow: `0 0 8px ${accentColor}` }} />
           </div>
           <span className="text-xs tabular-nums opacity-50" style={{ color: accentColor }}>{fmtTime(duration)}</span>
-        </div>
+        </div>  
       </div>
 
       {/* Controls */}
       <div className="flex items-center justify-between px-3 pb-3">
         <div className="flex gap-2">
-          <WinampBtn label="⟳" active={loop}    color={accentColor} onClick={() => setLoop((p) => !p)}    title="Loop" />
+          <WinampBtn
+            label={loopMode === "track" ? "⟳¹" : "⟳"}
+            active={loopMode !== "off"}
+            color={accentColor}
+            onClick={toggleLoopMode}
+            title={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
+          />
           <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" />
         </div>
         <div className="flex items-center gap-3">

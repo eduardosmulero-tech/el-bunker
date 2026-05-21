@@ -6,7 +6,7 @@
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { fetchQueue, saveQueue } from "./GoogleDriveService";
+import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
 
 // ─── VIBE COLOR MAP ───────────────────────────────────────────
 // null = neutro (sin acento activo)
@@ -46,7 +46,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeTrack,    setActiveTrack]    = useState(tracks[0] ?? null);
   const [isPlaying,      setIsPlaying]      = useState(false);
   const [localQueue,     setLocalQueue]     = useState([]);
-  const [loop,           setLoop]           = useState(false);
+  const [loopMode,       setLoopMode]       = useState("off");
   const [shuffle,        setShuffle]        = useState(false);
   const [autoPlaySignal, setAutoPlaySignal] = useState(0);
   const [syncStatus,     setSyncStatus]     = useState("idle");
@@ -87,8 +87,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   // ── Skip ─────────────────────────────────────────────────
   const skip = useCallback((dir, filteredTracks) => {
-    // Cola es fuente de verdad única para dir=1
-    if (dir === 1 && localQueue.length > 0) {
+    // Cola tiene prioridad solo si shuffle está desactivado (BUG-16)
+    if (dir === 1 && localQueue.length > 0 && !shuffle) {
       const next = localQueue[0];
       setLocalQueue((q) => q.slice(1));
       setActiveTrack(next);
@@ -99,6 +99,11 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     if (!list.length) return;
     const idx = list.findIndex((t) => t.id === activeTrack?.id);
     const base = idx < 0 ? 0 : idx;
+    // BUG-09: loopMode "off" → parar al llegar al último track
+    if (dir === 1 && loopModeRef.current === "off" && !shuffle && base >= list.length - 1) {
+      setIsPlaying(false);
+      return;
+    }
     const nextIdx = shuffle
       ? Math.floor(Math.random() * list.length)
       : (base + dir + list.length) % list.length;
@@ -106,9 +111,11 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     setAutoPlaySignal((n) => n + 1);
   }, [tracks, localQueue, activeTrack?.id, shuffle]);
 
-  // ref para que onStateChange de YT no tenga stale closure sobre skip
-  const skipRef = useRef(null);
-  useEffect(() => { skipRef.current = skip; }, [skip]);
+  // refs para que callbacks de YT no tengan stale closures
+  const skipRef     = useRef(null);
+  const loopModeRef = useRef("off");
+  useEffect(() => { skipRef.current     = skip;     }, [skip]);
+  useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
 
   // ── Handlers cola ─────────────────────────────────────────
   const addToQueue = useCallback((track) => {
@@ -130,8 +137,25 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   }, [activeTrack?.id, tracks]);
 
   const playTrack = useCallback((track) => {
+    if (activeTrack?.id === track.id) {
+      // BUG-11: tap en track activo → toggle play/pause
+      if (isPlaying) {
+        if (isYouTube) { ytPlayerRef.current?.pauseVideo?.(); }
+        else           { audioRef.current?.pause(); }
+        setIsPlaying(false);
+      } else {
+        if (isYouTube) { ytPlayerRef.current?.playVideo?.(); }
+        else           { audioRef.current?.play().catch(() => {}); }
+        setIsPlaying(true);
+      }
+      return;
+    }
     setActiveTrack(track);
     setAutoPlaySignal((n) => n + 1);
+  }, [activeTrack?.id, isPlaying, isYouTube]);
+
+  const toggleLoopMode = useCallback(() => {
+    setLoopMode((m) => m === "off" ? "list" : m === "list" ? "track" : "off");
   }, []);
 
   // ── WakeLock ──────────────────────────────────────────────
@@ -183,7 +207,13 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
             const s = e.data;
             if (s === window.YT.PlayerState.PLAYING)     { setIsPlaying(true); }
             else if (s === window.YT.PlayerState.PAUSED) { setIsPlaying(false); }
-            else if (s === window.YT.PlayerState.ENDED)  { setIsPlaying(false); skipRef.current?.(1); }
+            else if (s === window.YT.PlayerState.ENDED)  {
+              if (loopModeRef.current === "track") {
+                e.target.seekTo(0); e.target.playVideo();
+              } else {
+                setIsPlaying(false); skipRef.current?.(1);
+              }
+            }
           },
         },
       });
@@ -195,21 +225,20 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
-    if (loop && audioRef.current) {
+    if (loopMode === "track" && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     } else {
       skip(1);
     }
-  }, [loop, skip]);
+  }, [loopMode, skip]);
 
   // ── src del audio: reactivo al track activo ───────────────────
   const audioSrc = (!activeTrack || activeTrack.type === "youtube")
     ? null
     : activeTrack.drive_file_id
-      ? `https://www.googleapis.com/drive/v3/files/${activeTrack.drive_file_id}?alt=media`
+      ? getStreamUrl(activeTrack.drive_file_id)
       : null;
-
   // ── div YT fuera del árbol React — imperativo, nunca en JSX ──────────
   useEffect(() => {
     if (document.getElementById("yt-player-div")) return;
@@ -224,7 +253,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       activeTrack, setActiveTrack,
       isPlaying,   setIsPlaying,
       localQueue,  setLocalQueue,
-      loop,        setLoop,
+      loopMode,    setLoopMode,    toggleLoopMode,
       shuffle,     setShuffle,
       autoPlaySignal, setAutoPlaySignal,
       syncStatus,
