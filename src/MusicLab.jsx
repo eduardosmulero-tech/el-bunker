@@ -4,7 +4,7 @@
 //  Componentes extraídos a archivos propios (PLIEGO-035).
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "./Layout";
 import { usePlayer } from "./PlayerContext";
@@ -14,7 +14,6 @@ import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
 import { DropsHistory } from "./DropsManager";
-import { PlaylistModal } from "./PlaylistManager";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const GLASS_BG     = "rgba(191,255,0,0.03)";
@@ -73,8 +72,9 @@ export default function MusicLab({
   const [localTracks,       setLocalTracks]        = useState(rawTracks);
   const [localDrops,        setLocalDrops]         = useState(rawDrops);
   const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
-  const [showPlaylistModal, setShowPlaylistModal]  = useState(false);
-  const [pendingTrack,      setPendingTrack]       = useState(null);
+  const [showPlaylistModal,  setShowPlaylistModal]  = useState(false);
+  const [showPlaylistDetail, setShowPlaylistDetail] = useState(null); // playlist id
+  const [pendingTrack,       setPendingTrack]       = useState(null);
   const [toast,             setToast]              = useState(null);
 
   // ── Estado de reproducción — viene de PlayerContext ───────
@@ -473,13 +473,28 @@ export default function MusicLab({
                 <div className="flex flex-col gap-2">
                   {localPlaylists.map((pl) => (
                     <div key={pl.id} className="flex items-center justify-between p-3 rounded-sm"
-                      style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
+                      style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "pointer" }}
+                      onClick={() => setShowPlaylistDetail(pl.id)}>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-xs font-bold" style={{ color: ACID }}>{pl.name}</span>
                         <span className="text-xs opacity-30" style={{ color: ACID }}>
                           {pl.track_ids.length} tracks
                         </span>
                       </div>
+                      {pl.track_ids.length > 0 && (
+                        <motion.button whileTap={{ scale: 0.88 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const plTracks = pl.track_ids.map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
+                            if (!plTracks.length) return;
+                            playTrack(plTracks[0]);
+                            plTracks.slice(1).forEach((t) => addToQueue(t));
+                          }}
+                          style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`,
+                            borderRadius: 2, fontSize: 11, padding: "4px 10px", fontFamily: FONT_MONO }}>
+                          ▶
+                        </motion.button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -521,6 +536,36 @@ export default function MusicLab({
             </motion.div>
           )}
 
+        </AnimatePresence>
+
+        {/* PlaylistDetailModal */}
+        <AnimatePresence>
+          {showPlaylistDetail && (() => {
+            const pl = localPlaylists.find((p) => p.id === showPlaylistDetail);
+            if (!pl) return null;
+            return (
+              <PlaylistDetailModal
+                playlist={pl}
+                tracks={localTracks}
+                userId={userId}
+                onClose={() => setShowPlaylistDetail(null)}
+                onPlay={(t) => { playTrack(t); setShowPlaylistDetail(null); }}
+                onAddToQueue={addToQueue}
+                onRemoveTrack={(plId, trackId) => {
+                  const updated = localPlaylists.map((p) =>
+                    p.id === plId ? { ...p, track_ids: p.track_ids.filter((id) => id !== trackId) } : p
+                  );
+                  setLocalPlaylists(updated);
+                  onEditPlaylist?.(updated);
+                }}
+                onDeletePlaylist={(plId) => {
+                  const updated = localPlaylists.filter((p) => p.id !== plId);
+                  setLocalPlaylists(updated);
+                  onDeletePlaylist?.(updated);
+                }}
+              />
+            );
+          })()}
         </AnimatePresence>
 
         {/* Footer */}

@@ -48,11 +48,12 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     audioRef, ytPlayerRef, pollingRef,
     isYouTube: isYouTubeCtx,
     skip, startPolling, stopPolling,
+    masterVolume, setMasterVolume,
   } = usePlayer();
 
   const iframeRef   = useRef(null);
   const [progress, setProgress] = useState(0);
-  const [volume,   setVolume]   = useState(80);
+  const [volume,   setVolume]   = useState(masterVolume ?? 80);
   const [duration, setDuration] = useState(0);
   const [currentT, setCurrentT] = useState(0);
   const [showDrop, setShowDrop] = useState(false);
@@ -172,9 +173,17 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
 
   const changeVolume = (v) => {
     setVolume(v);
+    setMasterVolume?.(v);
     if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(v); }
     else           { if (audioRef.current)    audioRef.current.volume = v / 100; }
   };
+
+  useEffect(() => {
+    if (masterVolume == null) return;
+    setVolume(masterVolume);
+    if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(masterVolume); }
+    else           { if (audioRef.current)    audioRef.current.volume = masterVolume / 100; }
+  }, [masterVolume]);
 
   const fmtTime = (s) => {
     if (!s || isNaN(s)) return "0:00";
@@ -357,6 +366,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
       <AnimatePresence>
         {showDrop && (
           <DropComposeModal track={track} onClose={() => setShowDrop(false)}
+            currentMinute={currentT} trackDuration={duration}
             onSend={(dropData) => { onDropSend?.(dropData); setShowDrop(false); }} />
         )}
       </AnimatePresence>
