@@ -6,8 +6,17 @@
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { ACID } from "./Layout";
 import { fetchQueue, saveQueue } from "./GoogleDriveService";
+
+// ─── VIBE COLOR MAP ───────────────────────────────────────────
+// null = neutro (sin acento activo)
+const VIBE_COLORS = {
+  all:         null,
+  gaming:      "#00ffcc",
+  "420_chill": "#aaff44",
+  dnb:         "#ff6b35",
+  romantiqueo: "#bf00ff",
+};
 import { AudioVisualizer } from "./AudioVisualizer";
 
 const PlayerContext = createContext(null);
@@ -31,6 +40,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [shuffle,        setShuffle]        = useState(false);
   const [autoPlaySignal, setAutoPlaySignal] = useState(0);
   const [syncStatus,     setSyncStatus]     = useState("idle");
+  const [activeVibe,     setActiveVibe]     = useState("all");
+  const [masterVolume,   setMasterVolume]   = useState(80);
 
   const audioRef    = useRef(null);
   const ytPlayerRef = useRef(null);
@@ -139,6 +150,16 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     return () => { rel(); document.removeEventListener("visibilitychange", onVis); };
   }, [isPlaying]);
 
+  // ── Vibe accent — CSS variable global ─────────────────────
+  useEffect(() => {
+    const color = VIBE_COLORS[activeVibe] ?? null;
+    if (color) {
+      document.documentElement.style.setProperty("--vibe-accent", color);
+    } else {
+      document.documentElement.style.removeProperty("--vibe-accent");
+    }
+  }, [activeVibe]);
+
   return (
     <PlayerContext.Provider value={{
       activeTrack, setActiveTrack,
@@ -148,6 +169,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       shuffle,     setShuffle,
       autoPlaySignal, setAutoPlaySignal,
       syncStatus,
+      activeVibe,   setActiveVibe,
+      masterVolume, setMasterVolume,
       audioRef, ytPlayerRef, pollingRef,
       isYouTube,
       skip, addToQueue, removeFromQueue, playTrack,

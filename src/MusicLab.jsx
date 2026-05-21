@@ -13,7 +13,7 @@ import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
-import { DropAlertModal, DropsHistory } from "./DropsManager";
+import { DropsHistory } from "./DropsManager";
 import { PlaylistModal } from "./PlaylistManager";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
@@ -41,13 +41,6 @@ const DEMO_TRACKS = [
   { id: "t5", title: "Chase & Status – Flashing Lights", artist: "Chase & Status", url: "", vibe: "dnb", note: "La que suena en el carro.",      era_id: null, added_at: new Date().toISOString() },
 ];
 
-const DEMO_DROP = {
-  id: "drop-demo", from: "DAVID", track_id: "t3",
-  memory: "Escucha esto ahora mismo. 🖤",
-  mood: "romantiqueo", date: new Date().toISOString(),
-  created_at: new Date(Date.now() - 60000).toISOString(), seen: false,
-};
-
 // ─── HELPERS ─────────────────────────────────────────────────
 const uuid = () =>
   "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -72,13 +65,11 @@ export default function MusicLab({
   const rawDrops  = db?.music_lab?.drops  ?? [];
 
   // ── Estado local (UI solamente) ───────────────────────────
-  const [activeVibe,        setActiveVibe]        = useState("all");
   const [showAdd,           setShowAdd]            = useState(false);
   const [showDelete,        setShowDelete]         = useState(false);
   const [showEdit,          setShowEdit]           = useState(false);
   const [editingTrack,      setEditingTrack]       = useState(null);
   const [activeTab,         setActiveTab]          = useState("tracks");
-  const [pendingDrop,       setPendingDrop]        = useState(null);
   const [localTracks,       setLocalTracks]        = useState(rawTracks);
   const [localDrops,        setLocalDrops]         = useState(rawDrops);
   const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
@@ -92,18 +83,8 @@ export default function MusicLab({
     localQueue, addToQueue, removeFromQueue, playTrack,
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
+    activeVibe, setActiveVibe,
   } = usePlayer();
-
-  // ── Efectos de carga ─────────────────────────────────────
-  useEffect(() => {
-    if (!db) {
-      const timer = setTimeout(() => setPendingDrop(DEMO_DROP), 1500);
-      return () => clearTimeout(timer);
-    }
-    const unseen = rawDrops.find((d) => !d.seen && d.to === userId);
-    if (unseen) setPendingDrop(unseen);
-  }, []);
-
 
   useEffect(() => {
     if (!db) return;
@@ -206,18 +187,6 @@ export default function MusicLab({
     onAddDrop?.(newDrop);
   };
 
-  const handleDropPlay = (track) => {
-    if (track) { setActiveTrack(track); setAutoPlaySignal((n) => n + 1); }
-    setPendingDrop(null);
-    onMarkDropSeen?.(pendingDrop?.id);
-    setActiveTab("tracks");
-  };
-
-  const handleDropDismiss = () => {
-    setPendingDrop(null);
-    onMarkDropSeen?.(pendingDrop?.id);
-  };
-
   // ── Render ───────────────────────────────────────────────
   return (
     <>
@@ -234,9 +203,6 @@ export default function MusicLab({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Drop Alert */}
-      <DropAlertModal drop={pendingDrop} tracks={localTracks} onPlay={handleDropPlay} onDismiss={handleDropDismiss} />
 
       {/* Playlist Modal */}
       <AnimatePresence>
@@ -477,7 +443,7 @@ export default function MusicLab({
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
                       style={{ color: ACID }}>
-                      — no tracks for this vibe —
+                      — sin tracks para este vibe —
                     </motion.p>
                   )}
                 </AnimatePresence>
@@ -577,7 +543,6 @@ export {
   WinampPlayer,
   VibeTagBar,
   TrackCard,
-  DropAlertModal,
   DropsHistory,
   VIBE_TAGS,
 };

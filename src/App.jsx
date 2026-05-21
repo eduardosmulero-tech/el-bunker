@@ -8,11 +8,12 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { VaultProvider, useVault, BOOT } from "./VaultContext";
-import { PlayerProvider }                from "./PlayerContext";
+import { PlayerProvider, usePlayer }     from "./PlayerContext";
 import Layout                            from "./Layout";
 import LoginScreen                       from "./LoginScreen";
 import Vault                             from "./Vault";
 import MusicLab                          from "./MusicLab";
+import { DropAlertModal }               from "./DropsManager";
 import SmokeSession                      from "./SmokeSession";
 
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
@@ -270,31 +271,51 @@ const AuthenticatedApp = () => {
       activeTab, setActiveTab,
       masterVolume,
       logout,
+      pendingDrop, clearPendingDrop,
     } = useVault();
+  const { playTrack } = usePlayer();
 
   const ActivePage = TAB_MAP[activeTab] ?? VaultPage;
 
+  const handleDropPlay = (track) => {
+    if (track) playTrack(track);
+    clearPendingDrop(pendingDrop?.id);
+    setActiveTab("music");
+  };
+
+  const handleDropDismiss = () => {
+    clearPendingDrop(pendingDrop?.id);
+  };
+
   return (
-    <Layout
-        isAuthenticated
-        dbStatus={dbStatus}
-        lastHeartbeat={lastHeartbeat}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onSignOut={logout}
-    >
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-        >
-          <ActivePage />
-        </motion.div>
-      </AnimatePresence>
-    </Layout>
+    <>
+      <DropAlertModal
+        drop={pendingDrop}
+        tracks={db?.music_lab?.tracks ?? []}
+        onPlay={handleDropPlay}
+        onDismiss={handleDropDismiss}
+      />
+      <Layout
+          isAuthenticated
+          dbStatus={dbStatus}
+          lastHeartbeat={lastHeartbeat}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onSignOut={logout}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <ActivePage />
+          </motion.div>
+        </AnimatePresence>
+      </Layout>
+    </>
   );
 };
 
