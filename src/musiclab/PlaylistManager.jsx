@@ -10,7 +10,6 @@ export const PlaylistNameInput = ({ onConfirm }) => {
   return (
     <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15`, display: "flex", gap: 8 }}>
       <input value={name} onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) onConfirm(name); }}
         placeholder="Nueva playlist..."
         style={{ flex: 1, background: "transparent", border: `1px solid ${ACID}33`, borderRadius: 2,
           color: ACID, fontSize: 11, padding: "6px 10px", fontFamily: FONT_MONO,
@@ -61,8 +60,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
     .map((id) => tracks.find((t) => t.id === id))
     .filter(Boolean);
 
-  const isCreator = playlist.created_by === userId;
-  const canDelete = isCreator && plTracks.length === 0;
+  const canDelete = true;
 
   const handlePlay = () => {
     if (!plTracks.length) return;
@@ -131,13 +129,8 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
         </div>
 
         {/* Footer — borrar playlist */}
-        {isCreator && (
-          <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15` }}>
-            {!canDelete ? (
-              <p style={{ color: `${ACID}25`, fontSize: 10, letterSpacing: "0.15em", textAlign: "center" }}>
-                Vacía la playlist para poder borrarla
-              </p>
-            ) : confirmDelete ? (
+        <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15` }}>
+          {confirmDelete ? (
               <div style={{ display: "flex", gap: 8 }}>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDeletePlaylist(playlist.id); onClose(); }}
                   style={{ flex: 1, padding: "6px 0", background: "#ff444418", border: "1px solid #ff444455",
@@ -160,7 +153,6 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
               </motion.button>
             )}
           </div>
-        )}
       </motion.div>
     </motion.div>
   );

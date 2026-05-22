@@ -9,7 +9,7 @@ import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./Playlis
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
 import { usePlayer } from "../core/PlayerContext";
-import { fetchPlaylists, createPlaylist, addTrackToPlaylist } from "../core/GoogleDriveService";
+import { fetchPlaylists, createPlaylist, addTrackToPlaylist, deletePlaylist } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
@@ -102,8 +102,15 @@ export default function MusicLab({
     setLocalPlaylists(updatedPlaylists);
   };
 
-  const handleDeletePlaylist = (updatedPlaylists) => {
-    setLocalPlaylists(updatedPlaylists);
+  const handleDeletePlaylist = async (playlistId) => {
+    try {
+      await deletePlaylist(playlistId);
+    } catch (err) {
+      console.warn("[Búnker] deletePlaylist falló:", err);
+    }
+    setLocalPlaylists((p) => p.filter((pl) => pl.id !== playlistId));
+    setToast("PLAYLIST ELIMINADA");
+    setTimeout(() => setToast(null), 2500);
   };
 
   const handleSelectPlaylist = async (playlistId) => {
@@ -438,7 +445,7 @@ export default function MusicLab({
 
               <div className="flex flex-col gap-2">
                 <AnimatePresence>
-                  {filteredTracks.length > 0 ? (
+                  {!editingTrack && filteredTracks.length > 0 ? (
                     filteredTracks.map((track) => (
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
@@ -568,8 +575,7 @@ export default function MusicLab({
                   handleEditPlaylist(updated);
                 }}
                 onDeletePlaylist={(plId) => {
-                  const updated = localPlaylists.filter((p) => p.id !== plId);
-                  handleDeletePlaylist(updated);
+                  handleDeletePlaylist(plId);
                 }}
               />
             );
