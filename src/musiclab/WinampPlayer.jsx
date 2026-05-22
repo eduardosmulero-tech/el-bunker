@@ -54,6 +54,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
 
   const ytPollingRef = useRef(null);
   const mountedRef   = useRef(false);
+  const currentTRef  = useRef(0);
   const [progress, setProgress] = useState(0);
   const [volume,   setVolume]   = useState(masterVolume ?? 80);
   const [duration, setDuration] = useState(0);
@@ -93,15 +94,23 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     return () => clearTimeout(timer);
   }, [autoPlaySignal]);
 
-  const skipDir = useCallback((dir) => {
-    if (dir === -1 && currentT < 3) {
-      // BUG-12: reiniciar track si han pasado menos de 3s
-      if (isYouTube) { ytPlayerRef.current?.seekTo(0, true); }
-      else if (audioRef.current) { audioRef.current.currentTime = 0; }
-      return;
-    }
-    skip(dir, tracks);
-  }, [skip, tracks, currentT, isYouTube]);
+const skipDir = useCallback((dir) => {
+if (dir === -1 && currentTRef.current >= 3) {
+// >= 3s: ir al track anterior
+skip(dir, tracks);
+return;
+}
+if (dir === -1) {
+// < 3s: reiniciar track actual
+if (isYouTube) { ytPlayerRef.current?.seekTo(0, true); }
+else if (audioRef.current) { audioRef.current.currentTime = 0; }
+currentTRef.current = 0;
+setCurrentT(0);
+setProgress(0);
+return;
+}
+skip(dir, tracks);
+}, [skip, tracks, isYouTube]);
 
   // ── Polling YT — local, reactivo a isPlaying ──────────────
   useEffect(() => {
@@ -113,9 +122,10 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     ytPollingRef.current = setInterval(() => {
       const p = ytPlayerRef.current;
       if (!p || typeof p.getCurrentTime !== "function") return;
-      const ct  = p.getCurrentTime() || 0;
-      const dur = p.getDuration()    || 0;
-      setCurrentT(ct);
+        const ct  = p.getCurrentTime() || 0;
+        const dur = p.getDuration()    || 0;
+        currentTRef.current = ct;
+        setCurrentT(ct);
       setDuration(dur);
       setProgress(dur > 0 ? (ct / dur) * 100 : 0);
     }, 500);
@@ -145,7 +155,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
       if (!audioRef.current || !duration) return;
       audioRef.current.currentTime = targetTime;
     }
-    // BUG-NUEVO-06: actualizar visual aunque esté en pausa
+// BUG-NUEVO-06: actualizar visual aunque esté en pausa
+    currentTRef.current = targetTime;
     setCurrentT(targetTime);
     setProgress(pct);
   };
@@ -162,6 +173,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     const audio = audioRef.current;
     if (!audio) return;
     const onTimeUpdate = () => {
+      currentTRef.current = audio.currentTime;
       setCurrentT(audio.currentTime);
       setDuration(audio.duration || 0);
       setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
@@ -182,11 +194,15 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     else           { if (audioRef.current)    audioRef.current.volume = masterVolume / 100; }
   }, [masterVolume]);
 
-  // BUG-13: scroll de título solo si el texto desborda el contenedor
-  useLayoutEffect(() => {
-    if (!titleRef.current) return;
-    setShouldScroll(titleRef.current.scrollWidth > titleRef.current.offsetWidth);
-  }, [track?.id, track?.title]);
+// BUG-29: scroll de título solo si el texto desborda el contenedor
+useLayoutEffect(() => {
+if (!titleRef.current) return;
+const raf = requestAnimationFrame(() => {
+if (!titleRef.current) return;
+setShouldScroll(titleRef.current.scrollWidth > titleRef.current.offsetWidth);
+});
+return () => cancelAnimationFrame(raf);
+}, [track?.id, track?.title]);
 
   const fmtTime = (s) => {
     if (!s || isNaN(s)) return "0:00";
@@ -279,7 +295,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
 
       {/* Track Info */}
       <div className="px-3 py-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
-        <div className="overflow-hidden whitespace-nowrap" style={{ maxWidth: "100%" }}>
+        <div className="overflow-hidden whitespace-nowrap" style={{ width: "100%" }}>
           <motion.p
             ref={titleRef}
             animate={shouldScroll ? { x: ["0%", "-40%", "0%"] } : {}}
