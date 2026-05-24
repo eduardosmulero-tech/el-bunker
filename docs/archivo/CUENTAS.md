@@ -47,7 +47,7 @@ dcgdozt@gmail.com
 ## BIBLIOTECAS DE ALMACENAMIENTO
 
 Cuentas Gmail dedicadas solo a almacenamiento (15 GB gratis c/u).
-La app nunca inicia sesión en ellas — el Admin accede via su propio token OAuth.
+La app nunca inicia sesión en ellas — el Admin accede vía su propio token OAuth.
 
 | Cuenta | Tipo | Carpeta | Estado |
 |---|---|---|---|
@@ -59,19 +59,19 @@ La app nunca inicia sesión en ellas — el Admin accede via su propio token OAu
 - 🔴 LOST: 23 meses → posible pérdida de archivos
 
 **Rutina anual:**
-1. Entrar a Gmail/Drive con cada cuenta biblioteca
-2. Hacer cualquier acción (subir 1KB, borrarlo)
-3. App → sección bibliotecas → botón "Heartbeat ✓"
+1. Entrar a Gmail/Drive con cada cuenta biblioteca.
+2. Hacer cualquier acción (subir 1KB, borrarlo).
+3. App → sección bibliotecas → botón "Heartbeat ✓".
 
 ---
 
 ## AÑADIR BIBLIOTECA NUEVA
 
-1. Crear cuenta Gmail (ej: `elbunker.musica2@gmail.com`)
-2. Entrar a Drive → crear carpeta `BUNKER_MUSICA` o `BUNKER_FOTOS`
-3. Compartir con `thebunker.admin@gmail.com` (permiso: Editor)
-4. Copiar ID de carpeta (URL después de `/folders/`)
-5. App logueado como Admin → sección bibliotecas → Añadir biblioteca
-6. Rellenar: email, tipo, etiqueta, ID carpeta, capacidad (14 GB para margen)
+1. Crear cuenta Gmail (ej: `elbunker.musica2@gmail.com`).
+2. Entrar a Drive → crear carpeta `BUNKER_MUSICA` o `BUNKER_FOTOS`.
+3. Compartir con `thebunker.admin@gmail.com` (permiso: Editor).
+4. Copiar ID de carpeta (URL después de `/folders/`).
+5. App logueado como Admin → sección bibliotecas → Añadir biblioteca.
+6. Rellenar: email, tipo, etiqueta, ID carpeta, capacidad (14 GB para margen).
 
 Al llegar al 90% crear una nueva del mismo tipo — coexisten.

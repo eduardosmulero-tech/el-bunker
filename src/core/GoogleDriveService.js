@@ -1369,24 +1369,17 @@ export const addTrackToPlaylist = async (playlistId, trackId) => {
 };
 
 /**
- * deletePlaylist(playlistId, requestedBy)
- * Elimina una playlist. Solo el creador puede borrarla y solo si está vacía.
+ * deletePlaylist(playlistId)
+ * Elimina una playlist por id.
  * @param {string} playlistId
- * @param {string} requestedBy — userId del que solicita el borrado
  * @returns {Promise<void>}
  */
-export const deletePlaylist = async (playlistId, requestedBy) => {
+export const deletePlaylist = async (playlistId) => {
   const db = await fetchData();
   const playlist = (db.music_lab?.playlists ?? []).find((pl) => pl.id === playlistId);
 
   if (!playlist) {
     throw _vaultError("PLAYLIST_NOT_FOUND", `Playlist ${playlistId} no encontrada`);
-  }
-  if (playlist.created_by !== requestedBy) {
-    throw _vaultError("PLAYLIST_FORBIDDEN", "Solo el creador puede eliminar una playlist.");
-  }
-  if (playlist.track_ids.length > 0) {
-    throw _vaultError("PLAYLIST_NOT_EMPTY", "Vacía la playlist antes de eliminarla.");
   }
 
   await updateData((db) => ({

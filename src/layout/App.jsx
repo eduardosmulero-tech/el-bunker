@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { VaultProvider, useVault, BOOT } from "../core/VaultContext";
+import { useMusicActions }               from "../musiclab/useMusicActions";
 import { PlayerProvider, usePlayer }     from "../core/PlayerContext";
 import Layout                            from "./Layout";
 import LoginScreen                       from "./LoginScreen";
@@ -156,61 +157,18 @@ const VaultPage = () => {
 
 /** Wrapper para la pestaña MUSIC LAB */
 const MusicPage = () => {
-  const { db, patchDb, user, masterVolume, setMasterVolume } = useVault();
+  const { db, user, setMasterVolume } = useVault();
+  const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
   return (
     <MusicLab
       db={db}
       userId={user?.id ?? null}
-      onAddTrack={async (trackData) => {
-        await patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            tracks: [...(prev.music_lab?.tracks ?? []), trackData],
-          },
-        }));
-      }}
-      onAddDrop={async (dropData) => {
-        await patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            drops: [...(prev.music_lab?.drops ?? []), dropData],
-          },
-        }));
-      }}
-      onDeleteTrack={async (trackId) => {
-        await patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            tracks: (prev.music_lab?.tracks ?? []).filter((t) => t.id !== trackId),
-          },
-        }));
-      }}
-      onEditTrack={async (updatedTrack) => {
-        await patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            tracks: (prev.music_lab?.tracks ?? []).map((t) =>
-              t.id === updatedTrack.id ? { ...t, ...updatedTrack } : t
-            ),
-          },
-        }));
-      }}
+      onAddTrack={onAddTrack}
+      onAddDrop={onAddDrop}
+      onDeleteTrack={onDeleteTrack}
+      onEditTrack={onEditTrack}
       onMasterVolumeChange={setMasterVolume}
-      onMarkDropSeen={async (dropId) => {
-        await patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            drops: (prev.music_lab?.drops ?? []).map((d) =>
-              d.id === dropId ? { ...d, seen: true } : d
-            ),
-          },
-        }));
-      }}
+      onMarkDropSeen={onMarkDropSeen}
     />
   );
 };
