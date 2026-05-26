@@ -1,45 +1,8 @@
-# PLIEGOS.md — el_bunker
-> Registro secuencial. Número no se resetea entre sesiones.
-> **PRÓXIMO: PLIEGO-072**
+# PLIEGOS_HISTORIAL.md — el_bunker
+> Append-only. Claude nunca lee este archivo en arranque.
+> Al cerrar sesión: mover pliegos aplicados desde PLIEGOS.md aquí.
 
 ---
-
-## PLANTILLA
-
-```
-PLIEGO-[NNN] — [nombre]
-Fecha: YYYY-MM-DD
-Modelo: [qwen3-8b-nothink | qwen3-8b-think | qwen3-14b-nothink | qwen3-14b-think]
-Estado: [pendiente | aplicado | descartado]
-ARCHIVOS: [rutas desde raíz — uno por Pliego salvo excepciones documentadas]
-CAMBIO: [descripción técnica]
-CRITERIO DE ÉXITO: [cómo verificar]
-RESULTADO: [rellenar tras aplicar]
-```
-
----
-
-## PENDIENTES
-
-### PLIEGO-072 — `src/musiclab/MusicLab.jsx` + `src/musiclab/AddTrackForm.jsx` + `src/musiclab/PlaylistManager.jsx`
-**Bugs:** BUG-NUEVO-14, BUG-NUEVO-15, BUG-NUEVO-23
-- Editar track: ocultar lista de tracks mientras el modal de edición está abierto.
-- Crear playlist: botón explícito visible + Enter sin confirmación no debe crear.
-- Eliminar playlist: quitar restricción de owner (app privada de pareja) + fix persistencia en DB.
-**Modelo:** qwen3-14b-nothink
-
----
-
-### PLIEGO-073 — `src/musiclab/WinampPlayer.jsx` + `src/core/PlayerContext.jsx`
-**Bugs:** BUG-NUEVO-18, BUG-NUEVO-19, BUG-NUEVO-22
-- Slider volumen master: sincronizar con `audioRef.current.volume` para tracks Drive.
-- `activeVibe`: propagar acento de color a toda la app vía CSS custom property en `<body>`, no solo al reproductor.
-- Botones físicos de volumen Android: **incertidumbre técnica** — la API MediaSession no expone un evento `volumechange`. Investigar si `navigator.mediaSession` o el contexto TWA/WebView permiten interceptar los botones físicos antes de generar este bloque del Pliego. Si no hay API viable, documentar como limitación de plataforma.
-**Modelo:** qwen3-14b-nothink
-
----
-
-## HISTORIAL
 
 | # | Archivo/s | Cambio | Commit |
 |---|---|---|---|
@@ -128,5 +91,5 @@ RESULTADO: [rellenar tras aplicar]
 | 067 | WinampPlayer.jsx | Polling YT local reactivo a `isPlaying` + fix dep `[]` Drive | [S24] |
 | 068 | GoogleDriveService.js | Fix reauth automática en 403 para David | [S25] |
 | 069 | PlayerContext.jsx + WinampPlayer.jsx | Loop triestado `"off"\|"list"\|"track"` + `loopModeRef` + `toggleLoopMode` + icono triestado | [S26] |
-| 070 | PlayerContext.jsx + WinampPlayer.jsx | BUG-09 cola agotada+loopOFF para · BUG-10 mountedRef desync · BUG-11 toggle tap track activo · BUG-16 shuffle ignora cola · BUG-17 getStreamUrl Drive · BUG-19 vibeConf desde activeVibe · BUG-12 skipDir reiniciar <3s · BUG-13 scroll título condicional | [S26] |
-| 071 | WinampPlayer.jsx | BUG-NUEVO-12 skip anterior invertido (currentTRef stale closure) · BUG-NUEVO-13 título siempre animado (requestAnimationFrame + width:100%) | [S27] |
+| 070 | PlayerContext.jsx + WinampPlayer.jsx | BUG-09/10/11/16/17/19/12/13 — fixes reproductor bloque S26 | [S26] |
+| 071 | WinampPlayer.jsx | BUG-NUEVO-12 skip anterior invertido · BUG-NUEVO-13 título siempre animado | [S27] |

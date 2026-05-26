@@ -1,54 +1,77 @@
-# ERRORES_RESUELTOS.md — el_bunker
-> Archivo histórico. Append-only. Claude no lee en arranque.
-> Origen: ESTADO.md hasta sesión 27.
+# REGLAS.md — el_bunker
+> Workflow y conducta de Claude. Normativo — prevalencia absoluta.
+> Si Edu pide algo que contradice estas reglas, Claude para y lo señala.
 
-| # | Descripción | Solución | Commit |
-|---|---|---|---|
-| 1 | Tailwind v4 incompatible | Downgrade a v3.4.19. NO actualizar. | — |
-| 2 | Email vacío, 401 userinfo | Añadir userinfo.email + userinfo.profile a SCOPES | — |
-| 3 | SW cacheando versión rota | Clear site data completo + hard refresh | — |
-| 4 | Login admin bloqueado en Opera GX | Usar Chrome | — |
-| 5 | Continue webview en blanco | Cerrar todos Code.exe y reiniciar. Migrado a Cline | — |
-| 6 | Deploy Vercel | VITE vars en Vercel + URL en Google Cloud Console + Chrome | — |
-| 7 | Qwen trunca funciones largas | Rechazar diff. Reenviar con código explícito | — |
-| 8 | Qwen genera SEARCH incorrecto | Copiar SEARCH literal desde archivo con PowerShell | — |
-| 9 | Timeout Ollama | Verificar `ollama list` antes de lanzar Pliegos | — |
-| 10 | Ctrl+H falla por encoding PowerShell | Ir directo a la línea en VS Code | — |
-| 11 | PWA no instala como standalone | Iconos 192px y 512px obligatorios en public/icons/ | — |
-| 12 | Commits bloqueados en Vercel | Git con bansovi.py@gmail.com | — |
-| 13 | Separador `---` dentro de JS | NO usar en JS. Usar `// ─────` | — |
-| 14 | toast no declarado (pantalla blanca) | Verificar bloque useState antes de cualquier lógica | — |
-| 21 | SW interceptaba YouTube | Añadir youtube.com, ytimg.com, googlevideo.com a BYPASS_PATTERNS | — |
-| 22 | Migración schema no se ejecutaba | Actualizar CONFIG.SCHEMA_VERSION | — |
-| 23 | `<audio>` con URL YouTube | NO funciona. iframe para YT, `<audio>` para Drive | — |
-| 24 | Modales no mutuamente excluyentes | PLIEGO-023 | a484f2f |
-| 27/28 | Loop/shuffle/skip stale closures | PLIEGO-021 | e792889 |
-| 29 | Play en drop navega a MusicLab | PLIEGO-033 | aplicado |
-| 35 | YT.Player no carga video inicial | PLIEGO-028b | f6af422 |
-| Bug B | Sin persistencia OAuth2 | PLIEGO-022 | 200a1a3 |
-| BUG-CRÍTICO-02 | Pantalla blanca MusicLab (TDZ) | PLIEGO-034 | f598adb |
-| PLIEGO-035/036 | MusicLab.jsx 2119 líneas | Extracción a 6 archivos | 51d4ddb |
-| BUG-024-PERSIST | Editar track no persistía | PLIEGO-044 | — |
-| BUG-NUEVO-05 | URL playlist YouTube crasheaba | PLIEGO-045 | 254bcb3 |
-| Vercel cache s17 | Pantalla blanca pese a código correcto | git commit --allow-empty + push | — |
-| App.jsx s18 | `user` redeclarado en AppCore | Eliminar destructuring duplicado | — |
-| WinampPlayer s18 | `startPolling` redeclarado | Renombrar local a `startPollingLocal` | — |
-| MusicLab s19 | `useState is not defined` pantalla blanca | Import React faltante tras Ctrl+A+pegar | — |
-| BUG-NUEVO-04 | Volumen master estático | PLIEGO-054 | aplicado |
-| S21 BUG-PLAYLIST-INTEGRATION + BUG-DUPLICATE-KEYS + DROPS-VACIO | Varios | PLIEGO-064 | 9df252f |
-| 018-STRINGS | manifest.json encoding roto | PLIEGO-018-STRINGS | aplicado |
-| S23 TDZ skipRef | skipRef declarado antes de skip() | PLIEGO-065b | — |
-| S23 removeChild | div YT en JSX React → conflicto DOM | PLIEGO-065e: div imperativo fuera de árbol React | — |
-| S23 pantalla blanca | setYtReady residual en WinampPlayer | PLIEGO-065d | — |
-| S24 barra progreso inerte Drive | `useEffect` dep `[audioRef.current]` inerte | PLIEGO-067: dep `[]` | — |
-| S24 barra progreso inerte YT | startPolling nunca se llamaba | PLIEGO-067: `useEffect([playing, track?.id])` local | — |
-| S24 setYtReady is not defined | Residuo tras eliminar ytReady del contexto | PLIEGO-066b | — |
-| BUG-NUEVO-08 | Loop solo 2 estados | PLIEGO-069: loop triestado `"off"\|"list"\|"track"` | [S26] |
-| BUG-NUEVO-09 | Cola agotada + loop OFF → reproduce primer track | PLIEGO-070: `setIsPlaying(false); return` | [S26] |
-| BUG-NUEVO-10 | Volver a MusicLab → barra en 0:00, botón Play aunque suene | PLIEGO-070: `mountedRef` guard | [S26] |
-| BUG-NUEVO-11 | Tap en track activo reproduciéndose no pausa | PLIEGO-070: toggle en `playTrack` si mismo `activeTrack` | [S26] |
-| BUG-NUEVO-16 | Shuffle no funciona: salta al siguiente en cola | PLIEGO-070: cola con prioridad solo si `!shuffle` | [S26] |
-| BUG-NUEVO-17 | Track Drive termina → no autoplay siguiente | PLIEGO-070: `getStreamUrl` para URL autenticada | [S26] |
-| BUG-NUEVO-19 | `activeVibe` solo cambia acento en reproductor | PLIEGO-070 (parcial B13): `vibeConf` desde `activeVibe` en WinampPlayer | [S26] |
-| BUG-NUEVO-12 | Skip anterior invertido: <3s reiniciaba en vez de ir atrás | PLIEGO-071: `currentTRef` para evitar stale closure en `skipDir` | [S27] |
-| BUG-NUEVO-13 | Título siempre animado aunque cupiera en pantalla | PLIEGO-071: `requestAnimationFrame` en `useLayoutEffect` + `width:100%` en contenedor | [S27] |
+## ROL
+Edu es desarrollador novato — Claude es el responsable técnico.
+Si Edu propone algo que contradice una convención establecida o una decisión anterior, Claude lo dice antes de generar el Pliego. Si hay conflicto entre lo que Edu pide y lo que es técnicamente correcto, Claude prioriza lo correcto y lo explica. Edu tiene la última palabra, pero Claude no calla si ve un error.
+
+## REGLAS DE ORO
+Convenciones antes de arquitectura propia. Para patrones con más de 10 años de historia establecida, seguir las convenciones del estándar web. Ver ADR-009 en CONTRATO.md.
+Archivo antes de diagnóstico. Para cualquier bug, el archivo afectado se adjunta antes de pedir diagnóstico.
+Estado conocido antes de Pliegos nuevos. Confirmar o descartar todos los Pliegos "sin testing" antes de abrir trabajo nuevo.
+Un bug = una causa. Si varios síntomas comparten causa raíz, un solo Pliego los agrupa. Incluir causa probable al registrar.
+Edu pica el código salvo que diga lo contrario. Siempre SEARCH/REPLACE exactos o archivo completo. Nunca diffs.
+Resolución de formato. SEARCH/REPLACE por defecto. Archivo completo solo si menos de 80 líneas o más del 40% afectado.
+Un Pliego = un archivo. Agrupar Pliegos relacionados en una sola respuesta.
+Archivos críticos (GoogleDriveService.js, VaultContext.jsx, PlayerContext.jsx, sw.js): modelo qwen3-14b-think + revisión cruzada.
+Principio de modificación mínima. Solo tocar lo estrictamente necesario.
+Criterio de éxito antes del Pliego. Definir comportamiento observable antes del SEARCH/REPLACE.
+Scope lock. Una vez iniciado un Pliego, no se añaden cambios. Lo nuevo va a ESTADO.md.
+Regresión = explicación antes de fix. Claude explica por qué antes de generar el fix.
+ADR y convenciones son vinculantes. Contradicción → Claude para y pide confirmación explícita.
+Cierre de sesión obligatorio. Marcar Pliegos, testeos, bugs nuevos antes de terminar.
+Loop es triestado. loopMode: "off" | "list" | "track". Nunca boolean. Ver 🔒-1 en CONTRATO.md.
+
+## PLANTILLA DE PLIEGO
+PLIEGO-[NNN] — [nombre]
+Fecha: YYYY-MM-DD
+Modelo: [qwen3-8b-nothink | qwen3-8b-think | qwen3-14b-nothink | qwen3-14b-think]
+Estado: [pendiente | aplicado | descartado]
+ARCHIVOS: [rutas desde raíz — uno por Pliego salvo excepciones documentadas]
+CAMBIO: [descripción técnica]
+CRITERIO DE ÉXITO: [cómo verificar]
+RESULTADO: [rellenar tras aplicar]
+
+## WORKFLOW HUMANO
+
+SEARCH/REPLACE listos para Ctrl+H, o archivo completo para Ctrl+A + pegar.
+Comandos PowerShell de verificación junto al Pliego.
+Si SEARCH no coincide: avisar, no repetir el Pliego.
+Commits con master. PowerShell no admite && — comandos en líneas separadas.
+
+
+## WORKFLOW B — Síncrono (principal)
+
+git status + git diff [hash] src/Archivo.js
+Identificar Pliego en PLIEGOS.md
+Pedir SEARCH/REPLACE exactos
+Verificar SEARCH: Get-Content src/Archivo.js | Select-Object -Index (N..M)
+Aplicar Ctrl+H en VS Code
+Verificar resultado, pegar output a Claude para OK
+git add src/Archivo.js
+git commit -m "PLIEGO-00X: descripción"
+
+## WORKFLOW A — Asíncrono (fallback)
+Prerequisito: ollama list + ollama run qwen3:14b.
+Dar a Qwen el Pliego + bloque de código literal. Timer 20 min.
+Si Qwen falla: rechazar, cambiar a Workflow B. No reintentar más de una vez.
+
+## TABLA DE MODELOS
+ModeloCuándoqwen3-8b-nothink< 20 líneas, CSS, textos, renombradosqwen3-8b-think< 20 líneas con lógica, props simplesqwen3-14b-nothink> 100 líneas, lógica de estado, integracionesqwen3-14b-thinkauth, Drive API, Service Worker, bugs complejos, datos persistidos
+
+## CHECKLIST CIERRE DE PLIEGO
+
+ Marcar stale en docs/Arquitectura/INDEX.md los docs que describen archivos tocados
+ Actualizar docs/Nucleo/CONTRATO.md si el pliego implementa o modifica un ADR
+ Actualizar docs/Nucleo/ESTADO.md con bugs nuevos o resueltos
+ Actualizar número siguiente en PLIEGOS.md
+
+## CHECKLIST CIERRE DE SESIÓN
+
+ Actualizar docs/SESION.md para la próxima sesión
+ Actualizar docs de docs/Arquitectura/ marcados stale
+ Mover bugs resueltos a docs/legacy/ERRORES_RESUELTOS.md
+ Mover pliegos aplicados a docs/legacy/PLIEGOS_HISTORIAL.md
+ Escribir entrada en docs/legacy/SESIONES.md
+ Verificar límites de líneas en docs/Nucleo/
