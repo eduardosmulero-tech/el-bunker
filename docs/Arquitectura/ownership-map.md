@@ -1,3 +1,10 @@
+---
+describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, GoogleDriveService.js
+sincronizado_con: PLIEGO-055
+stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx
+stale: true — PLIEGO-066/069/070 modificaron PlayerContext.jsx sin actualizar este doc
+---
+
 # ownership-map.md
 
 # Ownership Map

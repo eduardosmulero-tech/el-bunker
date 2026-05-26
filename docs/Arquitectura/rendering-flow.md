@@ -1,3 +1,10 @@
+---
+describe: App.jsx, VaultContext.jsx, PlayerContext.jsx, main.jsx
+sincronizado_con: PLIEGO-053
+stale_si_pliego_toca: App.jsx, VaultContext.jsx, PlayerContext.jsx
+stale: true — PLIEGO-061/065/066 modificaron PlayerContext.jsx sin actualizar este doc
+---
+
 # rendering-flow.md
 
 # Rendering Flow

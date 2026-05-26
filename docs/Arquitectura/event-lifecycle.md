@@ -1,3 +1,10 @@
+---
+describe: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx
+sincronizado_con: PLIEGO-069
+stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx
+stale: true — PLIEGO-070/071 modificaron PlayerContext.jsx y WinampPlayer.jsx sin actualizar este doc
+---
+
 # event-lifecycle.md
 
 # Event Lifecycle

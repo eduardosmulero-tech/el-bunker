@@ -1,3 +1,9 @@
+---
+describe: PlayerContext.jsx, VaultContext.jsx, WinampPlayer.jsx, MusicLab.jsx, PlaylistManager.jsx, DropsManager.jsx
+sincronizado_con: PLIEGO-071
+stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx
+---
+
 # State Map
 
 ## Global State

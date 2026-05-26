@@ -1,3 +1,9 @@
+---
+describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, src/ (estructura general)
+sincronizado_con: PLIEGO-053
+stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx
+---
+
 # technical-debt.md
 
 # Technical Debt

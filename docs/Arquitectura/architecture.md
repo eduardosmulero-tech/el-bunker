@@ -1,4 +1,8 @@
-# architecture.md
+---
+describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, GoogleDriveService.js
+sincronizado_con: PLIEGO-065e
+stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx
+---
 
 # Architecture
 
