@@ -86,8 +86,12 @@ export default function MusicLab({
     localQueue, addToQueue, removeFromQueue, playTrack,
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
-    activeVibe, setActiveVibe,
   } = usePlayer();
+
+  // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
+  const [libraryFilter, setLibraryFilter] = useState("all");
+
+SEARCH/REPLACE 2 — filteredTracks: activeVibe → libraryFilter, campo vibe → tag con fallback
 
   useEffect(() => {
     if (!db) return;
@@ -147,9 +151,11 @@ export default function MusicLab({
   };
 
   // ── Handlers Tracks ──────────────────────────────────────
-  const filteredTracks = activeVibe === "all"
+  const filteredTracks = libraryFilter === "all"
     ? localTracks
-    : localTracks.filter((t) => t.vibe === activeVibe);
+    : localTracks.filter((t) => (t.tag ?? t.vibe) === libraryFilter);
+
+SEARCH/REPLACE 3 — VibeTagBar: activeVibe → libraryFilter
 
   const handleAddTrack = (trackData) => {
     setLocalTracks((p) => [...p, trackData]);
@@ -350,7 +356,7 @@ export default function MusicLab({
             <motion.div key="tracks" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <VibeTagBar activeVibe={activeVibe} onVibeChange={setActiveVibe} VIBE_TAGS={VIBE_TAGS} />
+                <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS} />
               </motion.div>
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">

@@ -93,3 +93,14 @@
 | 069 | PlayerContext.jsx + WinampPlayer.jsx | Loop triestado `"off"\|"list"\|"track"` + `loopModeRef` + `toggleLoopMode` + icono triestado | [S26] |
 | 070 | PlayerContext.jsx + WinampPlayer.jsx | BUG-09/10/11/16/17/19/12/13 — fixes reproductor bloque S26 | [S26] |
 | 071 | WinampPlayer.jsx | BUG-NUEVO-12 skip anterior invertido · BUG-NUEVO-13 título siempre animado | [S27] |
+### PLIEGO-072a — `src/musiclab/MusicLab.jsx`
+Fecha: 2026-05-27 · Modelo: qwen3-14b-nothink · Estado: aplicado · Sesión: S29
+BUG-14: ocultar TrackCards durante showEdit · BUG-15: botón explícito + formulario inline en pestaña LISTS · BUG-23: reemplazar deletePlaylist por patchDb para persistencia en DB
+
+### PLIEGO-072b — `src/musiclab/PlaylistManager.jsx`
+Fecha: 2026-05-27 · Modelo: qwen3-14b-nothink · Estado: aplicado · Sesión: S29
+BUG-15: guard onKeyDown en PlaylistNameInput para prevenir creación accidental con Enter
+
+### PLIEGO-073 — `src/musiclab/WinampPlayer.jsx`
+Fecha: 2026-05-27 · Modelo: qwen3-14b-nothink · Estado: aplicado · Sesión: S29
+BUG-18: sync masterVolume → audioRef.current.volume antes de play() en autoPlaySignal · BUG-22: listener volumechange para botones físicos Android · guarda feedback loop en efecto [masterVolume]

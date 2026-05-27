@@ -2,16 +2,15 @@
 //  EL BÚNKER — PlayerContext.jsx
 //  Global Audio State Provider (ADR-004)
 //  Centraliza: activeTrack, isPlaying, queue, autoPlaySignal,
-//              refs YT/Audio, skip/loop/shuffle
+//              audioRef, skip/loop/shuffle, trackVibe (ADR-011)
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
 
 // ─── VIBE COLOR MAP ───────────────────────────────────────────
-// null = neutro (sin acento activo)
+// Derivado de activeTrack?.tag (ADR-011). Sin "all" — es filtro de UI, no vibe.
 const VIBE_COLORS = {
-  all:         null,
   gaming:      "#00ffcc",
   "420_chill": "#aaff44",
   dnb:         "#ff6b35",
@@ -25,22 +24,7 @@ export const usePlayer = () => {
   return ctx;
 };
 
-const extractYouTubeId = (url) => {
-  const match = url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
-};
-
-const loadYTApi = (onReady) => {
-  if (window.YT && window.YT.Player) { onReady(); return; }
-  if (!document.getElementById("yt-api-script")) {
-    const tag = document.createElement("script");
-    tag.id  = "yt-api-script";
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-  }
-  const prev = window.onYouTubeIframeAPIReady;
-  window.onYouTubeIframeAPIReady = () => { prev?.(); onReady(); };
-};
+SEARCH/REPLACE 2 — eliminar activeVibe state + derivar trackVibe
 
 export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeTrack,    setActiveTrack]    = useState(tracks[0] ?? null);
@@ -50,14 +34,17 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [shuffle,        setShuffle]        = useState(false);
   const [autoPlaySignal, setAutoPlaySignal] = useState(0);
   const [syncStatus,     setSyncStatus]     = useState("idle");
-  const [activeVibe,     setActiveVibe]     = useState("all");
   const [masterVolume,   setMasterVolume]   = useState(80);
 
+  // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
+  const trackVibe = activeTrack?.tag ?? null;
+
+SEARCH/REPLACE 3 — eliminar ytPlayerRef + isYouTube
+
   const audioRef    = useRef(null);
-  const ytPlayerRef = useRef(null);
   const wakeLockRef = useRef(null);
 
-  const isYouTube = activeTrack?.type === "youtube" || (!activeTrack?.type && activeTrack?.url);
+SEARCH/REPLACE 4 — playTrack sin ramas YT
 
   // ── Persistencia cola en Drive ────────────────────────────
   useEffect(() => {
@@ -140,19 +127,19 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     if (activeTrack?.id === track.id) {
       // BUG-11: tap en track activo → toggle play/pause
       if (isPlaying) {
-        if (isYouTube) { ytPlayerRef.current?.pauseVideo?.(); }
-        else           { audioRef.current?.pause(); }
+        audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        if (isYouTube) { ytPlayerRef.current?.playVideo?.(); }
-        else           { audioRef.current?.play().catch(() => {}); }
+        audioRef.current?.play().catch(() => {});
         setIsPlaying(true);
       }
       return;
     }
     setActiveTrack(track);
     setAutoPlaySignal((n) => n + 1);
-  }, [activeTrack?.id, isPlaying, isYouTube]);
+  }, [activeTrack?.id, isPlaying]);
+
+SEARCH/REPLACE 5 — vibe effect: activeVibe → trackVibe, documentElement → body
 
   const toggleLoopMode = useCallback(() => {
     setLoopMode((m) => m === "off" ? "list" : m === "list" ? "track" : "off");
@@ -173,55 +160,20 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     return () => { rel(); document.removeEventListener("visibilitychange", onVis); };
   }, [isPlaying]);
 
-  // ── Vibe accent — CSS variable global ─────────────────────
+  // ── trackVibe → CSS custom property en body (ADR-011) ─────
   useEffect(() => {
-    const color = VIBE_COLORS[activeVibe] ?? null;
+    const color = VIBE_COLORS[trackVibe] ?? null;
     if (color) {
-      document.documentElement.style.setProperty("--vibe-accent", color);
+      document.body.style.setProperty("--vibe-accent", color);
     } else {
-      document.documentElement.style.removeProperty("--vibe-accent");
+      document.body.style.removeProperty("--vibe-accent");
     }
-  }, [activeVibe]);
+  }, [trackVibe]);
 
-   // ── Inicialización YT.Player persistente ─────────────────────────────
-  useEffect(() => {
-    if (!activeTrack) return;
-    const isYT = activeTrack.type === "youtube" || (!activeTrack.type && activeTrack.url);
-    if (!isYT) return;
+SEARCH/REPLACE 6 — eliminar efecto YT init completo
 
-    const initPlayer = () => {
-      const videoId = extractYouTubeId(activeTrack.youtube_url ?? activeTrack.url ?? "");
-      // Si el player ya existe, solo cambiar video — nunca destroy() sobre div controlado por React
-      if (ytPlayerRef.current && typeof ytPlayerRef.current.loadVideoById === "function") {
-        ytPlayerRef.current.loadVideoById(videoId);
-        return;
-      }
-      ytPlayerRef.current = new window.YT.Player("yt-player-div", {
-        videoId,
-        playerVars: { autoplay: 0, controls: 0, rel: 0 },
-        events: {
-          onReady: (e) => {
-            e.target.setVolume(masterVolume ?? 80);
-          },
-          onStateChange: (e) => {
-            const s = e.data;
-            if (s === window.YT.PlayerState.PLAYING)     { setIsPlaying(true); }
-            else if (s === window.YT.PlayerState.PAUSED) { setIsPlaying(false); }
-            else if (s === window.YT.PlayerState.ENDED)  {
-              if (loopModeRef.current === "track") {
-                e.target.seekTo(0); e.target.playVideo();
-              } else {
-                setIsPlaying(false); skipRef.current?.(1);
-              }
-            }
-          },
-        },
-      });
-    };
 
-    loadYTApi(initPlayer);
-    // NO cleanup destroy aquí — el player debe sobrevivir cambios de pestaña
-  }, [activeTrack?.id]);
+SEARCH/REPLACE 7 — audioSrc sin rama YT + eliminar efecto div YT
 
   // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
@@ -234,19 +186,11 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   }, [loopMode, skip]);
 
   // ── src del audio: reactivo al track activo ───────────────────
-  const audioSrc = (!activeTrack || activeTrack.type === "youtube")
-    ? null
-    : activeTrack.drive_file_id
-      ? getStreamUrl(activeTrack.drive_file_id)
-      : null;
-  // ── div YT fuera del árbol React — imperativo, nunca en JSX ──────────
-  useEffect(() => {
-    if (document.getElementById("yt-player-div")) return;
-    const div = document.createElement("div");
-    div.id = "yt-player-div";
-    div.style.display = "none";
-    document.body.appendChild(div);
-  }, []);
+  const audioSrc = activeTrack?.drive_file_id
+    ? getStreamUrl(activeTrack.drive_file_id)
+    : null;
+
+SEARCH/REPLACE 8 — context value actualizado
 
   return (
     <PlayerContext.Provider value={{
@@ -257,10 +201,9 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       shuffle,     setShuffle,
       autoPlaySignal, setAutoPlaySignal,
       syncStatus,
-      activeVibe,   setActiveVibe,
+      trackVibe,
       masterVolume, setMasterVolume,
-      audioRef, ytPlayerRef,
-      isYouTube,
+      audioRef,
       skip, addToQueue, removeFromQueue, playTrack,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}

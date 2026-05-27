@@ -1,0 +1,52 @@
+PLIEGO-077 — src/musiclab/MusicLab.jsx
+Fecha: 2026-05-27
+Modelo: qwen3-14b-nothink
+Estado: pendiente
+ARCHIVOS: src/musiclab/MusicLab.jsx
+CAMBIO: activeVibe/setActiveVibe salen de PlayerContext y pasan a estado local
+        libraryFilter/setLibraryFilter (ADR-011). filteredTracks actualizado.
+        VibeTagBar recibe libraryFilter en lugar de activeVibe.
+CRITERIO DE ÉXITO: El filtro de vibe en la librería funciona igual que antes.
+        PlayerContext ya no expone activeVibe. Sin errores de consola.
+RESULTADO: —
+
+SEARCH/REPLACE 1 — quitar activeVibe/setActiveVibe del hook; añadir estado local
+SEARCH:
+  // ── Estado de reproducción — viene de PlayerContext ───────
+  const {
+    activeTrack, setActiveTrack,
+    localQueue, addToQueue, removeFromQueue, playTrack,
+    autoPlaySignal, setAutoPlaySignal,
+    syncStatus,
+    activeVibe, setActiveVibe,
+  } = usePlayer();
+
+REPLACE:
+  // ── Estado de reproducción — viene de PlayerContext ───────
+  const {
+    activeTrack, setActiveTrack,
+    localQueue, addToQueue, removeFromQueue, playTrack,
+    autoPlaySignal, setAutoPlaySignal,
+    syncStatus,
+  } = usePlayer();
+
+  // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
+  const [libraryFilter, setLibraryFilter] = useState("all");
+
+SEARCH/REPLACE 2 — filteredTracks: activeVibe → libraryFilter, campo vibe → tag con fallback
+SEARCH:
+  const filteredTracks = activeVibe === "all"
+    ? localTracks
+    : localTracks.filter((t) => t.vibe === activeVibe);
+
+REPLACE:
+  const filteredTracks = libraryFilter === "all"
+    ? localTracks
+    : localTracks.filter((t) => (t.tag ?? t.vibe) === libraryFilter);
+
+SEARCH/REPLACE 3 — VibeTagBar: activeVibe → libraryFilter
+SEARCH:
+                <VibeTagBar activeVibe={activeVibe} onVibeChange={setActiveVibe} VIBE_TAGS={VIBE_TAGS} />
+
+REPLACE:
+                <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS} />

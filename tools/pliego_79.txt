@@ -1,0 +1,29 @@
+PLIEGO-079 — sw.js
+Fecha: 2026-05-27
+Modelo: qwen3-8b-nothink
+Estado: pendiente
+ARCHIVOS: public/sw.js
+CAMBIO: Eliminar bypass patterns de YouTube: youtube.com, ytimg.com, googlevideo.com.
+CRITERIO DE ÉXITO: BYPASS_PATTERNS solo contiene entradas de Google APIs/auth.
+        Sin referencias a YouTube en el Service Worker.
+RESULTADO: —
+
+SEARCH/REPLACE 1 — quitar tres patterns YT de BYPASS_PATTERNS
+SEARCH:
+const BYPASS_PATTERNS = [
+  /googleapis\.com/,
+  /accounts\.google\.com/,
+  /gstatic\.com/,
+  /youtube\.com/,
+  /ytimg\.com/,
+  /googlevideo\.com/,
+  /chrome-extension/,
+];
+
+REPLACE:
+const BYPASS_PATTERNS = [
+  /googleapis\.com/,
+  /accounts\.google\.com/,
+  /gstatic\.com/,
+  /chrome-extension/,
+];

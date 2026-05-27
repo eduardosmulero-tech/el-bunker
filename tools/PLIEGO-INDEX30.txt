@@ -1,0 +1,32 @@
+PLIEGO-INDEX30 — docs/Arquitectura/INDEX.md
+Fecha: 2026-05-28
+Modelo: qwen3-8b-nothink
+Estado: pendiente
+ARCHIVOS: docs/Arquitectura/INDEX.md
+CAMBIO: Actualizar sincronizado_con para los docs ya stale tocados por pliegos S30.
+CRITERIO DE ÉXITO: Todos los docs que describen archivos tocados en S30 marcados STALE con nota S30.
+RESULTADO: —
+
+SEARCH/REPLACE 1 — event-lifecycle
+SEARCH:
+| event-lifecycle.md | PLIEGO-069 | PlayerContext.jsx, WinampPlayer.jsx | ⚠️ STALE — PLIEGO-070/071/073 tocaron WinampPlayer.jsx y PlayerContext.jsx |
+REPLACE:
+| event-lifecycle.md | PLIEGO-069 | PlayerContext.jsx, WinampPlayer.jsx | ⚠️ STALE — PLIEGO-070/071/073/075/076 tocaron WinampPlayer.jsx y PlayerContext.jsx |
+
+SEARCH/REPLACE 2 — ownership-map
+SEARCH:
+| ownership-map.md | PLIEGO-055 | PlayerContext.jsx, VaultContext.jsx, App.jsx | ⚠️ STALE — PLIEGO-066/069/070 tocaron PlayerContext.jsx |
+REPLACE:
+| ownership-map.md | PLIEGO-055 | PlayerContext.jsx, VaultContext.jsx, App.jsx | ⚠️ STALE — PLIEGO-066/069/070/075 tocaron PlayerContext.jsx |
+
+SEARCH/REPLACE 3 — rendering-flow
+SEARCH:
+| rendering-flow.md | PLIEGO-053 | App.jsx, VaultContext.jsx, PlayerContext.jsx | ⚠️ STALE — PLIEGO-061/065/066 tocaron PlayerContext.jsx |
+REPLACE:
+| rendering-flow.md | PLIEGO-053 | App.jsx, VaultContext.jsx, PlayerContext.jsx | ⚠️ STALE — PLIEGO-061/065/066/075 tocaron PlayerContext.jsx |
+
+SEARCH/REPLACE 4 — state-map
+SEARCH:
+| state-map.md | PLIEGO-071 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx | ⚠️ STALE — PLIEGO-073 tocó WinampPlayer.jsx |
+REPLACE:
+| state-map.md | PLIEGO-071 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx | ⚠️ STALE — PLIEGO-073/075/076 tocaron PlayerContext.jsx y WinampPlayer.jsx |

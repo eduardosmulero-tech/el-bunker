@@ -91,3 +91,21 @@
 - Creados `docs/nucleo/CONTRATO.md`, `docs/nucleo/PROYECTO.md`, `docs/nucleo/REGLAS.md`
 **Commits:**
 - `[HASH]` DOC-1: sistema documental nuevo en paralelo
+
+## SESIÓN 28 / DOC-2 — 27 Mayo 2026
+**Tipo:** Documental — sin tocar código, sin pliegos aplicados
+**Acciones:**
+- Decisiones arquitecturales M1-M4 cerradas y documentadas
+- Criterio SemVer establecido: v4.0.0 (M1) · v4.1.0 (M2) · v4.2.0 (STAT-M9)
+- ADR-010 al ADR-014 añadidos a CONTRATO.md
+- ADR-003, 🔒-3, 🔒-4 marcados ⛔ SUPERSEDIDOS
+- ESTADO.md limpiado: BUG-NUEVO-19 cerrado, 3 items "sin probar" eliminados, reglas YT-específicas eliminadas, renumeración de reglas críticas
+- ERRORES_RESUELTOS.md: BUG-NUEVO-19 añadido
+**Commits:**
+- *(pendiente — commit documental al aplicar estos archivos)*
+
+## S29 — 2026-05-27
+Pliegos: PLIEGO-072a (MusicLab.jsx), PLIEGO-072b (PlaylistManager.jsx), PLIEGO-073 (WinampPlayer.jsx)
+Bugs resueltos: BUG-14, BUG-15, BUG-23, BUG-18, BUG-22
+Sin confirmar en producción: PLIEGO-068, 071, 072, 073
+Decisiones arquitecturales: ninguna

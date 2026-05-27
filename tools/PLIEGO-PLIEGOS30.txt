@@ -1,0 +1,72 @@
+PLIEGO-PLIEGOS30 — PLIEGOS.md
+Fecha: 2026-05-28
+Modelo: qwen3-8b-nothink
+Estado: pendiente
+ARCHIVOS: PLIEGOS.md
+CAMBIO: Actualizar próximo número. Vaciar PENDIENTES (074-079 pasan a historial).
+CRITERIO DE ÉXITO: PENDIENTES vacío. PRÓXIMO: PLIEGO-080.
+RESULTADO: —
+
+SEARCH/REPLACE 1 — próximo número
+SEARCH:
+> **PRÓXIMO: PLIEGO-072**
+REPLACE:
+> **PRÓXIMO: PLIEGO-080**
+
+SEARCH/REPLACE 2 — vaciar pendientes
+SEARCH:
+## PENDIENTES
+
+### PLIEGO-074 — `src/core/GoogleDriveService.js`
+**Hito:** M1 — Schema v4.0.0
+- Migración purga `tracks[]` y `drops[]` a arrays vacíos.
+- Eliminar campos legacy: `type`, `youtube_url`, `url`.
+- Eliminar métodos YT si los hubiera.
+- `CONFIG.SCHEMA_VERSION = "4.0.0"`.
+**Modelo:** qwen3-14b-think
+
+---
+
+### PLIEGO-075 — `src/core/PlayerContext.jsx`
+**Hito:** M1 — Extirpación YT + trackVibe
+- Eliminar todo lo relacionado con YT: `ytPlayerRef`, iframe imperativo, `onStateChange`, `loadVideoById`, `autoPlaySignal` YT, `ytReady`, div imperativo.
+- Renombrar `activeVibe` → `trackVibe` en todo el contexto.
+- Escribir `trackVibe` como CSS custom property en `document.body` (`--vibe-accent`, etc.).
+- Exponer `trackVibe` en lugar de `activeVibe`.
+**Modelo:** qwen3-14b-think
+
+---
+
+### PLIEGO-076 — `src/musiclab/WinampPlayer.jsx`
+**Hito:** M1 — Extirpación YT + consumo trackVibe
+- Eliminar polling YT local (`setInterval`, `ytReady`, `onStateChange` local si existe).
+- Eliminar refs y lógica de rama YT en efectos.
+- Consumir `trackVibe` en lugar de `activeVibe`.
+**Modelo:** qwen3-14b-nothink
+
+---
+
+### PLIEGO-077 — `src/musiclab/MusicLab.jsx`
+**Hito:** M1 — Extirpación YT + libraryFilter local
+- Eliminar cualquier ref a YT, iframe, `type === "youtube"`.
+- Mover `libraryFilter` (filtro de vibe/tag) a estado local de `MusicLab.jsx` — fuera de contexto global.
+**Modelo:** qwen3-14b-nothink
+
+---
+
+### PLIEGO-078 — `src/musiclab/AddTrackForm.jsx`
+**Hito:** M1 — Modo mantenimiento
+- Formulario inactivo con aviso visible: upload deshabilitado hasta M2 (R2).
+- No tocar lógica de subida.
+**Modelo:** qwen3-8b-nothink
+
+---
+
+### PLIEGO-079 — `sw.js`
+**Hito:** M1 — Limpieza Service Worker
+- Eliminar bypass patterns: `youtube.com`, `ytimg.com`, `googlevideo.com`.
+**Modelo:** qwen3-8b-nothink
+REPLACE:
+## PENDIENTES
+
+*(vacío — M1 cerrado en S30. Ver historial)*

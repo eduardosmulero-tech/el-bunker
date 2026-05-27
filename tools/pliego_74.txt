@@ -1,0 +1,92 @@
+PLIEGO-074 — src/core/GoogleDriveService.js
+Fecha: 2026-05-27
+Modelo: qwen3-14b-think
+Estado: pendiente
+ARCHIVOS: src/core/GoogleDriveService.js
+CAMBIO: Schema v4.0.0 — bump de versión, migración que purga tracks[] y drops[],
+        addTrack() sin campos YT (elimina url/youtube_url/type, renombra vibe→tag,
+        añade tags/format), comentarios EMPTY_DB actualizados.
+CRITERIO DE ÉXITO: App con DB en v3.4.0 arranca, migración se ejecuta,
+        tracks[] y drops[] quedan vacíos, DB se guarda con schema_version "4.0.0".
+        Tracks nuevos creados sin url, youtube_url ni type.
+RESULTADO: —
+
+SEARCH/REPLACE 1 — bump SCHEMA_VERSION
+SEARCH:
+  SCHEMA_VERSION: "3.4.0",
+
+REPLACE:
+  SCHEMA_VERSION: "4.0.0",
+
+SEARCH/REPLACE 2 — comentarios EMPTY_DB
+SEARCH:
+    tracks: [],
+    // { id, era_id, title, artist, url, note, added_at }
+    drops:  [],
+    // { id, era_id, track_id, memory, mood, date, created_at }
+
+REPLACE:
+    tracks: [],
+    // { id, era_id, title, artist, drive_file_id, tag, tags, thumbnail, format, note, play_count, last_played, added_at }
+    drops:  [],
+    // { id, era_id, track_id, from, to, memory, mood, date, favorited, favorited_by, created_at }
+
+SEARCH/REPLACE 3 — migración 3.4.0 → 4.0.0
+SEARCH:
+  migrated.schema_version = CONFIG.SCHEMA_VERSION;
+  migrated._wasMigrated   = true;
+  return migrated;
+
+REPLACE:
+  // ── 3.4.0 → 4.0.0: extirpación YT — purgar tracks y drops ──
+  if (migrated.schema_version === "3.4.0") {
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        tracks: [],
+        drops:  [],
+      },
+      schema_version: "4.0.0",
+    };
+  }
+
+  migrated.schema_version = CONFIG.SCHEMA_VERSION;
+  migrated._wasMigrated   = true;
+  return migrated;
+
+SEARCH/REPLACE 4 — addTrack() schema v4.0.0
+SEARCH:
+  const newTrack = {
+  id:            uuid(),
+  era_id:        trackData.era_id        ?? null,
+  title:         trackData.title         ?? "Sin título",
+  artist:        trackData.artist        ?? "",
+  url:           trackData.url           ?? "",
+  youtube_url:   trackData.youtube_url   ?? null,
+  type:          trackData.type          ?? "youtube",
+  drive_file_id: trackData.drive_file_id ?? null,
+  vibe:          trackData.vibe          ?? null,
+  note:          trackData.note          ?? "",
+  thumbnail:     trackData.thumbnail     ?? null,
+  play_count:    0,
+  last_played:   null,
+  added_at:      new Date().toISOString(),
+};
+
+REPLACE:
+  const newTrack = {
+    id:            uuid(),
+    era_id:        trackData.era_id        ?? null,
+    title:         trackData.title         ?? "Sin título",
+    artist:        trackData.artist        ?? "",
+    drive_file_id: trackData.drive_file_id ?? null,
+    tag:           trackData.tag           ?? null,
+    tags:          trackData.tags          ?? [],
+    thumbnail:     trackData.thumbnail     ?? null,
+    format:        trackData.format        ?? "mp3",
+    note:          trackData.note          ?? "",
+    play_count:    0,
+    last_played:   null,
+    added_at:      new Date().toISOString(),
+  };

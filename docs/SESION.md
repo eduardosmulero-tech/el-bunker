@@ -6,24 +6,32 @@
 
 ## ESTADO DE SESIÓN
 
-sesion_numero: 28
-fecha_ultima_actualizacion: 2026-05-22
-pliego_siguiente: PLIEGO-072
+sesion_numero: 31
+fecha_ultima_actualizacion: 2026-05-28
+pliego_siguiente: PLIEGO-080
 pendiente_de_cierre_anterior: false
+
+SEARCH/REPLACE 2 — contexto para esta sesión
 
 ---
 
 ## CONTEXTO PARA ESTA SESIÓN
 
-**Trabajo pendiente confirmado:**
-- PLIEGO-072 — MusicLab.jsx + AddTrackForm.jsx + PlaylistManager.jsx (BUG-14, 15, 23)
-- PLIEGO-073 — WinampPlayer.jsx + PlayerContext.jsx (BUG-18, 19, 22)
-
 **Sin confirmar en producción (no son bugs nuevos, solo falta test):**
-- PLIEGO-071 — skip anterior + scroll título (aplicado S27, sin confirmar)
-- PLIEGO-068 — reauth automática David (aplicado S25, sin confirmar con David)
+- PLIEGO-079 — sw.js bypass YT — aplicado S30, sin confirmar
+- PLIEGO-078 — AddTrackForm.jsx modo mantenimiento — aplicado S30, sin confirmar
+- PLIEGO-077 — MusicLab.jsx extirpación YT + libraryFilter local — aplicado S30, sin confirmar
+- PLIEGO-076 — WinampPlayer.jsx extirpación YT + trackVibe — aplicado S30, sin confirmar
+- PLIEGO-075 — PlayerContext.jsx extirpación YT + trackVibe — aplicado S30, sin confirmar
+- PLIEGO-074 — GoogleDriveService.js schema v4.0.0 — aplicado S30, sin confirmar
+- PLIEGO-073 — WinampPlayer.jsx (BUG-18, 22) — aplicado S29, sin confirmar
+- PLIEGO-072 — MusicLab.jsx + PlaylistManager.jsx (BUG-14, 15, 23) — aplicado S29, sin confirmar
+- PLIEGO-071 — skip anterior + scroll título — aplicado S27, sin confirmar
+- PLIEGO-068 — reauth automática David — aplicado S25, sin confirmar con David
 
 **Bloqueos activos:** ninguno
+
+SEARCH/REPLACE 3 — notas de sesión anterior
 
 ---
 
@@ -39,7 +47,7 @@ Leer en este orden exacto. No generar ningún pliego hasta completar los 6 pasos
 6. `docs/arquitectura/INDEX.md`      ← qué docs de arquitectura están stale
 
 Docs adicionales solo si el trabajo de sesión los requiere (declarar aquí):
-- *(ninguno adicional para sesión 28)*
+- *(ninguno adicional para sesión 30)*
 
 ---
 
@@ -54,8 +62,11 @@ Docs adicionales solo si el trabajo de sesión los requiere (declarar aquí):
 
 ---
 
-## NOTAS DE SESIÓN ANTERIOR (S27)
+## NOTAS DE SESIÓN ANTERIOR (S30)
 
-- PLIEGO-071 aplicado: fix skip anterior invertido (currentTRef) + scroll título condicional (requestAnimationFrame)
-- Sistema documental: DOC-1 iniciado en esta sesión (S28)
-- Próxima sesión tras DOC-1: retomar PLIEGO-072 (bugs MusicLab/Playlists)
+- M1 cerrado: PLIEGO-074 a 079 aplicados (schema v4.0.0, extirpación YT completa, sw.js limpio)
+- PLIEGO-REGLAS aplicado: pliego_apply.py establecido como workflow principal en REGLAS.md
+- tools/README.md creado: documentación del script
+- Sin decisiones arquitecturales nuevas — solo implementación de ADRs ya aprobados
+- Todos los pliegos de la sesión sin confirmar en producción
+- Próxima sesión: confirmar M1 en producción antes de abrir M2

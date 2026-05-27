@@ -11,8 +11,11 @@ Convenciones antes de arquitectura propia. Para patrones con más de 10 años de
 Archivo antes de diagnóstico. Para cualquier bug, el archivo afectado se adjunta antes de pedir diagnóstico.
 Estado conocido antes de Pliegos nuevos. Confirmar o descartar todos los Pliegos "sin testing" antes de abrir trabajo nuevo.
 Un bug = una causa. Si varios síntomas comparten causa raíz, un solo Pliego los agrupa. Incluir causa probable al registrar.
-Edu pica el código salvo que diga lo contrario. Siempre SEARCH/REPLACE exactos o archivo completo. Nunca diffs.
+Edu aplica pliegos con tools/pliego_apply.py. Claude genera el .txt; el script aplica. Nunca diffs.
 Resolución de formato. SEARCH/REPLACE por defecto. Archivo completo solo si menos de 80 líneas o más del 40% afectado.
+SEARCH debe coincidir exactamente una vez. Si falla: pegar fragmento exacto a Claude, no repetir el pliego.
+
+SEARCH/REPLACE 2 — WORKFLOW HUMANO: reescribir cabecera
 Un Pliego = un archivo. Agrupar Pliegos relacionados en una sola respuesta.
 Archivos críticos (GoogleDriveService.js, VaultContext.jsx, PlayerContext.jsx, sw.js): modelo qwen3-14b-think + revisión cruzada.
 Principio de modificación mínima. Solo tocar lo estrictamente necesario.
@@ -28,29 +31,39 @@ PLIEGO-[NNN] — [nombre]
 Fecha: YYYY-MM-DD
 Modelo: [qwen3-8b-nothink | qwen3-8b-think | qwen3-14b-nothink | qwen3-14b-think]
 Estado: [pendiente | aplicado | descartado]
-ARCHIVOS: [rutas desde raíz — uno por Pliego salvo excepciones documentadas]
+ARCHIVOS: [ruta desde raíz — uno por Pliego salvo excepciones documentadas]
 CAMBIO: [descripción técnica]
-CRITERIO DE ÉXITO: [cómo verificar]
+CRITERIO DE ÉXITO: [comportamiento observable]
 RESULTADO: [rellenar tras aplicar]
+
+Formato compatible con pliego_apply.py (ver tools/README.md):
+- SEARCH: y REPLACE: solos en su línea, sin backticks
+- El texto de SEARCH debe coincidir exactamente una vez en el archivo
+- Un archivo por pliego; usar --archivo si el pliego lista varios
 
 ## WORKFLOW HUMANO
 
-SEARCH/REPLACE listos para Ctrl+H, o archivo completo para Ctrl+A + pegar.
-Comandos PowerShell de verificación junto al Pliego.
-Si SEARCH no coincide: avisar, no repetir el Pliego.
+Claude genera el pliego como .txt. Edu lo guarda en tools/ y lo aplica con el script.
 Commits con master. PowerShell no admite && — comandos en líneas separadas.
+Si SEARCH no coincide: pegar Get-Content salida a Claude. No repetir el pliego hasta ajustar.
+
+SEARCH/REPLACE 3 — WORKFLOW B: reescribir con flujo de script
 
 
-## WORKFLOW B — Síncrono (principal)
+## WORKFLOW B — Script (principal)
 
-git status + git diff [hash] src/Archivo.js
-Identificar Pliego en PLIEGOS.md
-Pedir SEARCH/REPLACE exactos
-Verificar SEARCH: Get-Content src/Archivo.js | Select-Object -Index (N..M)
-Aplicar Ctrl+H en VS Code
-Verificar resultado, pegar output a Claude para OK
+git status
+Guardar pliego .txt en tools/
+python pliego_apply.py pliego_0XX.txt --dry-run
+python pliego_apply.py pliego_0XX.txt
+Verificar en navegador
 git add src/Archivo.js
-git commit -m "PLIEGO-00X: descripción"
+git commit -m "PLIEGO-0XX: descripción"
+Borrar .bak cuando confirmes en producción
+
+Diagnóstico si falla: Get-Content src/Archivo.js | Select-Object -Index (N..M)
+
+SEARCH/REPLACE 4 — PLANTILLA DE PLIEGO: añadir nota de formato para el script
 
 ## WORKFLOW A — Asíncrono (fallback)
 Prerequisito: ollama list + ollama run qwen3:14b.

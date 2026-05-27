@@ -66,7 +66,7 @@ Whitelist hardcoded en `CONFIG.USERS` de `GoogleDriveService.js`.
 - `VITE_GOOGLE_SHARED_FOLDER_ID=1wHc-UeuZ-JsD7k-6Q53j7gNtCqfXb1MV`
 - DB: `the_vault_database.json` en carpeta `the_vault_data` del Drive de Admin.
 - Colas: `queue_[userId].json` en la misma carpeta.
-- Schema actual: **v3.4.0** · migración automática desde v1, v2, v3.0.0–v3.3.0.
+- Schema actual: **v4.0.0** · migración automática desde v1, v2, v3.0.0–v3.4.0. Arrays tracks[] y drops[] purgados en M1.
 
 ---
 

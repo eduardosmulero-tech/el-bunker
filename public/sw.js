@@ -26,9 +26,6 @@ const BYPASS_PATTERNS = [
   /googleapis\.com/,
   /accounts\.google\.com/,
   /gstatic\.com/,
-  /youtube\.com/,
-  /ytimg\.com/,
-  /googlevideo\.com/,
   /chrome-extension/,
 ];
 

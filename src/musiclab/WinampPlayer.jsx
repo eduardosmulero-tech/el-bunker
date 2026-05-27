@@ -9,10 +9,8 @@ import { usePlayer } from "../core/PlayerContext";
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
-const extractYouTubeId = (url) => {
-  const match = url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
-};
+
+SEARCH/REPLACE 2 — destructuring: quitar ytPlayerRef, isYouTubeCtx, activeVibe; añadir trackVibe
 
 const getVibeConfig = (vibeId, VIBE_TAGS) =>
   VIBE_TAGS.find((v) => v.id === vibeId) ?? VIBE_TAGS[0];
@@ -45,14 +43,14 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     localQueue: queue,
     loopMode, toggleLoopMode, shuffle, setShuffle,
     autoPlaySignal, syncStatus,
-    audioRef, ytPlayerRef,
-    isYouTube: isYouTubeCtx,
+    audioRef,
     skip,
     masterVolume, setMasterVolume,
-    activeVibe,
+    trackVibe,
   } = usePlayer();
 
-  const ytPollingRef = useRef(null);
+SEARCH/REPLACE 3 — quitar ytPollingRef, actualizar vibeConf, quitar isYouTube local
+
   const mountedRef   = useRef(false);
   const currentTRef  = useRef(0);
   const [progress, setProgress] = useState(0);
@@ -63,12 +61,10 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   const [shouldScroll, setShouldScroll] = useState(false);
   const titleRef = useRef(null);
 
-  // BUG-19: acento sigue filtro activo; si "all", usa vibe del track
-  const vibeConf  = getVibeConfig(
-    (activeVibe && activeVibe !== "all") ? activeVibe : (track?.vibe ?? "all"),
-    VIBE_TAGS
-  );
-  const isYouTube = track?.type === "youtube" || (!track?.type && track?.url);
+  // trackVibe → acento visual del reproductor (ADR-011)
+  const vibeConf = getVibeConfig(trackVibe ?? "all", VIBE_TAGS);
+
+SEARCH/REPLACE 4 — autoPlaySignal effect: quitar rama YT
 
   useEffect(() => {
     // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
@@ -82,92 +78,63 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   useEffect(() => {
     if (!autoPlaySignal || !track) return;
     const timer = setTimeout(() => {
-      if (isYouTube) {
-        if (ytPlayerRef.current && typeof ytPlayerRef.current.playVideo === "function") {
-          ytPlayerRef.current.playVideo();
-        }
-      } else {
-        if (audioRef.current) audioRef.current.volume = masterVolume / 100;
-        audioRef.current?.play().catch(() => {});
-        setPlaying(true);
-      }
+      if (audioRef.current) audioRef.current.volume = masterVolume / 100;
+      audioRef.current?.play().catch(() => {});
+      setPlaying(true);
     }, 400);
     return () => clearTimeout(timer);
   }, [autoPlaySignal]);
 
+SEARCH/REPLACE 5 — skipDir: quitar ramas YT
+
 const skipDir = useCallback((dir) => {
 if (dir === -1 && currentTRef.current >= 3) {
-// >= 3s: ir al track anterior
-skip(dir, tracks);
-return;
+  skip(dir, tracks);
+  return;
 }
 if (dir === -1) {
-// < 3s: reiniciar track actual
-if (isYouTube) { ytPlayerRef.current?.seekTo(0, true); }
-else if (audioRef.current) { audioRef.current.currentTime = 0; }
-currentTRef.current = 0;
-setCurrentT(0);
-setProgress(0);
-return;
+  // < 3s: reiniciar track actual
+  if (audioRef.current) { audioRef.current.currentTime = 0; }
+  currentTRef.current = 0;
+  setCurrentT(0);
+  setProgress(0);
+  return;
 }
 skip(dir, tracks);
-}, [skip, tracks, isYouTube]);
+}, [skip, tracks]);
 
-  // ── Polling YT — local, reactivo a isPlaying ──────────────
-  useEffect(() => {
-    if (!isYouTube) return;
-    if (!playing) {
-      if (ytPollingRef.current) { clearInterval(ytPollingRef.current); ytPollingRef.current = null; }
-      return;
-    }
-    ytPollingRef.current = setInterval(() => {
-      const p = ytPlayerRef.current;
-      if (!p || typeof p.getCurrentTime !== "function") return;
-        const ct  = p.getCurrentTime() || 0;
-        const dur = p.getDuration()    || 0;
-        currentTRef.current = ct;
-        setCurrentT(ct);
-      setDuration(dur);
-      setProgress(dur > 0 ? (ct / dur) * 100 : 0);
-    }, 500);
-    return () => {
-      if (ytPollingRef.current) { clearInterval(ytPollingRef.current); ytPollingRef.current = null; }
-    };
-  }, [playing, track?.id, isYouTube]);
+SEARCH/REPLACE 6 — eliminar polling YT completo
+
+
+SEARCH/REPLACE 7 — togglePlay: quitar rama YT
 
   const togglePlay = () => {
-    if (isYouTube) {
-      if (!ytPlayerRef.current) return;
-      if (playing) { ytPlayerRef.current.pauseVideo(); }
-      else         { ytPlayerRef.current.playVideo();  }
-    } else {
-      if (!audioRef.current) return;
-      if (playing) { audioRef.current.pause(); setPlaying(false); }
-      else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
-    }
+    if (!audioRef.current) return;
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
   };
 
+SEARCH/REPLACE 8 — seekTo: quitar rama YT
+
   const seekTo = (pct) => {
+    if (!audioRef.current || !duration) return;
     const targetTime = (pct / 100) * duration;
-    if (isYouTube) {
-      if (!ytPlayerRef.current || !duration) return;
-      ytPlayerRef.current.seekTo(targetTime, true);
-    } else {
-      if (!audioRef.current || !duration) return;
-      audioRef.current.currentTime = targetTime;
-    }
-// BUG-NUEVO-06: actualizar visual aunque esté en pausa
+    audioRef.current.currentTime = targetTime;
+    // BUG-NUEVO-06: actualizar visual aunque esté en pausa
     currentTRef.current = targetTime;
     setCurrentT(targetTime);
     setProgress(pct);
   };
 
+SEARCH/REPLACE 9 — changeVolume: quitar rama YT
+
   const changeVolume = (v) => {
     setVolume(v);
     setMasterVolume?.(v);
-    if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(v); }
-    else           { if (audioRef.current)    audioRef.current.volume = v / 100; }
+    if (audioRef.current) audioRef.current.volume = v / 100;
   };
+
+SEARCH/REPLACE 10 — masterVolume effect: quitar rama YT
 
   // ── Suscripción a eventos del <audio> centralizado ───────────
   useEffect(() => {
@@ -199,15 +166,14 @@ skip(dir, tracks);
   useEffect(() => {
     if (masterVolume == null) return;
     setVolume(masterVolume);
-    if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(masterVolume); }
-    else {
-      if (audioRef.current) {
-        const target = masterVolume / 100;
-        // guarda: evitar re-set cuando el cambio viene de onVolumeChange (feedback loop)
-        if (Math.abs(audioRef.current.volume - target) > 0.001) audioRef.current.volume = target;
-      }
+    if (audioRef.current) {
+      const target = masterVolume / 100;
+      // guarda: evitar re-set cuando el cambio viene de onVolumeChange (feedback loop)
+      if (Math.abs(audioRef.current.volume - target) > 0.001) audioRef.current.volume = target;
     }
   }, [masterVolume]);
+
+SEARCH/REPLACE 11 — MediaSession: quitar ytId/artwork YT + ramas YT en handlers
 
 // BUG-29: scroll de título solo si el texto desborda el contenedor
 useLayoutEffect(() => {
@@ -230,20 +196,17 @@ return () => cancelAnimationFrame(raf);
 
   useEffect(() => {
     if (!("mediaSession" in navigator) || !track) return;
-    const ytId = extractYouTubeId(track.url ?? "");
-    const artwork = ytId
-      ? [{ src: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, sizes: "480x360", type: "image/jpeg" }]
+    const artwork = track.thumbnail
+      ? [{ src: track.thumbnail, sizes: "480x360", type: "image/jpeg" }]
       : [];
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title ?? "Sin título", artist: track.artist ?? "", album: "el búnker", artwork,
     });
     navigator.mediaSession.setActionHandler("play", () => {
-      if (isYouTube) { ytPlayerRef.current?.playVideo?.(); }
-      else { audioRef.current?.play(); setPlaying(true); }
+      audioRef.current?.play(); setPlaying(true);
     });
     navigator.mediaSession.setActionHandler("pause", () => {
-      if (isYouTube) { ytPlayerRef.current?.pauseVideo?.(); }
-      else { audioRef.current?.pause(); setPlaying(false); }
+      audioRef.current?.pause(); setPlaying(false);
     });
     navigator.mediaSession.setActionHandler("previoustrack", () => skipDir(-1));
     navigator.mediaSession.setActionHandler("nexttrack",     () => skipDir(1));
@@ -253,6 +216,8 @@ return () => cancelAnimationFrame(raf);
       });
     };
   }, [track?.id, playing, skip]);
+
+SEARCH/REPLACE 12 — comentario JSX: quitar referencia a div#yt-player-div
 
   return (
     <motion.div
@@ -267,7 +232,7 @@ return () => cancelAnimationFrame(raf);
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
     >
-      {/* div#yt-player-div y <audio> viven en PlayerProvider (ADR-004 Enmienda S21) */}
+      {/* <audio> vive en PlayerProvider (ADR-004 Enmienda S21) */}
 
       {/* Title Bar */}
       <div

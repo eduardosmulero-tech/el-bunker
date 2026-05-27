@@ -70,7 +70,18 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS, on
         {initialData ? "✎ EDITAR TRACK" : "◈ AÑADIR TRACK"}
       </p>
 
+      {/* ── Aviso mantenimiento M1 ── */}
+      {!initialData && (
+        <div className="mb-4 px-3 py-2 rounded-sm text-xs leading-relaxed"
+          style={{ background: "rgba(255,200,0,0.06)", border: "1px solid rgba(255,200,0,0.3)",
+            color: "#ffcc00", fontFamily: FONT_MONO, letterSpacing: "0.05em" }}>
+          ⚠ UPLOAD DESHABILITADO — Las subidas estarán disponibles en M2 (Cloudflare R2).
+        </div>
+      )}
+
       {/* Selector de tipo — solo en modo añadir */}
+
+SEARCH/REPLACE 2 — deshabilitar botón añadir
       {!initialData && (
         <div className="flex gap-2 mb-4">
           {[{ id: "youtube", label: "▶ YouTube" }, { id: "drive", label: "⬆ Drive MP3" }].map((t) => (
@@ -139,9 +150,18 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS, on
       </div>
 
       <div className="flex gap-2 mt-4">
-        <motion.button whileTap={{ scale: 0.95 }} onClick={submit}
+        <motion.button
+          whileTap={initialData ? { scale: 0.95 } : {}}
+          onClick={initialData ? submit : undefined}
+          disabled={!initialData}
           className="flex-1 py-2 text-xs tracking-widest uppercase font-bold rounded-sm"
-          style={{ background: `${ACID}18`, border: `1px solid ${ACID}44`, color: ACID, textShadow: `0 0 8px ${ACID}66` }}>
+          style={{
+            background: initialData ? `${ACID}18` : "rgba(255,255,255,0.04)",
+            border: `1px solid ${initialData ? ACID + "44" : "rgba(255,255,255,0.1)"}`,
+            color: initialData ? ACID : "rgba(255,255,255,0.2)",
+            textShadow: initialData ? `0 0 8px ${ACID}66` : "none",
+            cursor: initialData ? "pointer" : "not-allowed",
+          }}>
           {initialData ? "✎ GUARDAR" : "+ AÑADIR"}
         </motion.button>
         <motion.button whileTap={{ scale: 0.95 }} onClick={onClose}

@@ -1,0 +1,67 @@
+PLIEGO-SESION30 — docs/SESION.md
+Fecha: 2026-05-28
+Modelo: qwen3-8b-nothink
+Estado: pendiente
+ARCHIVOS: docs/SESION.md
+CAMBIO: Cierre sesión 30. Actualizar número, fecha, próximo pliego, contexto.
+CRITERIO DE ÉXITO: sesion_numero = 31, pliego_siguiente = PLIEGO-080
+RESULTADO: —
+
+SEARCH/REPLACE 1 — cabecera de estado
+SEARCH:
+sesion_numero: 30
+fecha_ultima_actualizacion: 2026-05-27
+pliego_siguiente: PLIEGO-074
+pendiente_de_cierre_anterior: false
+REPLACE:
+sesion_numero: 31
+fecha_ultima_actualizacion: 2026-05-28
+pliego_siguiente: PLIEGO-080
+pendiente_de_cierre_anterior: false
+
+SEARCH/REPLACE 2 — contexto para esta sesión
+SEARCH:
+## CONTEXTO PARA ESTA SESIÓN
+
+**Sin confirmar en producción (no son bugs nuevos, solo falta test):**
+- PLIEGO-073 — WinampPlayer.jsx (BUG-18, 22) — aplicado S29, sin confirmar
+- PLIEGO-072 — MusicLab.jsx + PlaylistManager.jsx (BUG-14, 15, 23) — aplicado S29, sin confirmar
+- PLIEGO-071 — skip anterior + scroll título (aplicado S27, sin confirmar)
+- PLIEGO-068 — reauth automática David (aplicado S25, sin confirmar con David)
+
+**Bloqueos activos:** ninguno
+REPLACE:
+## CONTEXTO PARA ESTA SESIÓN
+
+**Sin confirmar en producción (no son bugs nuevos, solo falta test):**
+- PLIEGO-079 — sw.js bypass YT — aplicado S30, sin confirmar
+- PLIEGO-078 — AddTrackForm.jsx modo mantenimiento — aplicado S30, sin confirmar
+- PLIEGO-077 — MusicLab.jsx extirpación YT + libraryFilter local — aplicado S30, sin confirmar
+- PLIEGO-076 — WinampPlayer.jsx extirpación YT + trackVibe — aplicado S30, sin confirmar
+- PLIEGO-075 — PlayerContext.jsx extirpación YT + trackVibe — aplicado S30, sin confirmar
+- PLIEGO-074 — GoogleDriveService.js schema v4.0.0 — aplicado S30, sin confirmar
+- PLIEGO-073 — WinampPlayer.jsx (BUG-18, 22) — aplicado S29, sin confirmar
+- PLIEGO-072 — MusicLab.jsx + PlaylistManager.jsx (BUG-14, 15, 23) — aplicado S29, sin confirmar
+- PLIEGO-071 — skip anterior + scroll título — aplicado S27, sin confirmar
+- PLIEGO-068 — reauth automática David — aplicado S25, sin confirmar con David
+
+**Bloqueos activos:** ninguno
+
+SEARCH/REPLACE 3 — notas de sesión anterior
+SEARCH:
+## NOTAS DE SESIÓN ANTERIOR (S29)
+
+- Sesión íntegramente de código — sin decisiones arquitecturales nuevas
+- PLIEGO-072 aplicado: MusicLab.jsx + PlaylistManager.jsx (BUG-14, 15, 23)
+- PLIEGO-073 aplicado: WinampPlayer.jsx (BUG-18, 22)
+- state-map.md marcado ⚠️ STALE (WinampPlayer.jsx tocado en PLIEGO-073)
+- Todos los pliegos de la sesión sin confirmar en producción
+REPLACE:
+## NOTAS DE SESIÓN ANTERIOR (S30)
+
+- M1 cerrado: PLIEGO-074 a 079 aplicados (schema v4.0.0, extirpación YT completa, sw.js limpio)
+- PLIEGO-REGLAS aplicado: pliego_apply.py establecido como workflow principal en REGLAS.md
+- tools/README.md creado: documentación del script
+- Sin decisiones arquitecturales nuevas — solo implementación de ADRs ya aprobados
+- Todos los pliegos de la sesión sin confirmar en producción
+- Próxima sesión: confirmar M1 en producción antes de abrir M2

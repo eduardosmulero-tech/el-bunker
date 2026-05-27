@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# R2 ingesta
+.env.r2
+tools/tracks_ingest.json
+tools/ingest_errors.txt
+tools/the_vault_database.json
+tools/*.bak_*
+tools/ingest_music.py
+tools/inject_tracks.py

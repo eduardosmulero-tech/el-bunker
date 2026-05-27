@@ -54,3 +54,9 @@
 | BUG-NUEVO-19 | `activeVibe` solo cambia acento en reproductor | PLIEGO-070 (parcial B13): `vibeConf` desde `activeVibe` en WinampPlayer | [S26] |
 | BUG-NUEVO-12 | Skip anterior invertido: <3s reiniciaba en vez de ir atrás | PLIEGO-071: `currentTRef` para evitar stale closure en `skipDir` | [S27] |
 | BUG-NUEVO-13 | Título siempre animado aunque cupiera en pantalla | PLIEGO-071: `requestAnimationFrame` en `useLayoutEffect` + `width:100%` en contenedor | [S27] |
+| BUG-NUEVO-19 | `activeVibe` solo cambia acento en reproductor, no en toda la app | Resuelto por decisión arquitectural S28: `activeVibe` → `trackVibe` (CSS custom property en body) + `libraryFilter`. Implementación en M1. | — |
+| BUG-NUEVO-14 | MusicLab mostraba lista edición + TrackCards simultáneamente | Añadir !showEdit a condición de render de TrackCards | PLIEGO-072a | S29 |
+| BUG-NUEVO-15 | Sin botón explícito para crear playlist; Enter creaba sin confirmación | Botón + formulario inline en LISTS; onKeyDown guard en PlaylistNameInput | PLIEGO-072a/b | S29 |
+| BUG-NUEVO-23 | Eliminar playlist no persistía en DB (deletePlaylist no existía en API surface) | Reemplazado por patchDb directo | PLIEGO-072a | S29 |
+| BUG-NUEVO-18 | Slider volumen no sincronizaba audioRef.current.volume al arrancar track Drive | Sync masterVolume/100 antes de play() en efecto autoPlaySignal | PLIEGO-073 | S29 |
+| BUG-NUEVO-22 | Botones físicos volumen Android no sincronizaban con slider | Listener volumechange en efecto [] de suscripción al audio | PLIEGO-073 | S29 |
