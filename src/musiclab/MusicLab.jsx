@@ -9,7 +9,7 @@ import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./Playlis
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
 import { usePlayer } from "../core/PlayerContext";
-import { fetchPlaylists, createPlaylist, addTrackToPlaylist, deletePlaylist } from "../core/GoogleDriveService";
+import { fetchPlaylists, createPlaylist, addTrackToPlaylist, patchDb } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
@@ -78,6 +78,7 @@ export default function MusicLab({
   const [showPlaylistDetail, setShowPlaylistDetail] = useState(null); // playlist id
   const [pendingTrack,       setPendingTrack]       = useState(null);
   const [toast,             setToast]              = useState(null);
+  const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
 
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
@@ -104,7 +105,13 @@ export default function MusicLab({
 
   const handleDeletePlaylist = async (playlistId) => {
     try {
-      await deletePlaylist(playlistId);
+      await patchDb((prev) => ({
+        ...prev,
+        music_lab: {
+          ...prev.music_lab,
+          playlists: (prev.music_lab?.playlists ?? []).filter((pl) => pl.id !== playlistId),
+        },
+      }));
     } catch (err) {
       console.warn("[Búnker] deletePlaylist falló:", err);
     }
@@ -121,7 +128,7 @@ export default function MusicLab({
       setToast("AÑADIDO A PLAYLIST");
       setTimeout(() => setToast(null), 2500);
     } catch (err) { console.warn("[Búnker] addTrackToPlaylist falló:", err); }
-    finally { setShowPlaylistModal(false); setPendingTrack(null); }
+    finally { setShowPlaylistModal(false); setPendingTrack(null); setShowCreatePlaylist(false); }
   };
 
   const handleCreatePlaylist = async (name) => {
@@ -445,7 +452,7 @@ export default function MusicLab({
 
               <div className="flex flex-col gap-2">
                 <AnimatePresence>
-                  {!editingTrack && filteredTracks.length > 0 ? (
+                  {!editingTrack && !showEdit && filteredTracks.length > 0 ? (
                     filteredTracks.map((track) => (
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
@@ -480,11 +487,27 @@ export default function MusicLab({
                     [{String(localPlaylists.length).padStart(2, "0")}]
                   </span>
                 </div>
+                <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
+                  onClick={() => setShowCreatePlaylist((p) => !p)}
+                  className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                  style={{ color: ACID, border: `1px solid ${showCreatePlaylist ? ACID + "66" : ACID + "33"}`,
+                    background: showCreatePlaylist ? `${ACID}15` : `${ACID}06` }}>
+                  {showCreatePlaylist ? "✕" : "+"}
+                </motion.button>
               </div>
+              <AnimatePresence>
+                {showCreatePlaylist && (
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    style={{ background: "rgba(191,255,0,0.03)", border: `1px solid ${ACID}22`, borderRadius: 2 }}>
+                    <PlaylistNameInput onConfirm={handleCreatePlaylist} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {localPlaylists.length === 0 ? (
                 <p className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
                   style={{ color: ACID, fontFamily: FONT_MONO }}>
-                  — sin playlists — long press en un track para crear una —
+                  — sin playlists —
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">

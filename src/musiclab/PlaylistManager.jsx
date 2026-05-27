@@ -10,6 +10,7 @@ export const PlaylistNameInput = ({ onConfirm }) => {
   return (
     <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15`, display: "flex", gap: 8 }}>
       <input value={name} onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
         placeholder="Nueva playlist..."
         style={{ flex: 1, background: "transparent", border: `1px solid ${ACID}33`, borderRadius: 2,
           color: ACID, fontSize: 11, padding: "6px 10px", fontFamily: FONT_MONO,
