@@ -23,7 +23,9 @@ const CONFIG = {
   HEARTBEAT_THROTTLE_MS: 15 * 60 * 1000,
 
   // Versión del esquema — permite migraciones futuras
-  SCHEMA_VERSION: "3.4.0",
+  SCHEMA_VERSION: "4.0.0",
+
+SEARCH/REPLACE 2 — comentarios EMPTY_DB
 
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
@@ -56,9 +58,11 @@ const EMPTY_DB = () => ({
   // ── Music Lab ────────────────────────────────────────────────
   music_lab: {
     tracks: [],
-    // { id, era_id, title, artist, url, note, added_at }
+    // { id, era_id, title, artist, drive_file_id, tag, tags, thumbnail, format, note, play_count, last_played, added_at }
     drops:  [],
-    // { id, era_id, track_id, memory, mood, date, created_at }
+    // { id, era_id, track_id, from, to, memory, mood, date, favorited, favorited_by, created_at }
+
+SEARCH/REPLACE 3 — migración 3.4.0 → 4.0.0
     playlists: [],
     // { id, name, track_ids: [], created_by, created_at, updated_at }
   },
@@ -794,9 +798,24 @@ const _migrateSchema = (data) => {
     };
   }
 
+  // ── 3.4.0 → 4.0.0: extirpación YT — purgar tracks y drops ──
+  if (migrated.schema_version === "3.4.0") {
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        tracks: [],
+        drops:  [],
+      },
+      schema_version: "4.0.0",
+    };
+  }
+
   migrated.schema_version = CONFIG.SCHEMA_VERSION;
   migrated._wasMigrated   = true;
   return migrated;
+
+SEARCH/REPLACE 4 — addTrack() schema v4.0.0
 };
 
 // ─── SECTION 7: BIBLIOTECA HEARTBEAT & STATUS ────────────────
@@ -1072,21 +1091,20 @@ export const addEntry = async (entryData) => {
  */
 export const addTrack = async (trackData) => {
   const newTrack = {
-  id:            uuid(),
-  era_id:        trackData.era_id        ?? null,
-  title:         trackData.title         ?? "Sin título",
-  artist:        trackData.artist        ?? "",
-  url:           trackData.url           ?? "",
-  youtube_url:   trackData.youtube_url   ?? null,
-  type:          trackData.type          ?? "youtube",
-  drive_file_id: trackData.drive_file_id ?? null,
-  vibe:          trackData.vibe          ?? null,
-  note:          trackData.note          ?? "",
-  thumbnail:     trackData.thumbnail     ?? null,
-  play_count:    0,
-  last_played:   null,
-  added_at:      new Date().toISOString(),
-};
+    id:            uuid(),
+    era_id:        trackData.era_id        ?? null,
+    title:         trackData.title         ?? "Sin título",
+    artist:        trackData.artist        ?? "",
+    drive_file_id: trackData.drive_file_id ?? null,
+    tag:           trackData.tag           ?? null,
+    tags:          trackData.tags          ?? [],
+    thumbnail:     trackData.thumbnail     ?? null,
+    format:        trackData.format        ?? "mp3",
+    note:          trackData.note          ?? "",
+    play_count:    0,
+    last_played:   null,
+    added_at:      new Date().toISOString(),
+  };
 
   await updateData((db) => ({
     ...db,
