@@ -32,3 +32,4 @@ tools/the_vault_database.json
 tools/*.bak_*
 tools/ingest_music.py
 tools/inject_tracks.py
+tools/*.txt
