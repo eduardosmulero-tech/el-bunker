@@ -87,6 +87,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
           ytPlayerRef.current.playVideo();
         }
       } else {
+        if (audioRef.current) audioRef.current.volume = masterVolume / 100;
         audioRef.current?.play().catch(() => {});
         setPlaying(true);
       }
@@ -179,11 +180,19 @@ skip(dir, tracks);
       setProgress(audio.duration ? (audio.currentTime / audio.duration) * 100 : 0);
     };
     const onLoaded = () => setDuration(audio.duration || 0);
+    // BUG-22: botones físicos Android → volumechange en el <audio>
+    const onVolumeChange = () => {
+      const newVol = Math.round(audio.volume * 100);
+      setVolume(newVol);
+      setMasterVolume?.(newVol);
+    };
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("loadedmetadata", onLoaded);
+    audio.addEventListener("volumechange", onVolumeChange);
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("loadedmetadata", onLoaded);
+      audio.removeEventListener("volumechange", onVolumeChange);
     };
   }, []);
 
@@ -191,7 +200,13 @@ skip(dir, tracks);
     if (masterVolume == null) return;
     setVolume(masterVolume);
     if (isYouTube) { if (ytPlayerRef.current) ytPlayerRef.current.setVolume(masterVolume); }
-    else           { if (audioRef.current)    audioRef.current.volume = masterVolume / 100; }
+    else {
+      if (audioRef.current) {
+        const target = masterVolume / 100;
+        // guarda: evitar re-set cuando el cambio viene de onVolumeChange (feedback loop)
+        if (Math.abs(audioRef.current.volume - target) > 0.001) audioRef.current.volume = target;
+      }
+    }
   }, [masterVolume]);
 
 // BUG-29: scroll de título solo si el texto desborda el contenedor
