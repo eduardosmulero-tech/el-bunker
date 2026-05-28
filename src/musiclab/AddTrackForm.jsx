@@ -76,12 +76,12 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
             {VIBE_TAGS.filter((v) => v.id !== "all").map((vibe) => (
               <motion.button
                 key={vibe.id} whileTap={{ scale: 0.9 }}
-                onClick={() => setForm((p) => ({ ...p, vibe: vibe.id }))}
+                onClick={() => setForm((p) => ({ ...p, tag: vibe.id }))}
                 className="text-xs px-2 py-1 rounded-sm tracking-wider uppercase"
                 style={{
                   color: vibe.color,
-                  background: form.vibe === vibe.id ? `${vibe.color}20` : "transparent",
-                  border: `1px solid ${form.vibe === vibe.id ? vibe.color + "55" : vibe.color + "22"}`,
+                  background: form.tag === vibe.id ? `${vibe.color}20` : "transparent",
+                  border: `1px solid ${form.tag === vibe.id ? vibe.color + "55" : vibe.color + "22"}`,
                 }}
               >
                 {vibe.icon} {vibe.label}

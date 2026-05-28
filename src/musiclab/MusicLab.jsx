@@ -459,7 +459,7 @@ export default function MusicLab({
                     filteredTracks.slice(0, visibleCount).map((track) => (
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
-                        vibeConfig={getVibeConfig(track.vibe)}
+                        vibeConfig={getVibeConfig(track.tag ?? track.vibe)}
                         onClick={() => { playTrack(track); }}
                         onAddToQueue={handleAddToQueue}
                         onAddToPlaylist={handleAddToPlaylist}
