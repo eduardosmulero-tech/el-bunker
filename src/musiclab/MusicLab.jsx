@@ -9,7 +9,7 @@ import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./Playlis
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
 import { usePlayer } from "../core/PlayerContext";
-import { fetchPlaylists, createPlaylist, addTrackToPlaylist, patchDb } from "../core/GoogleDriveService";
+import { fetchPlaylists, createPlaylist, addTrackToPlaylist, updateData } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
@@ -91,8 +91,6 @@ export default function MusicLab({
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
 
-SEARCH/REPLACE 2 — filteredTracks: activeVibe → libraryFilter, campo vibe → tag con fallback
-
   useEffect(() => {
     if (!db) return;
     fetchPlaylists()
@@ -154,8 +152,6 @@ SEARCH/REPLACE 2 — filteredTracks: activeVibe → libraryFilter, campo vibe �
   const filteredTracks = libraryFilter === "all"
     ? localTracks
     : localTracks.filter((t) => (t.tag ?? t.vibe) === libraryFilter);
-
-SEARCH/REPLACE 3 — VibeTagBar: activeVibe → libraryFilter
 
   const handleAddTrack = (trackData) => {
     setLocalTracks((p) => [...p, trackData]);
