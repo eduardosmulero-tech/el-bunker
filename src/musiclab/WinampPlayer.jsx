@@ -195,7 +195,7 @@ return () => cancelAnimationFrame(raf);
         try { navigator.mediaSession.setActionHandler(action, null); } catch (_) {}
       });
     };
-  }, [track?.id, playing, skip]);
+  }, [track?.id, playing, skip, skipDir]);
 
   return (
     <motion.div
