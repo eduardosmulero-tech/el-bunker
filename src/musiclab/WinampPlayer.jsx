@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, BG } from "../layout/Layout";
 import { getStreamUrl } from "../core/GoogleDriveService";
+import { getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";
@@ -9,8 +10,7 @@ import { usePlayer } from "../core/PlayerContext";
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
-const getVibeConfig = (vibeId, VIBE_TAGS) =>
-  VIBE_TAGS.find((v) => v.id === vibeId) ?? VIBE_TAGS[0];
+
 
 // ─── WINAMP BUTTON ───────────────────────────────────────────
 const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size = "md" }) => (
