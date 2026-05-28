@@ -157,7 +157,7 @@ const VaultPage = () => {
 
 /** Wrapper para la pestaña MUSIC LAB */
 const MusicPage = () => {
-  const { db, user, setMasterVolume } = useVault();
+  const { db, user, setMasterVolume, patchDb } = useVault();
   const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
   return (
     <MusicLab
@@ -169,6 +169,7 @@ const MusicPage = () => {
       onEditTrack={onEditTrack}
       onMasterVolumeChange={setMasterVolume}
       onMarkDropSeen={onMarkDropSeen}
+      patchDb={patchDb}
     />
   );
 };
