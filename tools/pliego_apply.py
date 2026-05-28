@@ -57,15 +57,23 @@ def parse_archivos(content: str) -> list[str]:
     return []
 
 
-def parse_pliego_id(content: str) -> str:
-    """Extrae el identificador del pliego de la primera línea (PLIEGO-NNN)."""
+def parse_pliego_id(content: str, filename: str = "") -> str:
+    """Extrae el identificador del pliego de la primera línea (PLIEGO-NNN).
+    Fallback: usa el stem del nombre de archivo si el contenido no tiene línea PLIEGO-."""
     for line in content.splitlines():
         stripped = line.strip()
         if stripped.upper().startswith("PLIEGO-"):
-            # Toma hasta el primer espacio o fin de línea
             token = stripped.split()[0] if stripped.split() else stripped
-            return token
+            # Limpiar guiones bajos y extensión del token si viene del filename
+            return token.rstrip(":")
+    # Fallback: nombre del archivo sin extensión, normalizado
+    if filename:
+        stem = Path(filename).stem.upper()
+        if stem.startswith("PLIEGO-"):
+            return stem
     return "PLIEGO-XXX"
+
+SEARCH/REPLACE 2 — pasar filename a parse_pliego_id
 
 
 def parse_cambio(content: str) -> str:
@@ -328,7 +336,7 @@ def main():
     # ── Parsear ──────────────────────────────────────────────────────────────
     archivos   = parse_archivos(content)
     pairs      = parse_pairs(content)
-    pliego_id  = parse_pliego_id(content)
+    pliego_id  = parse_pliego_id(content, pliego_path.name)
     cambio     = parse_cambio(content)
 
     print()
