@@ -4,8 +4,10 @@
 
 ---
 
-## PRÓXIMA SESIÓN 31
-**Próximo pliego:** PLIEGO-080
+## PRÓXIMA SESIÓN 32
+**Próximo pliego:** PLIEGO-081
+
+SEARCH/REPLACE 2 — añadir PLIEGO-080 a sin probar
 
 SEARCH/REPLACE 2 — sin probar
 
@@ -37,7 +39,10 @@ SEARCH/REPLACE 2 — sin probar
 - PLIEGO-071 — aplicado S27, sin confirmar en producción.
 - PLIEGO-072 — aplicado S29, sin confirmar en producción.
 - PLIEGO-073 — aplicado S29, sin confirmar en producción.
+- PLIEGO-080 — MusicLab.jsx import patchDb→updateData — aplicado S31, sin confirmar.
 - PLIEGO-074 — schema v4.0.0 GoogleDriveService.js — aplicado S30, sin confirmar.
+
+SEARCH/REPLACE 3 — deuda técnica
 - PLIEGO-075 — extirpación YT + trackVibe PlayerContext — aplicado S30, sin confirmar.
 - PLIEGO-076 — extirpación YT + trackVibe WinampPlayer — aplicado S30, sin confirmar.
 - PLIEGO-077 — extirpación YT + libraryFilter local MusicLab — aplicado S30, sin confirmar.
@@ -67,4 +72,5 @@ SEARCH/REPLACE 2 — sin probar
 | Ctrl+A+pegar → verificar línea 1 = `import React` | Bug recurrente desde S19 |
 | BUG-NUEVO-07 sin test real con David | Confirmar fix PLIEGO-068 |
 | AudioVisualizer: ciclo predeterminadas→negro | Pendiente solución estable |
+| GoogleDriveService.js refactorización | Archivo >600 líneas — candidato a split por secciones en M2/M3 |
 | Playlist: añadir tracks en bloque, tags, indicador activa | Post-estabilización |
