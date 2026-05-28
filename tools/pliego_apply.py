@@ -68,9 +68,6 @@ def parse_pliego_id(content: str, filename: str = "") -> str | None:
         return m2.group(0).upper()
     return None
 
-SEARCH/REPLACE 2 — pasar filename y omitir commit si ID es None
-
-
 def parse_cambio(content: str) -> str:
     """Extrae la descripción del campo CAMBIO: del pliego (primera línea)."""
     lines = content.splitlines()
@@ -164,7 +161,7 @@ def parse_pairs(content: str) -> list[tuple[str, str]]:
             if lines[j].strip() == "SEARCH:":
                 end_idx = j
                 break
-            if re.match(r"^-{3,}\s*$", lines[j]) or re.match(r"^\*\*SEARCH", lines[j]):
+            if re.match(r"^[-─]{3,}\s*$", lines[j]) or re.match(r"^\*\*SEARCH", lines[j]):
                 end_idx = j
                 break
 
@@ -232,6 +229,23 @@ def run_git(args: list[str], root: Path) -> tuple[int, str]:
     )
     output = (result.stdout + result.stderr).strip()
     return result.returncode, output
+
+
+def run_npm_build(root: Path) -> tuple[bool, str]:
+    """Ejecuta npm run build en la raíz del proyecto. Retorna (ok, output)."""
+    try:
+        result = subprocess.run(
+            ["npm", "run", "build"],
+            cwd=str(root),
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace"
+        )
+        output = (result.stdout + result.stderr).strip()
+        return result.returncode == 0, output
+    except FileNotFoundError:
+        return False, "ERROR: 'npm' no encontrado en PATH. Verifica que Node.js está instalado."
 
 
 def prompt_yn(question: str) -> bool:
@@ -318,6 +332,8 @@ def main():
                     help="Fuerza un archivo concreto (útil si el pliego lista varios)")
     ap.add_argument("--dry-run", action="store_true",
                     help="Simula la operación sin escribir nada")
+    ap.add_argument("--skip-build", action="store_true",
+                    help="Omite npm run build (útil para pliegos de documentación)")
     args = ap.parse_args()
 
     # ── Leer pliego ──────────────────────────────────────────────────────────
@@ -333,8 +349,6 @@ def main():
     pairs      = parse_pairs(content)
     pliego_id  = parse_pliego_id(content, pliego_path.name)
     cambio     = parse_cambio(content)
-
-SEARCH/REPLACE 3 — omitir git_commit_flow si no hay ID numérico
 
     print()
     print("=" * 62)
@@ -405,6 +419,21 @@ SEARCH/REPLACE 3 — omitir git_commit_flow si no hay ID numérico
             print()
         else:
             print(f"  RESULTADO: {len(pairs)}/{len(pairs)} aplicados — archivo guardado ✓")
+            if not args.skip_build:
+                print()
+                print("  ── Build ────────────────────────────────────────────────")
+                print("  Ejecutando npm run build...")
+                build_ok, build_out = run_npm_build(root)
+                if not build_ok:
+                    print("\n  ✗ BUILD FALLIDO — restaurando archivo original.")
+                    shutil.copy2(backup_path, target_path)
+                    backup_path.unlink()
+                    print("  ✓ Archivo restaurado. Ningún cambio persistido.")
+                    print("\n  Error de build (últimas líneas):")
+                    for line in build_out.splitlines()[-20:]:
+                        print(f"    {line}")
+                    sys.exit(1)
+                print("  ✓ Build OK")
             if pliego_id:
                 git_commit_flow(target_rel, backup_path, pliego_id, cambio, root)
             else:
