@@ -172,7 +172,7 @@ return () => cancelAnimationFrame(raf);
     return `${m}:${sec}`;
   };
 
-  const accentColor = vibeConf?.color ?? ACID;
+  const accentColor = vibeConf?.palette?.accent ?? ACID;
 
   useEffect(() => {
     if (!("mediaSession" in navigator) || !track) return;
