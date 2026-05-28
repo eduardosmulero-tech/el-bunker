@@ -79,20 +79,23 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   }, [autoPlaySignal]);
 
 const skipDir = useCallback((dir) => {
-if (dir === -1 && currentTRef.current >= 3) {
+  if (dir === -1) {
+    if (currentTRef.current < 3) {
+      // < 3s: ir al track anterior (ADR-009)
+      skip(dir, tracks);
+    } else {
+      // >= 3s: reiniciar track actual (ADR-009)
+      if (audioRef.current) { audioRef.current.currentTime = 0; }
+      currentTRef.current = 0;
+      setCurrentT(0);
+      setProgress(0);
+    }
+    return;
+  }
   skip(dir, tracks);
-  return;
-}
-if (dir === -1) {
-  // < 3s: reiniciar track actual
-  if (audioRef.current) { audioRef.current.currentTime = 0; }
-  currentTRef.current = 0;
-  setCurrentT(0);
-  setProgress(0);
-  return;
-}
-skip(dir, tracks);
 }, [skip, tracks]);
+
+── BLOQUE 2 de 3 — BUG-NUEVO-22: forzar presentación texto en botón play/pause ──
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -255,7 +258,7 @@ return () => cancelAnimationFrame(raf);
         <div className="overflow-hidden whitespace-nowrap" style={{ width: "100%" }}>
           <motion.p
             ref={titleRef}
-            animate={shouldScroll ? { x: ["0%", "-40%", "0%"] } : {}}
+            animate={shouldScroll ? { x: ["0%", "-40%", "0%"] } : { x: 0 }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             className="text-sm font-bold inline-block"
             style={{ color: accentColor, textShadow: `0 0 10px ${accentColor}66` }}
@@ -304,7 +307,8 @@ return () => cancelAnimationFrame(raf);
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
             style={{ background: `${accentColor}22`, border: `2px solid ${accentColor}66`, color: accentColor,
               boxShadow: playing ? `0 0 16px ${accentColor}55` : "none", textShadow: `0 0 8px ${accentColor}` }}>
-            {playing ? "⏸" : "▶"}
+            {playing ? "⏸\uFE0E" : "▶\uFE0E"}
+── BLOQUE 3 de 3 — scroll título: reset explícito a x:0 ─────────────────────
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
         </div>
