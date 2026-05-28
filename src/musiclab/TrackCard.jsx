@@ -37,7 +37,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS }) => (
   </div>
 );
 
-export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue, vibeConfig }) => {
+export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig }) => {
   const vibe = vibeConfig;
   const ytId = extractYouTubeId(track.url ?? "");
   const pressTimer = useRef(null);
@@ -71,6 +71,12 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
                 background: "transparent", border: "none", cursor: "pointer" }}
                 onClick={() => { onAddToQueue?.(track); setShowCtx(false); }}>
                 ◈ AÑADIR A COLA
+              </button>
+              <button style={{ display: "block", width: "100%", padding: "10px 16px",
+                textAlign: "left", color: ACID, fontSize: 11, letterSpacing: "0.2em",
+                background: "transparent", border: "none", cursor: "pointer" }}
+                onClick={() => { onAddNext?.(track); setShowCtx(false); }}>
+                ▷ REPRODUCIR A CONTINUACIÓN
               </button>
               <button style={{ display: "block", width: "100%", padding: "10px 16px",
                 textAlign: "left", color: ACID, fontSize: 11, letterSpacing: "0.2em",
