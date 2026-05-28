@@ -34,11 +34,11 @@ const VIBE_TAGS = [
 
 // ─── DEMO DATA ───────────────────────────────────────────────
 const DEMO_TRACKS = [
-  { id: "t1", title: "Knife Party – LRAD",         artist: "Knife Party",  url: "", vibe: "dnb",         note: "Para cuando llegamos a casa.",    era_id: null, added_at: new Date().toISOString() },
-  { id: "t2", title: "RL Grime – UCLA",             artist: "RL Grime",     url: "", vibe: "gaming",      note: "El himno de las noches largas.", era_id: null, added_at: new Date().toISOString() },
-  { id: "t3", title: "Cigarettes After Sex – Crush",artist: "CAS",          url: "", vibe: "romantiqueo", note: "Te la dedico.",                  era_id: null, added_at: new Date().toISOString() },
-  { id: "t4", title: "Tycho – Awake",               artist: "Tycho",        url: "", vibe: "420_chill",   note: "Flotando.",                      era_id: null, added_at: new Date().toISOString() },
-  { id: "t5", title: "Chase & Status – Flashing Lights", artist: "Chase & Status", url: "", vibe: "dnb", note: "La que suena en el carro.",      era_id: null, added_at: new Date().toISOString() },
+  { id: "t1", title: "Knife Party – LRAD",         artist: "Knife Party",  url: "", tag: "dnb",         note: "Para cuando llegamos a casa.",    era_id: null, added_at: new Date().toISOString() },
+  { id: "t2", title: "RL Grime – UCLA",             artist: "RL Grime",     url: "", tag: "gaming",      note: "El himno de las noches largas.", era_id: null, added_at: new Date().toISOString() },
+  { id: "t3", title: "Cigarettes After Sex – Crush",artist: "CAS",          url: "", tag: "romantiqueo", note: "Te la dedico.",                  era_id: null, added_at: new Date().toISOString() },
+  { id: "t4", title: "Tycho – Awake",               artist: "Tycho",        url: "", tag: "420_chill",   note: "Flotando.",                      era_id: null, added_at: new Date().toISOString() },
+  { id: "t5", title: "Chase & Status – Flashing Lights", artist: "Chase & Status", url: "", tag: "dnb", note: "La que suena en el carro.",      era_id: null, added_at: new Date().toISOString() },
 ];
 
 // ─── HELPERS ─────────────────────────────────────────────────
