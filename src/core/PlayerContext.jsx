@@ -186,8 +186,8 @@ SEARCH/REPLACE 7 — audioSrc sin rama YT + eliminar efecto div YT
   }, [loopMode, skip]);
 
   // ── src del audio: reactivo al track activo ───────────────────
-  const audioSrc = activeTrack?.drive_file_id
-    ? getStreamUrl(activeTrack.drive_file_id)
+  const audioSrc = activeTrack
+    ? getStreamUrl(activeTrack)
     : null;
 
 SEARCH/REPLACE 8 — context value actualizado
