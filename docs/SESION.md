@@ -8,7 +8,9 @@
 
 sesion_numero: 31
 fecha_ultima_actualizacion: 2026-05-28
-pliego_siguiente: PLIEGO-080
+pliego_siguiente: PLIEGO-081
+
+SEARCH/REPLACE 2 — contexto: añadir PLIEGO-080
 pendiente_de_cierre_anterior: false
 
 SEARCH/REPLACE 2 — contexto para esta sesión
@@ -18,7 +20,10 @@ SEARCH/REPLACE 2 — contexto para esta sesión
 ## CONTEXTO PARA ESTA SESIÓN
 
 **Sin confirmar en producción (no son bugs nuevos, solo falta test):**
+- PLIEGO-080 — MusicLab.jsx import patchDb→updateData (BUG build) — aplicado S31, sin confirmar
 - PLIEGO-079 — sw.js bypass YT — aplicado S30, sin confirmar
+
+SEARCH/REPLACE 3 — notas de sesión anterior
 - PLIEGO-078 — AddTrackForm.jsx modo mantenimiento — aplicado S30, sin confirmar
 - PLIEGO-077 — MusicLab.jsx extirpación YT + libraryFilter local — aplicado S30, sin confirmar
 - PLIEGO-076 — WinampPlayer.jsx extirpación YT + trackVibe — aplicado S30, sin confirmar
@@ -62,11 +67,10 @@ Docs adicionales solo si el trabajo de sesión los requiere (declarar aquí):
 
 ---
 
-## NOTAS DE SESIÓN ANTERIOR (S30)
+## NOTAS DE SESIÓN ANTERIOR (S31)
 
-- M1 cerrado: PLIEGO-074 a 079 aplicados (schema v4.0.0, extirpación YT completa, sw.js limpio)
-- PLIEGO-REGLAS aplicado: pliego_apply.py establecido como workflow principal en REGLAS.md
-- tools/README.md creado: documentación del script
-- Sin decisiones arquitecturales nuevas — solo implementación de ADRs ya aprobados
-- Todos los pliegos de la sesión sin confirmar en producción
+- Build roto heredado de S30: import patchDb inexistente en MusicLab.jsx — resuelto con PLIEGO-080
+- Causa raíz: PLIEGO-077 introdujo import con nombre incorrecto (patchDb vs updateData)
+- Build limpio al cierre: 430 modules, 0 errores
+- Nota deuda técnica: GoogleDriveService.js candidato a refactorización (archivo muy grande)
 - Próxima sesión: confirmar M1 en producción antes de abrir M2
