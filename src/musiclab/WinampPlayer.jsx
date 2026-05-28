@@ -159,7 +159,7 @@ useLayoutEffect(() => {
 if (!titleRef.current) return;
 const raf = requestAnimationFrame(() => {
 if (!titleRef.current) return;
-setShouldScroll(titleRef.current.scrollWidth > titleRef.current.offsetWidth);
+setShouldScroll(titleRef.current.scrollWidth > (titleRef.current.parentElement?.offsetWidth ?? titleRef.current.offsetWidth));
 });
 return () => cancelAnimationFrame(raf);
 }, [track?.id, track?.title]);
