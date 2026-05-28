@@ -1440,7 +1440,7 @@ export const uploadMusicFile = async (file) => {
   console.info(`[Búnker] Archivo de música subido ✓ (fileId: ${result.id})`);
   return result.id;
 };
-const R2_PUBLIC_BASE = "https://pub-fd8c3f986feb4cdf8ca32e852b37f6af.r2.dev";
+const R2_PUBLIC_BASE = "https://el-bunker-r2-proxy.thebunker-admin.workers.dev";
 
 export const getStreamUrl = (track) => {
   if (!track) return null;
