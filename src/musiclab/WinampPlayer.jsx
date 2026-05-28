@@ -95,8 +95,6 @@ const skipDir = useCallback((dir) => {
   skip(dir, tracks);
 }, [skip, tracks]);
 
-── BLOQUE 2 de 3 — BUG-NUEVO-22: forzar presentación texto en botón play/pause ──
-
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (playing) { audioRef.current.pause(); setPlaying(false); }
@@ -308,7 +306,6 @@ return () => cancelAnimationFrame(raf);
             style={{ background: `${accentColor}22`, border: `2px solid ${accentColor}66`, color: accentColor,
               boxShadow: playing ? `0 0 16px ${accentColor}55` : "none", textShadow: `0 0 8px ${accentColor}` }}>
             {playing ? "⏸\uFE0E" : "▶\uFE0E"}
-── BLOQUE 3 de 3 — scroll título: reset explícito a x:0 ─────────────────────
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
         </div>
