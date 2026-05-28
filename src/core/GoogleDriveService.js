@@ -25,8 +25,6 @@ const CONFIG = {
   // Versión del esquema — permite migraciones futuras
   SCHEMA_VERSION: "4.0.0",
 
-SEARCH/REPLACE 2 — comentarios EMPTY_DB
-
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
   // Roles: admin → gestión de bibliotecas, edu/david → usuarios normales
@@ -62,7 +60,6 @@ const EMPTY_DB = () => ({
     drops:  [],
     // { id, era_id, track_id, from, to, memory, mood, date, favorited, favorited_by, created_at }
 
-SEARCH/REPLACE 3 — migración 3.4.0 → 4.0.0
     playlists: [],
     // { id, name, track_ids: [], created_by, created_at, updated_at }
   },
@@ -815,7 +812,6 @@ const _migrateSchema = (data) => {
   migrated._wasMigrated   = true;
   return migrated;
 
-SEARCH/REPLACE 4 — addTrack() schema v4.0.0
 };
 
 // ─── SECTION 7: BIBLIOTECA HEARTBEAT & STATUS ────────────────

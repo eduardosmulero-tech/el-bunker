@@ -24,8 +24,6 @@ export const usePlayer = () => {
   return ctx;
 };
 
-SEARCH/REPLACE 2 — eliminar activeVibe state + derivar trackVibe
-
 export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeTrack,    setActiveTrack]    = useState(tracks[0] ?? null);
   const [isPlaying,      setIsPlaying]      = useState(false);
@@ -39,12 +37,9 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
   const trackVibe = activeTrack?.tag ?? null;
 
-SEARCH/REPLACE 3 — eliminar ytPlayerRef + isYouTube
-
   const audioRef    = useRef(null);
   const wakeLockRef = useRef(null);
 
-SEARCH/REPLACE 4 — playTrack sin ramas YT
 
   // ── Persistencia cola en Drive ────────────────────────────
   useEffect(() => {
@@ -139,8 +134,6 @@ SEARCH/REPLACE 4 — playTrack sin ramas YT
     setAutoPlaySignal((n) => n + 1);
   }, [activeTrack?.id, isPlaying]);
 
-SEARCH/REPLACE 5 — vibe effect: activeVibe → trackVibe, documentElement → body
-
   const toggleLoopMode = useCallback(() => {
     setLoopMode((m) => m === "off" ? "list" : m === "list" ? "track" : "off");
   }, []);
@@ -170,11 +163,6 @@ SEARCH/REPLACE 5 — vibe effect: activeVibe → trackVibe, documentElement → 
     }
   }, [trackVibe]);
 
-SEARCH/REPLACE 6 — eliminar efecto YT init completo
-
-
-SEARCH/REPLACE 7 — audioSrc sin rama YT + eliminar efecto div YT
-
   // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
     if (loopMode === "track" && audioRef.current) {
@@ -189,8 +177,6 @@ SEARCH/REPLACE 7 — audioSrc sin rama YT + eliminar efecto div YT
   const audioSrc = activeTrack
     ? getStreamUrl(activeTrack)
     : null;
-
-SEARCH/REPLACE 8 — context value actualizado
 
   return (
     <PlayerContext.Provider value={{

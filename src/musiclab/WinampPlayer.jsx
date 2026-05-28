@@ -9,9 +9,6 @@ import { usePlayer } from "../core/PlayerContext";
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
-
-SEARCH/REPLACE 2 — destructuring: quitar ytPlayerRef, isYouTubeCtx, activeVibe; añadir trackVibe
-
 const getVibeConfig = (vibeId, VIBE_TAGS) =>
   VIBE_TAGS.find((v) => v.id === vibeId) ?? VIBE_TAGS[0];
 
@@ -49,8 +46,6 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
     trackVibe,
   } = usePlayer();
 
-SEARCH/REPLACE 3 — quitar ytPollingRef, actualizar vibeConf, quitar isYouTube local
-
   const mountedRef   = useRef(false);
   const currentTRef  = useRef(0);
   const [progress, setProgress] = useState(0);
@@ -63,8 +58,6 @@ SEARCH/REPLACE 3 — quitar ytPollingRef, actualizar vibeConf, quitar isYouTube 
 
   // trackVibe → acento visual del reproductor (ADR-011)
   const vibeConf = getVibeConfig(trackVibe ?? "all", VIBE_TAGS);
-
-SEARCH/REPLACE 4 — autoPlaySignal effect: quitar rama YT
 
   useEffect(() => {
     // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
@@ -85,8 +78,6 @@ SEARCH/REPLACE 4 — autoPlaySignal effect: quitar rama YT
     return () => clearTimeout(timer);
   }, [autoPlaySignal]);
 
-SEARCH/REPLACE 5 — skipDir: quitar ramas YT
-
 const skipDir = useCallback((dir) => {
 if (dir === -1 && currentTRef.current >= 3) {
   skip(dir, tracks);
@@ -103,18 +94,12 @@ if (dir === -1) {
 skip(dir, tracks);
 }, [skip, tracks]);
 
-SEARCH/REPLACE 6 — eliminar polling YT completo
-
-
-SEARCH/REPLACE 7 — togglePlay: quitar rama YT
-
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (playing) { audioRef.current.pause(); setPlaying(false); }
     else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
   };
 
-SEARCH/REPLACE 8 — seekTo: quitar rama YT
 
   const seekTo = (pct) => {
     if (!audioRef.current || !duration) return;
@@ -126,15 +111,12 @@ SEARCH/REPLACE 8 — seekTo: quitar rama YT
     setProgress(pct);
   };
 
-SEARCH/REPLACE 9 — changeVolume: quitar rama YT
 
   const changeVolume = (v) => {
     setVolume(v);
     setMasterVolume?.(v);
     if (audioRef.current) audioRef.current.volume = v / 100;
   };
-
-SEARCH/REPLACE 10 — masterVolume effect: quitar rama YT
 
   // ── Suscripción a eventos del <audio> centralizado ───────────
   useEffect(() => {
@@ -172,9 +154,6 @@ SEARCH/REPLACE 10 — masterVolume effect: quitar rama YT
       if (Math.abs(audioRef.current.volume - target) > 0.001) audioRef.current.volume = target;
     }
   }, [masterVolume]);
-
-SEARCH/REPLACE 11 — MediaSession: quitar ytId/artwork YT + ramas YT en handlers
-
 // BUG-29: scroll de título solo si el texto desborda el contenedor
 useLayoutEffect(() => {
 if (!titleRef.current) return;
@@ -216,8 +195,6 @@ return () => cancelAnimationFrame(raf);
       });
     };
   }, [track?.id, playing, skip]);
-
-SEARCH/REPLACE 12 — comentario JSX: quitar referencia a div#yt-player-div
 
   return (
     <motion.div
