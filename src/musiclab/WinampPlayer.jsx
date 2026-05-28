@@ -57,7 +57,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   const titleRef = useRef(null);
 
   // trackVibe → acento visual del reproductor (ADR-011)
-  const vibeConf = getVibeConfig(trackVibe ?? "all", VIBE_TAGS);
+  const vibeConf = getVibeConfig(trackVibe ?? "gaming");
 
   useEffect(() => {
     // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
