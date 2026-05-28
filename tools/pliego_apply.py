@@ -26,6 +26,7 @@ Notas:
 
 import sys
 import re
+import os
 import shutil
 import argparse
 import subprocess
@@ -235,7 +236,7 @@ def run_npm_build(root: Path) -> tuple[bool, str]:
     """Ejecuta npm run build en la raíz del proyecto. Retorna (ok, output)."""
     try:
         result = subprocess.run(
-            ["npm", "run", "build"],
+            ["npm.cmd" if os.name == "nt" else "npm", "run", "build"],
             cwd=str(root),
             capture_output=True,
             text=True,
