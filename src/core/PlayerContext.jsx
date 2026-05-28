@@ -195,6 +195,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
         ref={audioRef}
+        crossOrigin="anonymous"
         src={audioSrc ?? undefined}
         loop={false}
         style={{ display: "none" }}
