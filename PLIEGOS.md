@@ -1,8 +1,6 @@
 # PLIEGOS.md — el_bunker
 > Registro secuencial. Número no se resetea entre sesiones.
-> **PRÓXIMO: PLIEGO-081**
-
-SEARCH/REPLACE 2 — vaciar pendientes
+> **PRÓXIMO: PLIEGO-088**
 
 ---
 
@@ -14,7 +12,7 @@ Ver docs/Nucleo/REGLAS.md § PLANTILLA DE PLIEGO
 
 ## PENDIENTES
 
-*(vacío — M1 cerrado en S30. Ver historial)*
+*(vacío)*
 
 ## HISTORIAL
 

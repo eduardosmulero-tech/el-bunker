@@ -60,3 +60,9 @@
 | BUG-NUEVO-23 | Eliminar playlist no persistía en DB (deletePlaylist no existía en API surface) | Reemplazado por patchDb directo | PLIEGO-072a | S29 |
 | BUG-NUEVO-18 | Slider volumen no sincronizaba audioRef.current.volume al arrancar track Drive | Sync masterVolume/100 antes de play() en efecto autoPlaySignal | PLIEGO-073 | S29 |
 | BUG-NUEVO-22 | Botones físicos volumen Android no sincronizaban con slider | Listener volumechange en efecto [] de suscripción al audio | PLIEGO-073 | S29 |
+# HISTORIAL DE ERRORES RESUELTOS
+
+## SESIÓN 32 (2026-05-28)
+- **BUG-C01:** Corrupción de sintaxis en `AddTrackForm.jsx`. Resuelto manualmente limpiando tags del parser inyectados erróneamente.
+- **BUG-S02:** Lógica invertida en salto de pista `skipDir` en `WinampPlayer.jsx`. Fix condicional < 3s.
+- **BUG-SCR03:** Scroll de marquesina `shouldScroll` omitía el desbordamiento. Resuelto calculando contra el `parentElement`.

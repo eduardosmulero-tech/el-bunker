@@ -104,3 +104,16 @@ BUG-15: guard onKeyDown en PlaylistNameInput para prevenir creación accidental 
 ### PLIEGO-073 — `src/musiclab/WinampPlayer.jsx`
 Fecha: 2026-05-27 · Modelo: qwen3-14b-nothink · Estado: aplicado · Sesión: S29
 BUG-18: sync masterVolume → audioRef.current.volume antes de play() en autoPlaySignal · BUG-22: listener volumechange para botones físicos Android · guarda feedback loop en efecto [masterVolume]
+
+## PLIEGO-081 — WinampPlayer.jsx: Lógica de skip
+- **Fecha:** 2026-05-28
+- **Estado:** Aplicado.
+
+## PLIEGO-082 — WinampPlayer.jsx: Scroll de título y skipDir
+- **Fecha:** 2026-05-28
+- **Estado:** Aplicado.
+- **Cambio:** Fix de ADR-009 y cálculo de `scrollWidth`.
+
+## PLIEGO-083 — MusicLab.jsx: Paginación en DOM
+- **Fecha:** 2026-05-28
+- **Estado:** Aplicado (Parcial). Bloques 1 y 3 en producción.

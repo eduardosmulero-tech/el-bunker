@@ -109,3 +109,8 @@ Pliegos: PLIEGO-072a (MusicLab.jsx), PLIEGO-072b (PlaylistManager.jsx), PLIEGO-0
 Bugs resueltos: BUG-14, BUG-15, BUG-23, BUG-18, BUG-22
 Sin confirmar en producción: PLIEGO-068, 071, 072, 073
 Decisiones arquitecturales: ninguna
+
+## Sesión 32 (2026-05-28)
+- **Pliegos procesados:** PLIEGO-081, PLIEGO-082 (Completos), PLIEGO-083 (Parcial).
+- **Incidencias:** Agotamiento masivo de contexto debido a múltiples fallos de `pliego_apply.py` en la indentación de reemplazos pequeños.
+- **Decisión Arquitectónica:** Aprobación del ADR-015 para mitigar la fragilidad del parser obligando a reemplazar bloques lógicos completos.

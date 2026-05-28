@@ -4,12 +4,8 @@
 
 ---
 
-## PRÓXIMA SESIÓN 32
-**Próximo pliego:** PLIEGO-081
-
-SEARCH/REPLACE 2 — añadir PLIEGO-080 a sin probar
-
-SEARCH/REPLACE 2 — sin probar
+## PRÓXIMA SESIÓN 33
+**Próximo pliego:** PLIEGO-084
 
 ---
 
@@ -21,10 +17,15 @@ SEARCH/REPLACE 2 — sin probar
 | BUG-NUEVO-07 | Token 403 para David: pantalla de error sin salida. Reautenticación automática en `_refreshToken`. | PLIEGO-068 — Aplicado · Sin confirmar con David |
 
 ### P2 — Reproductor
-*(vacío — bugs 12 y 13 resueltos en PLIEGO-071, sin testear en producción)*
+| ID | Descripción | Pliego |
+|---|---|---|
+| BUG-NUEVO-22 | Iconos ⏸▶ renderizados como emoji de sistema en Android (Unicode sin selector variación). Fix aplicado, pendiente testear. | PLIEGO-084 ⏳ |
+| BUG-skipDir | Lógica skipDir invertida — causa raíz de PLIEGO-071/081/082. Fix aplicado, pendiente testear. | PLIEGO-084 ⏳ |
 
 ### P3 — UX / MusicLab
-*(vacío — bugs 14, 15, 18, 22, 23 resueltos en PLIEGO-072/073, sin testear en producción)*
+| ID | Descripción | Pliego |
+|---|---|---|
+| BUG-LAG04 | MusicLab se congela al renderizar demasiados tracks. | PLIEGO-083 — (Parcial) Falta aplicar reset de filtro |
 
 ### P4 — Feature Gaps
 | ID | Descripción |
@@ -36,18 +37,14 @@ SEARCH/REPLACE 2 — sin probar
 ### Sin probar
 - Volumen SmokeSession sincronizado con PlayerContext.
 - Notificación con sonido breve no interrumpe reproducción.
-- PLIEGO-071 — aplicado S27, sin confirmar en producción.
-- PLIEGO-072 — aplicado S29, sin confirmar en producción.
-- PLIEGO-073 — aplicado S29, sin confirmar en producción.
-- PLIEGO-080 — MusicLab.jsx import patchDb→updateData — aplicado S31, sin confirmar.
-- PLIEGO-074 — schema v4.0.0 GoogleDriveService.js — aplicado S30, sin confirmar.
-
-SEARCH/REPLACE 3 — deuda técnica
-- PLIEGO-075 — extirpación YT + trackVibe PlayerContext — aplicado S30, sin confirmar.
-- PLIEGO-076 — extirpación YT + trackVibe WinampPlayer — aplicado S30, sin confirmar.
-- PLIEGO-077 — extirpación YT + libraryFilter local MusicLab — aplicado S30, sin confirmar.
-- PLIEGO-078 — AddTrackForm modo mantenimiento — aplicado S30, sin confirmar.
-- PLIEGO-079 — bypass YT eliminado sw.js — aplicado S30, sin confirmar.
+- PLIEGO-086 — REGLAS.md cabeceras entre bloques — aplicado S33.
+- PLIEGO-085 — pliego_apply.py build check — aplicado S33.
+- PLIEGO-084 — WinampPlayer.jsx skipDir + emoji + scroll — aplicado S33.
+- PLIEGO-083 — MusicLab.jsx paginación (Parcial) — aplicado S32.
+- PLIEGO-082 — WinampPlayer.jsx scroll y skipDir — aplicado S32 (causa raíz en 084).
+- PLIEGO-081 — WinampPlayer.jsx lógica — aplicado S32 (causa raíz en 084).
+- PLIEGO-080 — MusicLab.jsx import patchDb→updateData — aplicado S31.
+- PLIEGO-079 al 071 — (Ver historial SESION.md)
 
 ---
 
@@ -67,10 +64,9 @@ SEARCH/REPLACE 3 — deuda técnica
 
 | Item | Acción |
 |---|---|
-| ADR-008 pendiente corrección | Refactorización PlayerContext: playbackContext + contextPointer + manualQueue (M3) |
-| `ACID` y `PURPLE` en Vault.jsx | Migrar a tokens.js cuando se toque el archivo |
-| Ctrl+A+pegar → verificar línea 1 = `import React` | Bug recurrente desde S19 |
-| BUG-NUEVO-07 sin test real con David | Confirmar fix PLIEGO-068 |
-| AudioVisualizer: ciclo predeterminadas→negro | Pendiente solución estable |
-| GoogleDriveService.js refactorización | Archivo >600 líneas — candidato a split por secciones en M2/M3 |
-| Playlist: añadir tracks en bloque, tags, indicador activa | Post-estabilización |
+| Fragilidad en parser | Mitigado con ADR-015 (Directivas Anti-Fricción). |
+| ADR-008 pendiente corrección | Refactorización PlayerContext (M3). |
+| `ACID` y `PURPLE` en Vault.jsx | Migrar a tokens.js cuando se toque el archivo. |
+| Ctrl+A+pegar → verificar línea 1 = `import React` | Bug recurrente desde S19. |
+| AudioVisualizer: ciclo predeterminadas→negro | Pendiente solución estable. |
+| GoogleDriveService.js refactorización | Archivo >600 líneas — candidato a split (M2/M3). |
