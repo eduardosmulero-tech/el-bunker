@@ -1444,10 +1444,20 @@ export const uploadMusicFile = async (file) => {
   console.info(`[Búnker] Archivo de música subido ✓ (fileId: ${result.id})`);
   return result.id;
 };
-export const getStreamUrl = (fileId) => {
+const R2_PUBLIC_BASE = "https://pub-fd8c3f986feb4cdf8ca32e852b37f6af.r2.dev";
+
+export const getStreamUrl = (track) => {
+  if (!track) return null;
+
+  // R2 — URL pública directa (ADR-010, Opción A reproducción)
+  if (track.r2_key) {
+    return `${R2_PUBLIC_BASE}/${track.r2_key}`;
+  }
+
+  // Drive — fallback para tracks legacy sin r2_key
   const token = window.gapi.client.getToken()?.access_token;
-  if (!token || !fileId) return null;
-  return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&access_token=${token}`;
+  if (!token || !track.drive_file_id) return null;
+  return `https://www.googleapis.com/drive/v3/files/${track.drive_file_id}?alt=media&access_token=${token}`;
 };
 
 // ─── DEFAULT EXPORT ───────────────────────────────────────────────────────────
