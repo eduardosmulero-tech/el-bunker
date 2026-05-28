@@ -10,6 +10,16 @@ import { usePlayer } from "../core/PlayerContext";
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
+function withAlpha(color, alpha) {
+  const hex = Math.round(alpha * 255).toString(16).padStart(2, "0");
+  if (color.startsWith("hsl(")) {
+    const inner = color.slice(4, -1);
+    return `hsla(${inner}, ${alpha})`;
+  }
+  if (color.startsWith("hsla(")) return color;
+  return color + hex;
+}
+
 
 
 // ─── WINAMP BUTTON ───────────────────────────────────────────
@@ -22,11 +32,12 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
       size === "sm" ? "w-7 h-7" : "w-8 h-8"
     }`}
     style={{
-      background: active ? `${color}22` : "transparent",
-      border: `1px solid ${active ? color + "66" : color + "22"}`,
-      color: active ? color : color + "66",
-      boxShadow: active ? `0 0 8px ${color}44` : "none",
+      background: active ? withAlpha(color, 0.13) : "transparent",
+      border: `1px solid ${active ? withAlpha(color, 0.4) : withAlpha(color, 0.13)}`,
+      color: active ? color : withAlpha(color, 0.4),
+      boxShadow: active ? `0 0 8px ${withAlpha(color, 0.27)}` : "none",
     }}
+
   >
     {label}
   </motion.button>
@@ -202,8 +213,8 @@ return () => cancelAnimationFrame(raf);
       className="relative rounded-sm overflow-hidden"
       style={{
         background: `linear-gradient(145deg, rgba(10,10,10,0.98) 0%, rgba(20,20,20,0.98) 100%)`,
-        border: `1px solid ${accentColor}33`,
-        boxShadow: `0 0 30px ${accentColor}11, inset 0 0 40px rgba(0,0,0,0.6)`,
+        border: `1px solid ${withAlpha(accentColor, 0.2)}`,
+        boxShadow: `0 0 30px ${withAlpha(accentColor, 0.07)}, inset 0 0 40px rgba(0,0,0,0.6)`,
         fontFamily: FONT_MONO,
       }}
       initial={{ opacity: 0, y: 16 }}
@@ -216,8 +227,8 @@ return () => cancelAnimationFrame(raf);
       <div
         className="flex items-center justify-between px-3 py-2"
         style={{
-          background: `linear-gradient(90deg, ${accentColor}18 0%, transparent 100%)`,
-          borderBottom: `1px solid ${accentColor}22`,
+          background: `linear-gradient(90deg, ${withAlpha(accentColor, 0.09)} 0%, transparent 100%)`,
+          borderBottom: `1px solid ${withAlpha(accentColor, 0.13)}`,
         }}
       >
         <div className="flex items-center gap-2">
@@ -240,7 +251,7 @@ return () => cancelAnimationFrame(raf);
         </div>
         <div className="flex gap-2">
           <span className="text-xs tracking-widest uppercase px-2 py-0.5 rounded-sm"
-            style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33` }}>
+            style={{ color: accentColor, background: withAlpha(accentColor, 0.08), border: `1px solid ${withAlpha(accentColor, 0.2)}` }}>
             {vibeConf?.icon} {vibeConf?.label}
           </span>
         </div>
@@ -259,7 +270,7 @@ return () => cancelAnimationFrame(raf);
             animate={shouldScroll ? { x: ["0%", "-40%", "0%"] } : { x: 0 }}
             transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
             className="text-sm font-bold inline-block"
-            style={{ color: accentColor, textShadow: `0 0 10px ${accentColor}66` }}
+            style={{ color: accentColor, textShadow: `0 0 10px ${withAlpha(accentColor, 0.4)}` }}
           >
             {track ? `${track.title} — ${track.artist}` : "◈ SELECT A TRACK ◈"}
           </motion.p>
@@ -277,11 +288,11 @@ return () => cancelAnimationFrame(raf);
             const rect = e.currentTarget.getBoundingClientRect();
             seekTo(((e.clientX - rect.left) / rect.width) * 100);
           }}>
-            <div className="absolute inset-0 rounded-full" style={{ background: `${accentColor}22` }} />
+            <div className="absolute inset-0 rounded-full" style={{ background: withAlpha(accentColor, 0.13) }} />
             <motion.div className="absolute top-0 left-0 h-full rounded-full"
-              style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accentColor} 0%, ${accentColor}aa 100%)`, boxShadow: `0 0 8px ${accentColor}66` }} />
+              style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accentColor} 0%, ${withAlpha(accentColor, 0.67)} 100%)`, boxShadow: `0 0 8px ${withAlpha(accentColor, 0.4)}` }} />
             <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ left: `calc(${progress}% - 6px)`, borderColor: accentColor, background: BG, boxShadow: `0 0 8px ${accentColor}` }} />
+              style={{ left: `calc(${progress}% - 6px)`, borderColor: accentColor, background: BG, boxShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }} />
           </div>
           <span className="text-xs tabular-nums opacity-50" style={{ color: accentColor }}>{fmtTime(duration)}</span>
         </div>  
@@ -303,8 +314,8 @@ return () => cancelAnimationFrame(raf);
           <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" size="sm" />
           <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
-            style={{ background: `${accentColor}22`, border: `2px solid ${accentColor}66`, color: accentColor,
-              boxShadow: playing ? `0 0 16px ${accentColor}55` : "none", textShadow: `0 0 8px ${accentColor}` }}>
+            style={{ background: withAlpha(accentColor, 0.13), border: `2px solid ${withAlpha(accentColor, 0.4)}`, color: accentColor,
+              boxShadow: playing ? `0 0 16px ${withAlpha(accentColor, 0.33)}` : "none", textShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }}>
             {playing ? "⏸\uFE0E" : "▶\uFE0E"}
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
