@@ -1,6 +1,16 @@
 import { useRef, useEffect, useCallback } from "react";
 import { ACID } from "../layout/Layout";
 
+function withAlpha(color, alpha) {
+  const hex = Math.round(alpha * 255).toString(16).padStart(2, "0");
+  if (color.startsWith("hsl(")) {
+    const inner = color.slice(4, -1);
+    return `hsla(${inner}, ${alpha})`;
+  }
+  if (color.startsWith("hsla(")) return color;
+  return color + hex;
+}
+
 export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
   const canvasRef    = useRef(null);
   const analyserRef  = useRef(null);
@@ -63,14 +73,13 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
         const x    = i * (barW + 1.5);
         const y    = H - barH;
         const grad = ctx.createLinearGradient(x, y, x, H);
-        const hex  = accentColor;
-        grad.addColorStop(0,   hex + "ff");
-        grad.addColorStop(0.5, hex + "aa");
-        grad.addColorStop(1,   hex + "22");
+        grad.addColorStop(0,   withAlpha(accentColor, 1));
+        grad.addColorStop(0.5, withAlpha(accentColor, 0.67));
+        grad.addColorStop(1,   withAlpha(accentColor, 0.13));
 
         ctx.fillStyle   = grad;
         ctx.shadowBlur  = barH > H * 0.5 ? 18 : 6;
-        ctx.shadowColor = hex + "88";
+        ctx.shadowColor = withAlpha(accentColor, 0.53);
 
         const radius = Math.min(3, barW / 2);
         ctx.beginPath();
@@ -86,7 +95,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
         if (isPlaying && barH > H * 0.3) {
           ctx.fillStyle   = "#ffffff88";
           ctx.shadowBlur  = 12;
-          ctx.shadowColor = hex;
+          ctx.shadowColor = accentColor;
           ctx.fillRect(x, y - 3, barW, 2);
         }
         ctx.shadowBlur = 0;
