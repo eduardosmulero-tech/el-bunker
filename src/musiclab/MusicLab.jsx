@@ -60,6 +60,7 @@ export default function MusicLab({
   onAddDrop,
   onMarkDropSeen,
   onMasterVolumeChange,
+  patchDb,
 }) {
   const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
   const rawDrops  = db?.music_lab?.drops  ?? [];
