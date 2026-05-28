@@ -13,9 +13,9 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           title:  initialData.title  ?? "",
           artist: initialData.artist ?? "",
           note:   initialData.note   ?? "",
-          vibe:   initialData.vibe   ?? "gaming",
+          tag:    initialData.tag ?? initialData.vibe ?? "gaming",
         }
-      : { title: "", artist: "", note: "", vibe: "gaming" }
+      : { title: "", artist: "", note: "", tag: "gaming" }
   );
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
