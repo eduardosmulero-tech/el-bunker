@@ -57,23 +57,18 @@ def parse_archivos(content: str) -> list[str]:
     return []
 
 
-def parse_pliego_id(content: str, filename: str = "") -> str:
-    """Extrae el identificador del pliego de la primera línea (PLIEGO-NNN).
-    Fallback: usa el stem del nombre de archivo si el contenido no tiene línea PLIEGO-."""
-    for line in content.splitlines():
-        stripped = line.strip()
-        if stripped.upper().startswith("PLIEGO-"):
-            token = stripped.split()[0] if stripped.split() else stripped
-            # Limpiar guiones bajos y extensión del token si viene del filename
-            return token.rstrip(":")
-    # Fallback: nombre del archivo sin extensión, normalizado
-    if filename:
-        stem = Path(filename).stem.upper()
-        if stem.startswith("PLIEGO-"):
-            return stem
-    return "PLIEGO-XXX"
+def parse_pliego_id(content: str, filename: str = "") -> str | None:
+    """Busca PLIEGO-NNN (solo dígitos) en el contenido o en el nombre del archivo.
+    Retorna None si no encuentra ID numérico — el commit se omite."""
+    m = re.search(r"\bPLIEGO-\d+\b", content, re.IGNORECASE)
+    if m:
+        return m.group(0).upper()
+    m2 = re.search(r"\bPLIEGO-\d+\b", Path(filename).stem, re.IGNORECASE)
+    if m2:
+        return m2.group(0).upper()
+    return None
 
-SEARCH/REPLACE 2 — pasar filename a parse_pliego_id
+SEARCH/REPLACE 2 — pasar filename y omitir commit si ID es None
 
 
 def parse_cambio(content: str) -> str:
@@ -339,6 +334,8 @@ def main():
     pliego_id  = parse_pliego_id(content, pliego_path.name)
     cambio     = parse_cambio(content)
 
+SEARCH/REPLACE 3 — omitir git_commit_flow si no hay ID numérico
+
     print()
     print("=" * 62)
     print(f"  PLIEGO:   {pliego_path.name}")
@@ -408,7 +405,11 @@ def main():
             print()
         else:
             print(f"  RESULTADO: {len(pairs)}/{len(pairs)} aplicados — archivo guardado ✓")
-            git_commit_flow(target_rel, backup_path, pliego_id, cambio, root)
+            if pliego_id:
+                git_commit_flow(target_rel, backup_path, pliego_id, cambio, root)
+            else:
+                print("  Sin ID numérico — commit omitido (pliego de documentación).")
+                _offer_backup_delete(backup_path)
 
     print()
 
