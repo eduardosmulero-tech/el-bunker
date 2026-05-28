@@ -7,15 +7,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
-
-// ─── VIBE COLOR MAP ───────────────────────────────────────────
-// Derivado de activeTrack?.tag (ADR-011). Sin "all" — es filtro de UI, no vibe.
-const VIBE_COLORS = {
-  gaming:      "#00ffcc",
-  "420_chill": "#aaff44",
-  dnb:         "#ff6b35",
-  romantiqueo: "#bf00ff",
-};
+import { getVibeAccent } from "../tokens";
 const PlayerContext = createContext(null);
 
 export const usePlayer = () => {
@@ -93,7 +85,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     setAutoPlaySignal((n) => n + 1);
   }, [tracks, localQueue, activeTrack?.id, shuffle]);
 
-  // refs para que callbacks de YT no tengan stale closures
+  // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
   const loopModeRef = useRef("off");
   useEffect(() => { skipRef.current     = skip;     }, [skip]);
@@ -155,9 +147,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
   useEffect(() => {
-    const color = VIBE_COLORS[trackVibe] ?? null;
-    if (color) {
-      document.body.style.setProperty("--vibe-accent", color);
+    if (trackVibe) {
+      document.body.style.setProperty("--vibe-accent", getVibeAccent(trackVibe));
     } else {
       document.body.style.removeProperty("--vibe-accent");
     }

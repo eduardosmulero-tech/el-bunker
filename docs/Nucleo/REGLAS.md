@@ -37,7 +37,7 @@ Formato compatible con pliego_apply.py (ver tools/README.md):
 - El texto de SEARCH debe coincidir exactamente.
 - **Obligatorio:** Copiar bloque completo sin re-indentar.
 - **Prohibido entre bloques:** cualquier texto entre el contenido del REPLACE y el siguiente SEARCH: se inyecta literalmente en el archivo. Esto incluye cabeceras ── título ──, separadores --- y cualquier comentario. El REPLACE termina donde empieza el siguiente SEARCH:.
-- **Multi-bloque:** línea en blanco opcional tras el último contenido del REPLACE, luego directamente SEARCH: del bloque siguiente. Sin títulos ni cabeceras intermedias.
+- **Multi-bloque:** línea en blanco **obligatoria** tras el último contenido de cada REPLACE cuando hay bloques siguientes — el parser interpreta cualquier texto pegado al REPLACE como contenido a inyectar. El número de bloque va solo en su línea (`SEARCH/REPLACE 1`, sin guión ni texto adicional). Sin títulos ni cabeceras intermedias.
 
 ## WORKFLOW HUMANO
 Claude genera el pliego como .txt. Edu lo guarda y aplica.
