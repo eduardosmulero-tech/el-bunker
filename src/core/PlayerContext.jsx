@@ -17,14 +17,16 @@ export const usePlayer = () => {
 };
 
 export function PlayerProvider({ children, userId, tracks = [] }) {
-  const [activeTrack,    setActiveTrack]    = useState(tracks[0] ?? null);
-  const [isPlaying,      setIsPlaying]      = useState(false);
-  const [localQueue,     setLocalQueue]     = useState([]);
-  const [loopMode,       setLoopMode]       = useState("off");
-  const [shuffle,        setShuffle]        = useState(false);
-  const [autoPlaySignal, setAutoPlaySignal] = useState(0);
-  const [syncStatus,     setSyncStatus]     = useState("idle");
-  const [masterVolume,   setMasterVolume]   = useState(80);
+  const [activeTrack,      setActiveTrack]      = useState(tracks[0] ?? null);
+  const [isPlaying,        setIsPlaying]        = useState(false);
+  const [localQueue,       setLocalQueue]       = useState([]);
+  const [loopMode,         setLoopMode]         = useState("off");
+  const [shuffle,          setShuffle]          = useState(false);
+  const [autoPlaySignal,   setAutoPlaySignal]   = useState(0);
+  const [syncStatus,       setSyncStatus]       = useState("idle");
+  const [masterVolume,     setMasterVolume]     = useState(80);
+  // playbackContext — lista adoptada como contexto al iniciar reproducción (spec C2)
+  const [playbackContext,  setPlaybackContext]  = useState([]);
 
   // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
   const trackVibe = activeTrack?.tag ?? null;
@@ -69,7 +71,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       setAutoPlaySignal((n) => n + 1);
       return;
     }
-    const list = filteredTracks ?? tracks;
+    // Prioridad de lista: argumento explícito → playbackContext → tracks globales (spec C4)
+    const list = filteredTracks ?? (playbackContext.length > 0 ? playbackContext : tracks);
     if (!list.length) return;
     const idx = list.findIndex((t) => t.id === activeTrack?.id);
     const base = idx < 0 ? 0 : idx;
@@ -83,7 +86,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       : (base + dir + list.length) % list.length;
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
-  }, [tracks, localQueue, activeTrack?.id, shuffle]);
+  }, [tracks, localQueue, activeTrack?.id, shuffle, playbackContext]);
 
   // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
@@ -182,6 +185,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       masterVolume, setMasterVolume,
       audioRef,
       skip, addToQueue, removeFromQueue, playTrack,
+      playbackContext, setPlaybackContext,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
