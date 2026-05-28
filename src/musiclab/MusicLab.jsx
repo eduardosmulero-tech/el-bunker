@@ -80,6 +80,7 @@ export default function MusicLab({
   const [pendingTrack,       setPendingTrack]       = useState(null);
   const [toast,             setToast]              = useState(null);
   const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
+  const [visibleCount,       setVisibleCount]       = useState(50);
 
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
@@ -91,14 +92,13 @@ export default function MusicLab({
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
-
+  useEffect(() => { setVisibleCount(50); }, [libraryFilter]);
   useEffect(() => {
     if (!db) return;
     fetchPlaylists()
       .then(setLocalPlaylists)
       .catch((err) => console.warn("[Búnker] fetchPlaylists falló:", err));
   }, [db]);
-
   // ── Handlers Playlist ────────────────────────────────────
   const handleAddToPlaylist = (track) => { setPendingTrack(track); setShowPlaylistModal(true); };
 
@@ -456,7 +456,7 @@ export default function MusicLab({
               <div className="flex flex-col gap-2">
                 <AnimatePresence>
                   {!editingTrack && !showEdit && filteredTracks.length > 0 ? (
-                    filteredTracks.map((track) => (
+                    filteredTracks.slice(0, visibleCount).map((track) => (
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.vibe)}
@@ -474,6 +474,21 @@ export default function MusicLab({
                     </motion.p>
                   )}
                 </AnimatePresence>
+                {!editingTrack && !showEdit && visibleCount < filteredTracks.length && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setVisibleCount((c) => c + 50)}
+                    className="w-full py-2.5 text-xs tracking-[0.25em] uppercase font-bold rounded-sm mt-1"
+                    style={{
+                      color: `${ACID}88`,
+                      border: `1px solid ${ACID}22`,
+                      background: `${ACID}06`,
+                      fontFamily: FONT_MONO,
+                    }}
+                  >
+                    + CARGAR MÁS — {filteredTracks.length - visibleCount} restantes
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           )}
