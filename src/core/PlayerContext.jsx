@@ -110,20 +110,26 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
 
   // ── Handlers cola ─────────────────────────────────────────
-  const addToQueue = useCallback((track) => {
-    if (!track) return;
-    setLocalQueue((q) => q.find((t) => t.id === track.id) ? q : [...q, track]);
-  }, []);
+  const addToQueue = useCallback((track, force = false) => {
+    if (!track) return "added";
+    const isDup = localQueue.some((t) => t.id === track.id);
+    if (isDup && !force) return "duplicate";
+    setLocalQueue((q) => [...q, track]);
+    return "added";
+  }, [localQueue]);
 
-  const addNext = useCallback((track) => {
-    if (!track) return;
+  const addNext = useCallback((track, force = false) => {
+    if (!track) return "added";
+    const isDup = localQueue.some((t) => t.id === track.id);
+    if (isDup && !force) return "duplicate";
     setLocalQueue((q) => {
-      const filtered = q.filter((t) => t.id !== track.id);
-      const idx = filtered.findIndex((t) => t.id === activeTrack?.id);
+      const base = force ? q.filter((t) => t.id !== track.id) : q;
+      const idx = base.findIndex((t) => t.id === activeTrack?.id);
       const insertAt = idx >= 0 ? idx + 1 : 0;
-      return [...filtered.slice(0, insertAt), track, ...filtered.slice(insertAt)];
+      return [...base.slice(0, insertAt), track, ...base.slice(insertAt)];
     });
-  }, [activeTrack?.id]);
+    return "added";
+  }, [localQueue, activeTrack?.id]);
 
   const removeFromQueue = useCallback((trackId) => {
     setLocalQueue((q) => {
