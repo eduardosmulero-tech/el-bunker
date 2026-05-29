@@ -85,7 +85,7 @@ export default function MusicLab({
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
     activeTrack, setActiveTrack,
-    localQueue, addToQueue, addNext, removeFromQueue, playTrack,
+    localQueue, setLocalQueue, addToQueue, addNext, removeFromQueue, playTrack,
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
     playbackContext, setPlaybackContext,
@@ -209,6 +209,22 @@ export default function MusicLab({
 
   const handleRemoveFromQueue = (trackId) => {
     removeFromQueue(trackId);
+  };
+
+  // drag&drop cola (provisional — pendiente revisión sesión diseño)
+  const dragIdx = useRef(null);
+  const handleDragStart = (i) => { dragIdx.current = i; };
+  const handleDragOver  = (e) => { e.preventDefault(); };
+  const handleDrop      = (i) => {
+    if (dragIdx.current === null || dragIdx.current === i) return;
+    setLocalQueue((q) => {
+      const next = q.filter((t) => t.id !== activeTrack?.id);
+      const [moved] = next.splice(dragIdx.current, 1);
+      next.splice(i, 0, moved);
+      dragIdx.current = null;
+      // reinsertar activeTrack al principio si existe
+      return activeTrack ? [activeTrack, ...next] : next;
+    });
   };
 
   const handleQueueAdvance = (track) => {
@@ -354,9 +370,15 @@ export default function MusicLab({
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>siguientes</span>
                   <div className="flex flex-col gap-2">
-                    {localQueue.filter((t) => t.id !== activeTrack?.id).map((track) => (
-                      <div key={`queue-next-${track.id}`} className="flex items-center gap-3 p-3 rounded-sm"
-                        style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
+                    {localQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => (
+                      <div key={`queue-next-${track.id}`}
+                        draggable
+                        onDragStart={() => handleDragStart(i)}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(i)}
+                        className="flex items-center gap-3 p-3 rounded-sm"
+                        style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
+                        <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
                           <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
