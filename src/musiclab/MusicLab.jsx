@@ -284,7 +284,7 @@ export default function MusicLab({
         {toast && (
           <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.25 }}
-            style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
+            style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)",
               background: `${ACID}18`, border: `1px solid ${ACID}55`, color: ACID,
               fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
               padding: "8px 20px", borderRadius: 2, zIndex: 9999 }}>
