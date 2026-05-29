@@ -222,10 +222,39 @@ export default function MusicLab({
       const [moved] = next.splice(dragIdx.current, 1);
       next.splice(i, 0, moved);
       dragIdx.current = null;
-      // reinsertar activeTrack al principio si existe
       return activeTrack ? [activeTrack, ...next] : next;
     });
   };
+
+  // drag&drop playlists
+  const dragPlIdx = useRef(null);
+  const handlePlDragStart = (i) => { dragPlIdx.current = i; };
+  const handlePlDragOver  = (e) => { e.preventDefault(); };
+  const handlePlDrop      = async (i) => {
+    if (dragPlIdx.current === null || dragPlIdx.current === i) return;
+    setLocalPlaylists((pls) => {
+      const next = [...pls];
+      const [moved] = next.splice(dragPlIdx.current, 1);
+      next.splice(i, 0, moved);
+      dragPlIdx.current = null;
+      patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
+      return next;
+    });
+  };
+
+  // renombrar playlist inline
+  const [renamingPlId, setRenamingPlId] = useState(null);
+  const [renameVal,    setRenameVal]    = useState("");
+  const handleRenamePlaylist = async (plId) => {
+    if (!renameVal.trim()) { setRenamingPlId(null); return; }
+    const updated = localPlaylists.map((pl) => pl.id === plId ? { ...pl, name: renameVal.trim() } : pl);
+    setLocalPlaylists(updated);
+    setRenamingPlId(null);
+    await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
+  };
+
+  // confirmar eliminar playlist inline
+  const [confirmDeletePlId, setConfirmDeletePlId] = useState(null);
 
   const handleQueueAdvance = (track) => {
     playTrack(track);
@@ -603,48 +632,94 @@ export default function MusicLab({
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {localPlaylists.map((pl) => {
+                  {localPlaylists.map((pl, i) => {
                     const plTracks = pl.track_ids.map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
                     const isEmpty = plTracks.length === 0;
                     const plVibe = getVibeConfig(pl.tag ?? plTracks[0]?.tag ?? plTracks[0]?.vibe);
                     const totalSec = plTracks.reduce((acc, t) => acc + (t.duration ?? 0), 0);
-                    const durStr = totalSec > 0
-                      ? `${Math.floor(totalSec / 60)}m ${totalSec % 60}s`
-                      : null;
+                    const durStr = totalSec > 0 ? `${Math.floor(totalSec / 60)}m ${totalSec % 60}s` : null;
+                    const isRenaming = renamingPlId === pl.id;
+                    const isConfirmDel = confirmDeletePlId === pl.id;
                     return (
-                      <div key={pl.id} className="flex items-center gap-3 p-3 rounded-sm"
-                        style={{ background: GLASS_BG, border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? ACID) + "33"}`, fontFamily: FONT_MONO, cursor: "pointer", opacity: isEmpty ? 0.5 : 1 }}
-                        onClick={() => setShowPlaylistDetail(pl.id)}>
-                        <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                          style={{ background: `${plVibe?.color ?? ACID}12`, border: `1px solid ${plVibe?.color ?? ACID}33` }}>
-                          {plTracks[0]?.thumbnail
-                            ? <img src={plTracks[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                            : <span style={{ color: plVibe?.color ?? ACID, fontSize: 12 }}>{isEmpty ? "◌" : "◈"}</span>}
+                      <div key={pl.id}
+                        draggable
+                        onDragStart={() => handlePlDragStart(i)}
+                        onDragOver={handlePlDragOver}
+                        onDrop={() => handlePlDrop(i)}
+                        className="flex flex-col rounded-sm"
+                        style={{ background: GLASS_BG, border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? ACID) + "33"}`, fontFamily: FONT_MONO, opacity: isEmpty ? 0.6 : 1, cursor: "grab" }}>
+                        <div className="flex items-center gap-3 p-3"
+                          onClick={() => !isRenaming && !isConfirmDel && setShowPlaylistDetail(pl.id)}
+                          style={{ cursor: isRenaming || isConfirmDel ? "default" : "pointer" }}>
+                          <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
+                            style={{ background: `${plVibe?.color ?? ACID}12`, border: `1px solid ${plVibe?.color ?? ACID}33` }}>
+                            {plTracks[0]?.thumbnail
+                              ? <img src={plTracks[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
+                              : <span style={{ color: plVibe?.color ?? ACID, fontSize: 12 }}>{isEmpty ? "◌" : "◈"}</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            {isRenaming ? (
+                              <input autoFocus value={renameVal}
+                                onChange={(e) => setRenameVal(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleRenamePlaylist(pl.id); if (e.key === "Escape") setRenamingPlId(null); }}
+                                onClick={(e) => e.stopPropagation()}
+                                style={{ width: "100%", background: "transparent", border: `1px solid ${ACID}44`, borderRadius: 2,
+                                  color: ACID, fontSize: 11, padding: "2px 6px", fontFamily: FONT_MONO, outline: "none" }} />
+                            ) : (
+                              <span className="text-xs font-bold truncate block" style={{ color: plVibe?.color ?? ACID }}>{pl.name}</span>
+                            )}
+                            <span className="text-xs opacity-30 truncate block" style={{ color: ACID }}>
+                              {pl.track_ids.length} tracks{durStr ? ` · ${durStr}` : ""}
+                            </span>
+                          </div>
+                          {plVibe && !isRenaming && (
+                            <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                              style={{ color: plVibe.color, background: `${plVibe.color}15`, border: `1px solid ${plVibe.color}33` }}>
+                              {plVibe.icon}
+                            </span>
+                          )}
+                          {isRenaming ? (
+                            <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleRenamePlaylist(pl.id); }}
+                              style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`, borderRadius: 2, fontSize: 10, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                              OK
+                            </motion.button>
+                          ) : (
+                            <>
+                              {!isEmpty && (
+                                <motion.button whileTap={{ scale: 0.88 }}
+                                  onClick={(e) => { e.stopPropagation(); if (!plTracks.length) return; playTrack(plTracks[0]); plTracks.slice(1).forEach((t) => addToQueue(t)); }}
+                                  style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                  ▶
+                                </motion.button>
+                              )}
+                              <motion.button whileTap={{ scale: 0.9 }}
+                                onClick={(e) => { e.stopPropagation(); setRenamingPlId(pl.id); setRenameVal(pl.name); setConfirmDeletePlId(null); }}
+                                style={{ color: ACID, background: `${ACID}0a`, border: `1px solid ${ACID}22`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                ✎
+                              </motion.button>
+                              <motion.button whileTap={{ scale: 0.9 }}
+                                onClick={(e) => { e.stopPropagation(); setConfirmDeletePlId(pl.id); setRenamingPlId(null); }}
+                                style={{ color: "#ff4444", background: "#ff444408", border: "1px solid #ff444422", borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                ✕
+                              </motion.button>
+                            </>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs font-bold truncate block" style={{ color: plVibe?.color ?? ACID }}>{pl.name}</span>
-                          <span className="text-xs opacity-30 truncate block" style={{ color: ACID }}>
-                            {pl.track_ids.length} tracks{durStr ? ` · ${durStr}` : ""}
-                          </span>
-                        </div>
-                        {plVibe && (
-                          <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
-                            style={{ color: plVibe.color, background: `${plVibe.color}15`, border: `1px solid ${plVibe.color}33` }}>
-                            {plVibe.icon}
-                          </span>
-                        )}
-                        {!isEmpty && (
-                          <motion.button whileTap={{ scale: 0.88 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!plTracks.length) return;
-                              playTrack(plTracks[0]);
-                              plTracks.slice(1).forEach((t) => addToQueue(t));
-                            }}
-                            style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`,
-                              borderRadius: 2, fontSize: 11, padding: "4px 10px", fontFamily: FONT_MONO, flexShrink: 0 }}>
-                            ▶
-                          </motion.button>
+                        {isConfirmDel && (
+                          <div className="flex gap-2 px-3 pb-3" onClick={(e) => e.stopPropagation()}>
+                            <motion.button whileTap={{ scale: 0.95 }}
+                              onClick={() => { handleDeletePlaylist(pl.id); setConfirmDeletePlId(null); }}
+                              style={{ flex: 1, padding: "5px 0", background: "#ff444418", border: "1px solid #ff444455",
+                                color: "#ff4444", fontSize: 10, letterSpacing: "0.2em", borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                              CONFIRMAR BORRAR
+                            </motion.button>
+                            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmDeletePlId(null)}
+                              style={{ padding: "5px 12px", background: "transparent", border: `1px solid ${ACID}22`,
+                                color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                              CANCELAR
+                            </motion.button>
+                          </div>
                         )}
                       </div>
                     );
