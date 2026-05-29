@@ -85,7 +85,7 @@ export default function MusicLab({
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
     activeTrack, setActiveTrack,
-    localQueue, addToQueue, removeFromQueue, playTrack,
+    localQueue, addToQueue, addNext, removeFromQueue, playTrack,
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
   } = usePlayer();
@@ -191,6 +191,13 @@ export default function MusicLab({
   };
 
   // ── Handlers Cola ────────────────────────────────────────
+  const handleAddNext = (track) => {
+    if (!track) return;
+    addNext(track);
+    setToast("REPRODUCIR A CONTINUACIÓN");
+    setTimeout(() => setToast(null), 2500);
+  };
+
   const handleAddToQueue = (track) => {
     if (!track) return;
     addToQueue(track);
