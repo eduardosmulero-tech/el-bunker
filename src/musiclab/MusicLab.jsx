@@ -89,6 +89,7 @@ export default function MusicLab({
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
     playbackContext, setPlaybackContext,
+    playHistory,
   } = usePlayer();
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
@@ -308,6 +309,23 @@ export default function MusicLab({
                   </span>
                 </div>
               </div>
+              {playHistory.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>anterior</span>
+                  <div className="flex flex-col gap-2" style={{ opacity: 0.35 }}>
+                    {[...playHistory].reverse().map((track, i) => (
+                      <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
+                        style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
+                        <span style={{ color: ACID, fontSize: 12 }}>◎</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
+                          <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {activeTrack && (
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>ahora</span>
