@@ -282,8 +282,8 @@ export default function MusicLab({
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.25 }}
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.25 }}
             style={{ position: "fixed", bottom: 90, left: 16, right: 16,
               background: `${ACID}18`, border: `1px solid ${ACID}55`, color: ACID,
               fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
