@@ -329,16 +329,28 @@ export default function MusicLab({
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>anterior</span>
                   <div className="flex flex-col gap-2" style={{ opacity: 0.35 }}>
-                    {[...playHistory].reverse().map((track, i) => (
-                      <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
-                        style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
-                        <span style={{ color: ACID, fontSize: 12 }}>◎</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
-                          <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                    {[...playHistory].reverse().map((track, i) => {
+                      const hVibe = getVibeConfig(track.tag ?? track.vibe);
+                      return (
+                        <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
+                          style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
+                          <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
+                            style={{ background: `${hVibe?.color ?? ACID}12`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
+                            {track.thumbnail
+                              ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
+                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>◎</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? ACID }}>{track.title}</p>
+                            <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                          </div>
+                          <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                            style={{ color: hVibe?.color ?? ACID, background: `${hVibe?.color ?? ACID}15`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
+                            {hVibe?.icon}
+                          </span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -370,26 +382,39 @@ export default function MusicLab({
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>siguientes</span>
                   <div className="flex flex-col gap-2">
-                    {localQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => (
-                      <div key={`queue-next-${track.id}`}
-                        draggable
-                        onDragStart={() => handleDragStart(i)}
-                        onDragOver={handleDragOver}
-                        onDrop={() => handleDrop(i)}
-                        className="flex items-center gap-3 p-3 rounded-sm"
-                        style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                        <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
-                          <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                    {localQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => {
+                      const qVibe = getVibeConfig(track.tag ?? track.vibe);
+                      return (
+                        <div key={`queue-next-${track.id}`}
+                          draggable
+                          onDragStart={() => handleDragStart(i)}
+                          onDragOver={handleDragOver}
+                          onDrop={() => handleDrop(i)}
+                          className="flex items-center gap-3 p-3 rounded-sm"
+                          style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
+                          <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
+                            style={{ background: `${qVibe?.color ?? ACID}12`, border: `1px solid ${qVibe?.color ?? ACID}33` }}>
+                            {track.thumbnail
+                              ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
+                              : <span style={{ color: qVibe?.color ?? ACID, fontSize: 10 }}>◎</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate" style={{ color: qVibe?.color ?? ACID }}>{track.title}</p>
+                            <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                          </div>
+                          <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                            style={{ color: qVibe?.color ?? ACID, background: `${qVibe?.color ?? ACID}15`, border: `1px solid ${qVibe?.color ?? ACID}33` }}>
+                            {qVibe?.icon}
+                          </span>
+                          <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
+                            className="ml-1 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                            style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
+                            ✕
+                          </motion.button>
                         </div>
-                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
-                          className="ml-3 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
-                          style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
-                          ✕
-                        </motion.button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
