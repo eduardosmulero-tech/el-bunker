@@ -193,17 +193,25 @@ export default function MusicLab({
   };
 
   // ── Handlers Cola ────────────────────────────────────────
-  const handleAddNext = (track) => {
+  const handleAddNext = (track, force = false) => {
     if (!track) return;
-    addNext(track);
-    setToast("REPRODUCIR A CONTINUACIÓN");
+    const result = addNext(track, force);
+    if (result === "duplicate") {
+      setToast({ msg: "YA EN COLA", action: () => handleAddNext(track, true), actionLabel: "AÑADIR IGUALMENTE" });
+    } else {
+      setToast({ msg: "REPRODUCIR A CONTINUACIÓN" });
+    }
     setTimeout(() => setToast(null), 2500);
   };
 
-  const handleAddToQueue = (track) => {
+  const handleAddToQueue = (track, force = false) => {
     if (!track) return;
-    addToQueue(track);
-    setToast("AÑADIDO A COLA");
+    const result = addToQueue(track, force);
+    if (result === "duplicate") {
+      setToast({ msg: "YA EN COLA", action: () => handleAddToQueue(track, true), actionLabel: "AÑADIR IGUALMENTE" });
+    } else {
+      setToast({ msg: "AÑADIDO A COLA" });
+    }
     setTimeout(() => setToast(null), 2500);
   };
 
