@@ -100,6 +100,16 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
     setLocalQueue((q) => q.find((t) => t.id === track.id) ? q : [...q, track]);
   }, []);
 
+  const addNext = useCallback((track) => {
+    if (!track) return;
+    setLocalQueue((q) => {
+      const filtered = q.filter((t) => t.id !== track.id);
+      const idx = filtered.findIndex((t) => t.id === activeTrack?.id);
+      const insertAt = idx >= 0 ? idx + 1 : 0;
+      return [...filtered.slice(0, insertAt), track, ...filtered.slice(insertAt)];
+    });
+  }, [activeTrack?.id]);
+
   const removeFromQueue = useCallback((trackId) => {
     setLocalQueue((q) => {
       const isActive = activeTrack?.id === trackId;
@@ -184,7 +194,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       trackVibe,
       masterVolume, setMasterVolume,
       audioRef,
-      skip, addToQueue, removeFromQueue, playTrack,
+      skip, addToQueue, addNext, removeFromQueue, playTrack,
       playbackContext, setPlaybackContext,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
