@@ -88,6 +88,7 @@ export default function MusicLab({
     localQueue, addToQueue, addNext, removeFromQueue, playTrack,
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
+    playbackContext, setPlaybackContext,
   } = usePlayer();
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
