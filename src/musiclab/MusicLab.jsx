@@ -288,7 +288,14 @@ export default function MusicLab({
               background: `${ACID}18`, border: `1px solid ${ACID}55`, color: ACID,
               fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
               padding: "8px 20px", borderRadius: 2, zIndex: 9999 }}>
-            {toast}
+            {typeof toast === "string" ? toast : toast?.msg}
+            {toast?.action && (
+              <button onClick={() => { toast.action(); setToast(null); }}
+                style={{ marginLeft: 12, color: ACID, background: `${ACID}25`, border: `1px solid ${ACID}66`,
+                  borderRadius: 2, fontSize: 10, padding: "2px 8px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
+                {toast.actionLabel}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
