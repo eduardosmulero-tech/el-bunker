@@ -227,6 +227,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
         loop={false}
         style={{ display: "none" }}
         onEnded={handleAudioEnded}
+        onPause={() => setIsPlaying(false)}
+        onPlay={() => setIsPlaying(true)}
         onTimeUpdate={(e) => {
           // WinampPlayer se suscribe a audioRef directamente para el progreso visual
         }}
