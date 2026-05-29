@@ -603,32 +603,52 @@ export default function MusicLab({
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {localPlaylists.map((pl) => (
-                    <div key={pl.id} className="flex items-center justify-between p-3 rounded-sm"
-                      style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "pointer" }}
-                      onClick={() => setShowPlaylistDetail(pl.id)}>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-xs font-bold" style={{ color: ACID }}>{pl.name}</span>
-                        <span className="text-xs opacity-30" style={{ color: ACID }}>
-                          {pl.track_ids.length} tracks
-                        </span>
+                  {localPlaylists.map((pl) => {
+                    const plTracks = pl.track_ids.map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
+                    const isEmpty = plTracks.length === 0;
+                    const plVibe = getVibeConfig(pl.tag ?? plTracks[0]?.tag ?? plTracks[0]?.vibe);
+                    const totalSec = plTracks.reduce((acc, t) => acc + (t.duration ?? 0), 0);
+                    const durStr = totalSec > 0
+                      ? `${Math.floor(totalSec / 60)}m ${totalSec % 60}s`
+                      : null;
+                    return (
+                      <div key={pl.id} className="flex items-center gap-3 p-3 rounded-sm"
+                        style={{ background: GLASS_BG, border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? ACID) + "33"}`, fontFamily: FONT_MONO, cursor: "pointer", opacity: isEmpty ? 0.5 : 1 }}
+                        onClick={() => setShowPlaylistDetail(pl.id)}>
+                        <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
+                          style={{ background: `${plVibe?.color ?? ACID}12`, border: `1px solid ${plVibe?.color ?? ACID}33` }}>
+                          {plTracks[0]?.thumbnail
+                            ? <img src={plTracks[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
+                            : <span style={{ color: plVibe?.color ?? ACID, fontSize: 12 }}>{isEmpty ? "◌" : "◈"}</span>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-bold truncate block" style={{ color: plVibe?.color ?? ACID }}>{pl.name}</span>
+                          <span className="text-xs opacity-30 truncate block" style={{ color: ACID }}>
+                            {pl.track_ids.length} tracks{durStr ? ` · ${durStr}` : ""}
+                          </span>
+                        </div>
+                        {plVibe && (
+                          <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                            style={{ color: plVibe.color, background: `${plVibe.color}15`, border: `1px solid ${plVibe.color}33` }}>
+                            {plVibe.icon}
+                          </span>
+                        )}
+                        {!isEmpty && (
+                          <motion.button whileTap={{ scale: 0.88 }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!plTracks.length) return;
+                              playTrack(plTracks[0]);
+                              plTracks.slice(1).forEach((t) => addToQueue(t));
+                            }}
+                            style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`,
+                              borderRadius: 2, fontSize: 11, padding: "4px 10px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                            ▶
+                          </motion.button>
+                        )}
                       </div>
-                      {pl.track_ids.length > 0 && (
-                        <motion.button whileTap={{ scale: 0.88 }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const plTracks = pl.track_ids.map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
-                            if (!plTracks.length) return;
-                            playTrack(plTracks[0]);
-                            plTracks.slice(1).forEach((t) => addToQueue(t));
-                          }}
-                          style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`,
-                            borderRadius: 2, fontSize: 11, padding: "4px 10px", fontFamily: FONT_MONO }}>
-                          ▶
-                        </motion.button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </motion.div>
