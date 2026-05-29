@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../layout/Layout";
 
@@ -53,11 +53,14 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
 );
 
 // ── PlaylistDetailModal ────────────────────────────────────────────────────────
-export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist }) => {
+export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
+  const dragTrackIdx = useRef(null);
+
   if (!playlist) return null;
 
-  const plTracks = (playlist.track_ids ?? [])
+  const plTracks = orderedIds
     .map((id) => tracks.find((t) => t.id === id))
     .filter(Boolean);
 
@@ -68,6 +71,20 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
     onPlay(plTracks[0]);
     plTracks.slice(1).forEach((t) => onAddToQueue(t));
     onClose();
+  };
+
+  const handleTrackDragStart = (i) => { dragTrackIdx.current = i; };
+  const handleTrackDragOver  = (e) => { e.preventDefault(); };
+  const handleTrackDrop      = (i) => {
+    if (dragTrackIdx.current === null || dragTrackIdx.current === i) return;
+    setOrderedIds((ids) => {
+      const next = [...ids];
+      const [moved] = next.splice(dragTrackIdx.current, 1);
+      next.splice(i, 0, moved);
+      dragTrackIdx.current = null;
+      onReorderTracks?.(playlist.id, next);
+      return next;
+    });
   };
 
   return (
@@ -111,10 +128,15 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
             <p style={{ color: `${ACID}30`, fontSize: 10, letterSpacing: "0.2em", textAlign: "center",
               padding: "24px 16px", textTransform: "uppercase" }}>— sin tracks —</p>
           ) : (
-            plTracks.map((track) => (
+            plTracks.map((track, i) => (
               <div key={track.id}
+                draggable
+                onDragStart={() => handleTrackDragStart(i)}
+                onDragOver={handleTrackDragOver}
+                onDrop={() => handleTrackDrop(i)}
                 style={{ display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 16px", borderBottom: `1px solid ${ACID}08` }}>
+                  padding: "9px 16px", borderBottom: `1px solid ${ACID}08`, cursor: "grab" }}>
+                <span style={{ color: ACID, opacity: 0.25, fontSize: 11, flexShrink: 0 }}>⠿</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ color: ACID, fontSize: 11, letterSpacing: "0.1em",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.title}</p>
