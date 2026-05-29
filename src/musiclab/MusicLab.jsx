@@ -787,6 +787,13 @@ export default function MusicLab({
                 onDeletePlaylist={(plId) => {
                   handleDeletePlaylist(plId);
                 }}
+                onReorderTracks={async (plId, newIds) => {
+                  const updated = localPlaylists.map((pl) =>
+                    pl.id === plId ? { ...pl, track_ids: newIds } : pl
+                  );
+                  setLocalPlaylists(updated);
+                  await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
+                }}
               />
             );
           })()}
