@@ -193,6 +193,7 @@ return () => cancelAnimationFrame(raf);
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title ?? "Sin título", artist: track.artist ?? "", album: "el búnker", artwork,
     });
+    navigator.mediaSession.playbackState = playing ? "playing" : "paused";
     navigator.mediaSession.setActionHandler("play", () => {
       audioRef.current?.play(); setPlaying(true);
     });
@@ -201,8 +202,17 @@ return () => cancelAnimationFrame(raf);
     });
     navigator.mediaSession.setActionHandler("previoustrack", () => skipDir(-1));
     navigator.mediaSession.setActionHandler("nexttrack",     () => skipDir(1));
+    navigator.mediaSession.setActionHandler("seekto", (details) => {
+      if (!audioRef.current || !details.seekTime) return;
+      audioRef.current.currentTime = details.seekTime;
+      currentTRef.current = details.seekTime;
+      setCurrentT(details.seekTime);
+      if (audioRef.current.duration) {
+        setProgress((details.seekTime / audioRef.current.duration) * 100);
+      }
+    });
     return () => {
-      ["play", "pause", "previoustrack", "nexttrack"].forEach((action) => {
+      ["play", "pause", "previoustrack", "nexttrack", "seekto"].forEach((action) => {
         try { navigator.mediaSession.setActionHandler(action, null); } catch (_) {}
       });
     };
