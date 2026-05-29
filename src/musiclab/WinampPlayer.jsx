@@ -326,7 +326,7 @@ return () => cancelAnimationFrame(raf);
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
             style={{ background: withAlpha(accentColor, 0.13), border: `2px solid ${withAlpha(accentColor, 0.4)}`, color: accentColor,
               boxShadow: playing ? `0 0 16px ${withAlpha(accentColor, 0.33)}` : "none", textShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }}>
-            {playing ? <span style={{ display: "inline-flex", gap: "2px", alignItems: "center" }}><span>▌</span><span>▌</span></span> : "▶"}
+            {playing ? <span style={{ display: "inline-flex", gap: "3px", alignItems: "center" }}><span>▌</span><span>▌</span></span> : "▶"}
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
         </div>
