@@ -27,6 +27,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [masterVolume,     setMasterVolume]     = useState(80);
   // playbackContext — lista adoptada como contexto al iniciar reproducción (spec C2)
   const [playbackContext,  setPlaybackContext]  = useState([]);
+  // playHistory — historial de sesión (Q2/Q15). Nunca persiste.
+  const [playHistory,      setPlayHistory]      = useState([]);
 
   // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
   const trackVibe = activeTrack?.tag ?? null;
@@ -63,9 +65,21 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   // ── Skip ─────────────────────────────────────────────────
   const skip = useCallback((dir, filteredTracks) => {
+    // skip(-1) — navega por historial (Q2)
+    if (dir === -1) {
+      setPlayHistory((h) => {
+        if (h.length === 0) return h;
+        const prev = h[h.length - 1];
+        setActiveTrack(prev);
+        setAutoPlaySignal((n) => n + 1);
+        return h.slice(0, -1);
+      });
+      return;
+    }
     // Cola tiene prioridad solo si shuffle está desactivado (BUG-16)
     if (dir === 1 && localQueue.length > 0 && !shuffle) {
       const next = localQueue[0];
+      if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
       setLocalQueue((q) => q.slice(1));
       setActiveTrack(next);
       setAutoPlaySignal((n) => n + 1);
@@ -81,12 +95,13 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       setIsPlaying(false);
       return;
     }
+    if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
     const nextIdx = shuffle
       ? Math.floor(Math.random() * list.length)
       : (base + dir + list.length) % list.length;
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
-  }, [tracks, localQueue, activeTrack?.id, shuffle, playbackContext]);
+  }, [tracks, localQueue, activeTrack, shuffle, playbackContext]);
 
   // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
@@ -196,6 +211,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       audioRef,
       skip, addToQueue, addNext, removeFromQueue, playTrack,
       playbackContext, setPlaybackContext,
+      playHistory,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
