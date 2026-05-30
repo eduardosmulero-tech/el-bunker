@@ -395,7 +395,7 @@ export default function MusicLab({
                   onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
                   className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
                   style={{ color: ACID, border: `1px solid ${showQueueSearch ? ACID + "66" : ACID + "33"}`, background: showQueueSearch ? `${ACID}15` : `${ACID}06` }}>
-                  ◎
+                  ⌕
                 </motion.button>
               </div>
               <AnimatePresence>
@@ -426,7 +426,7 @@ export default function MusicLab({
                             style={{ background: `${hVibe?.color ?? ACID}12`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>◎</span>}
+                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>⌕</span>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? ACID }}>{track.title}</p>
@@ -485,7 +485,7 @@ export default function MusicLab({
                             style={{ background: `${qVibe?.color ?? ACID}12`, border: `1px solid ${qVibe?.color ?? ACID}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: qVibe?.color ?? ACID, fontSize: 10 }}>◎</span>}
+                              : <span style={{ color: qVibe?.color ?? ACID, fontSize: 10 }}>⌕</span>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: qVibe?.color ?? ACID }}>{track.title}</p>
@@ -530,7 +530,7 @@ export default function MusicLab({
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: ACID, border: `1px solid ${showTrackSearch ? ACID + "66" : ACID + "33"}`,
                       background: showTrackSearch ? `${ACID}15` : `${ACID}06` }}>
-                    ◎
+                    ⌕
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
                     onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
@@ -695,7 +695,7 @@ export default function MusicLab({
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: ACID, border: `1px solid ${showListSearch ? ACID + "66" : ACID + "33"}`,
                       background: showListSearch ? `${ACID}15` : `${ACID}06` }}>
-                    ◎
+                    ⌕
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
                     onClick={() => setShowCreatePlaylist((p) => !p)}
