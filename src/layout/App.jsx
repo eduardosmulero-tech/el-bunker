@@ -159,6 +159,45 @@ const VaultPage = () => {
 const MusicPage = () => {
   const { db, user, setMasterVolume, patchDb } = useVault();
   const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
+
+  const handleAddTag = async (tagData) => {
+    const newTag = {
+      ...tagData,
+      id: crypto.randomUUID(),
+      created_by: user?.id ?? "user",
+      created_at: new Date().toISOString(),
+    };
+    await patchDb((prev) => ({
+      ...prev,
+      music_lab: {
+        ...prev.music_lab,
+        tags: [...(prev.music_lab?.tags ?? []), newTag],
+      },
+    }));
+  };
+
+  const handleUpdateTag = async (tagId, updates) => {
+    await patchDb((prev) => ({
+      ...prev,
+      music_lab: {
+        ...prev.music_lab,
+        tags: (prev.music_lab?.tags ?? []).map((t) =>
+          t.id === tagId ? { ...t, ...updates } : t
+        ),
+      },
+    }));
+  };
+
+  const handleDeleteTag = async (tagId) => {
+    await patchDb((prev) => ({
+      ...prev,
+      music_lab: {
+        ...prev.music_lab,
+        tags: (prev.music_lab?.tags ?? []).filter((t) => t.id !== tagId),
+      },
+    }));
+  };
+
   return (
     <MusicLab
       db={db}
@@ -170,6 +209,9 @@ const MusicPage = () => {
       onMasterVolumeChange={setMasterVolume}
       onMarkDropSeen={onMarkDropSeen}
       patchDb={patchDb}
+      onAddTag={handleAddTag}
+      onUpdateTag={handleUpdateTag}
+      onDeleteTag={handleDeleteTag}
     />
   );
 };
