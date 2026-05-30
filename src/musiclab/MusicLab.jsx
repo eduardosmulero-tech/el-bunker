@@ -48,7 +48,7 @@ const uuid = () =>
     return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
   });
 
-const getVibeConfig = (vibeId) => VIBE_TAGS.find((v) => v.id === vibeId) ?? VIBE_TAGS[0];
+const getVibeConfig = (vibeId) => VIBE_TAGS.find((v) => v.id === vibeId) ?? null;
 
 // ─── MUSIC LAB MAIN ──────────────────────────────────────────
 export default function MusicLab({
@@ -713,7 +713,7 @@ export default function MusicLab({
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.tag ?? track.vibe)}
-                        onClick={() => { setPlaybackContext(filteredTracks); playTrack(track); }}
+                        onClick={() => { setPlaybackContext(filteredTracks, null); playTrack(track); }}
                         onAddToQueue={handleAddToQueue}
                         onAddNext={handleAddNext}
                         onAddToPlaylist={handleAddToPlaylist}
