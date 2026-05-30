@@ -33,6 +33,8 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const [masterVolume,     setMasterVolume]     = useState(80);
   // playHistory — historial de sesión (Q2/Q15). Nunca persiste.
   const [playHistory,      setPlayHistory]      = useState([]);
+  // queueContextName — nombre de la playlist activa en cola (C2). null si cola manual o vacía.
+  const [queueContextName, setQueueContextName] = useState(null);
 
   // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
   const trackVibe = activeTrack?.tag ?? null;
@@ -149,9 +151,11 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
 
   // setPlaybackContext — C2/C4: carga playlist como contexto, _manual:false
   // Reemplaza toda la cola con los tracks de la playlist.
-  const setPlaybackContext = useCallback((contextTracks) => {
+  // contextName opcional: nombre de la playlist para mostrar en cabecera de COLA.
+  const setPlaybackContext = useCallback((contextTracks, contextName = null) => {
     if (!Array.isArray(contextTracks)) return;
     setLocalQueue(contextTracks.map((t) => ({ ...t, _manual: false })));
+    setQueueContextName(contextName ?? null);
   }, []);
 
   // playbackContext — computed desde localQueue para compatibilidad con consumidores externos
@@ -244,6 +248,7 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       skip, addToQueue, addNext, removeFromQueue, playTrack,
       playbackContext, setPlaybackContext,
       playHistory,
+      queueContextName, setQueueContextName,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
