@@ -468,7 +468,7 @@ export default function MusicLab({
                             style={{ background: `${hVibe?.color ?? ACID}12`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>8</span>}
+                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>◎</span>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? ACID }}>{track.title}</p>
