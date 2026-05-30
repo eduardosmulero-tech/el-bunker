@@ -440,8 +440,6 @@ export default function MusicLab({
                   </div>
                 )}
               </div>
-
-SEARCH/REPLACE 4
               <AnimatePresence>
                 {showQueueSearch && (
                   <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
@@ -470,7 +468,7 @@ SEARCH/REPLACE 4
                             style={{ background: `${hVibe?.color ?? ACID}12`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>⌕</span>}
+                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>8</span>}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? ACID }}>{track.title}</p>
@@ -575,8 +573,6 @@ SEARCH/REPLACE 4
                         </div>
                       );
                     })}
-
-SEARCH/REPLACE 5
                   </div>
                 </div>
               )}
