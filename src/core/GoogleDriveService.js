@@ -23,7 +23,7 @@ const CONFIG = {
   HEARTBEAT_THROTTLE_MS: 15 * 60 * 1000,
 
   // Versión del esquema — permite migraciones futuras
-  SCHEMA_VERSION: "4.0.0",
+  SCHEMA_VERSION: "5.0.0",
 
   // ── Usuarios autorizados ─────────────────────────────────
   // Solo estos tres emails pueden usar la app.
@@ -61,7 +61,9 @@ const EMPTY_DB = () => ({
     // { id, era_id, track_id, from, to, memory, mood, date, favorited, favorited_by, created_at }
 
     playlists: [],
-    // { id, name, track_ids: [], created_by, created_at, updated_at }
+      // { id, name, track_ids: [], created_by, created_at, updated_at }
+    tags: [],
+      // { id, label, icon, color, created_by, created_at }
   },
 
   // ── Entradas generales (diario, fotos, cartas...) ────────────
@@ -808,6 +810,24 @@ const _migrateSchema = (data) => {
     };
   }
 
+  // ── 4.0.0 → 5.0.0: añadir music_lab.tags con los 4 tags base ──
+  if (migrated.schema_version === "4.0.0") {
+    const DEFAULT_TAGS = [
+      { id: "gaming",      label: "GAMING", icon: "◉", color: "#00ffcc", created_by: "system", created_at: new Date().toISOString() },
+      { id: "420_chill",   label: "420",    icon: "◎", color: "#aaff44", created_by: "system", created_at: new Date().toISOString() },
+      { id: "dnb",         label: "DnB",    icon: "⚡", color: "#ff6b35", created_by: "system", created_at: new Date().toISOString() },
+      { id: "romantiqueo", label: "♥",      icon: "♥", color: "#bf00ff", created_by: "system", created_at: new Date().toISOString() },
+    ];
+    migrated = {
+      ...migrated,
+      music_lab: {
+        ...migrated.music_lab,
+        tags: migrated.music_lab?.tags?.length > 0 ? migrated.music_lab.tags : DEFAULT_TAGS,
+      },
+      schema_version: "5.0.0",
+    };
+  }
+
   migrated.schema_version = CONFIG.SCHEMA_VERSION;
   migrated._wasMigrated   = true;
   return migrated;
@@ -1307,6 +1327,73 @@ const GoogleDriveService = {
   createPlaylist,
   addTrackToPlaylist,
   deletePlaylist,
+  // Tags (VB11/VB17) — schema 5.0.0
+  addTag,
+  updateTag,
+  deleteTag,
+};
+
+/**
+ * addTag(tagData)
+ * Añade un tag personalizado a music_lab.tags.
+ * @param {{ label, icon, color, created_by }} tagData
+ * @returns {Promise<object>} — el tag creado
+ */
+export const addTag = async (tagData) => {
+  const newTag = {
+    id:         uuid(),
+    label:      tagData.label      ?? "TAG",
+    icon:       tagData.icon       ?? "◈",
+    color:      tagData.color      ?? "#ffffff",
+    created_by: tagData.created_by ?? "edu",
+    created_at: new Date().toISOString(),
+  };
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      tags: [...(db.music_lab?.tags ?? []), newTag],
+    },
+  }));
+  return newTag;
+};
+
+/**
+ * updateTag(tagId, updates)
+ * Actualiza un tag existente. No modifica id ni created_at.
+ * @param {string} tagId
+ * @param {{ label?, icon?, color? }} updates
+ * @returns {Promise<object>} — el tag actualizado
+ */
+export const updateTag = async (tagId, updates) => {
+  let updated = null;
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      tags: (db.music_lab?.tags ?? []).map((t) => {
+        if (t.id !== tagId) return t;
+        updated = { ...t, ...updates, id: t.id, created_at: t.created_at };
+        return updated;
+      }),
+    },
+  }));
+  return updated;
+};
+
+/**
+ * deleteTag(tagId)
+ * Elimina un tag. El caller debe verificar que no hay tracks usando este tag.
+ * @param {string} tagId
+ */
+export const deleteTag = async (tagId) => {
+  await updateData((db) => ({
+    ...db,
+    music_lab: {
+      ...db.music_lab,
+      tags: (db.music_lab?.tags ?? []).filter((t) => t.id !== tagId),
+    },
+  }));
 };
 // ─── SECTION 11: PLAYLISTS PUBLIC API ────────────────────────
 
