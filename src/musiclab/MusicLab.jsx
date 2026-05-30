@@ -23,14 +23,15 @@ const PURPLE_BG    = "rgba(191,0,255,0.04)";
 const PURPLE_BORDER= "rgba(191,0,255,0.2)";
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
-// ─── VIBE TAGS CONFIG ────────────────────────────────────────
-const VIBE_TAGS = [
-  { id: "all",         label: "ALL",    icon: "◈", color: "#ffffff"  },
+// ─── VIBE TAGS CONFIG — fallback para demo/sin DB ────────────
+const DEFAULT_VIBE_TAGS = [
   { id: "gaming",      label: "GAMING", icon: "◉", color: "#00ffcc" },
   { id: "420_chill",   label: "420",    icon: "◎", color: "#aaff44" },
   { id: "dnb",         label: "DnB",    icon: "⚡", color: "#ff6b35" },
   { id: "romantiqueo", label: "♥",      icon: "♥", color: PURPLE    },
 ];
+// "all" es filtro de UI, nunca en DB (VB2)
+const ALL_TAG = { id: "all", label: "ALL", icon: "◈", color: "#ffffff" };
 
 // ─── DEMO DATA ───────────────────────────────────────────────
 const DEMO_TRACKS = [
@@ -48,8 +49,6 @@ const uuid = () =>
     return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
   });
 
-const getVibeConfig = (vibeId) => VIBE_TAGS.find((v) => v.id === vibeId) ?? null;
-
 // ─── MUSIC LAB MAIN ──────────────────────────────────────────
 export default function MusicLab({
   db = null,
@@ -61,10 +60,16 @@ export default function MusicLab({
   onMarkDropSeen,
   onMasterVolumeChange,
   patchDb,
+  onAddTag,
+  onUpdateTag,
+  onDeleteTag,
 }) {
   const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
   const rawDrops  = db?.music_lab?.drops  ?? [];
   const userDrops = userId ? rawDrops.filter((d) => d.to === userId || d.from === userId) : rawDrops;
+  // VIBE_TAGS dinámico desde DB — "all" se inyecta en runtime como filtro de UI (VB2)
+  const VIBE_TAGS = [ALL_TAG, ...(db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS)];
+  const getVibeConfig = (vibeId) => VIBE_TAGS.find((v) => v.id === vibeId) ?? null;
 
   // ── Estado local (UI solamente) ───────────────────────────
   const [showAdd,           setShowAdd]            = useState(false);
@@ -995,5 +1000,4 @@ export {
   VibeTagBar,
   TrackCard,
   DropsHistory,
-  VIBE_TAGS,
 };
