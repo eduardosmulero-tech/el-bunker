@@ -14,6 +14,7 @@ import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
+import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
@@ -86,6 +87,7 @@ export default function MusicLab({
   const [toast,             setToast]              = useState(null);
   const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
   const [visibleCount,       setVisibleCount]       = useState(50);
+  const [showTagManager,     setShowTagManager]     = useState(false);
 
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
@@ -589,8 +591,23 @@ export default function MusicLab({
             <motion.div key="tracks" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS} />
+                <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS}
+                  onOpenTagManager={() => setShowTagManager((p) => !p)} />
               </motion.div>
+              <AnimatePresence>
+                {showTagManager && (
+                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
+                    <TagManager
+                      tags={db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS}
+                      tracks={localTracks}
+                      onAdd={onAddTag}
+                      onUpdate={onUpdateTag}
+                      onDelete={onDeleteTag}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <span style={{ color: ACID }}>◎</span>
