@@ -11,7 +11,7 @@ const extractYouTubeId = (url) => {
   return match ? match[1] : null;
 };
 
-export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS }) => (
+export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager }) => (
   <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
     {VIBE_TAGS.map((vibe) => {
       const isActive = activeVibe === vibe.id;
@@ -34,6 +34,18 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS }) => (
         </motion.button>
       );
     })}
+    {onOpenTagManager && (
+      <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
+        className="flex-shrink-0 flex items-center justify-center px-2 py-1 rounded-sm transition-all"
+        style={{
+          fontFamily: FONT_MONO, fontSize: 13,
+          color: `${ACID}55`,
+          background: "transparent",
+          border: `1px solid ${ACID}18`,
+        }}>
+        ⚙
+      </motion.button>
+    )}
   </div>
 );
 
