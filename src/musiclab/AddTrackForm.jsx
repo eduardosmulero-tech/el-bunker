@@ -13,15 +13,15 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           title:  initialData.title  ?? "",
           artist: initialData.artist ?? "",
           note:   initialData.note   ?? "",
-          tag:    initialData.tag ?? initialData.vibe ?? "gaming",
+          tag:    initialData.tag ?? initialData.vibe ?? "",
         }
-      : { title: "", artist: "", note: "", tag: "gaming" }
+      : { title: "", artist: "", note: "", tag: "" }
   );
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
   const submit = () => {
-    if (!form.title.trim()) return;
+    if (!form.title.trim() || !form.tag) return;
     onAdd({ ...initialData, ...form });
   };
 
@@ -71,7 +71,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           <input style={inputStyle} value={form.note} onChange={set("note")} placeholder="¿Por qué este track?" />
         </div>
         <div>
-          <label style={labelStyle}>Vibe</label>
+          <label style={labelStyle}>Vibe <span style={{ color: "#ff4444", marginLeft: 2 }}>*</span></label>
           <div className="flex flex-wrap gap-2 mt-1">
             {VIBE_TAGS.filter((v) => v.id !== "all").map((vibe) => (
               <motion.button
@@ -93,16 +93,16 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
 
       <div className="flex gap-2 mt-4">
         <motion.button
-          whileTap={initialData ? { scale: 0.95 } : {}}
-          onClick={initialData ? submit : undefined}
-          disabled={!initialData}
+          whileTap={form.tag ? { scale: 0.95 } : {}}
+          onClick={form.tag ? submit : undefined}
+          disabled={!form.tag}
           className="flex-1 py-2 text-xs tracking-widest uppercase font-bold rounded-sm"
           style={{
-            background:  initialData ? `${ACID}18` : "rgba(255,255,255,0.04)",
-            border:      `1px solid ${initialData ? ACID + "44" : "rgba(255,255,255,0.1)"}`,
-            color:       initialData ? ACID : "rgba(255,255,255,0.2)",
-            textShadow:  initialData ? `0 0 8px ${ACID}66` : "none",
-            cursor:      initialData ? "pointer" : "not-allowed",
+            background:  form.tag ? `${ACID}18` : "rgba(255,255,255,0.04)",
+            border:      `1px solid ${form.tag ? ACID + "44" : "rgba(255,255,255,0.1)"}`,
+            color:       form.tag ? ACID : "rgba(255,255,255,0.2)",
+            textShadow:  form.tag ? `0 0 8px ${ACID}66` : "none",
+            cursor:      form.tag ? "pointer" : "not-allowed",
           }}
         >
           {initialData ? "✎ GUARDAR" : "+ AÑADIR"}
