@@ -3,6 +3,9 @@
 //  Global Audio State Provider (ADR-004)
 //  Centraliza: activeTrack, isPlaying, queue, autoPlaySignal,
 //              audioRef, skip/loop/shuffle, trackVibe (ADR-011)
+//  Q14: cola unificada — cada item lleva _manual: boolean
+//       _manual:true  → añadido por el usuario explícitamente
+//       _manual:false → cargado desde contexto de playlist
 // ============================================================
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
@@ -19,14 +22,15 @@ export const usePlayer = () => {
 export function PlayerProvider({ children, userId, tracks = [] }) {
   const [activeTrack,      setActiveTrack]      = useState(tracks[0] ?? null);
   const [isPlaying,        setIsPlaying]        = useState(false);
+  // Q14: cola unificada. Cada item: { ...track, _manual: boolean }
+  // _manual:true  → "Añadir a cola" / "Reproducir a continuación" (C4-A, C4-B)
+  // _manual:false → tracks cargados desde contexto de playlist (C2/C4)
   const [localQueue,       setLocalQueue]       = useState([]);
   const [loopMode,         setLoopMode]         = useState("off");
   const [shuffle,          setShuffle]          = useState(false);
   const [autoPlaySignal,   setAutoPlaySignal]   = useState(0);
   const [syncStatus,       setSyncStatus]       = useState("idle");
   const [masterVolume,     setMasterVolume]     = useState(80);
-  // playbackContext — lista adoptada como contexto al iniciar reproducción (spec C2)
-  const [playbackContext,  setPlaybackContext]  = useState([]);
   // playHistory — historial de sesión (Q2/Q15). Nunca persiste.
   const [playHistory,      setPlayHistory]      = useState([]);
 
@@ -36,14 +40,16 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   const audioRef    = useRef(null);
   const wakeLockRef = useRef(null);
 
-
   // ── Persistencia cola en Drive ────────────────────────────
   useEffect(() => {
     if (!userId) return;
     fetchQueue(userId)
       .then((trackIds) => {
         if (!trackIds.length) return;
-        const qt = trackIds.map((id) => tracks.find((t) => t.id === id)).filter(Boolean);
+        const qt = trackIds
+          .map((id) => tracks.find((t) => t.id === id))
+          .filter(Boolean)
+          .map((t) => ({ ...t, _manual: false }));
         if (!qt.length) return;
         setLocalQueue(qt);
         setActiveTrack(qt[0]);
@@ -64,6 +70,9 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   }, [activeTrack?.id, localQueue, userId]);
 
   // ── Skip ─────────────────────────────────────────────────
+  // Q14: cola unificada — skip avanza en localQueue en orden.
+  // No hay bifurcación queue/context. Shuffle aleatoriza solo
+  // cuando la cola está vacía — nunca reordena posiciones existentes (Q1/Q8/Q9).
   const skip = useCallback((dir, filteredTracks) => {
     // skip(-1) — navega por historial (Q2)
     if (dir === -1) {
@@ -76,8 +85,9 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       });
       return;
     }
-    // Cola tiene prioridad solo si shuffle está desactivado (BUG-16)
-    if (dir === 1 && localQueue.length > 0 && !shuffle) {
+
+    // Cola unificada: si hay tracks en cola, avanzar en orden (Q1 — prioridad absoluta)
+    if (dir === 1 && localQueue.length > 0) {
       const next = localQueue[0];
       if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
       setLocalQueue((q) => q.slice(1));
@@ -85,23 +95,26 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       setAutoPlaySignal((n) => n + 1);
       return;
     }
-    // Prioridad de lista: argumento explícito → playbackContext → tracks globales (spec C4)
-    const list = filteredTracks ?? (playbackContext.length > 0 ? playbackContext : tracks);
+
+    // Cola vacía: shuffle aleatoriza sobre filteredTracks o tracks globales
+    const list = filteredTracks ?? tracks;
     if (!list.length) return;
-    const idx = list.findIndex((t) => t.id === activeTrack?.id);
+    const idx  = list.findIndex((t) => t.id === activeTrack?.id);
     const base = idx < 0 ? 0 : idx;
-    // BUG-09: loopMode "off" → parar al llegar al último track
+
+    // loopMode "off" → parar al llegar al último track (BUG-09)
     if (dir === 1 && loopModeRef.current === "off" && !shuffle && base >= list.length - 1) {
       setIsPlaying(false);
       return;
     }
+
     if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
     const nextIdx = shuffle
       ? Math.floor(Math.random() * list.length)
       : (base + dir + list.length) % list.length;
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
-  }, [tracks, localQueue, activeTrack, shuffle, playbackContext]);
+  }, [tracks, localQueue, activeTrack, shuffle]);
 
   // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
@@ -110,14 +123,17 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
 
   // ── Handlers cola ─────────────────────────────────────────
+
+  // addToQueue — C4-B: añade al final, _manual:true
   const addToQueue = useCallback((track, force = false) => {
     if (!track) return "added";
     const isDup = localQueue.some((t) => t.id === track.id);
     if (isDup && !force) return "duplicate";
-    setLocalQueue((q) => [...q, track]);
+    setLocalQueue((q) => [...q, { ...track, _manual: true }]);
     return "added";
   }, [localQueue]);
 
+  // addNext — C4-A: inserta tras el track activo, _manual:true
   const addNext = useCallback((track, force = false) => {
     if (!track) return "added";
     const isDup = localQueue.some((t) => t.id === track.id);
@@ -126,17 +142,27 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
       const base = force ? q.filter((t) => t.id !== track.id) : q;
       const idx = base.findIndex((t) => t.id === activeTrack?.id);
       const insertAt = idx >= 0 ? idx + 1 : 0;
-      return [...base.slice(0, insertAt), track, ...base.slice(insertAt)];
+      return [...base.slice(0, insertAt), { ...track, _manual: true }, ...base.slice(insertAt)];
     });
     return "added";
   }, [localQueue, activeTrack?.id]);
+
+  // setPlaybackContext — C2/C4: carga playlist como contexto, _manual:false
+  // Reemplaza toda la cola con los tracks de la playlist.
+  const setPlaybackContext = useCallback((contextTracks) => {
+    if (!Array.isArray(contextTracks)) return;
+    setLocalQueue(contextTracks.map((t) => ({ ...t, _manual: false })));
+  }, []);
+
+  // playbackContext — computed desde localQueue para compatibilidad con consumidores externos
+  const playbackContext = localQueue.filter((t) => !t._manual);
 
   const removeFromQueue = useCallback((trackId) => {
     setLocalQueue((q) => {
       const isActive = activeTrack?.id === trackId;
       const filtered = q.filter((t) => t.id !== trackId);
       if (isActive) {
-        const next = filtered.find((t) => t.id !== trackId);
+        const next = filtered[0] ?? null;
         if (next) { setActiveTrack(next); setAutoPlaySignal((n) => n + 1); }
         else setActiveTrack(tracks[0] ?? null);
       }
