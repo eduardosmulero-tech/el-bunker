@@ -56,6 +56,8 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
 export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
   const dragTrackIdx = useRef(null);
 
   if (!playlist) return null;
@@ -63,6 +65,13 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
   const plTracks = orderedIds
     .map((id) => tracks.find((t) => t.id === id))
     .filter(Boolean);
+
+  const visibleTracks = searchQuery.trim()
+    ? plTracks.filter((t) => {
+        const q = searchQuery.toLowerCase();
+        return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
+      })
+    : plTracks;
 
   const canDelete = true;
 
@@ -105,10 +114,18 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
               ◎ {playlist.name}
             </p>
             <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.15em" }}>
-              {plTracks.length} track{plTracks.length !== 1 ? "s" : ""}
+              {searchQuery.trim() ? `${visibleTracks.length}/${plTracks.length}` : plTracks.length} track{plTracks.length !== 1 ? "s" : ""}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <motion.button whileTap={{ scale: 0.9 }}
+              onClick={() => { setShowSearch((p) => !p); setSearchQuery(""); }}
+              style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+                borderRadius: 2, fontSize: 15, transition: "all 0.15s",
+                color: ACID, border: `1px solid ${showSearch ? ACID + "66" : ACID + "33"}`,
+                background: showSearch ? `${ACID}15` : `${ACID}06`, cursor: "pointer" }}>
+              ⌕
+            </motion.button>
             {plTracks.length > 0 && (
               <motion.button whileTap={{ scale: 0.92 }} onClick={handlePlay}
                 style={{ background: `${ACID}18`, border: `1px solid ${ACID}44`, color: ACID,
@@ -122,13 +139,35 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
           </div>
         </div>
 
+        {/* Search input */}
+        <AnimatePresence>
+          {showSearch && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2 }}
+              style={{ padding: "8px 16px", borderBottom: `1px solid ${ACID}15` }}>
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="BUSCAR EN PLAYLIST..."
+                style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`,
+                  borderRadius: 2, color: ACID, fontSize: 11, padding: "7px 12px",
+                  fontFamily: FONT_MONO, letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Track list */}
         <div style={{ overflowY: "auto", flex: 1 }}>
-          {plTracks.length === 0 ? (
+          {visibleTracks.length === 0 ? (
             <p style={{ color: `${ACID}30`, fontSize: 10, letterSpacing: "0.2em", textAlign: "center",
-              padding: "24px 16px", textTransform: "uppercase" }}>— sin tracks —</p>
+              padding: "24px 16px", textTransform: "uppercase" }}>
+              {searchQuery.trim() ? "— sin resultados —" : "— sin tracks —"}
+            </p>
           ) : (
-            plTracks.map((track, i) => (
+            visibleTracks.map((track, i) => (
               <div key={track.id}
                 draggable
                 onDragStart={() => handleTrackDragStart(i)}
