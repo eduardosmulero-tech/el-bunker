@@ -94,7 +94,14 @@ export default function MusicLab({
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
+  const [trackSearch,   setTrackSearch]   = useState("");
+  const [showTrackSearch, setShowTrackSearch] = useState(false);
+  const [listSearch,    setListSearch]    = useState("");
+  const [showListSearch,  setShowListSearch]  = useState(false);
+  const [queueSearch,   setQueueSearch]   = useState("");
+  const [showQueueSearch, setShowQueueSearch] = useState(false);
   useEffect(() => { setVisibleCount(50); }, [libraryFilter]);
+  useEffect(() => { setVisibleCount(50); }, [trackSearch]);
   useEffect(() => {
     if (!db) return;
     fetchPlaylists()
@@ -152,9 +159,25 @@ export default function MusicLab({
   };
 
   // ── Handlers Tracks ──────────────────────────────────────
-  const filteredTracks = libraryFilter === "all"
-    ? localTracks
-    : localTracks.filter((t) => (t.tag ?? t.vibe) === libraryFilter);
+  const filteredTracks = localTracks
+    .filter((t) => libraryFilter === "all" || (t.tag ?? t.vibe) === libraryFilter)
+    .filter((t) => {
+      if (!trackSearch.trim()) return true;
+      const q = trackSearch.toLowerCase();
+      return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
+    });
+
+  const filteredPlaylists = localPlaylists.filter((pl) => {
+    if (!listSearch.trim()) return true;
+    const q = listSearch.toLowerCase();
+    return pl.name?.toLowerCase().includes(q);
+  });
+
+  const filteredQueue = localQueue.filter((t) => {
+    if (!queueSearch.trim()) return true;
+    const q = queueSearch.toLowerCase();
+    return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
+  });
 
   const handleAddTrack = (trackData) => {
     setLocalTracks((p) => [...p, trackData]);
@@ -368,7 +391,28 @@ export default function MusicLab({
                     [{String(localQueue.length).padStart(2, "0")}]
                   </span>
                 </div>
+                <motion.button whileTap={{ scale: 0.9 }}
+                  onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                  style={{ color: ACID, border: `1px solid ${showQueueSearch ? ACID + "66" : ACID + "33"}`, background: showQueueSearch ? `${ACID}15` : `${ACID}06` }}>
+                  ◎
+                </motion.button>
               </div>
+              <AnimatePresence>
+                {showQueueSearch && (
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
+                    <input
+                      autoFocus
+                      value={queueSearch}
+                      onChange={(e) => setQueueSearch(e.target.value)}
+                      placeholder="BUSCAR EN COLA..."
+                      style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
+                        color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                        letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               {playHistory.length > 0 && (
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>anterior</span>
@@ -426,7 +470,7 @@ export default function MusicLab({
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>siguientes</span>
                   <div className="flex flex-col gap-2">
-                    {localQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => {
+                    {filteredQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => {
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
                       return (
                         <div key={`queue-next-${track.id}`}
@@ -481,6 +525,13 @@ export default function MusicLab({
                   </span>
                 </div>
                 <div className="flex gap-1">
+                  <motion.button whileTap={{ scale: 0.9 }} title="Buscar track"
+                    onClick={() => { setShowTrackSearch((p) => !p); setTrackSearch(""); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    style={{ color: ACID, border: `1px solid ${showTrackSearch ? ACID + "66" : ACID + "33"}`,
+                      background: showTrackSearch ? `${ACID}15` : `${ACID}06` }}>
+                    ◎
+                  </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
                     onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
@@ -504,6 +555,21 @@ export default function MusicLab({
                   </motion.button>
                 </div>
               </div>
+              <AnimatePresence>
+                {showTrackSearch && (
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
+                    <input
+                      autoFocus
+                      value={trackSearch}
+                      onChange={(e) => setTrackSearch(e.target.value)}
+                      placeholder="BUSCAR TRACK..."
+                      style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
+                        color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                        letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <AnimatePresence>
                 {showAdd && (
@@ -620,17 +686,41 @@ export default function MusicLab({
                   <span style={{ color: ACID }}>◈</span>
                   <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>LISTS</span>
                   <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
-                    [{String(localPlaylists.length).padStart(2, "0")}]
+                    [{String(filteredPlaylists.length).padStart(2, "0")}]
                   </span>
                 </div>
-                <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
-                  onClick={() => setShowCreatePlaylist((p) => !p)}
-                  className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                  style={{ color: ACID, border: `1px solid ${showCreatePlaylist ? ACID + "66" : ACID + "33"}`,
-                    background: showCreatePlaylist ? `${ACID}15` : `${ACID}06` }}>
-                  {showCreatePlaylist ? "✕" : "+"}
-                </motion.button>
+                <div className="flex gap-1">
+                  <motion.button whileTap={{ scale: 0.9 }} title="Buscar lista"
+                    onClick={() => { setShowListSearch((p) => !p); setListSearch(""); }}
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    style={{ color: ACID, border: `1px solid ${showListSearch ? ACID + "66" : ACID + "33"}`,
+                      background: showListSearch ? `${ACID}15` : `${ACID}06` }}>
+                    ◎
+                  </motion.button>
+                  <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
+                    onClick={() => setShowCreatePlaylist((p) => !p)}
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    style={{ color: ACID, border: `1px solid ${showCreatePlaylist ? ACID + "66" : ACID + "33"}`,
+                      background: showCreatePlaylist ? `${ACID}15` : `${ACID}06` }}>
+                    {showCreatePlaylist ? "✕" : "+"}
+                  </motion.button>
+                </div>
               </div>
+              <AnimatePresence>
+                {showListSearch && (
+                  <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
+                    <input
+                      autoFocus
+                      value={listSearch}
+                      onChange={(e) => setListSearch(e.target.value)}
+                      placeholder="BUSCAR LISTA..."
+                      style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
+                        color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                        letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <AnimatePresence>
                 {showCreatePlaylist && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -640,14 +730,14 @@ export default function MusicLab({
                   </motion.div>
                 )}
               </AnimatePresence>
-              {localPlaylists.length === 0 ? (
+              {filteredPlaylists.length === 0 ? (
                 <p className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
                   style={{ color: ACID, fontFamily: FONT_MONO }}>
                   — sin playlists —
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {localPlaylists.map((pl, i) => {
+                  {filteredPlaylists.map((pl, i) => {
                     const plTracks = pl.track_ids.map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
                     const isEmpty = plTracks.length === 0;
                     const plVibe = getVibeConfig(pl.tag ?? plTracks[0]?.tag ?? plTracks[0]?.vibe);
