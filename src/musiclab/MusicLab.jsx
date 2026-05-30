@@ -90,6 +90,7 @@ export default function MusicLab({
     syncStatus,
     playbackContext, setPlaybackContext,
     playHistory,
+    queueContextName, setQueueContextName,
   } = usePlayer();
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
@@ -98,8 +99,9 @@ export default function MusicLab({
   const [showTrackSearch, setShowTrackSearch] = useState(false);
   const [listSearch,    setListSearch]    = useState("");
   const [showListSearch,  setShowListSearch]  = useState(false);
-  const [queueSearch,   setQueueSearch]   = useState("");
+  const [queueSearch,     setQueueSearch]     = useState("");
   const [showQueueSearch, setShowQueueSearch] = useState(false);
+  const [confirmClearQueue, setConfirmClearQueue] = useState(false);
   useEffect(() => { setVisibleCount(50); }, [libraryFilter]);
   useEffect(() => { setVisibleCount(50); }, [trackSearch]);
   useEffect(() => {
@@ -383,21 +385,63 @@ export default function MusicLab({
           {activeTab === "queue" && (
             <motion.div key="queue" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
-              <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <span style={{ color: ACID }}>▶</span>
-                  <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>COLA</span>
-                  <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
-                    [{String(localQueue.length).padStart(2, "0")}]
-                  </span>
+              <div className="flex flex-col gap-1 px-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span style={{ color: ACID }}>▶</span>
+                    <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>COLA</span>
+                    <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
+                      [{String(localQueue.length).padStart(2, "0")}]
+                    </span>
+                  </div>
+                  <div className="flex gap-1">
+                    <motion.button whileTap={{ scale: 0.9 }} title="Buscar en cola"
+                      onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
+                      className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: ACID, border: `1px solid ${showQueueSearch ? ACID + "66" : ACID + "33"}`, background: showQueueSearch ? `${ACID}15` : `${ACID}06` }}>
+                      ⌕
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.9 }} title="Guardar cola como playlist"
+                      onClick={() => {
+                        const name = prompt("Nombre de la nueva playlist:");
+                        if (!name?.trim()) return;
+                        handleCreatePlaylist(name.trim());
+                      }}
+                      className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: ACID, border: `1px solid ${ACID}33`, background: `${ACID}06` }}>
+                      ◈
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.9 }} title="Vaciar cola"
+                      onClick={() => setConfirmClearQueue(true)}
+                      className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: "#ff4444", border: "1px solid #ff444433", background: "#ff444406" }}>
+                      ✕
+                    </motion.button>
+                  </div>
                 </div>
-                <motion.button whileTap={{ scale: 0.9 }}
-                  onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                  style={{ color: ACID, border: `1px solid ${showQueueSearch ? ACID + "66" : ACID + "33"}`, background: showQueueSearch ? `${ACID}15` : `${ACID}06` }}>
-                  ⌕
-                </motion.button>
+                {queueContextName && (
+                  <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
+                    DESDE: {queueContextName}
+                  </span>
+                )}
+                {confirmClearQueue && (
+                  <div className="flex gap-2 mt-1">
+                    <motion.button whileTap={{ scale: 0.95 }}
+                      onClick={() => { setLocalQueue([]); setQueueContextName(null); setConfirmClearQueue(false); }}
+                      style={{ flex: 1, padding: "5px 0", background: "#ff444418", border: "1px solid #ff444455",
+                        color: "#ff4444", fontSize: 10, letterSpacing: "0.2em", borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                      CONFIRMAR VACIAR
+                    </motion.button>
+                    <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmClearQueue(false)}
+                      style={{ padding: "5px 12px", background: "transparent", border: `1px solid ${ACID}22`,
+                        color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                      CANCELAR
+                    </motion.button>
+                  </div>
+                )}
               </div>
+
+SEARCH/REPLACE 4
               <AnimatePresence>
                 {showQueueSearch && (
                   <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.2 }}>
@@ -474,6 +518,12 @@ export default function MusicLab({
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
                       // Q14: track manual → color propio del vibe. track de playlist → ACID
                       const trackColor = track._manual ? (qVibe?.color ?? ACID) : ACID;
+                      // Q4: playlist activa donde insertar el track manual
+                      const activePl = queueContextName
+                        ? localPlaylists.find((p) => p.name === queueContextName)
+                        : null;
+                      // posición del track dentro de localQueue (excluyendo activeTrack)
+                      const queuePos = localQueue.filter((t) => t.id !== activeTrack?.id).findIndex((t) => t.id === track.id);
                       return (
                         <div key={`queue-next-${track.id}`}
                           draggable
@@ -481,7 +531,7 @@ export default function MusicLab({
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
-                          style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
+                          style={{ background: GLASS_BG, border: `1px solid ${track._manual ? trackColor + "33" : GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
                           <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
@@ -497,6 +547,26 @@ export default function MusicLab({
                             style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
                             {qVibe?.icon}
                           </span>
+                          {track._manual && activePl && (
+                            <motion.button whileTap={{ scale: 0.9 }}
+                              title={`Añadir a ${activePl.name} en esta posición`}
+                              onClick={async () => {
+                                const newIds = [...activePl.track_ids];
+                                // insertar en la posición del track dentro de la playlist (tras el track activo)
+                                const activeIdxInPl = newIds.indexOf(activeTrack?.id);
+                                const insertAt = activeIdxInPl >= 0 ? activeIdxInPl + 1 + queuePos : newIds.length;
+                                newIds.splice(insertAt, 0, track.id);
+                                const updated = localPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
+                                setLocalPlaylists(updated);
+                                await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
+                                setToast(`AÑADIDO A ${activePl.name.toUpperCase()}`);
+                                setTimeout(() => setToast(null), 2500);
+                              }}
+                              className="flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                              style={{ color: ACID, border: `1px solid ${ACID}44`, background: `${ACID}12` }}>
+                              ◈
+                            </motion.button>
+                          )}
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
                             className="ml-1 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
@@ -505,6 +575,8 @@ export default function MusicLab({
                         </div>
                       );
                     })}
+
+SEARCH/REPLACE 5
                   </div>
                 </div>
               )}
@@ -795,7 +867,7 @@ export default function MusicLab({
                             <>
                               {!isEmpty && (
                                 <motion.button whileTap={{ scale: 0.88 }}
-                                  onClick={(e) => { e.stopPropagation(); if (!plTracks.length) return; playTrack(plTracks[0]); plTracks.slice(1).forEach((t) => addToQueue(t)); }}
+                                  onClick={(e) => { e.stopPropagation(); if (!plTracks.length) return; setPlaybackContext(plTracks, pl.name); setActiveTrack(plTracks[0]); setAutoPlaySignal((n) => n + 1); }}
                                   style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                   ▶
                                 </motion.button>
