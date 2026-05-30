@@ -472,6 +472,8 @@ export default function MusicLab({
                   <div className="flex flex-col gap-2">
                     {filteredQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => {
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
+                      // Q14: track manual → color propio del vibe. track de playlist → ACID
+                      const trackColor = track._manual ? (qVibe?.color ?? ACID) : ACID;
                       return (
                         <div key={`queue-next-${track.id}`}
                           draggable
@@ -482,17 +484,17 @@ export default function MusicLab({
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
                           <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                            style={{ background: `${qVibe?.color ?? ACID}12`, border: `1px solid ${qVibe?.color ?? ACID}33` }}>
+                            style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: qVibe?.color ?? ACID, fontSize: 10 }}>⌕</span>}
+                              : <span style={{ color: trackColor, fontSize: 10 }}>⌕</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate" style={{ color: qVibe?.color ?? ACID }}>{track.title}</p>
+                            <p className="text-xs font-bold truncate" style={{ color: trackColor }}>{track.title}</p>
                             <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
-                            style={{ color: qVibe?.color ?? ACID, background: `${qVibe?.color ?? ACID}15`, border: `1px solid ${qVibe?.color ?? ACID}33` }}>
+                            style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
                             {qVibe?.icon}
                           </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
