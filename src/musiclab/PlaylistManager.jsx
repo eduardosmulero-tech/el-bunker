@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../layout/Layout";
+import { VibeTagBar } from "./TrackCard";
 
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 const GLASS_BG  = "rgba(191,255,0,0.03)";
@@ -53,11 +54,12 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
 );
 
 // ── PlaylistDetailModal ────────────────────────────────────────────────────────
-export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks }) => {
+export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const [vibeFilter, setVibeFilter] = useState("all");
   const dragTrackIdx = useRef(null);
 
   if (!playlist) return null;
@@ -66,12 +68,13 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
     .map((id) => tracks.find((t) => t.id === id))
     .filter(Boolean);
 
-  const visibleTracks = searchQuery.trim()
-    ? plTracks.filter((t) => {
-        const q = searchQuery.toLowerCase();
-        return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
-      })
-    : plTracks;
+  const visibleTracks = plTracks
+    .filter((t) => vibeFilter === "all" || (t.tag ?? t.vibe) === vibeFilter)
+    .filter((t) => {
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase();
+      return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
+    });
 
   const canDelete = true;
 
@@ -138,6 +141,13 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
               style={{ color: `${ACID}44`, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}>✕</motion.button>
           </div>
         </div>
+
+        {/* Vibe filter */}
+        {VIBE_TAGS.length > 0 && (
+          <div style={{ padding: "8px 16px", borderBottom: `1px solid ${ACID}15` }}>
+            <VibeTagBar activeVibe={vibeFilter} onVibeChange={setVibeFilter} VIBE_TAGS={VIBE_TAGS} />
+          </div>
+        )}
 
         {/* Search input */}
         <AnimatePresence>
