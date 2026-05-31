@@ -991,6 +991,7 @@ export default function MusicLab({
                 playlist={pl}
                 tracks={localTracks}
                 userId={userId}
+                VIBE_TAGS={VIBE_TAGS}
                 onClose={() => setShowPlaylistDetail(null)}
                 onPlay={(t) => { playTrack(t); setShowPlaylistDetail(null); }}
                 onAddToQueue={addToQueue}
