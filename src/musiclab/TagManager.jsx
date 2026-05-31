@@ -39,8 +39,14 @@ const ColorPicker = ({ value, onChange }) => {
             }} />
         ))}
       </div>
-      <div className="flex items-center gap-2">
-        <div style={{ width: 24, height: 24, borderRadius: 2, background: custom, border: `1px solid ${custom}88`, flexShrink: 0 }} />
+      <div style={{ height: 1, background: `${ACID}15`, margin: "2px 0" }} />
+      <span className="text-xs opacity-30 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
+        Color personalizado
+      </span>
+      <div className="flex items-center gap-3">
+        <div style={{ width: 32, height: 32, borderRadius: 2, background: custom,
+          border: `2px solid ${custom}99`, flexShrink: 0,
+          boxShadow: `0 0 8px ${custom}55` }} />
         <input
           value={custom}
           onChange={(e) => handleCustom(e.target.value)}
