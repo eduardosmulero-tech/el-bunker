@@ -11,40 +11,46 @@ const extractYouTubeId = (url) => {
   return match ? match[1] : null;
 };
 
-export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager }) => (
-  <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-    {VIBE_TAGS.map((vibe) => {
-      const isActive = activeVibe === vibe.id;
-      return (
-        <motion.button key={vibe.id} whileTap={{ scale: 0.9 }} onClick={() => onVibeChange(vibe.id)}
-          className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs tracking-widest uppercase rounded-sm transition-all"
-          style={{
-            fontFamily: FONT_MONO,
-            color: isActive ? vibe.color : `${vibe.color}55`,
-            background: isActive ? `${vibe.color}18` : "transparent",
-            border: `1px solid ${isActive ? vibe.color + "55" : vibe.color + "18"}`,
-            boxShadow: isActive ? `0 0 10px ${vibe.color}33` : "none",
-            textShadow: isActive ? `0 0 6px ${vibe.color}88` : "none",
-          }}
-          animate={isActive ? { opacity: [0.8, 1, 0.8] } : {}}
-          transition={{ duration: 2, repeat: isActive ? Infinity : 0 }}
-        >
-          <span>{vibe.icon}</span>
-          <span>{vibe.label}</span>
-        </motion.button>
-      );
-    })}
+export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
+  <div className="flex items-center gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-1 flex-1" style={{ scrollbarWidth: "none" }}>
+      {VIBE_TAGS.map((vibe) => {
+        const isActive = activeVibe === vibe.id;
+        return (
+          <motion.button key={vibe.id} whileTap={{ scale: 0.9 }} onClick={() => onVibeChange(vibe.id)}
+            className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs tracking-widest uppercase rounded-sm transition-all"
+            style={{
+              fontFamily: FONT_MONO,
+              color: isActive ? vibe.color : `${vibe.color}55`,
+              background: isActive ? `${vibe.color}18` : "transparent",
+              border: `1px solid ${isActive ? vibe.color + "55" : vibe.color + "18"}`,
+              boxShadow: isActive ? `0 0 10px ${vibe.color}33` : "none",
+              textShadow: isActive ? `0 0 6px ${vibe.color}88` : "none",
+            }}
+            animate={isActive ? { opacity: [0.8, 1, 0.8] } : {}}
+            transition={{ duration: 2, repeat: isActive ? Infinity : 0 }}
+          >
+            <span>{vibe.icon}</span>
+            <span>{vibe.label}</span>
+          </motion.button>
+        );
+      })}
+    </div>
     {onOpenTagManager && (
-      <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
-        className="flex-shrink-0 flex items-center justify-center px-2 py-1 rounded-sm transition-all"
-        style={{
-          fontFamily: FONT_MONO, fontSize: 13,
-          color: `${ACID}55`,
-          background: "transparent",
-          border: `1px solid ${ACID}18`,
-        }}>
-        ⚙
-      </motion.button>
+      <>
+        <div style={{ width: 1, alignSelf: "stretch", background: `${ACID}18`, flexShrink: 0 }} />
+        <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
+          className="flex-shrink-0 flex items-center justify-center w-8 h-7 rounded-sm transition-all"
+          style={{
+            fontFamily: FONT_MONO, fontSize: 13,
+            color: isTagManagerOpen ? ACID : `${ACID}44`,
+            background: isTagManagerOpen ? `${ACID}15` : "transparent",
+            border: `1px solid ${isTagManagerOpen ? ACID + "55" : ACID + "18"}`,
+            boxShadow: isTagManagerOpen ? `0 0 8px ${ACID}33` : "none",
+          }}>
+          ⚙
+        </motion.button>
+      </>
     )}
   </div>
 );
