@@ -4,7 +4,7 @@
 //  Tags guardados en music_lab.tags en Drive (schema 5.0.0).
 // ============================================================
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
 
@@ -55,14 +55,13 @@ const ColorPicker = ({ value, onChange }) => {
   );
 };
 
-const EMPTY_FORM = { label: "", icon: "", color: "#00ffcc" };
+const emptyForm = () => ({ label: "", icon: "", color: "#00ffcc" });
 
 export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, onReorder, onFilterByTag }) => {
   const [showForm,      setShowForm]      = useState(false);
   const [editingId,     setEditingId]     = useState(null);
   const [form,          setForm]          = useState(emptyForm);
   const [toast,         setToast]         = useState(null);
-  const [showIconPicker,setShowIconPicker]= useState(false);
   const dragIdx = useRef(null);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
@@ -117,16 +116,6 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
 
-      {/* IconPicker bottom sheet */}
-      {showIconPicker && (
-        <IconPicker
-          value={form.icon}
-          color={form.color}
-          onSelect={(ic) => setForm((p) => ({ ...p, icon: ic }))}
-          onClose={() => setShowIconPicker(false)}
-        />
-      )}
-
       {/* Toast */}
       <AnimatePresence>
         {toast && (
@@ -173,20 +162,20 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                   letterSpacing: "0.15em", outline: "none" }} />
             </div>
 
-            {/* Icono — botón que abre bottom sheet */}
+            {/* Icono — input directo */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Icono</span>
-              <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowIconPicker(true)}
-                style={{ display: "flex", alignItems: "center", gap: 10, background: `${ACID}06`,
-                  border: `1px solid ${ACID}33`, borderRadius: 2, padding: "7px 12px",
-                  cursor: "pointer", fontFamily: FONT_MONO, textAlign: "left" }}>
-                <span style={{ fontSize: 20, color: form.color, lineHeight: 1, minWidth: 24 }}>
+              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Icono (emoji)</span>
+              <div className="flex items-center gap-2">
+                <span style={{ fontSize: 20, color: form.color, lineHeight: 1, minWidth: 28, textAlign: "center" }}>
                   {form.icon || "◈"}
                 </span>
-                <span style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.15em" }}>
-                  {form.icon ? "CAMBIAR ICONO" : "ELEGIR ICONO →"}
-                </span>
-              </motion.button>
+                <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))}
+                  placeholder="◈"
+                  maxLength={4}
+                  style={{ flex: 1, background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
+                    color: ACID, fontSize: 18, padding: "5px 10px", fontFamily: FONT_MONO,
+                    letterSpacing: "0.1em", outline: "none", textAlign: "center" }} />
+              </div>
             </div>
 
             {/* Color */}
