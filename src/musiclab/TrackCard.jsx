@@ -22,24 +22,23 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
       {VIBE_TAGS.map((vibe) => {
         const isActive = activeVibe === vibe.id;
         return (
-          <motion.button key={vibe.id} whileTap={{ scale: 0.9 }} onClick={() => onVibeChange(vibe.id)}
+          <button key={vibe.id} onClick={() => onVibeChange(vibe.id)}
             style={{
               flexShrink: 0, display: "flex", alignItems: "center", gap: 4,
               padding: "4px 12px", fontSize: 11, letterSpacing: "0.1em",
               textTransform: "uppercase", borderRadius: 2, transition: "all 0.15s",
-              fontFamily: FONT_MONO,
+              fontFamily: FONT_MONO, cursor: "pointer", border: "none",
               color: isActive ? vibe.color : `${vibe.color}55`,
               background: isActive ? `${vibe.color}18` : "transparent",
-              border: `1px solid ${isActive ? vibe.color + "55" : vibe.color + "18"}`,
+              outline: `1px solid ${isActive ? vibe.color + "55" : vibe.color + "18"}`,
               boxShadow: isActive ? `0 0 10px ${vibe.color}33` : "none",
               textShadow: isActive ? `0 0 6px ${vibe.color}88` : "none",
+              animation: isActive ? "vibe-pulse 2s ease-in-out infinite" : "none",
             }}
-            animate={isActive ? { opacity: [0.8, 1, 0.8] } : {}}
-            transition={{ duration: 2, repeat: isActive ? Infinity : 0 }}
           >
             <span>{vibe.icon}</span>
             <span>{vibe.label}</span>
-          </motion.button>
+          </button>
         );
       })}
     </div>
