@@ -12,14 +12,21 @@ const extractYouTubeId = (url) => {
 };
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-    <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none", touchAction: "pan-x", width: 0 }}>
+  <div style={{ position: "relative", width: "100%", minWidth: 0 }}>
+    <div style={{
+      display: "flex", gap: 8,
+      overflowX: "auto", paddingBottom: 4,
+      scrollbarWidth: "none", touchAction: "pan-x",
+      paddingRight: onOpenTagManager ? 44 : 0,
+    }}>
       {VIBE_TAGS.map((vibe) => {
         const isActive = activeVibe === vibe.id;
         return (
           <motion.button key={vibe.id} whileTap={{ scale: 0.9 }} onClick={() => onVibeChange(vibe.id)}
-            className="flex-shrink-0 flex items-center gap-1 px-3 py-1 text-xs tracking-widest uppercase rounded-sm transition-all"
             style={{
+              flexShrink: 0, display: "flex", alignItems: "center", gap: 4,
+              padding: "4px 12px", fontSize: 11, letterSpacing: "0.1em",
+              textTransform: "uppercase", borderRadius: 2, transition: "all 0.15s",
               fontFamily: FONT_MONO,
               color: isActive ? vibe.color : `${vibe.color}55`,
               background: isActive ? `${vibe.color}18` : "transparent",
@@ -37,20 +44,19 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
       })}
     </div>
     {onOpenTagManager && (
-      <>
-        <div style={{ width: 1, alignSelf: "stretch", background: `${ACID}18`, flexShrink: 0 }} />
-        <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
-          className="flex-shrink-0 flex items-center justify-center w-8 h-7 rounded-sm transition-all"
-          style={{
-            fontFamily: FONT_MONO, fontSize: 13,
-            color: isTagManagerOpen ? ACID : `${ACID}44`,
-            background: isTagManagerOpen ? `${ACID}15` : "transparent",
-            border: `1px solid ${isTagManagerOpen ? ACID + "55" : ACID + "18"}`,
-            boxShadow: isTagManagerOpen ? `0 0 8px ${ACID}33` : "none",
-          }}>
-          ⚙
-        </motion.button>
-      </>
+      <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
+        style={{
+          position: "absolute", right: 0, top: 0,
+          width: 32, height: 28,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          borderRadius: 2, fontFamily: FONT_MONO, fontSize: 13,
+          color: isTagManagerOpen ? ACID : `${ACID}44`,
+          background: isTagManagerOpen ? `${ACID}15` : "#0a0a0a",
+          border: `1px solid ${isTagManagerOpen ? ACID + "55" : ACID + "18"}`,
+          boxShadow: isTagManagerOpen ? `0 0 8px ${ACID}33` : "none",
+        }}>
+        ⚙
+      </motion.button>
     )}
   </div>
 );
