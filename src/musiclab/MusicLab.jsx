@@ -592,7 +592,7 @@ export default function MusicLab({
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS}
-                  onOpenTagManager={() => setShowTagManager((p) => !p)} />
+                  onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
               </motion.div>
               <AnimatePresence>
                 {showTagManager && (
