@@ -433,7 +433,8 @@ export default function MusicLab({
             <motion.div key="queue" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1 px-1">
-                <VibeTagBar activeVibe={queueTagFilter} onVibeChange={setQueueTagFilter} VIBE_TAGS={VIBE_TAGS} />
+                <VibeTagBar activeVibe={queueTagFilter} onVibeChange={setQueueTagFilter} VIBE_TAGS={VIBE_TAGS}
+                onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span style={{ color: ACID }}>▶</span>
@@ -801,7 +802,8 @@ export default function MusicLab({
           {activeTab === "playlists" && (
             <motion.div key="playlists" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
-              <VibeTagBar activeVibe={listTagFilter} onVibeChange={setListTagFilter} VIBE_TAGS={VIBE_TAGS} />
+              <VibeTagBar activeVibe={listTagFilter} onVibeChange={setListTagFilter} VIBE_TAGS={VIBE_TAGS}
+                onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <span style={{ color: ACID }}>◈</span>
