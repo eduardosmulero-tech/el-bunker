@@ -12,7 +12,7 @@ const extractYouTubeId = (url) => {
 };
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
-  <div style={{ position: "relative", width: "100%", minWidth: 0 }}>
+  <div style={{ position: "relative", width: "100%", minWidth: 0, paddingBottom: 6 }}>
     <div style={{
       display: "flex", gap: 8,
       overflowX: "auto", paddingBottom: 4,
