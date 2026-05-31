@@ -351,6 +351,39 @@ export default function MusicLab({
         )}
       </AnimatePresence>
 
+      {/* TagManager — overlay global, accesible desde todos los tabs */}
+      <AnimatePresence>
+        {showTagManager && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
+            style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9990,
+              background: "rgba(0,0,0,0.85)", overflowY: "auto", padding: "16px 16px 100px" }}
+            onClick={(e) => { if (e.target === e.currentTarget) setShowTagManager(false); }}
+          >
+            <div style={{ maxWidth: 448, margin: "0 auto" }}>
+              <TagManager
+                tags={db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS}
+                tracks={localTracks}
+                onAdd={onAddTag}
+                onUpdate={onUpdateTag}
+                onDelete={onDeleteTag}
+                onReorder={async (newTags) => {
+                  await patchDb((prev) => ({
+                    ...prev,
+                    music_lab: { ...prev.music_lab, tags: newTags },
+                  }));
+                }}
+                onFilterByTag={(tagId) => {
+                  setLibraryFilter(tagId);
+                  setShowTagManager(false);
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col gap-5 px-4 py-6 max-w-md mx-auto" style={{ fontFamily: FONT_MONO }}>
 
         {/* ══ Player ══ */}
@@ -602,30 +635,7 @@ export default function MusicLab({
                 <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS}
                   onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
               </motion.div>
-              <AnimatePresence>
-                {showTagManager && (
-                  <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
-                    <TagManager
-                      tags={db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS}
-                      tracks={localTracks}
-                      onAdd={onAddTag}
-                      onUpdate={onUpdateTag}
-                      onDelete={onDeleteTag}
-                      onReorder={async (newTags) => {
-                        await patchDb((prev) => ({
-                          ...prev,
-                          music_lab: { ...prev.music_lab, tags: newTags },
-                        }));
-                      }}
-                      onFilterByTag={(tagId) => {
-                        setLibraryFilter(tagId);
-                        setShowTagManager(false);
-                      }}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <span style={{ color: ACID }}>◎</span>
