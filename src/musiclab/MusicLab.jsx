@@ -358,7 +358,7 @@ export default function MusicLab({
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}
             style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9990,
-              background: "rgba(0,0,0,0.85)", overflowY: "auto", padding: "16px 16px 100px" }}
+              background: "rgba(0,0,0,0.85)", overflowY: "auto", padding: "58px 16px 100px" }}
             onClick={(e) => { if (e.target === e.currentTarget) setShowTagManager(false); }}
           >
             <div style={{ maxWidth: 448, margin: "0 auto" }}>
