@@ -12,8 +12,8 @@ const extractYouTubeId = (url) => {
 };
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
-  <div className="flex items-center gap-2">
-    <div className="flex gap-2 overflow-x-auto pb-1 flex-1" style={{ scrollbarWidth: "none" }}>
+  <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+    <div className="flex gap-2 overflow-x-auto pb-1 flex-1 min-w-0" style={{ scrollbarWidth: "none" }}>
       {VIBE_TAGS.map((vibe) => {
         const isActive = activeVibe === vibe.id;
         return (
