@@ -176,13 +176,20 @@ export default function MusicLab({
       return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
     });
 
+  const [listTagFilter, setListTagFilter] = useState("all");
   const filteredPlaylists = localPlaylists.filter((pl) => {
+    if (listTagFilter !== "all") {
+      const plTracks = (pl.track_ids ?? []).map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
+      if (!plTracks.some((t) => (t.tag ?? t.vibe) === listTagFilter)) return false;
+    }
     if (!listSearch.trim()) return true;
     const q = listSearch.toLowerCase();
     return pl.name?.toLowerCase().includes(q);
   });
 
+  const [queueTagFilter, setQueueTagFilter] = useState("all");
   const filteredQueue = localQueue.filter((t) => {
+    if (queueTagFilter !== "all" && (t.tag ?? t.vibe) !== queueTagFilter) return false;
     if (!queueSearch.trim()) return true;
     const q = queueSearch.toLowerCase();
     return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
@@ -393,7 +400,8 @@ export default function MusicLab({
             <motion.div key="queue" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1 px-1">
-                <div className="flex items-center justify-between">
+                <VibeTagBar activeVibe={queueTagFilter} onVibeChange={setQueueTagFilter} VIBE_TAGS={VIBE_TAGS} />
+              <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span style={{ color: ACID }}>▶</span>
                     <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>COLA</span>
@@ -604,6 +612,16 @@ export default function MusicLab({
                       onAdd={onAddTag}
                       onUpdate={onUpdateTag}
                       onDelete={onDeleteTag}
+                      onReorder={async (newTags) => {
+                        await patchDb((prev) => ({
+                          ...prev,
+                          music_lab: { ...prev.music_lab, tags: newTags },
+                        }));
+                      }}
+                      onFilterByTag={(tagId) => {
+                        setLibraryFilter(tagId);
+                        setShowTagManager(false);
+                      }}
                     />
                   </motion.div>
                 )}
@@ -773,6 +791,7 @@ export default function MusicLab({
           {activeTab === "playlists" && (
             <motion.div key="playlists" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
+              <VibeTagBar activeVibe={listTagFilter} onVibeChange={setListTagFilter} VIBE_TAGS={VIBE_TAGS} />
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <span style={{ color: ACID }}>◈</span>
