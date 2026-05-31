@@ -13,7 +13,7 @@ const extractYouTubeId = (url) => {
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 8, width: "100%" }}>
-    <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none", touchAction: "pan-x" }}>
+    <div style={{ flex: 1, minWidth: 0, display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, scrollbarWidth: "none", touchAction: "pan-x", width: 0 }}>
       {VIBE_TAGS.map((vibe) => {
         const isActive = activeVibe === vibe.id;
         return (
