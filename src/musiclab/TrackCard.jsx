@@ -11,7 +11,7 @@ const extractYouTubeId = (url) => {
   return match ? match[1] : null;
 };
 
-export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
+export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen, accentColor = ACID }) => (
   <div style={{ position: "relative", width: "100%", minWidth: 0, paddingBottom: 8 }}>
     <div style={{
       display: "flex", gap: 8,
@@ -47,13 +47,13 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
       <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
         style={{
           position: "absolute", right: 0, top: 4,
-          width: 32, height: 28,
+          width: 32, height: 20,
           display: "flex", alignItems: "center", justifyContent: "center",
           borderRadius: 2, fontFamily: FONT_MONO, fontSize: 13,
-          color: isTagManagerOpen ? ACID : `${ACID}44`,
-          background: isTagManagerOpen ? `${ACID}15` : "#0a0a0a",
-          border: `1px solid ${isTagManagerOpen ? ACID + "55" : ACID + "18"}`,
-          boxShadow: isTagManagerOpen ? `0 0 8px ${ACID}33` : "none",
+          color: isTagManagerOpen ? accentColor : `${accentColor}99`,
+          background: isTagManagerOpen ? `${accentColor}20` : "#0a0a0a",
+          border: `1px solid ${isTagManagerOpen ? accentColor + "66" : accentColor + "33"}`,
+          boxShadow: isTagManagerOpen ? `0 0 10px ${accentColor}44` : `0 0 4px ${accentColor}22`,
         }}>
         ⚙
       </motion.button>
