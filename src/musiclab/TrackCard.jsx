@@ -163,7 +163,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         </div>
         <div className="flex flex-row items-center gap-2 flex-shrink-0">
           <span style={{
-            color: vibeColor, fontSize: 32,
+            color: vibeColor, fontSize: 24,
             textShadow: `0 0 14px ${vibeColor}cc`,
             lineHeight: "normal",
           }}>
@@ -172,7 +172,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           <motion.button whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
             style={{ color: `${vibeColor}cc`, background: "transparent", border: "none",
-              cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "2px 2px",
+              cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "2px 2px",
               fontFamily: FONT_MONO }}
             title="Más opciones">
             ⋮
