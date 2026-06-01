@@ -71,6 +71,18 @@ export default function MusicLab({
   // VIBE_TAGS dinámico desde DB — "all" se inyecta en runtime como filtro de UI (VB2)
   const VIBE_TAGS = [ALL_TAG, ...(db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS)];
   const getVibeConfig = (vibeId) => VIBE_TAGS.find((v) => v.id === vibeId) ?? null;
+  // resolveVibeConf — normaliza tag de DB al schema que WinampPlayer espera.
+  // Tags de DB: {id, label, icon, color/seedColor} — sin palette.
+  // WinampPlayer consume vibeConf.palette.accent → necesita al menos ese campo.
+  // Si el tag ya tiene palette (canónico de tokens.js), lo pasa tal cual.
+  const resolveVibeConf = (vibeId) => {
+    if (!vibeId) return null;
+    const raw = getVibeConfig(vibeId);
+    if (!raw) return null;
+    if (raw.palette?.accent) return raw;
+    const accent = raw.color ?? raw.seedColor ?? "#bfff00";
+    return { ...raw, palette: { accent } };
+  };
 
   // ── Estado local (UI solamente) ───────────────────────────
   const [showAdd,           setShowAdd]            = useState(false);
@@ -398,7 +410,7 @@ export default function MusicLab({
             syncStatus={syncStatus}
             VIBE_TAGS={VIBE_TAGS}
             autoPlaySignal={autoPlaySignal}
-            vibeConf={getVibeConfig(activeTrack?.tag ?? activeTrack?.vibe)}
+            vibeConf={resolveVibeConf(activeTrack?.tag ?? activeTrack?.vibe)}
           />
         </motion.section>
 
