@@ -91,6 +91,17 @@ export default function MusicLab({
   const [editingTrack,      setEditingTrack]       = useState(null);
   const [activeTab,         setActiveTab]          = useState("tracks");
   const [localTracks,       setLocalTracks]        = useState(rawTracks);
+  const [viewMode,          setViewMode]            = useState(() => {
+    try { return localStorage.getItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`) ?? "list"; }
+    catch { return "list"; }
+  });
+  const cycleViewMode = () => {
+    const next = viewMode === "list" ? "grid" : viewMode === "grid" ? "card" : "list";
+    setViewMode(next);
+    try { localStorage.setItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`, next); }
+    catch {}
+  };
+  const VIEW_MODE_ICON = { list: "☰", grid: "⊞", card: "❒" };
   const [localDrops,        setLocalDrops]         = useState(userDrops);
   const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
   const [showPlaylistModal,  setShowPlaylistModal]  = useState(false);
@@ -663,6 +674,13 @@ export default function MusicLab({
                   </span>
                 </div>
                 <div className="flex gap-1">
+                  <motion.button whileTap={{ scale: 0.9 }} title={`Vista: ${viewMode}`}
+                    onClick={cycleViewMode}
+                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    style={{ color: accentColor, border: `1px solid ${accentColor}33`,
+                      background: `${accentColor}06`, fontFamily: FONT_MONO }}>
+                    {VIEW_MODE_ICON[viewMode]}
+                  </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Buscar track"
                     onClick={() => { setShowTrackSearch((p) => !p); setTrackSearch(""); }}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
@@ -777,10 +795,30 @@ export default function MusicLab({
               <div className="flex flex-col gap-2">
                 <AnimatePresence>
                   {!editingTrack && !showEdit && filteredTracks.length > 0 ? (
+                    viewMode === "grid" ? (
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {filteredTracks.slice(0, visibleCount).map((track) => {
+                          const vc = getVibeConfig(track.tag ?? track.vibe);
+                          const vibeColor = vc?.color ?? "#555555";
+                          const isActive = activeTrack?.id === track.id;
+                          const ytId = track.url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
+                          return (
+                            <TrackCardGrid key={track.id} track={track} vc={vc} vibeColor={vibeColor}
+                              isActive={isActive} ytId={ytId}
+                              onClick={() => playTrack(track)}
+                              onAddToQueue={handleAddToQueue}
+                              onAddNext={handleAddNext}
+                              onAddToPlaylist={handleAddToPlaylist}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
                     filteredTracks.slice(0, visibleCount).map((track) => (
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.tag ?? track.vibe)}
+                        viewMode={viewMode}
                         onClick={() => { playTrack(track); }}
                         onAddToQueue={handleAddToQueue}
                         onAddNext={handleAddNext}
@@ -788,6 +826,7 @@ export default function MusicLab({
                         onDrop={(t) => setActiveTrack(t)}
                       />
                     ))
+                    )
                   ) : (
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
