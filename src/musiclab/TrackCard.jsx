@@ -119,32 +119,52 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
           document.body
         )}
       </AnimatePresence>
-      <motion.div whileTap={{ scale: 0.97 }} onClick={onClick}
-        style={{
-          position: "relative", aspectRatio: "1", borderRadius: 4,
-          overflow: "hidden", cursor: "pointer",
-          border: `1px solid ${isActive ? vibeColor + "88" : vibeColor + "44"}`,
-          boxShadow: isActive ? `0 0 14px ${vibeColor}44` : "none",
-          background: ytId ? "transparent" : `${vibeColor}18`,
-          fontFamily: FONT_MONO_LOCAL,
-        }}>
-        {ytId ? (
-          <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
-            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
-        ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex",
-            alignItems: "center", justifyContent: "center",
-            fontSize: 28, color: `${vibeColor}44`, fontFamily: FONT_MONO_LOCAL }}>
-            {(track.artist ?? "?").slice(0, 2).toUpperCase()}
+      <div style={{ position: "relative" }}>
+        <motion.div whileTap={{ scale: 0.97 }} onClick={onClick}
+          style={{
+            position: "relative", aspectRatio: "1", borderRadius: 4,
+            overflow: "hidden", cursor: "pointer",
+            border: `1px solid ${isActive ? vibeColor + "88" : vibeColor + "44"}`,
+            boxShadow: isActive ? `0 0 14px ${vibeColor}44` : "none",
+            background: ytId ? "transparent" : `${vibeColor}18`,
+            fontFamily: FONT_MONO_LOCAL,
+          }}>
+          {ytId ? (
+            <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "flex",
+              alignItems: "center", justifyContent: "center",
+              fontSize: 28, color: `${vibeColor}44`, fontFamily: FONT_MONO_LOCAL }}>
+              {(track.artist ?? "?").slice(0, 2).toUpperCase()}
+            </div>
+          )}
+          <div style={{ position: "absolute", inset: 0,
+            background: "linear-gradient(to top, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%)" }} />
+          <span style={{ position: "absolute", top: 6, left: 7,
+            fontSize: 14, color: `${vibeColor}ee`,
+            textShadow: `0 0 10px ${vibeColor}cc`, lineHeight: 1 }}>
+            {vibe?.icon}
+          </span>
+          {isActive && (
+            <motion.div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
+              background: vibeColor, boxShadow: `0 0 8px ${vibeColor}` }}
+              animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
+          )}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "6px 8px" }}>
+            <p style={{ color: "#fff", fontSize: 10, fontWeight: "bold",
+              letterSpacing: "0.08em", margin: 0, overflow: "hidden",
+              textOverflow: "ellipsis", whiteSpace: "nowrap",
+              textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+              {track.title}
+            </p>
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 9,
+              letterSpacing: "0.06em", margin: 0, overflow: "hidden",
+              textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {track.artist}
+            </p>
           </div>
-        )}
-        <div style={{ position: "absolute", inset: 0,
-          background: "linear-gradient(to top, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%)" }} />
-        <span style={{ position: "absolute", top: 6, left: 7,
-          fontSize: 14, color: `${vibeColor}ee`,
-          textShadow: `0 0 10px ${vibeColor}cc`, lineHeight: 1 }}>
-          {vibe?.icon}
-        </span>
+        </motion.div>
         <motion.button whileTap={{ scale: 0.85 }}
           onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
           style={{ position: "absolute", top: 4, right: 4,
@@ -152,28 +172,11 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
             border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 18,
             lineHeight: 1, padding: "6px 8px", borderRadius: 2,
             fontFamily: FONT_MONO_LOCAL, minWidth: 32, minHeight: 32,
-            display: "flex", alignItems: "center", justifyContent: "center" }}>
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 2 }}>
           ⋮
         </motion.button>
-        {isActive && (
-          <motion.div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
-            background: vibeColor, boxShadow: `0 0 8px ${vibeColor}` }}
-            animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
-        )}
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "6px 8px" }}>
-          <p style={{ color: "#fff", fontSize: 10, fontWeight: "bold",
-            letterSpacing: "0.08em", margin: 0, overflow: "hidden",
-            textOverflow: "ellipsis", whiteSpace: "nowrap",
-            textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
-            {track.title}
-          </p>
-          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 9,
-            letterSpacing: "0.06em", margin: 0, overflow: "hidden",
-            textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {track.artist}
-          </p>
-        </div>
-      </motion.div>
+      </div>
     </>
   );
 };
@@ -297,7 +300,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center",
             justifyContent: "center", gap: 6, flexShrink: 0 }}>
-            <span style={{ color: vibeColor, fontSize: 28,
+            <span style={{ color: `${vibeColor}ee`, fontSize: 28,
               textShadow: `0 0 16px ${vibeColor}dd`, lineHeight: 1 }}>
               {vibe?.icon}
             </span>
@@ -353,7 +356,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         </div>
         <div className="flex flex-row items-center gap-2 flex-shrink-0">
           <span style={{
-            color: vibeColor, fontSize: 24,
+            color: `${vibeColor}ee`, fontSize: 24,
             textShadow: `0 0 14px ${vibeColor}cc`,
             lineHeight: "normal",
           }}>
