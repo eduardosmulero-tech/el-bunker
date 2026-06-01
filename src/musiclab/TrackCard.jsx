@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
 
@@ -66,58 +66,62 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
   const vibe = vibeConfig ?? null;
   const vibeColor = vibe?.color ?? "#555555";
   const ytId = extractYouTubeId(track.url ?? "");
-  const pressTimer = useRef(null);
   const [showCtx, setShowCtx] = useState(false);
-
-  const handleTouchStart = () => { pressTimer.current = setTimeout(() => setShowCtx(true), 500); };
-  const handleTouchEnd   = () => { clearTimeout(pressTimer.current); };
 
   return (
     <>
       <AnimatePresence>
         {showCtx && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.15 }}
-            style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.7)",
-              display: "flex", alignItems: "center", justifyContent: "center" }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.6)" }}
             onClick={() => setShowCtx(false)}
           >
             <motion.div
-              style={{ background: "#0a0a0a", border: `1px solid ${ACID}33`, borderRadius: 2,
-                padding: "8px 0", minWidth: 220, fontFamily: FONT_MONO }}
+              initial={{ y: "100%" }} animate={{ y: 0 }}
+              exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0,
+                background: "#0f0f0f", borderTop: `1px solid ${vibeColor}33`,
+                borderRadius: "6px 6px 0 0", paddingBottom: "env(safe-area-inset-bottom, 16px)",
+                fontFamily: FONT_MONO }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ padding: "8px 16px 12px", borderBottom: `1px solid ${ACID}15`,
-                color: ACID, fontSize: 11, letterSpacing: "0.2em", opacity: 0.6 }}>
-                {track.title}
+              <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${vibeColor}15`,
+                display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ color: vibeColor, fontSize: 13 }}>{vibe?.icon}</span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
+                    fontWeight: "bold", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {track.title}
+                  </p>
+                  <p style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em",
+                    margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {track.artist}
+                  </p>
+                </div>
               </div>
-              <button style={{ display: "block", width: "100%", padding: "10px 16px",
-                textAlign: "left", color: ACID, fontSize: 11, letterSpacing: "0.2em",
-                background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => { onAddToQueue?.(track); setShowCtx(false); }}>
-                ◈ AÑADIR A COLA
-              </button>
-              <button style={{ display: "block", width: "100%", padding: "10px 16px",
-                textAlign: "left", color: ACID, fontSize: 11, letterSpacing: "0.2em",
-                background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => { onAddNext?.(track); setShowCtx(false); }}>
-                ▷ REPRODUCIR A CONTINUACIÓN
-              </button>
-              <button style={{ display: "block", width: "100%", padding: "10px 16px",
-                textAlign: "left", color: ACID, fontSize: 11, letterSpacing: "0.2em",
-                background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => { onAddToPlaylist?.(track); setShowCtx(false); }}>
-                ◎ AÑADIR A PLAYLIST
-              </button>
+              {[
+                { icon: "▷", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
+                { icon: "◈", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
+                { icon: "◎", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
+              ].map(({ icon, label, action }) => (
+                <button key={label}
+                  style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
+                    padding: "14px 20px", textAlign: "left", color: vibeColor, fontSize: 12,
+                    letterSpacing: "0.2em", background: "transparent", border: "none",
+                    cursor: "pointer", fontFamily: FONT_MONO, borderBottom: `1px solid ${vibeColor}10` }}
+                  onClick={action}>
+                  <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}>{icon}</span>
+                  {label}
+                </button>
+              ))}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
       <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
-        onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}
-        onContextMenu={(e) => { e.preventDefault(); setShowCtx(true); }}
         className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
         style={{
           background: isActive ? `${vibeColor}10` : `${vibeColor}06`,
@@ -155,11 +159,21 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
             <p className="text-xs opacity-25 truncate mt-0.5 italic" style={{ color: vibeColor }}>{track.note}</p>
           )}
         </div>
-        <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
-          style={{ color: vibeColor, background: `${vibeColor}15`,
-            border: `1px solid ${vibeColor}33` }}>
-          {vibe?.icon}
-        </span>
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <span className="text-xs px-1.5 py-0.5 rounded-sm"
+            style={{ color: vibeColor, background: `${vibeColor}15`,
+              border: `1px solid ${vibeColor}33` }}>
+            {vibe?.icon}
+          </span>
+          <motion.button whileTap={{ scale: 0.85 }}
+            onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
+            style={{ color: `${vibeColor}88`, background: "transparent", border: "none",
+              cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "2px 4px",
+              fontFamily: FONT_MONO, letterSpacing: "0.05em" }}
+            title="Más opciones">
+            ···
+          </motion.button>
+        </div>
       </motion.div>
     </>
   );
