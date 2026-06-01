@@ -75,7 +75,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,0.6)" }}
+            style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)" }}
             onClick={() => setShowCtx(false)}
           >
             <motion.div
@@ -159,19 +159,21 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
             <p className="text-xs opacity-25 truncate mt-0.5 italic" style={{ color: vibeColor }}>{track.note}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <span className="text-xs px-1.5 py-0.5 rounded-sm"
-            style={{ color: vibeColor, background: `${vibeColor}15`,
-              border: `1px solid ${vibeColor}33` }}>
+        <div className="flex flex-row items-center gap-2 flex-shrink-0">
+          <span style={{
+            color: vibeColor, fontSize: 16,
+            textShadow: `0 0 10px ${vibeColor}cc`,
+            lineHeight: 1,
+          }}>
             {vibe?.icon}
           </span>
           <motion.button whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
-            style={{ color: `${vibeColor}88`, background: "transparent", border: "none",
-              cursor: "pointer", fontSize: 14, lineHeight: 1, padding: "2px 4px",
-              fontFamily: FONT_MONO, letterSpacing: "0.05em" }}
+            style={{ color: `${vibeColor}cc`, background: "transparent", border: "none",
+              cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "2px 2px",
+              fontFamily: FONT_MONO }}
             title="Más opciones">
-            ···
+            ⋮
           </motion.button>
         </div>
       </motion.div>
