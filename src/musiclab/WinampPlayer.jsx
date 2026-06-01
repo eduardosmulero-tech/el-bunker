@@ -45,7 +45,7 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
 );
 
 // ─── WINAMP PLAYER ───────────────────────────────────────────
-export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
+export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS, vibeConf: vibeConfProp }) => {
   const {
     activeTrack: track, setActiveTrack,
     isPlaying: playing, setIsPlaying: setPlaying,
@@ -69,7 +69,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS }) => {
   const titleRef = useRef(null);
 
   // trackVibe → acento visual del reproductor (ADR-011)
-  const vibeConf = getVibeConfig(trackVibe ?? "gaming");
+  // vibeConfProp viene de MusicLab (resuelto desde DB, incluye tags custom)
+  // fallback a getVibeConfig canónico solo si no se pasa prop
+  const vibeConf = vibeConfProp ?? getVibeConfig(trackVibe ?? "gaming");
 
   useEffect(() => {
     // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
