@@ -26,8 +26,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
     const allTags = tags.length > 0 ? tags : CANONICAL_VIBE_TAGS;
     const found = allTags.find((t) => t.id === tagId);
     if (found) {
-      // Tags de DB tienen seedColor, tags canonicos tienen palette.accent
-      return found.palette?.accent ?? found.seedColor ?? getVibeAccentCanonical(tagId);
+      // Tags de DB pueden tener: palette.accent (canónico), seedColor, o color directo
+      return found.palette?.accent ?? found.seedColor ?? found.color ?? getVibeAccentCanonical(tagId);
     }
     return getVibeAccentCanonical(tagId);
   }, [tags]);
