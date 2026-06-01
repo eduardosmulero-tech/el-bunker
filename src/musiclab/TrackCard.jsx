@@ -123,9 +123,9 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
         style={{
           position: "relative", aspectRatio: "1", borderRadius: 4,
           overflow: "hidden", cursor: "pointer",
-          border: `1px solid ${isActive ? vibeColor + "66" : vibeColor + "22"}`,
-          boxShadow: isActive ? `0 0 14px ${vibeColor}33` : "none",
-          background: ytId ? "transparent" : `${vibeColor}12`,
+          border: `1px solid ${isActive ? vibeColor + "88" : vibeColor + "44"}`,
+          boxShadow: isActive ? `0 0 14px ${vibeColor}44` : "none",
+          background: ytId ? "transparent" : `${vibeColor}18`,
           fontFamily: FONT_MONO_LOCAL,
         }}>
         {ytId ? (
@@ -141,17 +141,18 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
         <div style={{ position: "absolute", inset: 0,
           background: "linear-gradient(to top, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%)" }} />
         <span style={{ position: "absolute", top: 6, left: 7,
-          fontSize: 14, color: vibeColor,
+          fontSize: 14, color: `${vibeColor}ee`,
           textShadow: `0 0 10px ${vibeColor}cc`, lineHeight: 1 }}>
           {vibe?.icon}
         </span>
         <motion.button whileTap={{ scale: 0.85 }}
           onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
           style={{ position: "absolute", top: 4, right: 4,
-            color: `${vibeColor}cc`, background: "rgba(0,0,0,0.4)",
-            border: "none", cursor: "pointer", fontSize: 18,
-            lineHeight: 1, padding: "2px 4px", borderRadius: 2,
-            fontFamily: FONT_MONO_LOCAL }}>
+            color: `${vibeColor}cc`, background: "rgba(0,0,0,0.55)",
+            border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 18,
+            lineHeight: 1, padding: "6px 8px", borderRadius: 2,
+            fontFamily: FONT_MONO_LOCAL, minWidth: 32, minHeight: 32,
+            display: "flex", alignItems: "center", justifyContent: "center" }}>
           ⋮
         </motion.button>
         {isActive && (
@@ -241,9 +242,9 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           style={{
             position: "relative", display: "flex", alignItems: "stretch", gap: 12,
             padding: 10, borderRadius: 4, cursor: "pointer",
-            background: isActive ? `${vibeColor}12` : `${vibeColor}07`,
-            border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "1a"}`,
-            boxShadow: isActive ? `0 0 18px ${vibeColor}22` : "none",
+            background: isActive ? `${vibeColor}18` : `${vibeColor}0e`,
+            border: `1px solid ${isActive ? vibeColor + "66" : vibeColor + "33"}`,
+            boxShadow: isActive ? `0 0 18px ${vibeColor}33` : "none",
             fontFamily: FONT_MONO,
           }}
         >
@@ -268,7 +269,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 3 }}>
             <p style={{ color: vibeColor, fontSize: 12, fontWeight: "bold", margin: 0,
               overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              opacity: isActive ? 1 : 0.7,
+              opacity: isActive ? 1 : 0.85,
               textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
               {track.title}
             </p>
@@ -315,9 +316,9 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
         className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
         style={{
-          background: isActive ? `${vibeColor}10` : `${vibeColor}06`,
-          border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "18"}`,
-          boxShadow: isActive ? `0 0 16px ${vibeColor}22` : "none",
+          background: isActive ? `${vibeColor}18` : `${vibeColor}0e`,
+          border: `1px solid ${isActive ? vibeColor + "66" : vibeColor + "33"}`,
+          boxShadow: isActive ? `0 0 16px ${vibeColor}33` : "none",
           fontFamily: FONT_MONO,
         }}
       >
@@ -341,7 +342,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold truncate"
             style={{ color: vibeColor,
-              opacity: isActive ? 1 : 0.55,
+              opacity: isActive ? 1 : 0.75,
               textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
             {track.title}
           </p>
