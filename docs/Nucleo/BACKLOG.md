@@ -8,15 +8,7 @@
 
 ## PRIORIDAD ALTA — desbloquean features
 
-### VB9 — Vibe solo afecta WinampPlayer, no se propaga a toda la UI
-**Archivo:** `src/musiclab/WinampPlayer.jsx` + CSS global
-**Causa raíz:** Variables CSS de vibe no se setean en `:root`, solo en el componente
-**Fix conocido:** Propagar variables CSS dinámicas en `:root` desde PlayerContext
-**Bloquea:** VB1 completo (spec: vibe afecta toda la UI excepto botones destructivos)
-
----
-
-## PRIORIDAD MEDIA — funcionalidad pendiente de spec
+Ninguno. Ver RESUELTOS.
 
 ### Q2/Q3 — Historial se pierde al recargar
 **Archivo:** `src/core/PlayerContext.jsx`
@@ -52,7 +44,9 @@
 
 | ID | Fix | Archivo | Fecha |
 |----|-----|---------|-------|
-| PLIEGO-172 | Reemplazar el archivo vacío con el formato definit… | SESION.md | 2026-06-01 |
-| PLIEGO-173 | Crear BACKLOG.md canónico en docs/Nucleo/ con los … | BACKLOG.md | 2026-06-01 |
-| PLIEGO-175 | Eliminar audit histórico S42-S43 de BACKLOG.md par… | BACKLOG.md | 2026-06-01 |
-| PLIEGO-176 | append_resuelto_backlog mantiene maximo 5 filas en… | pliego_apply.py | 2026-06-01 |
+| PLIEGO-203 | Eliminar botón ⚡ lanzar drop de las TrackCards | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-204 | Menú de track como bottom sheet con botón ⋯ — elim… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-205 | Layout derecho card en fila, icono tag más grande … | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-206 | Bottom sheet en portal + icono tag doble tamaño al… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-207 | Icono tag fontSize 24, botón ⋮ fontSize 22 | TrackCard.jsx | 2026-06-01 |
+| VB9 | Vibe propagado a shell completo — TRACKS Fase A ready | PlayerContext.jsx | 2026-06-01 |
