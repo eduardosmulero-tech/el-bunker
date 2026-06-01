@@ -764,7 +764,7 @@ export default function MusicLab({
                       <TrackCard key={track.id} track={track}
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.tag ?? track.vibe)}
-                        onClick={() => { setPlaybackContext(filteredTracks, null); playTrack(track); }}
+                        onClick={() => { playTrack(track); }}
                         onAddToQueue={handleAddToQueue}
                         onAddNext={handleAddNext}
                         onAddToPlaylist={handleAddToPlaylist}
