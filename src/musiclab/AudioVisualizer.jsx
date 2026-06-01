@@ -39,36 +39,44 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Fix 1 — sin loop idle: canvas estático cuando no hay reproducción
+    if (!isPlaying) {
+      cancelAnimationFrame(animFrameRef.current);
+      const ctx = canvas.getContext("2d");
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w && h) {
+        canvas.width  = w * window.devicePixelRatio;
+        canvas.height = h * window.devicePixelRatio;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      return;
+    }
+
     const ctx    = canvas.getContext("2d");
     const BAR_COUNT = 32;
 
+    // Fix 2 — flag cancelled: evita doble loop en React 18 / skips rápidos
+    let cancelled = false;
+
     const draw = () => {
+      if (cancelled) return;
       animFrameRef.current = requestAnimationFrame(draw);
       const W = canvas.width;
       const H = canvas.height;
       if (!W || !H) return;
       ctx.clearRect(0, 0, W, H);
 
-      let dataArray;
-      if (analyserRef.current && isPlaying) {
-        const bufferLen = analyserRef.current.frequencyBinCount;
-        dataArray = new Uint8Array(bufferLen);
-        analyserRef.current.getByteFrequencyData(dataArray);
-      }
+      const bufferLen = analyserRef.current?.frequencyBinCount ?? 0;
+      const dataArray = bufferLen ? new Uint8Array(bufferLen) : null;
+      if (dataArray) analyserRef.current.getByteFrequencyData(dataArray);
 
       const barW = (W / BAR_COUNT) - 1.5;
-      const now  = performance.now() / 1000;
 
       for (let i = 0; i < BAR_COUNT; i++) {
-        let barH;
-        if (dataArray && isPlaying) {
-          const idx = Math.floor((i / BAR_COUNT) * dataArray.length);
-          barH = (dataArray[idx] / 255) * H * 0.9;
-        } else {
-          const base   = Math.sin(now * 1.2 + i * 0.35) * 0.38 + 0.52;
-          const ripple = Math.sin(now * 3.1 + i * 0.7)  * 0.12;
-          barH = Math.max((base + ripple) * H * 0.72, H * 0.08);
-        }
+        const idx  = dataArray ? Math.floor((i / BAR_COUNT) * dataArray.length) : -1;
+        const barH = dataArray ? (dataArray[idx] / 255) * H * 0.9 : H * 0.05;
 
         const x    = i * (barW + 1.5);
         const y    = H - barH;
@@ -92,7 +100,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
         ctx.quadraticCurveTo(x, y, x + radius, y);
         ctx.fill();
 
-        if (isPlaying && barH > H * 0.3) {
+        if (barH > H * 0.3) {
           ctx.fillStyle   = "#ffffff88";
           ctx.shadowBlur  = 12;
           ctx.shadowColor = accentColor;
@@ -104,6 +112,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
 
     let drawStarted = false;
     const tryStart = () => {
+      if (cancelled) return;
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
       if (w === 0 || h === 0) {
@@ -125,11 +134,25 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     };
+
+    // Fix 3 — visibilitychange: parar rAF cuando la app va a background
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animFrameRef.current);
+      } else if (!cancelled) {
+        draw();
+      }
+    };
+
     tryStart();
     window.addEventListener("resize", resize);
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
+      cancelled = true;
       cancelAnimationFrame(animFrameRef.current);
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [isPlaying, accentColor]);
 
