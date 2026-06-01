@@ -99,7 +99,7 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut, accent
       </div>
 
       {/* RIGHT: Clock */}
-      <div className="flex items-center gap-4 text-xs whitespace-nowrap" style={{ color: accentColor, opacity: 0.5 }}>
+      <div className="flex items-center gap-4 text-xs whitespace-nowrap" style={{ color: accentColor, opacity: 0.75 }}>
         <span className="tracking-wider">{dateStr}</span>
         <span
           className="font-bold tracking-widest tabular-nums"
@@ -157,7 +157,7 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
             whileTap={{ scale: 0.9 }}
             className="relative flex flex-col items-center gap-1 px-3 py-1 text-xs tracking-widest uppercase transition-all"
             style={{
-              color: isActive ? accentColor : `${accentColor}4d`,
+              color: isActive ? accentColor : `${accentColor}88`,
               textShadow: isActive ? `0 0 12px ${accentColor}` : "none",
             }}
           >
