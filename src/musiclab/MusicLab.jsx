@@ -110,7 +110,10 @@ export default function MusicLab({
     playbackContext, setPlaybackContext,
     playHistory,
     queueContextName, setQueueContextName,
+    trackVibe, resolveVibeAccent,
   } = usePlayer();
+  // accentColor — sigue el vibe activo. ACID si no hay track.
+  const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
@@ -424,14 +427,15 @@ export default function MusicLab({
             ...(localDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${localDrops.length}]`, icon: "⚡" }] : []),
           ].map((tab) => {
             const isActive = activeTab === tab.id;
+            const tabColor = tab.id === "drops" ? PURPLE : accentColor;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
                 className="flex-1 py-2.5 text-xs tracking-[0.25em] uppercase font-bold transition-all"
                 style={{ fontFamily: FONT_MONO,
-                  color: isActive ? (tab.id === "drops" ? PURPLE : ACID) : `${ACID}33`,
-                  background: isActive ? (tab.id === "drops" ? `${PURPLE}15` : `${ACID}10`) : "transparent",
-                  borderBottom: isActive ? `2px solid ${tab.id === "drops" ? PURPLE : ACID}` : "2px solid transparent",
-                  textShadow: isActive ? `0 0 8px ${tab.id === "drops" ? PURPLE : ACID}88` : "none" }}>
+                  color: isActive ? tabColor : `${accentColor}33`,
+                  background: isActive ? `${tabColor}10` : "transparent",
+                  borderBottom: isActive ? `2px solid ${tabColor}` : "2px solid transparent",
+                  textShadow: isActive ? `0 0 8px ${tabColor}88` : "none" }}>
                 {tab.icon} {tab.label}
               </button>
             );
@@ -652,9 +656,9 @@ export default function MusicLab({
 
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span style={{ color: ACID }}>◎</span>
-                  <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>TRACKS</span>
-                  <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
+                  <span style={{ color: accentColor }}>◎</span>
+                  <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accentColor }}>TRACKS</span>
+                  <span className="text-xs opacity-30 tabular-nums" style={{ color: accentColor }}>
                     [{String(filteredTracks.length).padStart(2, "0")}]
                   </span>
                 </div>
@@ -662,15 +666,15 @@ export default function MusicLab({
                   <motion.button whileTap={{ scale: 0.9 }} title="Buscar track"
                     onClick={() => { setShowTrackSearch((p) => !p); setTrackSearch(""); }}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: ACID, border: `1px solid ${showTrackSearch ? ACID + "66" : ACID + "33"}`,
-                      background: showTrackSearch ? `${ACID}15` : `${ACID}06` }}>
+                    style={{ color: accentColor, border: `1px solid ${showTrackSearch ? accentColor + "66" : accentColor + "33"}`,
+                      background: showTrackSearch ? `${accentColor}15` : `${accentColor}06` }}>
                     ⌕
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
                     onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: ACID, border: `1px solid ${showAdd ? ACID + "66" : ACID + "33"}`,
-                      background: showAdd ? `${ACID}15` : `${ACID}06` }}>
+                    style={{ color: accentColor, border: `1px solid ${showAdd ? accentColor + "66" : accentColor + "33"}`,
+                      background: showAdd ? `${accentColor}15` : `${accentColor}06` }}>
                     {showAdd ? "✕" : "+"}
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Editar track"
