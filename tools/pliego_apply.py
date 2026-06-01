@@ -236,7 +236,7 @@ def update_proximo_pliego(estado_path: Path, pliego_id: str) -> bool:
             return False
         next_num = int(m.group(1)) + 1
         new_content, n = re.subn(
-            r"(\*\*Próximo pliego:\*\*\s*)PLIEGO-\d+",
+            r"(\*\*Pr[oó]ximo pliego:\*\*\s*)PLIEGO-\d+",
             lambda mo: mo.group(1) + f"PLIEGO-{next_num}",
             content
         )
