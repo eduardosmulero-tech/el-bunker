@@ -8,7 +8,13 @@
 
 ## PRIORIDAD ALTA — desbloquean features
 
-Ninguno. Ver RESUELTOS.
+### CTX-1 — Menú ⋮ no abre en tracks recién añadidos
+**Archivo:** `src/musiclab/TrackCard.jsx`
+**Causa raíz:** pendiente — error en terminal por confirmar en próxima sesión
+**Síntoma:** tap en ⋮ tras añadir track nuevo lanza error, bottom sheet no aparece
+
+### TRACKS-M23 — CERRADO S44 (acciones al ⋮, bottom sheet)
+### UX10/UI-M25 — CERRADO S44 (toggle ☰/⊞/❒, modo tarjeta difere a STAT-M9)
 
 ### Q2/Q3 — Historial se pierde al recargar
 **Archivo:** `src/core/PlayerContext.jsx`
@@ -44,9 +50,8 @@ Ninguno. Ver RESUELTOS.
 
 | ID | Fix | Archivo | Fecha |
 |----|-----|---------|-------|
-| PLIEGO-203 | Eliminar botón ⚡ lanzar drop de las TrackCards | TrackCard.jsx | 2026-06-01 |
-| PLIEGO-204 | Menú de track como bottom sheet con botón ⋯ — elim… | TrackCard.jsx | 2026-06-01 |
-| PLIEGO-205 | Layout derecho card en fila, icono tag más grande … | TrackCard.jsx | 2026-06-01 |
-| PLIEGO-206 | Bottom sheet en portal + icono tag doble tamaño al… | TrackCard.jsx | 2026-06-01 |
 | PLIEGO-207 | Icono tag fontSize 24, botón ⋮ fontSize 22 | TrackCard.jsx | 2026-06-01 |
 | VB9 | Vibe propagado a shell completo — TRACKS Fase A ready | PlayerContext.jsx | 2026-06-01 |
+| PLIEGO-211 | Toggle viewMode lista/grid/tarjeta con persistenci… | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-212 | Modo tarjeta expandida (viewMode card) + component… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-213 | Añadir TrackCardGrid al import de TrackCard | MusicLab.jsx | 2026-06-01 |
