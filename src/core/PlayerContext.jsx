@@ -255,6 +255,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       autoPlaySignal, setAutoPlaySignal,
       syncStatus,
       trackVibe,
+      resolveVibeAccent,
       masterVolume, setMasterVolume,
       audioRef,
       skip, addToQueue, addNext, removeFromQueue, playTrack,
