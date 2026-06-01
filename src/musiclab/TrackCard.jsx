@@ -46,8 +46,8 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
     {onOpenTagManager && (
       <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
         style={{
-          position: "absolute", right: 0, top: 0,
-          alignSelf: "center",
+          position: "absolute", right: 0, top: "50%",
+          transform: "translateY(-50%)",
           width: 32, height: 28,
           display: "flex", alignItems: "center", justifyContent: "center",
           borderRadius: 2, fontFamily: FONT_MONO, fontSize: 13,
