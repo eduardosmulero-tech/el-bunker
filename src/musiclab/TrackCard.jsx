@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
 
@@ -71,7 +72,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
   return (
     <>
       <AnimatePresence>
-        {showCtx && (
+        {showCtx && createPortal(
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
@@ -117,7 +118,8 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
                 </button>
               ))}
             </motion.div>
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
       <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
@@ -161,9 +163,9 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         </div>
         <div className="flex flex-row items-center gap-2 flex-shrink-0">
           <span style={{
-            color: vibeColor, fontSize: 16,
-            textShadow: `0 0 10px ${vibeColor}cc`,
-            lineHeight: 1,
+            color: vibeColor, fontSize: 32,
+            textShadow: `0 0 14px ${vibeColor}cc`,
+            lineHeight: "normal",
           }}>
             {vibe?.icon}
           </span>
