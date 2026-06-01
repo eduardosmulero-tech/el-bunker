@@ -303,11 +303,62 @@ def append_resuelto_backlog(backlog_path: Path, pliego_id: str,
         else:
             lines.insert(insert_at, nueva_fila)
 
+        # Mantener maximo 5 filas en RESUELTOS — volcar exceso a legacy
+        lines = _trim_resueltos(lines, table_start, max_rows=5,
+                                historial_path=backlog_path.parent.parent / "legacy" / "PLIEGOS_HISTORIAL.md")
+
         backlog_path.write_text("".join(lines), encoding="utf-8")
         return True
     except Exception as e:
         print(f"  ⚠ No se pudo actualizar BACKLOG.md: {e}")
         return False
+
+
+def _trim_resueltos(lines: list[str], table_start: int, max_rows: int,
+                    historial_path: Path) -> list[str]:
+    """
+    Si la tabla RESUELTOS tiene mas de max_rows filas de datos,
+    elimina las mas antiguas (las primeras) y las appende a historial_path.
+    Devuelve la lista de lineas modificada.
+    """
+    # Localizar filas de datos (empiezan con | pero no son cabecera ni separador)
+    data_rows = []
+    for i, line in enumerate(lines):
+        if i <= table_start:
+            continue
+        if line.startswith("|") and not line.startswith("| ID") and not re.match(r"^\|[-| ]+\|", line):
+            data_rows.append(i)
+
+    excess = len(data_rows) - max_rows
+    if excess <= 0:
+        return lines
+
+    # Filas a rotar: las mas antiguas (primeras en la lista)
+    to_rotate = data_rows[:excess]
+    rotated_text = "".join(lines[i] for i in to_rotate)
+
+    # Volcar a historial
+    try:
+        historial_path.parent.mkdir(parents=True, exist_ok=True)
+        if not historial_path.exists():
+            header = (
+                "# PLIEGOS_HISTORIAL.md — el_bunker\n"
+                "> Historial completo de pliegos aplicados. No se carga en arranque.\n\n"
+                "| ID | Fix | Archivo | Fecha |\n"
+                "|----|-----|---------|-------|\n"
+            )
+            historial_path.write_text(header + rotated_text, encoding="utf-8")
+        else:
+            existing = read_file(historial_path)
+            historial_path.write_text(existing + rotated_text, encoding="utf-8")
+    except Exception as e:
+        print(f"  Aviso: No se pudo escribir en PLIEGOS_HISTORIAL.md: {e}")
+
+    # Eliminar filas rotadas de lines (en orden inverso para no desplazar indices)
+    for i in reversed(to_rotate):
+        lines.pop(i)
+
+    return lines
 
 
 def update_estado_backlog_flow(root: Path, pliego_id: str,
@@ -343,7 +394,6 @@ def update_estado_backlog_flow(root: Path, pliego_id: str,
 
 # ─── GIT ─────────────────────────────────────────────────────────────────────
 
-SEARCH/REPLACE 2 — llamar al flujo justo antes del commit, pasando archivos
 
 def run_git(args: list[str], root: Path) -> tuple[int, str]:
     """Ejecuta un comando git en la raíz del proyecto."""

@@ -117,3 +117,47 @@ BUG-18: sync masterVolume → audioRef.current.volume antes de play() en autoPla
 ## PLIEGO-083 — MusicLab.jsx: Paginación en DOM
 - **Fecha:** 2026-05-28
 - **Estado:** Aplicado (Parcial). Bloques 1 y 3 en producción.
+### PLIEGO-088 — WinampPlayer.jsx
+Fecha: 2026-05-28 · Modelo: qwen3-8b-think · Estado: aplicado · Sesión: S34
+skipDir no estaba en deps de useEffect MediaSession — stale closure en previoustrack handler
+
+### PLIEGO-089 — tools/pliego_apply.py
+Fecha: 2026-05-28 · Modelo: qwen3-8b-nothink · Estado: aplicado · Sesión: S34
+npm.cmd en Windows — subprocess.run(["npm"]) no encontraba npm tras reinicio
+
+### PLIEGO-090 — src/layout/App.jsx
+Fecha: 2026-05-28 · Modelo: qwen3-8b-think · Estado: aplicado · Sesión: S34
+patchDb no se pasaba a MusicLab — handleDeletePlaylist lanzaba ReferenceError
+
+### PLIEGO-091 — src/musiclab/MusicLab.jsx
+Fecha: 2026-05-28 · Modelo: qwen3-8b-nothink · Estado: aplicado · Sesión: S34
+patchDb añadido a firma de props de MusicLab
+Fecha: 2026-05-28 · Modelo: qwen3-14b-nothink · Estado: aplicado · Sesión: S34
+### PLIEGO-083 — src/musiclab/MusicLab.jsx
+visibleCount 50 inicial — reset al cambiar libraryFilter — botón CARGAR MÁS en bloques de 50
+
+| # | Archivo/s | Cambio | Commit |
+|---|---|---|---|
+| 088 | WinampPlayer.jsx | skipDir en deps useEffect MediaSession — fix stale closure previoustrack | bbce744 |
+| 089 | tools/pliego_apply.py | npm.cmd en Windows — subprocess no encontraba npm | e71961f |
+| 090 | App.jsx | patchDb pasado a MusicLab — fix handleDeletePlaylist ReferenceError | 146959b |
+| 091 | MusicLab.jsx | patchDb añadido a firma de props | e121410 |
+| 094 | tokens.js | Sistema de tags canónico VIBE_TAGS + paletas HSL completas por tag | 7e97183 |
+| 095/096 | PlayerContext.jsx, REGLAS.md | PlayerContext migra a getVibeAccent. REGLAS fix formato multi-bloque | 8650199 |
+| 097 | AddTrackForm.jsx | Estado interno migra vibe→tag con fallback legacy | 2ad647d |
+| 097b/098b | AddTrackForm.jsx, MusicLab.jsx | Migración tag completa | c82954d |
+| 098 | MusicLab.jsx | DEMO_TRACKS migrar vibe→tag schema v4 | 73cb751 |
+| 099 | WinampPlayer.jsx | accentColor leer vibeConf.palette.accent (campo correcto tokens.js) | 4137ada |
+| 100 | WinampPlayer.jsx | Añadir import getVibeConfig desde tokens.js | 0ff2f6d |
+| 100b/100c | WinampPlayer.jsx | Eliminar getVibeConfig local — usar tokens.js exclusivamente | 34fa56c |
+| 101 | AudioVisualizer.jsx | Helper withAlpha() — fix canvas con accentColor HSL | 05b0d0a |
+| 102 | WinampPlayer.jsx | Helper withAlpha() local — migración completa estilos inline hex→HSL | 3c20cfe |
+- **PLIEGO-156:** Fix TAG-01 (useRef, emptyForm, eliminación IconPicker fantasma). [Aplicado]
+- **PLIEGO-157:** Migración de TagManager fuera del tab TRACKS a overlay global. [Aplicado]
+- **PLIEGO-158:** Propagación de prop `onOpenTagManager` en barras LISTS y COLA. [Aplicado]
+- **PLIEGO-159:** Intento de scroll fix con `touchAction: pan-x`. [Aplicado]
+- **PLIEGO-160:** Intento de scroll fix forzando reflow de width a 0. [Aplicado]
+- **PLIEGO-161:** Intento de scroll fix eliminando contenedor flex externo. [Aplicado]
+- **PLIEGO-162:** Ajuste de z-index y padding para evitar solapamiento de overlay con header. [Aplicado]
+- **PLIEGO-163:** Fix definitivo scroll Android eliminando el listener `whileTap` de framer-motion. [Aplicado]
+- **PLIEGO-164/165:** Intentos fallidos/parciales de corregir corte de bordes por colisión con `overflow-x`. [Descartado/Revertido]

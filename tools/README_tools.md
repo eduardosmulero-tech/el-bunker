@@ -32,6 +32,9 @@ python pliego_apply.py pliego_076.txt --root C:\Proyectos\el-bunker
 | `--root <ruta>` | `..` (carpeta padre) | Raíz del proyecto |
 | `--archivo <ruta>` | *(detectado del pliego)* | Fuerza un archivo concreto |
 | `--dry-run` | off | Simula sin escribir nada |
+| `--skip-build` | off | Omite `npm run build` (útil para pliegos de documentación) |
+
+SEARCH/REPLACE 2 — eliminar campo Modelo del formato de pliego
 
 ### Dry-run (verificar antes de aplicar)
 
@@ -75,12 +78,13 @@ El script parsea pliegos con este formato (sin triple-backtick):
 ```
 PLIEGO-NNN — nombre
 Fecha: YYYY-MM-DD
-Modelo: qwen3-...
 Estado: pendiente
 ARCHIVOS: src/ruta/al/Archivo.jsx
 CAMBIO: descripción
 CRITERIO DE ÉXITO: comportamiento observable
 RESULTADO: —
+
+SEARCH/REPLACE 3 — añadir sección de actualización automática antes del workflow
 
 SEARCH/REPLACE 1 — descripción opcional
 SEARCH:
@@ -103,7 +107,22 @@ Reglas críticas:
 
 ---
 
-## Workflow completo con el script
+## Actualización automática de ESTADO.md y BACKLOG.md
+
+Tras un apply + build exitosos, el script detecta `docs/Nucleo/ESTADO.md` y
+`docs/Nucleo/BACKLOG.md` y pregunta si actualizarlos:
+
+```
+  ── Estado del proyecto ──────────────────────────────────
+  Archivos encontrados en docs/Nucleo: ESTADO.md, BACKLOG.md
+  ¿Actualizar ESTADO.md y BACKLOG.md con PLIEGO-166? [s/N]
+```
+
+Si confirmas:
+- **ESTADO.md** — actualiza `**Próximo pliego:**` al número siguiente.
+- **BACKLOG.md** — inserta una fila en la tabla `## RESUELTOS`. No hace append al final: el archivo no crece en estructura, solo en filas.
+
+Esto garantiza que el estado queda registrado aunque la sesión de Claude se interrumpa.
 
 ```powershell
 # 1. Guardar el pliego .txt en tools/

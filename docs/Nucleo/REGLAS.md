@@ -25,8 +25,9 @@ Loop es triestado.
 ## PLANTILLA DE PLIEGO
 PLIEGO-[NNN] — [nombre]
 Fecha: YYYY-MM-DD
-Modelo: [qwen3-8b-nothink | qwen3-8b-think | qwen3-14b-nothink | qwen3-14b-think]
 Estado: [pendiente | aplicado | descartado]
+
+SEARCH/REPLACE 2 — reemplazar tabla de modelos
 ARCHIVOS: [ruta desde raíz]
 CAMBIO: [descripción técnica]
 CRITERIO DE ÉXITO: [comportamiento observable]
@@ -56,20 +57,22 @@ Prerequisito: ollama list + ollama run qwen3:14b.
 
 ## TABLA DE MODELOS
 Modelo | Cuándo
-qwen3-8b-nothink | < 20 líneas, CSS, textos
-qwen3-8b-think | < 20 líneas con lógica
-qwen3-14b-nothink | > 100 líneas
-qwen3-14b-think | auth, Drive API, Service Worker
+deepseek/deepseek-chat    | Todo uso diario: pliegos, bugs, refactors
+deepseek/deepseek-r1-0528 | Arquitectura o decisiones complejas
+
+SEARCH/REPLACE 3 — actualizar checklist de cierre de pliego con rutas correctas
 
 ## CHECKLIST CIERRE DE PLIEGO
- Marcar stale en docs/Arquitectura/INDEX.md
- Actualizar docs/Nucleo/CONTRATO.md si hay ADR
- Actualizar docs/Nucleo/ESTADO.md
- Actualizar número en PLIEGOS.md
+ Marcar stale en docs/Arquitectura/INDEX.md si el pliego toca archivos listados
+ Actualizar docs/Nucleo/CONTRATO.md si hay ADR nuevo
+ Actualizar docs/Nucleo/ESTADO.md (próximo pliego + bugs)
+ pliego_apply.py actualiza ESTADO.md y BACKLOG.md automáticamente
+
+SEARCH/REPLACE 4 — actualizar checklist de cierre de sesión con rutas correctas
 
 ## CHECKLIST CIERRE DE SESIÓN
- Actualizar SESION.md
- Actualizar docs de Arquitectura marcados stale
- Mover bugs a ERRORES_RESUELTOS.md
- Mover pliegos a PLIEGOS_HISTORIAL.md
- Escribir entrada en SESIONES.md
+ Actualizar docs/Nucleo/SESION.md con resumen de la sesión
+ Actualizar docs de Arquitectura marcados stale en INDEX.md
+ Bugs resueltos: pliego_apply.py los registra en BACKLOG.md automáticamente
+ Pliegos aplicados: añadir fila a docs/legacy/PLIEGOS_HISTORIAL.md
+ Escribir entrada en docs/legacy/SESIONES.md
