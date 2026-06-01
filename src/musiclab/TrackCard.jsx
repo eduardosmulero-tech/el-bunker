@@ -167,6 +167,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
         </motion.div>
         <motion.button whileTap={{ scale: 0.85 }}
           onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
+          onPointerDown={(e) => e.stopPropagation()}
           style={{ position: "absolute", top: 4, right: 4,
             color: `${vibeColor}cc`, background: "rgba(0,0,0,0.55)",
             border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 18,
@@ -306,9 +307,12 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
             </span>
             <motion.button whileTap={{ scale: 0.85 }}
               onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
-              style={{ color: `${vibeColor}cc`, background: "transparent", border: "none",
-                cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "2px 2px",
-                fontFamily: FONT_MONO }}
+              onPointerDown={(e) => e.stopPropagation()}
+              style={{ color: `${vibeColor}cc`, background: "rgba(0,0,0,0.4)",
+                border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 20,
+                lineHeight: 1, padding: "6px 8px", borderRadius: 2,
+                fontFamily: FONT_MONO, minWidth: 32, minHeight: 32,
+                display: "flex", alignItems: "center", justifyContent: "center" }}
               title="Más opciones">
               ⋮
             </motion.button>
@@ -364,9 +368,12 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           </span>
           <motion.button whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
-            style={{ color: `${vibeColor}cc`, background: "transparent", border: "none",
-              cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "2px 2px",
-              fontFamily: FONT_MONO }}
+            onPointerDown={(e) => e.stopPropagation()}
+            style={{ color: `${vibeColor}cc`, background: "rgba(0,0,0,0.4)",
+              border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 20,
+              lineHeight: 1, padding: "6px 8px", borderRadius: 2,
+              fontFamily: FONT_MONO, minWidth: 32, minHeight: 32,
+              display: "flex", alignItems: "center", justifyContent: "center" }}
             title="Más opciones">
             ⋮
           </motion.button>
