@@ -12,13 +12,13 @@ const extractYouTubeId = (url) => {
 };
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen }) => (
-  <div style={{ position: "relative", width: "100%", minWidth: 0, paddingBottom: 8, paddingTop: 4 }}>
+  <div style={{ position: "relative", width: "100%", minWidth: 0, paddingBottom: 8 }}>
     <div style={{
       display: "flex", gap: 8,
       overflowX: "auto", paddingBottom: 6, paddingTop: 4,
       scrollbarWidth: "none", touchAction: "pan-x",
       paddingRight: onOpenTagManager ? 44 : 0,
-      paddingLeft: 2,
+      paddingLeft: 4,
     }}>
       {VIBE_TAGS.map((vibe) => {
         const isActive = activeVibe === vibe.id;
@@ -46,7 +46,8 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
     {onOpenTagManager && (
       <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
         style={{
-          position: "absolute", right: 0, top: 4,
+          position: "absolute", right: 0, top: 0,
+          alignSelf: "center",
           width: 32, height: 28,
           display: "flex", alignItems: "center", justifyContent: "center",
           borderRadius: 2, fontFamily: FONT_MONO, fontSize: 13,
@@ -150,9 +151,9 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
               textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
             {track.title}
           </p>
-          <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+          <p className="text-xs opacity-40 truncate" style={{ color: vibeColor }}>{track.artist}</p>
           {track.note && (
-            <p className="text-xs opacity-25 truncate mt-0.5 italic" style={{ color: ACID }}>{track.note}</p>
+            <p className="text-xs opacity-25 truncate mt-0.5 italic" style={{ color: vibeColor }}>{track.note}</p>
           )}
         </div>
         <div className="flex flex-col items-end gap-1">
