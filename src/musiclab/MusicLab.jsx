@@ -12,7 +12,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { fetchPlaylists, createPlaylist, addTrackToPlaylist, updateData } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
-import { VibeTagBar, TrackCard } from "./TrackCard";
+import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
 import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
