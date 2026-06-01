@@ -186,57 +186,55 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
 
   return (
     <>
-      <AnimatePresence>
-        {showCtx && createPortal(
+      {showCtx && createPortal(
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.15 }}
+          style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)" }}
+          onClick={() => setShowCtx(false)}
+        >
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
-            style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)" }}
-            onClick={() => setShowCtx(false)}
+            initial={{ y: "100%" }} animate={{ y: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+            style={{ position: "absolute", bottom: 0, left: 0, right: 0,
+              background: "#0f0f0f", borderTop: `1px solid ${vibeColor}33`,
+              borderRadius: "6px 6px 0 0", paddingBottom: "env(safe-area-inset-bottom, 16px)",
+              fontFamily: FONT_MONO }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }}
-              exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              style={{ position: "absolute", bottom: 0, left: 0, right: 0,
-                background: "#0f0f0f", borderTop: `1px solid ${vibeColor}33`,
-                borderRadius: "6px 6px 0 0", paddingBottom: "env(safe-area-inset-bottom, 16px)",
-                fontFamily: FONT_MONO }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${vibeColor}15`,
-                display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ color: vibeColor, fontSize: 13 }}>{vibe?.icon}</span>
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
-                    fontWeight: "bold", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {track.title}
-                  </p>
-                  <p style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em",
-                    margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {track.artist}
-                  </p>
-                </div>
+            <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${vibeColor}15`,
+              display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ color: vibeColor, fontSize: 13 }}>{vibe?.icon}</span>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
+                  fontWeight: "bold", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {track.title}
+                </p>
+                <p style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em",
+                  margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {track.artist}
+                </p>
               </div>
-              {[
-                { icon: "▷", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
-                { icon: "◈", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
-                { icon: "◎", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
-              ].map(({ icon, label, action }) => (
-                <button key={label}
-                  style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
-                    padding: "14px 20px", textAlign: "left", color: vibeColor, fontSize: 12,
-                    letterSpacing: "0.2em", background: "transparent", border: "none",
-                    cursor: "pointer", fontFamily: FONT_MONO, borderBottom: `1px solid ${vibeColor}10` }}
-                  onClick={action}>
-                  <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}>{icon}</span>
-                  {label}
-                </button>
-              ))}
-            </motion.div>
-          </motion.div>,
-          document.body
-        )}
-      </AnimatePresence>
+            </div>
+            {[
+              { icon: "▷", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
+              { icon: "◈", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
+              { icon: "◎", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
+            ].map(({ icon, label, action }) => (
+              <button key={label}
+                style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
+                  padding: "14px 20px", textAlign: "left", color: vibeColor, fontSize: 12,
+                  letterSpacing: "0.2em", background: "transparent", border: "none",
+                  cursor: "pointer", fontFamily: FONT_MONO, borderBottom: `1px solid ${vibeColor}10` }}
+                onClick={action}>
+                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}>{icon}</span>
+                {label}
+              </button>
+            ))}
+          </motion.div>
+        </motion.div>,
+        document.body
+      )}
       {viewMode === "card" ? (
         <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
