@@ -7,7 +7,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { usePlayer } from "../core/PlayerContext";
-import { getVibeAccent } from "../tokens";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const ACID   = "#bfff00";
@@ -240,8 +239,8 @@ export default function Layout({
   onTabChange = () => {},
   onSignOut,
 }) {
-  const { trackVibe } = usePlayer();
-  const accentColor = trackVibe ? getVibeAccent(trackVibe) : ACID;
+  const { trackVibe, resolveVibeAccent } = usePlayer();
+  const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   return (
     <div
