@@ -18,6 +18,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
       overflowX: "auto", paddingBottom: 6, paddingTop: 4,
       scrollbarWidth: "none", touchAction: "pan-x",
       paddingRight: onOpenTagManager ? 44 : 0,
+      paddingLeft: 2,
     }}>
       {VIBE_TAGS.map((vibe) => {
         const isActive = activeVibe === vibe.id;
@@ -45,7 +46,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
     {onOpenTagManager && (
       <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
         style={{
-          position: "absolute", right: 0, top: 0,
+          position: "absolute", right: 0, top: 4,
           width: 32, height: 28,
           display: "flex", alignItems: "center", justifyContent: "center",
           borderRadius: 2, fontFamily: FONT_MONO, fontSize: 13,
