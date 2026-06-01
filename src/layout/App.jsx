@@ -369,8 +369,9 @@ const AppCore = () => {
   }
 
   const tracks = db?.music_lab?.tracks ?? [];
+  const tags   = db?.music_lab?.tags   ?? [];
   return (
-    <PlayerProvider userId={user?.id ?? null} tracks={tracks}>
+    <PlayerProvider userId={user?.id ?? null} tracks={tracks} tags={tags}>
       <AuthenticatedApp />
     </PlayerProvider>
   );
