@@ -62,7 +62,122 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
   </div>
 );
 
-export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig }) => {
+export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, onAddToQueue, onAddNext, onAddToPlaylist }) => {
+  const [showCtx, setShowCtx] = useState(false);
+  const vibe = vc ?? null;
+  const FONT_MONO_LOCAL = "'JetBrains Mono', 'Courier New', monospace";
+  return (
+    <>
+      <AnimatePresence>
+        {showCtx && createPortal(
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }} transition={{ duration: 0.2 }}
+            style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)" }}
+            onClick={() => setShowCtx(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }}
+              exit={{ y: "100%" }} transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0,
+                background: "#0f0f0f", borderTop: `1px solid ${vibeColor}33`,
+                borderRadius: "6px 6px 0 0", paddingBottom: "env(safe-area-inset-bottom, 16px)",
+                fontFamily: FONT_MONO_LOCAL }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${vibeColor}15`,
+                display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ color: vibeColor, fontSize: 13 }}>{vibe?.icon}</span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
+                    fontWeight: "bold", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {track.title}
+                  </p>
+                  <p style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em",
+                    margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {track.artist}
+                  </p>
+                </div>
+              </div>
+              {[
+                { icon: "▷", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
+                { icon: "◈", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
+                { icon: "◎", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
+              ].map(({ icon, label, action }) => (
+                <button key={label}
+                  style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
+                    padding: "14px 20px", textAlign: "left", color: vibeColor, fontSize: 12,
+                    letterSpacing: "0.2em", background: "transparent", border: "none",
+                    cursor: "pointer", fontFamily: FONT_MONO_LOCAL, borderBottom: `1px solid ${vibeColor}10` }}
+                  onClick={action}>
+                  <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}>{icon}</span>
+                  {label}
+                </button>
+              ))}
+            </motion.div>
+          </motion.div>,
+          document.body
+        )}
+      </AnimatePresence>
+      <motion.div whileTap={{ scale: 0.97 }} onClick={onClick}
+        style={{
+          position: "relative", aspectRatio: "1", borderRadius: 4,
+          overflow: "hidden", cursor: "pointer",
+          border: `1px solid ${isActive ? vibeColor + "66" : vibeColor + "22"}`,
+          boxShadow: isActive ? `0 0 14px ${vibeColor}33` : "none",
+          background: ytId ? "transparent" : `${vibeColor}12`,
+          fontFamily: FONT_MONO_LOCAL,
+        }}>
+        {ytId ? (
+          <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
+        ) : (
+          <div style={{ width: "100%", height: "100%", display: "flex",
+            alignItems: "center", justifyContent: "center",
+            fontSize: 28, color: `${vibeColor}44`, fontFamily: FONT_MONO_LOCAL }}>
+            {(track.artist ?? "?").slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        <div style={{ position: "absolute", inset: 0,
+          background: "linear-gradient(to top, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%)" }} />
+        <span style={{ position: "absolute", top: 6, left: 7,
+          fontSize: 14, color: vibeColor,
+          textShadow: `0 0 10px ${vibeColor}cc`, lineHeight: 1 }}>
+          {vibe?.icon}
+        </span>
+        <motion.button whileTap={{ scale: 0.85 }}
+          onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
+          style={{ position: "absolute", top: 4, right: 4,
+            color: `${vibeColor}cc`, background: "rgba(0,0,0,0.4)",
+            border: "none", cursor: "pointer", fontSize: 18,
+            lineHeight: 1, padding: "2px 4px", borderRadius: 2,
+            fontFamily: FONT_MONO_LOCAL }}>
+          ⋮
+        </motion.button>
+        {isActive && (
+          <motion.div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
+            background: vibeColor, boxShadow: `0 0 8px ${vibeColor}` }}
+            animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
+        )}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "6px 8px" }}>
+          <p style={{ color: "#fff", fontSize: 10, fontWeight: "bold",
+            letterSpacing: "0.08em", margin: 0, overflow: "hidden",
+            textOverflow: "ellipsis", whiteSpace: "nowrap",
+            textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+            {track.title}
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 9,
+            letterSpacing: "0.06em", margin: 0, overflow: "hidden",
+            textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {track.artist}
+          </p>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
+export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig, viewMode = "list" }) => {
   // Si no hay vibeConfig (tag legacy o desconocido), usar neutro gris — nunca ACID
   const vibe = vibeConfig ?? null;
   const vibeColor = vibe?.color ?? "#555555";
@@ -122,6 +237,82 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           document.body
         )}
       </AnimatePresence>
+      {viewMode === "card" ? (
+        <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
+          style={{
+            position: "relative", display: "flex", alignItems: "stretch", gap: 12,
+            padding: 10, borderRadius: 4, cursor: "pointer",
+            background: isActive ? `${vibeColor}12` : `${vibeColor}07`,
+            border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "1a"}`,
+            boxShadow: isActive ? `0 0 18px ${vibeColor}22` : "none",
+            fontFamily: FONT_MONO,
+          }}
+        >
+          {isActive && (
+            <motion.div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 2,
+              background: vibeColor, boxShadow: `0 0 8px ${vibeColor}`, borderRadius: "4px 0 0 4px" }}
+              animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
+          )}
+          <div style={{ width: 64, height: 64, flexShrink: 0, borderRadius: 3, overflow: "hidden",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
+            border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
+            {ytId ? (
+              <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
+                style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
+            ) : (
+              <span style={{ color: isActive ? vibeColor : `${vibeColor}44`, fontSize: 20 }}>
+                {isActive ? "◉" : "◎"}
+              </span>
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 3 }}>
+            <p style={{ color: vibeColor, fontSize: 12, fontWeight: "bold", margin: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              opacity: isActive ? 1 : 0.7,
+              textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
+              {track.title}
+            </p>
+            <p style={{ color: vibeColor, fontSize: 10, opacity: 0.45, margin: 0,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {track.artist}
+            </p>
+            {track.note && (
+              <p style={{ color: vibeColor, fontSize: 10, opacity: 0.3, margin: 0,
+                fontStyle: "italic", whiteSpace: "normal", lineHeight: 1.4 }}>
+                {track.note}
+              </p>
+            )}
+            {track.tags?.length > 0 && (
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 2 }}>
+                {track.tags.map((t) => (
+                  <span key={t} style={{ fontSize: 9, letterSpacing: "0.08em", padding: "1px 6px",
+                    borderRadius: 2, color: `${vibeColor}88`,
+                    border: `1px solid ${vibeColor}22`, background: `${vibeColor}08` }}>
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center",
+            justifyContent: "center", gap: 6, flexShrink: 0 }}>
+            <span style={{ color: vibeColor, fontSize: 28,
+              textShadow: `0 0 16px ${vibeColor}dd`, lineHeight: 1 }}>
+              {vibe?.icon}
+            </span>
+            <motion.button whileTap={{ scale: 0.85 }}
+              onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
+              style={{ color: `${vibeColor}cc`, background: "transparent", border: "none",
+                cursor: "pointer", fontSize: 22, lineHeight: 1, padding: "2px 2px",
+                fontFamily: FONT_MONO }}
+              title="Más opciones">
+              ⋮
+            </motion.button>
+          </div>
+        </motion.div>
+      ) : (
       <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
         className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
@@ -179,6 +370,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
           </motion.button>
         </div>
       </motion.div>
+      )}
     </>
   );
 };
