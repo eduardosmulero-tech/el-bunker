@@ -344,8 +344,8 @@ return () => cancelAnimationFrame(raf);
       {track && (
         <motion.button whileTap={{ scale: 0.96 }} onClick={() => setShowDrop(true)}
           className="w-full py-2 text-xs tracking-[0.25em] uppercase font-bold transition-all"
-          style={{ background: `linear-gradient(90deg, ${PURPLE}22 0%, ${PURPLE}11 100%)`,
-            borderTop: `1px solid ${PURPLE}33`, color: PURPLE, textShadow: `0 0 8px ${PURPLE}88` }}>
+          style={{ background: `linear-gradient(90deg, ${withAlpha(accentColor, 0.13)} 0%, ${withAlpha(accentColor, 0.07)} 100%)`,
+            borderTop: `1px solid ${withAlpha(accentColor, 0.2)}`, color: accentColor, textShadow: `0 0 8px ${withAlpha(accentColor, 0.53)}` }}>
           ⚡ LANZAR DROP
         </motion.button>
       )}
