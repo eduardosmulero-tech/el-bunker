@@ -216,7 +216,134 @@ def apply_all(filepath: Path, pairs: list[tuple[str, str]], dry_run: bool) -> bo
     return True
 
 
+# ─── ESTADO / BACKLOG ────────────────────────────────────────────────────────
+
+def find_nucleo(root: Path) -> Path:
+    """Retorna la ruta a docs/Nucleo/ si existe, si no la raíz."""
+    nucleo = root / "docs" / "Nucleo"
+    return nucleo if nucleo.is_dir() else root
+
+
+def update_proximo_pliego(estado_path: Path, pliego_id: str) -> bool:
+    """
+    En ESTADO.md actualiza la línea **Próximo pliego:** al número siguiente.
+    Retorna True si modificó algo.
+    """
+    try:
+        content = read_file(estado_path)
+        m = re.search(r"PLIEGO-(\d+)", pliego_id, re.IGNORECASE)
+        if not m:
+            return False
+        next_num = int(m.group(1)) + 1
+        new_content, n = re.subn(
+            r"(\*\*Próximo pliego:\*\*\s*)PLIEGO-\d+",
+            lambda mo: mo.group(1) + f"PLIEGO-{next_num}",
+            content
+        )
+        if n == 0:
+            return False
+        estado_path.write_text(new_content, encoding="utf-8")
+        return True
+    except Exception as e:
+        print(f"  ⚠ No se pudo actualizar ESTADO.md: {e}")
+        return False
+
+
+def append_resuelto_backlog(backlog_path: Path, pliego_id: str,
+                             cambio: str, archivos: list[str]) -> bool:
+    """
+    En BACKLOG.md inserta una fila nueva en la tabla ## RESUELTOS.
+    Formato de fila: | ID | Fix | Pliego | Fecha |
+    No hace append al final — busca la tabla y añade la fila dentro de ella.
+    Retorna True si modificó algo.
+    """
+    try:
+        content = read_file(backlog_path)
+        if pliego_id in content:
+            return False
+
+        date_str = datetime.now().strftime("%Y-%m-%d")
+        archivo_corto = Path(archivos[0]).name if archivos else "—"
+        fix_desc = cambio[:50] + "…" if len(cambio) > 50 else cambio
+        nueva_fila = f"| {pliego_id} | {fix_desc} | {archivo_corto} | {date_str} |\n"
+
+        # Buscar la tabla RESUELTOS e insertar antes de la última fila vacía o al final
+        resueltos_marker = "## RESUELTOS"
+        idx = content.find(resueltos_marker)
+        if idx == -1:
+            # No hay tabla — añadir sección mínima al final
+            nuevo_bloque = (
+                f"\n## RESUELTOS\n\n"
+                f"| ID | Fix | Archivo | Fecha |\n"
+                f"|----|-----|---------|-------|\n"
+                f"{nueva_fila}"
+            )
+            backlog_path.write_text(content.rstrip() + "\n" + nuevo_bloque, encoding="utf-8")
+            return True
+
+        # Encontrar el final de la tabla (primera línea en blanco tras el último |)
+        lines = content.splitlines(keepends=True)
+        table_start = None
+        insert_at = None
+        for i, line in enumerate(lines):
+            if resueltos_marker in line:
+                table_start = i
+            if table_start is not None and i > table_start:
+                if line.startswith("|"):
+                    insert_at = i + 1  # justo después de la última fila de tabla
+                elif insert_at is not None and not line.startswith("|"):
+                    break  # salimos de la tabla
+
+        if insert_at is None:
+            # Tabla encontrada pero vacía — insertar cabecera + fila
+            lines.insert(table_start + 1, "\n")
+            lines.insert(table_start + 2, "| ID | Fix | Archivo | Fecha |\n")
+            lines.insert(table_start + 3, "|----|-----|---------|-------|\n")
+            lines.insert(table_start + 4, nueva_fila)
+        else:
+            lines.insert(insert_at, nueva_fila)
+
+        backlog_path.write_text("".join(lines), encoding="utf-8")
+        return True
+    except Exception as e:
+        print(f"  ⚠ No se pudo actualizar BACKLOG.md: {e}")
+        return False
+
+
+def update_estado_backlog_flow(root: Path, pliego_id: str,
+                                cambio: str, archivos: list[str]) -> None:
+    """Flujo interactivo para actualizar ESTADO.md y BACKLOG.md."""
+    nucleo = find_nucleo(root)
+    estado_path  = nucleo / "ESTADO.md"
+    backlog_path = nucleo / "BACKLOG.md"
+
+    found = []
+    if estado_path.exists():
+        found.append("ESTADO.md")
+    if backlog_path.exists():
+        found.append("BACKLOG.md")
+    if not found:
+        return
+
+    print()
+    print("  ── Estado del proyecto ──────────────────────────────────")
+    print(f"  Archivos encontrados en {nucleo.relative_to(root)}: {', '.join(found)}")
+    if not prompt_yn(f"¿Actualizar {' y '.join(found)} con {pliego_id}?"):
+        print("  Actualización omitida.")
+        return
+
+    if estado_path.exists():
+        ok = update_proximo_pliego(estado_path, pliego_id)
+        print(f"  {'✓' if ok else '⚠'} ESTADO.md — próximo pliego {'actualizado' if ok else 'sin cambios (revisar formato)'}")
+
+    if backlog_path.exists():
+        ok = append_resuelto_backlog(backlog_path, pliego_id, cambio, archivos)
+        print(f"  {'✓' if ok else '⚠'} BACKLOG.md — {'fila añadida en tabla RESUELTOS' if ok else 'sin cambios (ya registrado)'}")
+
+
 # ─── GIT ─────────────────────────────────────────────────────────────────────
+
+SEARCH/REPLACE 2 — llamar al flujo justo antes del commit, pasando archivos
 
 def run_git(args: list[str], root: Path) -> tuple[int, str]:
     """Ejecuta un comando git en la raíz del proyecto."""
@@ -436,6 +563,7 @@ def main():
                     sys.exit(1)
                 print("  ✓ Build OK")
             if pliego_id:
+                update_estado_backlog_flow(root, pliego_id, cambio, archivos)
                 git_commit_flow(target_rel, backup_path, pliego_id, cambio, root)
             else:
                 print("  Sin ID numérico — commit omitido (pliego de documentación).")
