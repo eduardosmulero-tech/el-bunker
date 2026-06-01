@@ -398,6 +398,7 @@ export default function MusicLab({
             syncStatus={syncStatus}
             VIBE_TAGS={VIBE_TAGS}
             autoPlaySignal={autoPlaySignal}
+            vibeConf={getVibeConfig(activeTrack?.tag ?? activeTrack?.vibe)}
           />
         </motion.section>
 
