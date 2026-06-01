@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { usePlayer } from "../core/PlayerContext";
+import { getVibeAccent } from "../tokens";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const ACID   = "#bfff00";
@@ -40,7 +42,7 @@ const NoiseOverlay = () => (
 
 // ─── CORNER BRACKETS ─────────────────────────────────────────
 // Decorative L-shaped corners — signals "secure terminal"
-const CornerBrackets = ({ color = ACID, size = 20, thickness = 2 }) => {
+const CornerBrackets = ({ color = ACID, size = 20, thickness = 2, accentColor = ACID }) => {
   const style = { borderColor: color, borderWidth: thickness };
   const cls   = "absolute w-5 h-5 opacity-60";
   return (
@@ -54,7 +56,7 @@ const CornerBrackets = ({ color = ACID, size = 20, thickness = 2 }) => {
 };
 
 // ─── TOP STATUS BAR ──────────────────────────────────────────
-const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut }) => {
+const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut, accentColor = ACID }) => {
   const [tick, setTick] = useState(new Date());
 
   useEffect(() => {
@@ -87,29 +89,29 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut }) => {
           animate={{ opacity: [1, 0.3, 1] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
           className="w-2 h-2 rounded-full"
-          style={{ background: isAuthenticated ? ACID : "#ff3b3b", boxShadow: `0 0 8px ${isAuthenticated ? ACID : "#ff3b3b"}` }}
+          style={{ background: isAuthenticated ? accentColor : "#ff3b3b", boxShadow: `0 0 8px ${isAuthenticated ? accentColor : "#ff3b3b"}` }}
         />
         <span
           className="text-xs tracking-[0.3em] uppercase font-bold"
-          style={{ color: ACID, textShadow: `0 0 12px ${ACID}44` }}
+          style={{ color: accentColor, textShadow: `0 0 12px ${accentColor}44` }}
         >
           EL BÚNKER
         </span>
       </div>
 
       {/* RIGHT: Clock */}
-      <div className="flex items-center gap-4 text-xs whitespace-nowrap" style={{ color: ACID, opacity: 0.5 }}>
+      <div className="flex items-center gap-4 text-xs whitespace-nowrap" style={{ color: accentColor, opacity: 0.5 }}>
         <span className="tracking-wider">{dateStr}</span>
         <span
           className="font-bold tracking-widest tabular-nums"
-          style={{ color: ACID, textShadow: `0 0 8px ${ACID}66` }}
+          style={{ color: accentColor, textShadow: `0 0 8px ${accentColor}66` }}
         >
           {timeStr}
         </span>
         <button
           onClick={() => window.location.reload()}
           className="text-xs tracking-widest uppercase px-2 py-1 rounded-sm transition-all"
-          style={{ border: `1px solid ${ACID}33`, opacity: 1 }}
+          style={{ border: `1px solid ${accentColor}33`, opacity: 1 }}
         >
           ↺
         </button>
@@ -128,7 +130,7 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut }) => {
 };
 
 // ─── BOTTOM NAV ──────────────────────────────────────────────
-const BottomNav = ({ activeTab, onTabChange }) => {
+const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
   const tabs = [
     { id: "vault",     label: "VAULT",    icon: "◈" },
     { id: "timeline",  label: "TIMELINE", icon: "◎" },
@@ -156,8 +158,8 @@ const BottomNav = ({ activeTab, onTabChange }) => {
             whileTap={{ scale: 0.9 }}
             className="relative flex flex-col items-center gap-1 px-3 py-1 text-xs tracking-widest uppercase transition-all"
             style={{
-              color: isActive ? ACID : "rgba(191,255,0,0.3)",
-              textShadow: isActive ? `0 0 12px ${ACID}` : "none",
+              color: isActive ? accentColor : `${accentColor}4d`,
+              textShadow: isActive ? `0 0 12px ${accentColor}` : "none",
             }}
           >
             <span className="text-base">{tab.icon}</span>
@@ -166,7 +168,7 @@ const BottomNav = ({ activeTab, onTabChange }) => {
               <motion.div
                 layoutId="nav-indicator"
                 className="absolute -bottom-1 left-0 right-0 h-px"
-                style={{ background: ACID, boxShadow: `0 0 8px ${ACID}` }}
+                style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
               />
             )}
           </motion.button>
@@ -177,27 +179,30 @@ const BottomNav = ({ activeTab, onTabChange }) => {
 };
 
 // ─── GRID BACKGROUND ─────────────────────────────────────────
-const GridBackground = () => (
-  <div
-    aria-hidden="true"
-    className="fixed inset-0 z-0 opacity-[0.04]"
-    style={{
-      backgroundImage: `
-        linear-gradient(rgba(191,255,0,0.6) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(191,255,0,0.6) 1px, transparent 1px)
-      `,
-      backgroundSize: "40px 40px",
-    }}
-  />
-);
+const GridBackground = ({ accentColor = ACID }) => {
+  const hex = accentColor.startsWith("#") ? accentColor : ACID;
+  return (
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 z-0 opacity-[0.04]"
+      style={{
+        backgroundImage: `
+          linear-gradient(${hex}99 1px, transparent 1px),
+          linear-gradient(90deg, ${hex}99 1px, transparent 1px)
+        `,
+        backgroundSize: "40px 40px",
+      }}
+    />
+  );
+};
 
 // ─── AMBIENT GLOWS ───────────────────────────────────────────
-const AmbientGlows = () => (
+const AmbientGlows = ({ accentColor = ACID }) => (
   <div aria-hidden="true" className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-    {/* Top-left acid glow */}
+    {/* Top-left vibe glow */}
     <div
       className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.06]"
-      style={{ background: ACID, filter: "blur(80px)" }}
+      style={{ background: accentColor, filter: "blur(80px)" }}
     />
     {/* Bottom-right purple glow */}
     <div
@@ -207,7 +212,7 @@ const AmbientGlows = () => (
     {/* Center pulse */}
     <motion.div
       className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-[0.02]"
-      style={{ background: ACID, filter: "blur(60px)" }}
+      style={{ background: accentColor, filter: "blur(60px)" }}
       animate={{ scale: [1, 1.3, 1], opacity: [0.02, 0.04, 0.02] }}
       transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
     />
@@ -235,14 +240,17 @@ export default function Layout({
   onTabChange = () => {},
   onSignOut,
 }) {
+  const { trackVibe } = usePlayer();
+  const accentColor = trackVibe ? getVibeAccent(trackVibe) : ACID;
+
   return (
     <div
       className="relative min-h-screen overflow-hidden"
-      style={{ background: BG, color: ACID, fontFamily: "'JetBrains Mono', 'Courier New', monospace" }}
+      style={{ background: BG, color: accentColor, fontFamily: "'JetBrains Mono', 'Courier New', monospace" }}
     >
       {/* ── Layer 0: Atmosphere ── */}
-      <GridBackground />
-      <AmbientGlows />
+      <GridBackground accentColor={accentColor} />
+      <AmbientGlows accentColor={accentColor} />
 
       {/* ── Layer 1: CRT + Noise effects ── */}
       <NoiseOverlay />
@@ -254,6 +262,7 @@ export default function Layout({
         lastHeartbeat={lastHeartbeat}
         dbStatus={dbStatus}
         onSignOut={onSignOut}
+        accentColor={accentColor}
       />
 
       {/* ── Layer 3: Page Content ── */}
@@ -276,7 +285,7 @@ export default function Layout({
       </main>
 
       {/* ── Layer 4: Bottom Nav ── */}
-      <BottomNav activeTab={activeTab} onTabChange={onTabChange} />
+      <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
     </div>
   );
 }
