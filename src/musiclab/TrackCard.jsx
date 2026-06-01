@@ -62,7 +62,9 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
 );
 
 export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig }) => {
-  const vibe = vibeConfig;
+  // Si no hay vibeConfig (tag legacy o desconocido), usar neutro gris — nunca ACID
+  const vibe = vibeConfig ?? null;
+  const vibeColor = vibe?.color ?? "#555555";
   const ytId = extractYouTubeId(track.url ?? "");
   const pressTimer = useRef(null);
   const [showCtx, setShowCtx] = useState(false);
@@ -118,34 +120,34 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         onContextMenu={(e) => { e.preventDefault(); setShowCtx(true); }}
         className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
         style={{
-          background: isActive ? `${vibe?.color ?? ACID}10` : `${vibe?.color ?? ACID}06`,
-          border: `1px solid ${isActive ? (vibe?.color ?? ACID) + "44" : (vibe?.color ?? ACID) + "18"}`,
-          boxShadow: isActive ? `0 0 16px ${vibe?.color ?? ACID}22` : "none",
+          background: isActive ? `${vibeColor}10` : `${vibeColor}06`,
+          border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "18"}`,
+          boxShadow: isActive ? `0 0 16px ${vibeColor}22` : "none",
           fontFamily: FONT_MONO,
         }}
       >
         {isActive && (
           <motion.div className="absolute left-0 top-0 bottom-0 w-0.5"
-            style={{ background: vibe?.color ?? ACID, boxShadow: `0 0 8px ${vibe?.color ?? ACID}` }}
+            style={{ background: vibeColor, boxShadow: `0 0 8px ${vibeColor}` }}
             animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
         )}
         <div className="w-10 h-10 flex-shrink-0 rounded-sm flex items-center justify-center text-base overflow-hidden"
-          style={{ background: isActive ? `${vibe?.color ?? ACID}18` : `${ACID}08`,
-            border: `1px solid ${isActive ? (vibe?.color ?? ACID) + "44" : GLASS_BORDER}` }}>
+          style={{ background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
+            border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
           {ytId ? (
             <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
               className="w-full h-full object-cover opacity-70" />
           ) : (
-            <span style={{ color: isActive ? vibe?.color ?? ACID : `${ACID}44` }}>
+            <span style={{ color: isActive ? vibeColor : `${vibeColor}55` }}>
               {isActive ? "◉" : "◎"}
             </span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold truncate"
-            style={{ color: isActive ? vibe?.color ?? ACID : vibe?.color ?? ACID,
+            style={{ color: vibeColor,
               opacity: isActive ? 1 : 0.55,
-              textShadow: isActive ? `0 0 8px ${vibe?.color ?? ACID}88` : "none" }}>
+              textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
             {track.title}
           </p>
           <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
@@ -155,14 +157,14 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
         </div>
         <div className="flex flex-col items-end gap-1">
           <span className="text-xs px-1.5 py-0.5 rounded-sm"
-            style={{ color: vibe?.color ?? ACID, background: `${vibe?.color ?? ACID}15`,
-              border: `1px solid ${vibe?.color ?? ACID}33` }}>
+            style={{ color: vibeColor, background: `${vibeColor}15`,
+              border: `1px solid ${vibeColor}33` }}>
             {vibe?.icon}
           </span>
           <motion.button whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); onDrop?.(track); }}
             className="text-xs px-1.5 py-0.5 rounded-sm opacity-50 hover:opacity-100 transition-opacity"
-            style={{ color: PURPLE, background: `${PURPLE}11`, border: `1px solid ${PURPLE}22` }}
+            style={{ color: vibeColor, background: `${vibeColor}11`, border: `1px solid ${vibeColor}22` }}
             title="Lanzar Drop">
             ⚡
           </motion.button>
