@@ -155,20 +155,11 @@ export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, o
             <p className="text-xs opacity-25 truncate mt-0.5 italic" style={{ color: vibeColor }}>{track.note}</p>
           )}
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <span className="text-xs px-1.5 py-0.5 rounded-sm"
-            style={{ color: vibeColor, background: `${vibeColor}15`,
-              border: `1px solid ${vibeColor}33` }}>
-            {vibe?.icon}
-          </span>
-          <motion.button whileTap={{ scale: 0.85 }}
-            onClick={(e) => { e.stopPropagation(); onDrop?.(track); }}
-            className="text-xs px-1.5 py-0.5 rounded-sm opacity-50 hover:opacity-100 transition-opacity"
-            style={{ color: vibeColor, background: `${vibeColor}11`, border: `1px solid ${vibeColor}22` }}
-            title="Lanzar Drop">
-            ⚡
-          </motion.button>
-        </div>
+        <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+          style={{ color: vibeColor, background: `${vibeColor}15`,
+            border: `1px solid ${vibeColor}33` }}>
+          {vibe?.icon}
+        </span>
       </motion.div>
     </>
   );
