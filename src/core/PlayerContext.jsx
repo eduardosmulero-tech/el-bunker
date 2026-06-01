@@ -10,7 +10,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
-import { getVibeAccent } from "../tokens";
+import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
 const PlayerContext = createContext(null);
 
 export const usePlayer = () => {
@@ -19,7 +19,18 @@ export const usePlayer = () => {
   return ctx;
 };
 
-export function PlayerProvider({ children, userId, tracks = [] }) {
+export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
+  // Resolver acento desde tags de DB primero, fallback a canonicos de tokens.js
+  const resolveVibeAccent = useCallback((tagId) => {
+    if (!tagId) return null;
+    const allTags = tags.length > 0 ? tags : CANONICAL_VIBE_TAGS;
+    const found = allTags.find((t) => t.id === tagId);
+    if (found) {
+      // Tags de DB tienen seedColor, tags canonicos tienen palette.accent
+      return found.palette?.accent ?? found.seedColor ?? getVibeAccentCanonical(tagId);
+    }
+    return getVibeAccentCanonical(tagId);
+  }, [tags]);
   const [activeTrack,      setActiveTrack]      = useState(tracks[0] ?? null);
   const [isPlaying,        setIsPlaying]        = useState(false);
   // Q14: cola unificada. Cada item: { ...track, _manual: boolean }
@@ -212,11 +223,12 @@ export function PlayerProvider({ children, userId, tracks = [] }) {
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
   useEffect(() => {
     if (trackVibe) {
-      document.body.style.setProperty("--vibe-accent", getVibeAccent(trackVibe));
+      const accent = resolveVibeAccent(trackVibe);
+      if (accent) document.body.style.setProperty("--vibe-accent", accent);
     } else {
       document.body.style.removeProperty("--vibe-accent");
     }
-  }, [trackVibe]);
+  }, [trackVibe, resolveVibeAccent]);
 
   // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
