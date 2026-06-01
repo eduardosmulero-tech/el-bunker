@@ -451,7 +451,7 @@ export default function MusicLab({
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <div className="flex flex-col gap-1 px-1">
                 <VibeTagBar activeVibe={queueTagFilter} onVibeChange={setQueueTagFilter} VIBE_TAGS={VIBE_TAGS}
-                onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
+                  onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span style={{ color: ACID }}>▶</span>
@@ -651,7 +651,7 @@ export default function MusicLab({
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="min-w-0">
                 <VibeTagBar activeVibe={libraryFilter} onVibeChange={setLibraryFilter} VIBE_TAGS={VIBE_TAGS}
-                  onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
+                  onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               </motion.div>
 
               <div className="flex items-center justify-between px-1">
@@ -680,8 +680,8 @@ export default function MusicLab({
                   <motion.button whileTap={{ scale: 0.9 }} title="Editar track"
                     onClick={() => { setShowEdit((p) => !p); setShowDelete(false); setShowAdd(false); setEditingTrack(null); }}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: PURPLE, border: `1px solid ${showEdit ? PURPLE + "66" : PURPLE + "33"}`,
-                      background: showEdit ? `${PURPLE}15` : `${PURPLE}06` }}>
+                    style={{ color: accentColor, border: `1px solid ${showEdit ? accentColor + "66" : accentColor + "33"}`,
+                      background: showEdit ? `${accentColor}15` : `${accentColor}06` }}>
                     {showEdit ? "✕" : "✎"}
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Eliminar track"
@@ -820,7 +820,7 @@ export default function MusicLab({
             <motion.div key="playlists" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <VibeTagBar activeVibe={listTagFilter} onVibeChange={setListTagFilter} VIBE_TAGS={VIBE_TAGS}
-                onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} />
+                onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
                   <span style={{ color: ACID }}>◈</span>
