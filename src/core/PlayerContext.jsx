@@ -70,16 +70,19 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       .catch((err) => console.warn("[Búnker] fetchQueue:", err));
   }, [userId]);
 
-  useEffect(() => {
+useEffect(() => {
     if (!userId) return;
     const ids = activeTrack
       ? [activeTrack.id, ...localQueue.filter((t) => t.id !== activeTrack.id).map((t) => t.id)]
       : localQueue.map((t) => t.id);
     if (!ids.length) return;
     setSyncStatus("syncing");
-    saveQueue(userId, ids)
-      .then(() => setSyncStatus("idle"))
-      .catch(() => { setSyncStatus("error"); setTimeout(() => setSyncStatus("idle"), 4000); });
+    const timer = setTimeout(() => {
+      saveQueue(userId, ids)
+        .then(() => setSyncStatus("idle"))
+        .catch(() => { setSyncStatus("error"); setTimeout(() => setSyncStatus("idle"), 4000); });
+    }, 2000);
+    return () => clearTimeout(timer);
   }, [activeTrack?.id, localQueue, userId]);
 
   // ── Skip ─────────────────────────────────────────────────

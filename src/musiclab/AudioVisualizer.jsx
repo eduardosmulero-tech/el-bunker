@@ -17,6 +17,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
   const sourceRef    = useRef(null);
   const animFrameRef = useRef(null);
   const audioCtxRef  = useRef(null);
+  const dataArrayRef = useRef(null);
 
   const setupAudio = useCallback(() => {
     if (!audioRef?.current || audioCtxRef.current) return;
@@ -69,8 +70,9 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
       ctx.clearRect(0, 0, W, H);
 
       const bufferLen = analyserRef.current?.frequencyBinCount ?? 0;
-      const dataArray = bufferLen ? new Uint8Array(bufferLen) : null;
-      if (dataArray) analyserRef.current.getByteFrequencyData(dataArray);
+      if (bufferLen && !dataArrayRef.current) dataArrayRef.current = new Uint8Array(bufferLen);
+      const dataArray = dataArrayRef.current;
+      if (dataArray && analyserRef.current) analyserRef.current.getByteFrequencyData(dataArray);
 
       const barW = (W / BAR_COUNT) - 1.5;
 

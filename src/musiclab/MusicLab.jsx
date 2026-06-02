@@ -4,7 +4,7 @@
 //  Componentes extraídos a archivos propios (PLIEGO-035).
 // ============================================================
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../layout/Layout";
@@ -194,16 +194,16 @@ export default function MusicLab({
   };
 
   // ── Handlers Tracks ──────────────────────────────────────
-  const filteredTracks = localTracks
+  const filteredTracks = useMemo(() => localTracks
     .filter((t) => libraryFilter === "all" || (t.tag ?? t.vibe) === libraryFilter)
     .filter((t) => {
       if (!trackSearch.trim()) return true;
       const q = trackSearch.toLowerCase();
       return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
-    });
+    }), [localTracks, libraryFilter, trackSearch]);
 
   const [listTagFilter, setListTagFilter] = useState("all");
-  const filteredPlaylists = localPlaylists.filter((pl) => {
+  const filteredPlaylists = useMemo(() => localPlaylists.filter((pl) => {
     if (listTagFilter !== "all") {
       const plTracks = (pl.track_ids ?? []).map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
       if (!plTracks.some((t) => (t.tag ?? t.vibe) === listTagFilter)) return false;
@@ -211,7 +211,7 @@ export default function MusicLab({
     if (!listSearch.trim()) return true;
     const q = listSearch.toLowerCase();
     return pl.name?.toLowerCase().includes(q);
-  });
+  }), [localPlaylists, listTagFilter, localTracks, listSearch]);
 
   const [queueTagFilter, setQueueTagFilter] = useState("all");
   const filteredQueue = localQueue.filter((t) => {
