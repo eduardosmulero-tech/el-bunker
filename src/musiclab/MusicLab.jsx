@@ -735,26 +735,27 @@ export default function MusicLab({
 
               <AnimatePresence>
                 {showEdit && !editingTrack && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }} className="flex flex-col gap-2 p-3 rounded-sm"
-                    style={{ background: "rgba(191,0,255,0.04)", border: `1px solid ${PURPLE}22`, fontFamily: FONT_MONO }}>
-                    <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: PURPLE }}>✎ EDITAR TRACK</p>
-                    {localTracks.length === 0 ? (
-                      <p className="text-xs opacity-40" style={{ color: PURPLE }}>NO HAY TRACKS</p>
-                    ) : (
-                      localTracks.map((track) => (
-                        <motion.div key={track.id} whileTap={{ scale: 0.98 }}
-                          onClick={() => handleEditTrack(track.id)}
-                          className="flex items-center justify-between px-3 py-2 rounded-sm cursor-pointer"
-                          style={{ background: "rgba(191,0,255,0.03)", border: `1px solid ${PURPLE}18` }}>
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-xs font-bold truncate" style={{ color: PURPLE }}>{track.title}</span>
-                            <span className="text-xs opacity-40 truncate" style={{ color: PURPLE }}>{track.artist}</span>
-                          </div>
-                          <span className="ml-3 flex-shrink-0 text-xs opacity-40" style={{ color: PURPLE }}>→</span>
-                        </motion.div>
-                      ))
-                    )}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="flex flex-col items-center justify-center gap-2 py-5 px-4 rounded-sm"
+                    style={{
+                      background: "rgba(191,0,255,0.08)",
+                      border: `1px solid ${PURPLE}55`,
+                      fontFamily: FONT_MONO,
+                      textAlign: "center",
+                      boxShadow: `0 0 24px rgba(191,0,255,0.10)`,
+                    }}>
+                    <p
+                      className="text-sm tracking-[0.25em] uppercase font-bold"
+                      style={{ color: PURPLE, textShadow: `0 0 14px ${PURPLE}` }}>
+                      ✎ MODO EDICIÓN ACTIVO
+                    </p>
+                    <p
+                      className="text-xs opacity-50 tracking-[0.15em] uppercase"
+                      style={{ color: PURPLE }}>
+                      Selecciona cualquier canción de la lista para editar sus metadatos
+                    </p>
                   </motion.div>
                 )}
                 {showEdit && editingTrack && (
@@ -794,7 +795,7 @@ export default function MusicLab({
 
               <div className="flex flex-col gap-2">
                 <AnimatePresence>
-                  {!editingTrack && !showEdit && filteredTracks.length > 0 ? (
+                  {!editingTrack && filteredTracks.length > 0 ? (
                     viewMode === "grid" ? (
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                         {filteredTracks.slice(0, visibleCount).map((track) => {
@@ -805,7 +806,7 @@ export default function MusicLab({
                           return (
                             <TrackCardGrid key={track.id} track={track} vc={vc} vibeColor={vibeColor}
                               isActive={isActive} ytId={ytId}
-                              onClick={() => playTrack(track)}
+                              onClick={() => showEdit ? handleEditTrack(track.id) : playTrack(track)}
                               onAddToQueue={handleAddToQueue}
                               onAddNext={handleAddNext}
                               onAddToPlaylist={handleAddToPlaylist}
@@ -819,7 +820,7 @@ export default function MusicLab({
                         isActive={activeTrack?.id === track.id}
                         vibeConfig={getVibeConfig(track.tag ?? track.vibe)}
                         viewMode={viewMode}
-                        onClick={() => { playTrack(track); }}
+                        onClick={() => { showEdit ? handleEditTrack(track.id) : playTrack(track); }}
                         onAddToQueue={handleAddToQueue}
                         onAddNext={handleAddNext}
                         onAddToPlaylist={handleAddToPlaylist}
@@ -835,7 +836,7 @@ export default function MusicLab({
                     </motion.p>
                   )}
                 </AnimatePresence>
-                {!editingTrack && !showEdit && visibleCount < filteredTracks.length && (
+                {!editingTrack && visibleCount < filteredTracks.length && (
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setVisibleCount((c) => c + 50)}
