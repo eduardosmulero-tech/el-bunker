@@ -244,7 +244,6 @@ export default function MusicLab({
     if (activeTrack?.id === editingTrack.id) setActiveTrack((t) => ({ ...t, ...updatedData }));
     setToast("TRACK ACTUALIZADO");
     setTimeout(() => setToast(null), 2500);
-    setShowEdit(false);
     setEditingTrack(null);
   };
 
@@ -760,7 +759,7 @@ export default function MusicLab({
                 )}
                 {showEdit && editingTrack && (
                   <AddTrackForm onAdd={handleSaveEdit}
-                    onClose={() => { setShowEdit(false); setEditingTrack(null); }}
+                    onClose={() => { setEditingTrack(null); }}
                     initialData={editingTrack} VIBE_TAGS={VIBE_TAGS} />
                 )}
               </AnimatePresence>
