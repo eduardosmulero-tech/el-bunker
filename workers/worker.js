@@ -440,16 +440,26 @@ export default {
         const VALID_PREFIXES = ["music", "vault/photos", "vault/videos", "vault/docs", "vault/audio"];
         if (!VALID_PREFIXES.includes(body.prefix)) return err(`Invalid prefix. Valid: ${VALID_PREFIXES.join(", ")}`, 400);
         const r2_key = `${body.prefix}/${crypto.randomUUID()}_${body.filename}`;
-        // Generar pre-signed URL para PUT directo a R2 (válida 15 min)
-        const uploadUrl = await env.BUNKER.createMultipartUpload(r2_key); // placeholder — ver abajo
-        // Guardar referencia en files
+        // Guardar referencia en files y devolver r2_key para upload directo
         const fileId = crypto.randomUUID();
         await env.DB.prepare(
           `INSERT INTO files (id, entry_id, track_id, r2_key, r2_bucket, prefix, filename, mime_type, size_bytes, uploaded_by)
            VALUES (?1,?2,?3,?4,'el-bunker-music',?5,?6,?7,?8,?9)`
         ).bind(fileId, body.entry_id||null, body.track_id||null, r2_key,
                body.prefix, body.filename, body.mime_type||null, body.size_bytes||null, userId).run();
-        return json({ r2_key, upload_url: uploadUrl, file_id: fileId }, 201);
+        return json({ r2_key, file_id: fileId }, 201);
+      }
+
+      // PUT /api/upload/:key — subir binario directo a R2 (S57)
+      if (path.startsWith("/api/upload/") && request.method === "PUT") {
+        if (!userId) return err("Unauthorized", 401);
+        const r2_key = decodeURIComponent(path.split("/api/upload/")[1]);
+        if (!r2_key) return err("r2_key required", 400);
+        const data = await request.arrayBuffer();
+        await env.BUNKER.put(r2_key, data, {
+          httpMetadata: { contentType: request.headers.get("Content-Type") || "application/octet-stream" },
+        });
+        return json({ ok: true, r2_key, size: data.byteLength }, 201);
       }
 
       // ═══ 404 ══════════════════════════════════════════════
