@@ -137,6 +137,15 @@ useEffect(() => {
   // No hay bifurcación queue/context. Shuffle aleatoriza solo
   // cuando la cola está vacía — nunca reordena posiciones existentes (Q1/Q8/Q9).
   const skip = useCallback((dir, filteredTracks) => {
+    // L1: loop track absoluto — siguiente/anterior → seek inicio del track actual.
+    // La única salida es reproducir otra canción explícitamente.
+    if (loopModeRef.current === "track" && activeTrack && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+      setIsPlaying(true);
+      return;
+    }
+
     // skip(-1) — navega por historial (Q2)
     if (dir === -1) {
       setPlayHistory((h) => {
