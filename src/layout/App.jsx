@@ -15,6 +15,7 @@ import Vault                             from "../vault/Vault";
 import MusicLab                          from "../musiclab/MusicLab";
 import { DropAlertModal }               from "../musiclab/DropsManager";
 import SmokeSession                      from "../smoke/SmokeSession";
+import Capsules                          from "../capsules/Capsules";
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
 const ACID   = "#bfff00";
 const PURPLE = "#bf00ff";
@@ -216,52 +217,26 @@ const MusicPage = () => {
   );
 };
 
-/** Placeholder para TIMELINE */
-const TimelinePage = () => (
-  <div
-    className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-8"
-    style={{ fontFamily: FONT }}
-  >
-    <motion.div
-      animate={{ opacity: [0.3, 0.7, 0.3] }}
-      transition={{ duration: 2.5, repeat: Infinity }}
-      className="text-4xl"
-      style={{ color: ACID }}
-    >
-      ◎
-    </motion.div>
-    <p className="text-xs tracking-[0.4em] uppercase opacity-30 text-center" style={{ color: ACID }}>
-      TIMELINE · PRÓXIMAMENTE
-    </p>
-  </div>
-);
+// Placeholder eliminado — Timeline fusionada en CAPSULES (ADR-017, ADR-020)
 
 /** Wrapper para CAPSULES con SmokeSession flotante */
 const CapsulesPage = () => {
+  const { db, user } = useVault();
   const { masterVolume, setMasterVolume } = useVault();
+  const { activeTrack } = usePlayer();
   return (
-    <div className="px-4 py-6 max-w-md mx-auto flex flex-col gap-6">
-      <div className="flex items-center gap-2 px-1">
-        <span style={{ color: ACID }}>⧖</span>
-        <h2 className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>
-          SESIÓN ESPECIAL
-        </h2>
-      </div>
-      <SmokeSession
-        masterVolume={masterVolume}
-        onVolumeChange={setMasterVolume}
-      />
-    </div>
+    <Capsules
+      db={db}
+      userId={user?.id ?? null}
+      activeTrack={activeTrack}
+      masterVolume={masterVolume}
+      onVolumeChange={setMasterVolume}
+    />
   );
 };
 
 // ─── TAB ROUTER ──────────────────────────────────────────────
-const TAB_MAP = {
-  vault:     VaultPage,
-  timeline:  TimelinePage,
-  music:     MusicPage,
-  capsules:  CapsulesPage,
-};
+const TAB_MAP = { vault: VaultPage, music: MusicPage, capsules: CapsulesPage };
 
 // ─── AUTHENTICATED APP ───────────────────────────────────────
 const AuthenticatedApp = () => {

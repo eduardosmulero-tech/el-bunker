@@ -132,7 +132,6 @@ const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut, accent
 const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
   const tabs = [
     { id: "vault",     label: "VAULT",    icon: "◈" },
-    { id: "timeline",  label: "TIMELINE", icon: "◎" },
     { id: "music",     label: "MUSIC LAB",icon: "◉" },
     { id: "capsules",  label: "CAPSULES", icon: "⧖" },
   ];
