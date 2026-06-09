@@ -27,8 +27,16 @@ export default function Capsules({ db: _db, userId: _userId, events = [], active
 
   return (
     <div className="px-4 py-4 max-w-lg mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
-      {/* Sub-tab bar */}
-      <nav className="flex gap-1 overflow-x-auto pb-1">
+      {/* Sub-tab bar — swipeable en móvil, sin scrollbar */}
+      <nav
+        className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          WebkitOverflowScrolling: "touch",
+          cursor: "default",
+        }}
+      >
         {SUB_TABS.map((t) => {
           const active = subTab === t.id;
           return (
@@ -36,17 +44,20 @@ export default function Capsules({ db: _db, userId: _userId, events = [], active
               key={t.id}
               onClick={() => setSubTab(t.id)}
               whileTap={{ scale: 0.95 }}
-              className="text-xs tracking-[0.2em] uppercase px-3 py-2 whitespace-nowrap transition-colors"
+              className="text-xs tracking-[0.2em] uppercase px-4 py-3 whitespace-nowrap transition-all flex-shrink-0"
               style={{
                 color: active ? ACID : `${ACID}53`,
-                borderBottom: active ? `1px solid ${ACID}` : "1px solid transparent",
+                borderBottom: active ? `2px solid ${ACID}` : "2px solid transparent",
                 fontFamily: FONT_MONO,
+                minHeight: 44,
               }}
             >
               {t.icon} {t.label}
             </motion.button>
           );
         })}
+        {/* Oculta scrollbar webkit */}
+        <style>{`.capsules-subnav::-webkit-scrollbar { display: none; }`}</style>
       </nav>
 
       {/* Sub-tab content */}

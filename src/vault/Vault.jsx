@@ -4,16 +4,11 @@
 //  Stack: React + Tailwind CSS + Framer Motion
 // ============================================================
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useVault } from "../core/VaultContext";
-import {
-  motion,
-  AnimatePresence,
-  useMotionValue,
-  useTransform,
-  animate,
-  useAnimation,
-} from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import AddEntryForm from "./AddEntryForm";
+import VaultGallery from "./VaultGallery";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const ACID        = "#bfff00";
@@ -200,7 +195,7 @@ const HeartbeatWidget = ({ lastHeartbeat }) => {
  * TimeCapsule
  * Locked: shows countdown. Unlocked: shows glitch-reveal animation.
  */
-const TimeCapsule = ({ title, unlockDate, content, eraColor = PURPLE }) => {
+const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE }) => {
   const countdown = timeUntil(unlockDate);
   const isLocked  = countdown && !countdown.unlocked;
 
@@ -488,8 +483,26 @@ const EraDetailPanel = ({ era, entries = [] }) => {
  */
 export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
-  const { user } = useVault();
-   const [exporting, setExporting] = useState(false);
+  const [showAddEntry, setShowAddEntry] = useState(false);
+  const { user, patchDb } = useVault();
+  const entries = db?.entries ?? [];
+  const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
+  const [exporting, setExporting] = useState(false);
+
+  const handleAddEntry = async (entryData) => {
+    const newEntry = {
+      ...entryData,
+      id: crypto.randomUUID(),
+      from_user: user?.id ?? "user",
+      created_at: new Date().toISOString(),
+      is_deleted: false,
+    };
+    await patchDb((prev) => ({
+      ...prev,
+      entries: [...(prev.entries ?? []), newEntry],
+    }));
+    setShowAddEntry(false);
+  };
 
    const handleExport = () => {
      if (!db) return;
@@ -513,15 +526,17 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
   const scrollLeft = useRef(0);
 
   // Enrich eras with index
-  const eras = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
-  const activeEra = eras.find((e) => e.id === activeEraId) ?? eras[0] ?? null;
+  const activeEra = eras_arr.find((e) => e.id === activeEraId) ?? eras_arr[0] ?? null;
+
+  // eslint-disable-next-line no-unused-vars
+  const _activeEra = activeEra;
 
   // Auto-select first era
   useEffect(() => {
-    if (eras.length > 0 && !activeEraId) {
-      setActiveEraId(eras[0].id);
+    if (eras_arr.length > 0 && !activeEraId) {
+      setActiveEraId(eras_arr[0].id);
     }
-  }, [eras.length]);
+  }, [eras_arr.length, activeEraId]);
 
   // ── Drag-to-scroll on desktop ─────────────────────────────
   const onMouseDown = (e) => {
@@ -543,15 +558,10 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
   };
 
   // ── Demo data if DB is null ───────────────────────────────
-  const displayEras = eras.length > 0 ? eras : [
+  const displayEras = eras_arr.length > 0 ? eras_arr : [
     { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
     { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
     { id: "demo-3", _index: 2, name: "RENACIMIENTO",  description: "Construyendo algo nuevo desde las cenizas.",          start_date: new Date(Date.now() - 80*86400000).toISOString(),   color: "#ff6b35", cover_image: null },
-  ];
-
-  const demoTimeCapsules = [
-    { id: "tc-1", title: "CARTA AL FUTURO",     unlockDate: new Date(Date.now() + 90*86400000).toISOString(),  content: "" },
-    { id: "tc-2", title: "PRIMER ANIVERSARIO",  unlockDate: new Date(Date.now() - 10*86400000).toISOString(),  content: "Ya pasó un año. Lo logramos." },
   ];
 
   const activeDisplayEra = displayEras.find((e) => e.id === activeEraId) ?? displayEras[0];
@@ -648,24 +658,48 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="flex items-center gap-2 mb-3 px-1">
-            <span style={{ color: activeDisplayEra.color ?? ACID }}>◉</span>
-            <h2
-              className="text-xs tracking-[0.35em] uppercase font-bold"
-              style={{ color: activeDisplayEra.color ?? ACID }}
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="flex items-center gap-2">
+              <span style={{ color: activeDisplayEra.color ?? ACID }}>◉</span>
+              <h2
+                className="text-xs tracking-[0.35em] uppercase font-bold"
+                style={{ color: activeDisplayEra.color ?? ACID }}
+              >
+                {activeDisplayEra.name}
+              </h2>
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowAddEntry(prev => !prev)}
+              className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm"
+              style={{
+                color: showAddEntry ? `${ACID}44` : ACID,
+                border: `1px solid ${showAddEntry ? `${ACID}22` : `${ACID}44`}`,
+              }}
             >
-              {activeDisplayEra.name}
-            </h2>
+              {showAddEntry ? "CANCELAR" : "+ ENTRADA"}
+            </motion.button>
           </div>
+          {showAddEntry && (
+            <AddEntryForm
+              eras={displayEras}
+              onAdd={handleAddEntry}
+              onCancel={() => setShowAddEntry(false)}
+            />
+          )}
           <EraDetailPanel
             era={activeDisplayEra}
-            entries={db?.entries ?? []}
+            entries={entries}
           />
+          {/* Galería de la Era activa */}
+          <div className="mt-4">
+            <VaultGallery
+              entries={entries.filter(e => e.era_id === activeDisplayEra.id)}
+              eras={displayEras}
+            />
+          </div>
         </motion.section>
       )}
-
-      {/* ══ SECTION 4: Time Capsules — OCULTO hasta implementación real ══ */}
-      {/* {demoTimeCapsules} eliminado — no mostrar datos demo en producción */}
 
       {/* ══ SECTION 5: System Status ═════════════════════════════ */}
        <motion.footer
