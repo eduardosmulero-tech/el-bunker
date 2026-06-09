@@ -5,7 +5,37 @@
 
 ---
 
-## S55-S57 — Rama roadmap-completo: API CRUD + JWT + Upload + Stats (Junio 2026)
+## S55-S57 → Fases 2-6 — Rama roadmap-completo: Roadmap completado (Junio 2026)
+
+**Objetivo cumplido:** Todo el scaffolding del roadmap implementado en rama `roadmap-completo`.
+
+### Fase 1 completada (S55-S57)
+- JWT HMAC-SHA256 real, 18 endpoints REST, CRUD completo tracks/playlists/entries/tags
+- FileUploadService + StatsEngine frontend
+- R2 upload directo + streaming de archivos
+
+### Fases 2-6 implementadas
+- **VAULT:** AddEntryForm polimorfico (note/photo/milestone/letter), VaultGallery 6 modos (WALL masonry/CINEMA swipe/DIALOGUE/EXHIBITION/REEL/MAP)
+- **CAPSULES:** 4 sub-tabs (Timeline con eventos agrupados/Smoke/Time Capsules CRUD/RECAP semanal-mensual-anual con stats)
+- **Layout:** 3 tabs definitivos (ADR-017) — VAULT · MUSIC LAB · CAPSULES
+- **MusicLab:** MediaSession API (M1-M12), vibrate táctil, sharedListening stub
+
+### Rama
+`roadmap-completo` — 10 commits, +2,171 líneas, 15 archivos:
+  PROMPT_MAESTRO.md · workers/worker.js · FileUploadService.js · StatsEngine.js
+  Capsules.jsx · Timeline.jsx · TimeCapsules.jsx · Recaps.jsx
+  AddEntryForm.jsx · VaultGallery.jsx · Layout.jsx (3 tabs) · App.jsx (routes)
+
+### Pendiente para producción
+- Integrar AddEntryForm + VaultGallery en Vault.jsx
+- Conectar Capsules a la API D1 (actualmente consume db JSON de Drive)
+- TimeCapsules handleCreate → POST /api/entries
+- Migración real de datos Drive → D1
+
+### Próximo paso natural
+Inyectar PROMPT_MAESTRO.md en nueva sesion para pulir integraciones y migrar datos.
+
+---
 
 **Objetivo cumplido:** Fase 1 completada. Worker con 18 endpoints, JWT real, CRUD completo.
 
