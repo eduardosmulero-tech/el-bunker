@@ -42,8 +42,44 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   const [autoPlaySignal,   setAutoPlaySignal]   = useState(0);
   const [syncStatus,       setSyncStatus]       = useState("idle");
   const [masterVolume,     setMasterVolume]     = useState(80);
-  // playHistory — historial de sesión (Q2/Q15). Nunca persiste.
-  const [playHistory,      setPlayHistory]      = useState([]);
+  // playHistory — historial de sesión (Q2/Q3/Q15). Persiste en localStorage por usuario.
+  // Se restaura al recargar. Se limpia al vaciar la cola o navegar todo el historial hacia atrás.
+  const loadHistory = () => {
+    if (!userId) return [];
+    try {
+      const raw = localStorage.getItem(`el_bunker_history_${userId}`);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      // Solo filtrar tracks inexistentes si la biblioteca ya está cargada
+      if (tracks.length > 0) return parsed.filter((h) => tracks.some((t) => t.id === h.id));
+      return parsed;
+    } catch { return []; }
+  };
+  const [playHistory,      setPlayHistory]      = useState(loadHistory);
+
+  // Persistir/limpiar historial en localStorage cuando cambia
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      if (playHistory.length === 0) {
+        localStorage.removeItem(`el_bunker_history_${userId}`);
+      } else {
+        localStorage.setItem(`el_bunker_history_${userId}`, JSON.stringify(playHistory));
+      }
+    } catch { /* localStorage lleno o no disponible */ }
+  }, [playHistory, userId]);
+
+  // Limpiar historial cuando se vacía la cola (acción explícita del usuario)
+  const prevQueueLen = useRef(localQueue.length);
+  useEffect(() => {
+    const wasPopulated = prevQueueLen.current > 0;
+    prevQueueLen.current = localQueue.length;
+    // Solo limpiar si la cola pasa de tener tracks a estar vacía (no en mount inicial)
+    if (wasPopulated && localQueue.length === 0 && userId) {
+      setPlayHistory([]);
+    }
+  }, [localQueue.length, userId]);
   // queueContextName — nombre de la playlist activa en cola (C2). null si cola manual o vacía.
   const [queueContextName, setQueueContextName] = useState(null);
 
