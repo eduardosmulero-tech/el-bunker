@@ -74,11 +74,32 @@ export default {
         const body = await request.json();
         const id = crypto.randomUUID();
         await env.DB.prepare(
-          `INSERT INTO tracks (id, title, artist, tag_id, format, note, duration, thumbnail, added_by)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`
-        ).bind(id, body.title, body.artist || "", body.tag_id || null, body.format || "mp3",
+          `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, added_by)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`
+        ).bind(id, body.era_id || null, body.title, body.artist || "", body.tag_id || null,
+               body.r2_key || null, body.format || "mp3",
                body.note || "", body.duration || null, body.thumbnail || null, userId).run();
         return json({ id, ...body, added_by: userId }, 201);
+      }
+
+      // ── Drops ────────────────────────────────────────────
+      if (path === "/api/drops" && request.method === "GET") {
+        const { results } = await env.DB.prepare(
+          "SELECT * FROM drops ORDER BY created_at DESC LIMIT 200"
+        ).all();
+        return json(results);
+      }
+
+      if (path === "/api/drops" && request.method === "POST") {
+        if (!userId) return error("Unauthorized", 401);
+        const body = await request.json();
+        const id = crypto.randomUUID();
+        await env.DB.prepare(
+          `INSERT INTO drops (id, era_id, track_id, from_user, to_user, drop_date, memory, mood)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`
+        ).bind(id, body.era_id || null, body.track_id || null, userId, body.to_user || userId,
+               body.drop_date || null, body.memory || "", body.mood || "").run();
+        return json({ id, ...body, from_user: userId }, 201);
       }
 
       // ── Playlists ────────────────────────────────────────
