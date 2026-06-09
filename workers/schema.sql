@@ -74,9 +74,11 @@ CREATE TABLE entry_tags (
 -- ═══ TRACKS (MusicLab) ══════════════════════════════════════
 CREATE TABLE tracks (
   id          TEXT PRIMARY KEY,
+  era_id      TEXT REFERENCES eras(id) ON DELETE SET NULL,
   title       TEXT NOT NULL,
   artist      TEXT DEFAULT '',
   tag_id      TEXT REFERENCES tags(id) ON DELETE SET NULL,  -- vibe principal
+  r2_key      TEXT,                        -- R2 object key para getStreamUrl (ADR-010)
   format      TEXT DEFAULT 'mp3',
   note        TEXT DEFAULT '',
   duration    INTEGER,                     -- seconds
@@ -88,7 +90,9 @@ CREATE TABLE tracks (
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX idx_tracks_era     ON tracks(era_id);
 CREATE INDEX idx_tracks_tag     ON tracks(tag_id);
+CREATE INDEX idx_tracks_r2      ON tracks(r2_key);
 CREATE INDEX idx_tracks_created ON tracks(created_at);
 
 -- ═══ TRACK_TAGS (junction MusicLab) ═════════════════════════
@@ -138,9 +142,11 @@ CREATE INDEX idx_pl_tracks_pos ON playlist_tracks(playlist_id, position);
 -- ═══ DROPS ══════════════════════════════════════════════════
 CREATE TABLE drops (
   id           TEXT PRIMARY KEY,
+  era_id       TEXT REFERENCES eras(id) ON DELETE SET NULL,
   track_id     TEXT REFERENCES tracks(id) ON DELETE SET NULL,
   from_user    TEXT NOT NULL REFERENCES users(id),
   to_user      TEXT NOT NULL REFERENCES users(id),
+  drop_date    TEXT,                        -- fecha real del momento (≠ created_at)
   memory       TEXT DEFAULT '',
   mood         TEXT DEFAULT '',
   seen         INTEGER NOT NULL DEFAULT 0,
@@ -148,8 +154,10 @@ CREATE TABLE drops (
   favorited_by TEXT,
   created_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
-CREATE INDEX idx_drops_from ON drops(from_user);
-CREATE INDEX idx_drops_to   ON drops(to_user);
+CREATE INDEX idx_drops_era   ON drops(era_id);
+CREATE INDEX idx_drops_from  ON drops(from_user);
+CREATE INDEX idx_drops_to    ON drops(to_user);
+CREATE INDEX idx_drops_date  ON drops(drop_date);
 
 -- ═══ QUEUE_ITEMS (ADR-002 — cola por usuario) ══════════════
 CREATE TABLE queue_items (
