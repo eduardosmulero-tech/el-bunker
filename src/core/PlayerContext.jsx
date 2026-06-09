@@ -306,6 +306,23 @@ useEffect(() => {
     return () => { rel(); document.removeEventListener("visibilitychange", onVis); };
   }, [isPlaying]);
 
+  // ── MediaSession API (S80-S81, Android M1-M12) ────────────
+  useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
+    if (!activeTrack) { navigator.mediaSession.metadata = null; return; }
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: activeTrack.title || "Sin título",
+      artist: activeTrack.artist || "El Búnker",
+      album: activeTrack.era_id ? `Era ${activeTrack.era_id}` : "Music Lab",
+      artwork: activeTrack.thumbnail ? [{ src: activeTrack.thumbnail, sizes: "512x512", type: "image/jpeg" }] : [],
+    });
+    navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play(); setIsPlaying(true); });
+    navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
+    navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
+    navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));
+    navigator.mediaSession.setActionHandler("seekto", (d) => { if (audioRef.current && d.seekTime != null) audioRef.current.currentTime = d.seekTime; });
+  }, [activeTrack]);
+
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
   useEffect(() => {
     if (trackVibe) {
@@ -348,6 +365,10 @@ useEffect(() => {
       playbackContext, setPlaybackContext,
       playHistory,
       queueContextName, setQueueContextName,
+      // Android (S78-S79)
+      vibrate: (pattern) => { try { navigator.vibrate?.(pattern); } catch {} },
+      // Shared listening (S82)
+      sharedListening: false, setSharedListening: () => {},
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
