@@ -39,6 +39,17 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   const [localQueue,       setLocalQueue]       = useState([]);
   const [loopMode,         setLoopMode]         = useState("off");
   const [shuffle,          setShuffle]          = useState(false);
+  // SH1: orden aleatorio de tracks restantes. Se regenera al activar shuffle o al agotarse.
+  const shuffledListRef  = useRef([]);
+  const shuffleIndexRef  = useRef(0);
+
+  // Resetear estado de shuffle al desactivarlo
+  useEffect(() => {
+    if (!shuffle) {
+      shuffledListRef.current = [];
+      shuffleIndexRef.current = 0;
+    }
+  }, [shuffle]);
   const [autoPlaySignal,   setAutoPlaySignal]   = useState(0);
   const [syncStatus,       setSyncStatus]       = useState("idle");
   const [masterVolume,     setMasterVolume]     = useState(80);
@@ -161,9 +172,29 @@ useEffect(() => {
     }
 
     if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
-    const nextIdx = shuffle
-      ? Math.floor(Math.random() * list.length)
-      : (base + dir + list.length) % list.length;
+    // SH1: shuffle usa orden pre-generado, no random cada vez
+    if (shuffle) {
+      // Regenerar orden aleatorio si está vacío
+      if (shuffledListRefStable.current.length === 0) {
+        const remaining = [...list];
+        for (let i = remaining.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+        }
+        shuffledListRefStable.current = remaining;
+        shuffleIndexRefStable.current = 0;
+      }
+      const nextTrack = shuffledListRefStable.current[shuffleIndexRefStable.current];
+      shuffleIndexRefStable.current++;
+      if (shuffleIndexRefStable.current >= shuffledListRefStable.current.length) {
+        shuffledListRefStable.current = [];
+        shuffleIndexRefStable.current = 0;
+      }
+      setActiveTrack(nextTrack);
+      setAutoPlaySignal((n) => n + 1);
+      return;
+    }
+    const nextIdx = (base + dir + list.length) % list.length;
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
   }, [tracks, localQueue, activeTrack, shuffle]);
@@ -173,6 +204,11 @@ useEffect(() => {
   const loopModeRef = useRef("off");
   useEffect(() => { skipRef.current     = skip;     }, [skip]);
   useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
+  // SH1: mantener refs de shuffle sincronizados con closures del skip
+  const shuffledListRefStable = useRef(shuffledListRef.current);
+  const shuffleIndexRefStable = useRef(shuffleIndexRef.current);
+  useEffect(() => { shuffledListRefStable.current = shuffledListRef.current; }, [shuffle]);
+  useEffect(() => { shuffleIndexRefStable.current = shuffleIndexRef.current; }, [shuffle]);
 
   // ── Handlers cola ─────────────────────────────────────────
 
