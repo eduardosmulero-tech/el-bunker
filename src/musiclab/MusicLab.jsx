@@ -584,28 +584,26 @@ export default function MusicLab({
                   </div>
                 </div>
               )}
-              {localQueue.filter((t) => t.id !== activeTrack?.id).length > 0 && (
+              {/* Q14: cola manual — tracks añadidos explícitamente por el usuario */}
+              {filteredQueue.filter((t) => t.id !== activeTrack?.id && t._manual).length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>siguientes</span>
+                  <span className="text-xs opacity-50 tracking-widest uppercase px-1" style={{ color: ACID }}>cola manual</span>
                   <div className="flex flex-col gap-2">
-                    {filteredQueue.filter((t) => t.id !== activeTrack?.id).map((track, i) => {
+                    {filteredQueue.filter((t) => t.id !== activeTrack?.id && t._manual).map((track, i) => {
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
-                      // Q14: track manual → color propio del vibe. track de playlist → ACID
-                      const trackColor = track._manual ? (qVibe?.color ?? ACID) : ACID;
-                      // Q4: playlist activa donde insertar el track manual
+                      const trackColor = qVibe?.color ?? ACID;
                       const activePl = queueContextName
                         ? localPlaylists.find((p) => p.name === queueContextName)
                         : null;
-                      // posición del track dentro de localQueue (excluyendo activeTrack)
-                      const queuePos = localQueue.filter((t) => t.id !== activeTrack?.id).findIndex((t) => t.id === track.id);
+                      const queuePos = localQueue.filter((t) => t.id !== activeTrack?.id && t._manual).findIndex((t) => t.id === track.id);
                       return (
-                        <div key={`queue-next-${track.id}`}
+                        <div key={`queue-manual-${track.id}`}
                           draggable
                           onDragStart={() => handleDragStart(i)}
                           onDragOver={handleDragOver}
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
-                          style={{ background: GLASS_BG, border: `1px solid ${track._manual ? trackColor + "33" : GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
+                          style={{ background: GLASS_BG, border: `1px solid ${trackColor}33`, fontFamily: FONT_MONO, cursor: "grab" }}>
                           <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
@@ -621,12 +619,11 @@ export default function MusicLab({
                             style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
                             {qVibe?.icon}
                           </span>
-                          {track._manual && activePl && (
+                          {activePl && (
                             <motion.button whileTap={{ scale: 0.9 }}
                               title={`Añadir a ${activePl.name} en esta posición`}
                               onClick={async () => {
                                 const newIds = [...activePl.track_ids];
-                                // insertar en la posición del track dentro de la playlist (tras el track activo)
                                 const activeIdxInPl = newIds.indexOf(activeTrack?.id);
                                 const insertAt = activeIdxInPl >= 0 ? activeIdxInPl + 1 + queuePos : newIds.length;
                                 newIds.splice(insertAt, 0, track.id);
@@ -641,6 +638,49 @@ export default function MusicLab({
                               ◈
                             </motion.button>
                           )}
+                          <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
+                            className="ml-1 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                            style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
+                            ✕
+                          </motion.button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {/* Q14: cola de contexto — tracks cargados desde playlist */}
+              {filteredQueue.filter((t) => t.id !== activeTrack?.id && !t._manual).length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs opacity-50 tracking-widest uppercase px-1" style={{ color: ACID }}>
+                    {queueContextName ? `playlist · ${queueContextName}` : 'contexto'}
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    {filteredQueue.filter((t) => t.id !== activeTrack?.id && !t._manual).map((track, i) => {
+                      const qVibe = getVibeConfig(track.tag ?? track.vibe);
+                      return (
+                        <div key={`queue-ctx-${track.id}`}
+                          draggable
+                          onDragStart={() => handleDragStart(i)}
+                          onDragOver={handleDragOver}
+                          onDrop={() => handleDrop(i)}
+                          className="flex items-center gap-3 p-3 rounded-sm"
+                          style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
+                          <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
+                            style={{ background: `${ACID}12`, border: `1px solid ${ACID}33` }}>
+                            {track.thumbnail
+                              ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
+                              : <span style={{ color: ACID, fontSize: 10 }}>⌕</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
+                            <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                          </div>
+                          <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                            style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33` }}>
+                            {qVibe?.icon}
+                          </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
                             className="ml-1 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>

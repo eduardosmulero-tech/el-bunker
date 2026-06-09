@@ -245,13 +245,15 @@ useEffect(() => {
   }, [localQueue, activeTrack?.id]);
 
   // setPlaybackContext — C2/C4: carga playlist como contexto, _manual:false
-  // Reemplaza toda la cola con los tracks de la playlist.
+  // Q10: preserva tracks manuales (_manual:true) al cambiar de playlist.
+  // Manual primero (prioridad Q1), luego el contexto nuevo.
   // contextName opcional: nombre de la playlist para mostrar en cabecera de COLA.
   const setPlaybackContext = useCallback((contextTracks, contextName = null) => {
     if (!Array.isArray(contextTracks)) return;
-    setLocalQueue(contextTracks.map((t) => ({ ...t, _manual: false })));
+    const manualTracks = localQueue.filter((t) => t._manual);
+    setLocalQueue([...manualTracks, ...contextTracks.map((t) => ({ ...t, _manual: false }))]);
     setQueueContextName(contextName ?? null);
-  }, []);
+  }, [localQueue]);
 
   // playbackContext — computed desde localQueue para compatibilidad con consumidores externos
   const playbackContext = localQueue.filter((t) => !t._manual);
