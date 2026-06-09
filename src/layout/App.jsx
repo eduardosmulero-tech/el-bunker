@@ -14,7 +14,6 @@ import LoginScreen                       from "./LoginScreen";
 import Vault                             from "../vault/Vault";
 import MusicLab                          from "../musiclab/MusicLab";
 import { DropAlertModal }               from "../musiclab/DropsManager";
-import SmokeSession                      from "../smoke/SmokeSession";
 import Capsules                          from "../capsules/Capsules";
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
 const ACID   = "#bfff00";
@@ -221,8 +220,7 @@ const MusicPage = () => {
 
 /** Wrapper para CAPSULES con SmokeSession flotante */
 const CapsulesPage = () => {
-  const { db, user } = useVault();
-  const { masterVolume, setMasterVolume } = useVault();
+  const { db, user, masterVolume, setMasterVolume } = useVault();
   const { activeTrack } = usePlayer();
   return (
     <Capsules

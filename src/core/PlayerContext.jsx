@@ -365,8 +365,7 @@ useEffect(() => {
       playbackContext, setPlaybackContext,
       playHistory,
       queueContextName, setQueueContextName,
-      // Android (S78-S79)
-      vibrate: (pattern) => { try { navigator.vibrate?.(pattern); } catch {} },
+      vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern); } catch {} }, []),
       // Shared listening (S82)
       sharedListening: false, setSharedListening: () => {},
     }}>
