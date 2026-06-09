@@ -1,0 +1,104 @@
+======================================================================
+  EL BÚNKER — S54: FASE 1 · D1 Schema + Workers Init + Wrangler
+  Fecha: 9 Junio 2026
+======================================================================
+
+OBJETIVO
+--------
+Crear la infraestructura Cloudflare: schema D1 (16 tablas SQL normalizadas),
+Worker REST (8 endpoints + health), y configuración wrangler.toml.
+Migración planificada de Drive JSON → D1+R2 (ADR-024).
+
+ARCHIVOS CREADOS
+----------------
+  workers/schema.sql      — 16 tablas + 4 índices + seed data (3 usuarios, 4 tags)
+  workers/worker.js       — Worker CF con endpoints: health, tracks, drops,
+                             playlists, tags, queue, events + JWT placeholder
+  wrangler.toml           — Config Cloudflare: bindings D1 + R2, observability
+  tools/recreate_schema.sh — Script para DROP+CREATE atómico del schema
+
+RESUMEN DE LA SESIÓN
+--------------------
+
+1. CREACIÓN INICIAL DEL SCHEMA (commit 70a456f)
+   - 16 tablas normalizadas cubriendo todas las entidades del JSON Drive 5.0.0
+   - users, app_config, eras, entries, entry_tags, files, tags, tracks,
+     track_tags, playlists, playlist_tracks, drops, queue_items, events,
+     time_capsules, capsule_items
+   - Seed data: 3 usuarios (Admin, Edu, David) + 4 tags del sistema (ADR-016)
+
+2. REVISIÓN Y CORRECCIÓN DEL SCHEMA (commit 0006d05)
+   Bugs encontrados en review:
+   - FK files→tracks mal ordenada → corregido moviendo files después de tracks
+   - RETURNING id no soportado en D1 SQLite → eliminado del worker
+   - Queue PUT aceptaba track_ids[] plano → cambiado a items[] con is_manual
+   
+   Campos añadidos tras auditar contra GoogleDriveService.js:
+   - tracks.era_id   (el JSON Drive lo tiene, necesario filtrar por Era)
+   - tracks.r2_key   (getStreamUrl() consulta track.r2_key directamente)
+   - drops.era_id    (drops están asociados a Eras en Drive)
+   - drops.drop_date (fecha real del momento, distinta de created_at)
+
+3. VERIFICACIÓN DE TAGS (preocupación del usuario)
+   Los 4 tags seed coinciden EXACTAMENTE con:
+   - tokens.js (VIBE_TAGS): gaming◉#00ffcc, 420_chill◎#aaff44, dnb⚡#ff6b35, romantiqueo♥#bf00ff
+   - GoogleDriveService.js (DEFAULT_TAGS en migración 4.0→5.0): mismos ids/labels/iconos/colores
+   Conclusión: tags correctos, coinciden con el código actual.
+
+4. SINCRONIZACIÓN WORKER (commit 874030b)
+   - POST /api/tracks: añadidos era_id y r2_key (11 placeholders, 11 binds ✅)
+   - Añadidos endpoints GET/POST /api/drops con era_id y drop_date (8 binds ✅)
+
+COMANDOS DE DESPLIEGUE (Wrangler)
+----------------------------------
+
+  # 1. Recuperar el database_id (solo si se perdió)
+  npx wrangler d1 list
+
+  # 2. Meter el database_id en wrangler.toml (pegando la UUID)
+  sed -i 's|database_id = ""|database_id = "PEGA-AQUI-TU-UUID"|' wrangler.toml
+
+  # 3. Verificar
+  grep database_id wrangler.toml
+
+  # 4. Desplegar
+  npx wrangler deploy
+
+PROBLEMAS RESUELTOS DURANTE LA SESIÓN
+--------------------------------------
+
+  - wrangler: command not found → usar npx wrangler (está en ~/.hermes/node/bin/)
+  - wrangler login se cuelga en WSL → usar API Token en vez de OAuth
+    (CLOUDFLARE_API_TOKEN en ~/.bashrc)
+  - Permisos del token → 3 filas: Workers Scripts:Edit, D1:Edit, R2 Storage:Edit
+  - R2: elegir "R2 Storage" (no Data catalog ni SQL)
+  - schema.sql no se lee → usar ruta absoluta con --file
+  - No se puede pegar comandos largos → crear script recreate_schema.sh
+  - database_id perdido → recuperar con `npx wrangler d1 list`
+
+VERIFICACIÓN FINAL (D1 local)
+------------------------------
+  16/16 tablas creadas ✅
+  tracks: era_id + r2_key presentes ✅
+  drops: era_id + drop_date presentes ✅
+  Tags: GAMING ◉ · 420 ◎ · DnB ⚡ · ♥ ♥ ✅
+
+PENDIENTE
+---------
+  - Poner database_id en wrangler.toml
+  - `npx wrangler deploy`
+  - Bucket R2 "el-bunker" ya existe → no hace falta crearlo
+
+COMMITS GENERADOS
+-----------------
+  70a456f  S54: D1 schema completo (16 tablas normalizadas) + Workers init
+  0006d05  S54: D1 schema v1.0.1 corregido — era_id, r2_key, drop_date + recreate_schema.sh
+  874030b  S54: worker.js sincronizado con schema v1.0.1 — drops endpoints + nuevas columnas
+
+COSTE ESTIMADO (Cloudflare Free Tier)
+--------------------------------------
+  Workers:  100K req/día → 2 usuarios ≈ 0€
+  D1:       5GB / 5M lecturas → unos pocos MB ≈ 0€
+  R2:       10GB / 1M ops Clase A → <10GB ≈ 0€
+  Total: 0€/mes mientras no se superen los límites gratuitos.
+======================================================================

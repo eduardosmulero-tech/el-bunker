@@ -22,7 +22,7 @@
 | Medio | ESLint no reconocía prefijo _ | eslint.config.js |
 
 ### Rama
-`roadmap-completo` — 11 commits, +2,388 líneas, 17 archivos (9 nuevos)
+`roadmap-completo` — 11 commits (+3 en master Fase 0), +2,388 líneas, 17 archivos (9 nuevos)
 
 ### Pendiente
 - Wiring JWT frontend → TimeCapsules
