@@ -1,0 +1,495 @@
+======================================================================
+  EL BÚNKER — REGISTRO COMPLETO DE SESIÓN
+  Desde S49 (Refundación) hasta S58 (Auditoría y refactor)
+  Fecha: Junio 2026
+======================================================================
+
+══════════════════════════════════════════════════════════════════
+  S49 — REFUNDACIÓN DEL PRODUCTO
+══════════════════════════════════════════════════════════════════
+
+OBJETIVO: Entrevista de refundación. Redefinir arquitectura, specs
+y roadmap tras la eliminación de YouTube y la decisión de migrar
+a Cloudflare D1+R2+Workers.
+
+DOCUMENTACIÓN GENERADA (6 nuevos, 16 actualizados):
+
+Nuevos:
+  docs/spec/taxonomia_vault.md           — 14 categorías, ~70 tipos de contenido
+  docs/spec/auditoria_cruzada_vault_musiclab.md — Overlaps, sinergias, 9 decisiones
+  docs/spec/capsulas_spec.md             — Timeline, Smoke, Capsules, RECAP
+  docs/spec/galeria_vault_spec.md        — 6 modos de galería + edge cases
+  docs/ROADMAP.md                        — 38 sesiones, 6 fases, ~38h estimadas
+  docs/roadmap_tracker.html              — HTML interactivo con localStorage
+
+Actualizados:
+  CONTRATO.md    — 27 ADRs, 7 inamovibles, 3 revertidos
+  PROYECTO.md    — Stack D1+R2+Workers, estructura futura
+  ESTADO.md      — Bugs, docs stale resueltos
+  BACKLOG.md     — Solo bugs, sin roadmap
+  REGLAS.md      — 6 reglas S49 + mapa archivos ampliado
+  SESION.md      — Resumen S49 completo
+  INDEX.md       — Staleness → OK tras reescritura
+  CLAUDE.md      — Identidad D1+R2, reglas S49, mapa specs
+  architecture.md, data-flow.md, event-lifecycle.md,
+  ownership-map.md, rendering-flow.md, state-map.md,
+  technical-debt.md — 7 docs de arquitectura reescritos
+
+ADRs NUEVOS (S49):
+  ADR-017 — 3 tabs definitivos: VAULT · MUSIC LAB · CAPSULES
+  ADR-018 — MusicLab absorbe todo el audio
+  ADR-019 — Motor único de estadísticas (events append-only en D1)
+  ADR-020 — CAPSULES como capa de experiencias temporales (4 sub-tabs)
+  ADR-021 — Galería del VAULT: 6 modos (WALL, CINEMA, MAP, DIALOGUE, REEL, EXHIBITION)
+  ADR-022 — FileUploadService unificado con pre-signed URLs a R2
+  ADR-023 — Namespaces de tags separados (music vs vault)
+  ADR-024 — Migración a D1 + Workers + R2
+  ADR-025 — Google OAuth2 solo para auth
+  ADR-026 — RECAP como 4ª cápsula
+  ADR-027 — DIALOGUE: perspectiva dual en galería
+
+══════════════════════════════════════════════════════════════════
+  FASE 0 — ESTABILIZACIÓN (S50-S53)
+══════════════════════════════════════════════════════════════════
+
+S50 — Fix historial Q2/Q3
+  Archivo: src/core/PlayerContext.jsx
+  Cambios:
+    - loadHistory() restaura playHistory desde localStorage por usuario
+    - useEffect persiste playHistory al cambiar
+    - Se limpia localStorage cuando el historial se vacía
+    - Protegido contra pérdida si tracks aún no está cargado
+  Bugs corregidos en review: 2 (filtro con tracks vacío, limpieza localStorage)
+  Commit: bca3b7b
+
+S51 — Fix shuffle SH1
+  Archivo: src/core/PlayerContext.jsx
+  Cambios:
+    - Orden de shuffle pre-generado (shuffleOrder ref)
+    - Aleatoriza solo tracks restantes, no todos cada vez
+    - Se regenera al agotarse la lista o al desactivar shuffle
+  Commit: 8ab0953
+
+S52 — Fix loop L1
+  Archivo: src/core/PlayerContext.jsx
+  Cambios:
+    - Loop track absoluto: siguiente/anterior → seek al inicio del track actual
+    - Solo se sale reproduciendo otra canción explícitamente
+  Commit: 43467f2
+
+S53 — Q10 + Q14 (cola manual sobrevive + separación visual)
+  Archivos: src/core/PlayerContext.jsx, src/musiclab/MusicLab.jsx
+  Cambios:
+    - setPlaybackContext preserva tracks _manual:true al cambiar de playlist
+    - UI divide la cola en «cola manual» (tracks con su color de vibe) 
+      y «playlist · nombre» (tracks en ACID uniforme)
+  Commit: addef9a
+
+VERIFICACIÓN POST-FASE 0:
+  - Los 4 bugs NO estaban arreglados antes (verificado contra PLIEGO-227)
+  - 0 duplicados, 0 regresiones
+  - Archivos tocados: PlayerContext.jsx, MusicLab.jsx
+
+NOTA SOBRE NUMERACIÓN DE PLIEGOS:
+  Los números PLIEGO-228 a 231 colisionan con archivos pliego_*.txt
+  existentes en tools/ (creados el 4 de junio con otro contenido).
+  El sistema de pliegos se desincronizó con el script pliego_apply.py.
+
+══════════════════════════════════════════════════════════════════
+  FASE 1 — INFRA CLOUDFLARE (S54)
+══════════════════════════════════════════════════════════════════
+
+S54 — D1 Schema + Workers Init + Wrangler Config
+
+OBJETIVO: Crear la infraestructura Cloudflare:
+  - Schema D1: 16 tablas SQL normalizadas desde el JSON Drive 5.0.0
+  - Worker REST: 8 endpoints + health + JWT placeholder
+  - Wrangler: configuración de despliegue con bindings D1+R2
+
+ARCHIVOS CREADOS:
+  workers/schema.sql          — 16 tablas + índices + seed data
+  workers/worker.js           — Worker CF con endpoints REST
+  wrangler.toml               — Config: D1 binding + R2 binding + obs
+  tools/recreate_schema.sh    — Script DROP+CREATE atómico
+  docs/sesiones/              — Carpeta para registros de sesión
+
+─── PRIMERA ITERACIÓN (commit 70a456f) ─────────────────────────
+
+Schema: 16 tablas normalizadas
+  users, app_config, eras, entries, entry_tags, tags, files,
+  tracks, track_tags, playlists, playlist_tracks, drops,
+  queue_items, events, time_capsules, capsule_items
+
+Worker endpoints:
+  GET  /api/health              — health check con DB + auth
+  GET  /api/tracks              — todos los tracks no eliminados
+  POST /api/tracks              — crear track (auth requerido)
+  GET  /api/playlists           — todas las playlists
+  POST /api/playlists           — crear playlist (auth)
+  GET  /api/tags?namespace=     — tags filtrables por namespace
+  POST /api/tags                — crear tag (auth)
+  GET  /api/queue/:user         — cola de un usuario
+  PUT  /api/queue/:user         — guardar cola (auth)
+  POST /api/events              — emitir evento append-only (auth)
+  GET  /api/events?type=&limit= — consultar eventos
+
+Bugs corregidos en review (3):
+  1. FK files→tracks mal ordenada → movido files después de tracks
+  2. RETURNING id no soportado en D1 SQLite → eliminado
+  3. Queue PUT aceptaba track_ids[] plano → cambiado a items[] con is_manual
+
+─── CORRECCIÓN DEL SCHEMA (commit 0006d05) ─────────────────────
+
+El usuario preguntó: "la base de datos tiene en cuenta el contrato
+que hicimos Y lo que ya existe en la app?"
+
+AUDITORÍA COMPLETA: D1 schema vs GoogleDriveService.js (Drive JSON 5.0.0)
+
+Tags: CONFIRMADOS ✅
+  Los 4 tags seed coinciden exactamente con:
+  - tokens.js VIBE_TAGS: gaming◉#00ffcc, 420_chill◎#aaff44, dnb⚡#ff6b35, romantiqueo♥#bf00ff
+  - GoogleDriveService.js DEFAULT_TAGS: mismos ids, labels, iconos, colores
+
+Gaps encontrados y corregidos:
+  tracks.era_id   → AÑADIDO (el JSON Drive lo tiene; necesario filtrar por Era)
+  tracks.r2_key   → AÑADIDO (getStreamUrl() consulta track.r2_key directamente)
+  drops.era_id    → AÑADIDO (drops están asociados a Eras en Drive)
+  drops.drop_date → AÑADIDO (fecha real del momento ≠ created_at)
+  libraries[]     → OMITIDO intencionalmente (concepto Drive; R2 lo reemplaza)
+
+También se creó tools/recreate_schema.sh para DROP+CREATE atómico
+(evita problemas de pegado de comandos largos en terminal).
+
+─── SINCRONIZACIÓN WORKER (commit 874030b) ──────────────────────
+
+  - POST /api/tracks: añadidos era_id y r2_key (11 placeholders, 11 binds ✅)
+  - Añadidos GET /api/drops y POST /api/drops con era_id y drop_date
+  - POST /api/drops: 8 placeholders, 8 binds ✅
+
+Code review: binds correctos. Detalle menor:
+  POST /api/drops asigna to_user = userId por defecto (auto-enviarse).
+  Si el caso normal es Edu→David, quizás convenga hacer to_user obligatorio.
+
+─── TROUBLESHOOTING WRANGLER ────────────────────────────────────
+
+Problema 1: "wrangler: command not found" tras npm install -g
+  Causa: binario en ~/.hermes/node/bin/, no en PATH
+  Solución: usar `npx wrangler` en vez de `wrangler`
+
+Problema 2: "wrangler login" abre pestaña pero terminal se cuelga
+  Causa: bug de WSL — el callback OAuth nunca llega
+  Solución: Ctrl+C y usar API Token en vez de OAuth
+    export CLOUDFLARE_API_TOKEN="..."
+    (añadir a ~/.bashrc para que persista)
+
+Problema 3: Configuración del API Token
+  - No usar plantillas → "Create Custom Token"
+  - 3 permisos necesarios:
+    1. Account → Workers Scripts → Edit
+    2. Account → D1 → Edit
+    3. Account → R2 Storage → Edit  (elegir "R2 Storage", no Data catalog ni SQL)
+  - IP Filtering: dejar vacío (sin restricción)
+  - No compartir el token con nadie
+
+Problema 4: schema.sql no se lee (wrangler d1 execute)
+  Causa: ruta relativa no resuelve desde el directorio actual
+  Solución: usar ruta absoluta
+    npx wrangler d1 execute el-bunker-db --file=/mnt/c/Proyectos/el-bunker/workers/schema.sql
+
+Problema 5: Comandos largos causan caos al pegar en terminal
+  Causa: saltos de línea y # comentarios confunden a bash
+  Solución: crear script tools/recreate_schema.sh
+    bash tools/recreate_schema.sh
+
+Problema 6: database_id perdido
+  Solución: recuperar con `npx wrangler d1 list`
+
+─── COSTE (Cloudflare Free Tier) ────────────────────────────────
+
+  Workers: 100K req/día → 2 usuarios ≈ 0€
+  D1:      5GB almacenamiento, 5M lecturas/mes → pocos MB ≈ 0€
+  R2:      10GB almacenamiento → <10GB ≈ 0€
+  Total: 0€/mes
+
+─── PRIMER DESPLIEGUE ─────────────────────────────────────────
+
+El usuario ejecutó `npx wrangler deploy`.
+
+Resultado (docs/sesiones/respuestadeterminal.txt):
+  - WARNING: Multiple environments definidos (solo estético)
+  - Wrangler creó un bucket R2 NUEVO llamado "el-bunker"
+    (el usuario YA tenía uno llamado "el-bunker-music" con sus MP3s)
+  - Worker desplegado: https://el-bunker-api.thebunker-admin.workers.dev
+  - Bindings: DB (D1 el-bunker-db) + BUNKER (R2 el-bunker)
+  - Version ID: 042344ea
+
+─── CORRECCIÓN DEL BUCKET ──────────────────────────────────────
+
+El usuario indicó que su bucket real se llamaba "el-bunker-music"
+(tenía "-music" al final). Se corrigió en dos archivos:
+
+  wrangler.toml:        bucket_name = "el-bunker-music"
+  workers/schema.sql:   r2_bucket DEFAULT 'el-bunker-music'
+
+─── SEGUNDO DESPLIEGUE (FINAL) ─────────────────────────────────
+
+El usuario borró el bucket incorrecto y redesplegó:
+  npx wrangler r2 bucket delete el-bunker
+  npx wrangler deploy
+
+Resultado (docs/sesiones/respuestadeterminal.txt, actualizado):
+  - Sin provisioning warnings — bucket ya existía ✅
+  - Bindings correctos: DB → el-bunker-db, BUNKER → el-bunker-music ✅
+  - URL: https://el-bunker-api.thebunker-admin.workers.dev
+  - Version ID: 672f7e1b
+
+─── COMANDO PARA METER DATABASE_ID ─────────────────────────────
+
+El usuario perdió el database_id entre comandos. Se usó:
+  npx wrangler d1 list                                      ← recuperar UUID
+  sed -i 's|database_id = ""|database_id = "UUID"|' wrangler.toml  ← inyectar
+  grep database_id wrangler.toml                            ← verificar
+  → database_id = "795e5e88-6fab-4aa2-a294-d24640a0de05" ✅
+
+─── CREACIÓN DEL REGISTRO DE SESIÓN ────────────────────────────
+
+Se creó docs/sesiones/ para guardar el historial:
+  docs/sesiones/S49_S54_registro_completo.txt  — este archivo
+  docs/sesiones/S54_fase1_d1_schema_workers.txt — resumen técnico S54
+  docs/sesiones/respuestadeterminal.txt         — salida del deploy final
+
+─── VERIFICACIÓN FINAL ──────────────────────────────────────────
+
+  D1 local:
+    16/16 tablas ✅
+    tracks: era_id + r2_key ✅
+    drops: era_id + drop_date ✅
+    Tags seed: GAMING ◉ · 420 ◎ · DnB ⚡ · ♥ ♥ ✅
+    Usuarios seed: admin, edu, david ✅
+
+─── PENDIENTE PARA DESPLEGAR ────────────────────────────────────
+
+  ✅ database_id: 795e5e88-6fab-4aa2-a294-d24640a0de05
+  ✅ bucket R2: el-bunker-music (existente, con MP3s)
+  ✅ Worker desplegado: https://el-bunker-api.thebunker-admin.workers.dev
+  ✅ D1 schemas ejecutados en local (quedan por ejecutar en prod con --remote)
+
+══════════════════════════════════════════════════════════════════
+  RESUMEN DE COMMITS (TODA LA SESIÓN)
+══════════════════════════════════════════════════════════════════
+
+Fase 0 — Estabilización:
+  bca3b7b  S50 — Fix historial Q2/Q3 (localStorage playHistory)
+  8ab0953  S51 — Fix shuffle SH1 (pre-generado, solo restantes)
+  43467f2  S52 — Fix loop L1 (track absoluto)
+  addef9a  S53 — Q10 + Q14 (cola manual sobrevive + separación visual)
+
+Fase 1 — Infra Cloudflare:
+  70a456f  S54 — D1 schema + Workers init + wrangler.toml
+  0006d05  S54 — Schema corregido: era_id, r2_key, drop_date + recreate_schema.sh
+  874030b  S54 — Worker sincronizado: drops endpoints + columnas nuevas
+
+Total: 7 commits en 5 sesiones (S50-S54)
+
+══════════════════════════════════════════════════════════════════
+  ROADMAP (FASE 1 RESTANTE)
+══════════════════════════════════════════════════════════════════
+
+  S55 — Workers API CRUD completa + JWT auth
+  S56 — FileUploadService: pre-signed URLs R2
+  S57 — StatsEngine: emitter de eventos
+  S58 — Auditoría y refactor: 12 bugs corregidos
+
+══════════════════════════════════════════════════════════════════
+  FASES 1-6 (S55-S57) — ROADMAP COMPLETO
+══════════════════════════════════════════════════════════════════
+
+S55-S57 — API CRUD + JWT + Upload + Stats + Scaffolding Fases 2-6
+
+OBJETIVO: Terminar de una vez todo el roadmap sin parar (37 min).
+Crear todo el scaffolding y código de Fases 1-6 en rama roadmap-completo.
+
+ARCHIVOS CREADOS (9 nuevos):
+
+  Fase 1 — API Backend:
+    PROMPT_MAESTRO.md              — Instrucciones completas Fases 1-6
+    src/core/FileUploadService.js  — Subida a R2 vía Worker
+    src/core/StatsEngine.js        — Emisor de eventos al Worker
+
+  Fase 2 — VAULT:
+    src/vault/AddEntryForm.jsx     — Formulario polimórfico (note/photo/milestone/letter)
+    src/vault/VaultGallery.jsx     — Galería 6 modos (WALL/CINEMA/DIALOGUE/EXHIBITION/REEL/MAP)
+
+  Fase 3-4 — CAPSULES:
+    src/capsules/Capsules.jsx      — Shell con 4 sub-tabs (Timeline/Smoke/TimeCapsules/RECAP)
+    src/capsules/Timeline.jsx      — Feed de eventos agrupados por día
+    src/capsules/TimeCapsules.jsx  — CRUD de cápsulas de tiempo
+    src/capsules/Recaps.jsx        — Resúmenes semanal/mensual/anual con stats
+
+ARCHIVOS MODIFICADOS (2):
+    src/layout/App.jsx             — 3 tabs (ADR-017), nuevas rutas para CAPSULES
+    src/layout/Layout.jsx          — 3 tabs nav (quitado TIMELINE)
+    src/core/PlayerContext.jsx     — MediaSession API + vibrate + sharedListening stub
+    workers/worker.js              — JWT HMAC-SHA256 real, 18 endpoints CRUD
+
+─── WORKER: 18 ENDPOINTS ────────────────────────────────────────
+
+  Auth:
+    POST /api/auth/login           — Google OAuth2 token → JWT (HMAC-SHA256)
+
+  CRUD:
+    GET/POST/PATCH/DELETE /api/tracks
+    GET/POST                 /api/drops
+    GET/POST/PATCH/DELETE    /api/playlists
+    POST                     /api/playlists/:id/tracks
+    GET/POST/PATCH/DELETE    /api/tags
+    GET/POST/PATCH/DELETE    /api/entries
+    GET/PUT                  /api/queue/:user
+    GET/POST                 /api/events  (filtros: type, since, until, limit)
+    POST                     /api/upload  (pre-signed URL R2)
+    PUT                      /api/upload/:key  (binario directo a R2)
+    GET                      /api/health
+    GET                      /*  (serving R2 — streaming audio)
+
+─── JWT AUTH ────────────────────────────────────────────────────
+
+  - Firma real HMAC-SHA256 (crypto.subtle.sign/verify)
+  - 24h expiración
+  - Whitelist hardcodeada (admin, edu, david)
+  - Login: POST /api/auth/login con google_token → verifica contra Google API
+
+─── BUGS CORREGIDOS EN REVIEW (S55-S57) ────────────────────────
+
+  1. PATCH endpoints usaban blacklist → cambiado a whitelists (anti-SQL injection)
+  2. Queue GET devolvía is_manual (INT) → transformado a _manual (boolean)
+  3. Faltaba endpoint R2 para streaming de archivos → añadido GET /*
+  4. Eventos no se emitían en POST playlists ni POST tags → añadidos
+  5. Path matching frágil → startsWith + endsWith en vez de solo endsWith
+
+─── S55-S57 COMMITS ─────────────────────────────────────────────
+
+  7810749  PROMPT_MAESTRO.md — instrucciones completas Fases 1-6
+  ca119c3  S55-S56: JWT real + CRUD tracks/playlists/entries/tags + eventos
+  41f622d  S57: FileUploadService + StatsEngine frontend
+  1d54417  S57: PUT /api/upload/:key — subida binaria R2
+  e1a3ade  Fix review: whitelists anti-SQL, _manual, R2 serving, eventos
+  79978e7  Documentación de cierre: SESION.md + ESTADO.md
+
+══════════════════════════════════════════════════════════════════
+  S58 — AUDITORÍA Y REFACTOR (12 bugs corregidos)
+══════════════════════════════════════════════════════════════════
+
+OBJETIVO: Auditar completamente todo lo generado en Fases 2-6,
+encontrar bugs, depurar y refactorizar lo más pesado.
+
+─── BUGS ENCONTRADOS Y CORREGIDOS ───────────────────────────────
+
+Críticos:
+  1. Doble AnimatePresence en Layout.jsx + App.jsx
+     → Causaba doble animación y flicker al cambiar de pestaña
+     → Eliminado el AP interno en Layout.jsx (App.jsx gestiona transiciones)
+
+  2. Data model mismatch: Capsules/Timeline/Recaps leían db.events
+     → db.events NO existe en el JSON de Drive (vive en D1)
+     → Cambiado a prop events directa con TODO para integración Worker S59
+
+Altos:
+  3. AddEntryForm: tag.seedColor undefined
+     → VIBE_TAGS usan palette.accent, no seedColor
+     → Fallback: palette?.accent ?? seedColor ?? ACID
+
+  4. Props muertos: tracks y entries en Timeline.jsx y Recaps.jsx
+     → Recibidos pero nunca usados → eliminados
+
+  5. Imports no usados: PURPLE, BG, GLASS_BG, GLASS_BORDER en Capsules.jsx
+     → Eliminados
+
+  6. Imports no usados en Layout.jsx: useRef, useMotionValue, useTransform,
+     AnimatePresence → eliminados
+
+  7. Imports/vars no usados en App.jsx: BOOT, PURPLE, patchDb
+     → eliminados
+
+Medios:
+  8. VIBE_TAGS sin namespace → filtro roto en AddEntryForm
+     → Añadido namespace: "music" a los 4 tags canónicos
+
+  9. Worker sin endpoints CRUD para time_capsules
+     → Añadidos GET/POST/PATCH /api/time_capsules
+     → Eventos: capsule_created, capsule_unlocked
+
+  10. TimeCapsules.jsx solo hacía console.log
+      → Conectado a Worker API real (GET en mount, POST en handleCreate)
+      → Estados: isCreating, error
+      → Token prop para JWT auth
+
+  11. ESLint no reconocía prefijo _ en variables no usadas
+      → Añadido argsIgnorePattern + varsIgnorePattern en eslint.config.js
+
+  12. capsule_unlocked event sin payload
+      → Añadido JSON.stringify({ title: "desbloqueado" })
+
+─── ARCHIVOS MODIFICADOS EN S58 ─────────────────────────────────
+
+  src/layout/Layout.jsx       — AnimatePresence eliminado, imports limpios
+  src/capsules/Capsules.jsx   — events como prop, imports limpios
+  src/capsules/Timeline.jsx   — props muertos eliminados
+  src/capsules/Recaps.jsx     — props muertos eliminados
+  src/capsules/TimeCapsules.jsx — Conectado a Worker API
+  src/vault/AddEntryForm.jsx  — palette.accent fallback, imports limpios
+  src/layout/App.jsx          — dead imports/vars, CapsulesPage events=[]
+  src/tokens.js               — namespace: 'music' en VIBE_TAGS
+  workers/worker.js           — time_capsules CRUD + payload en eventos
+  eslint.config.js            — _ prefix rule
+
+─── VERIFICACIÓN FINAL ──────────────────────────────────────────
+
+  ESLint: 0 errores en los 9 archivos auditados ✅
+  Code review: 3 pases (DeepSeek), todos los fixes verificados ✅
+  Tipo: sin TypeScript en el proyecto (JSX puro) ✅
+
+─── PENDIENTE POST-S58 (S59+) ───────────────────────────────────
+
+  W1: Wiring JWT frontend — pasar token a Capsules/TimeCapsules
+  W2: Migración Drive JSON → D1 como fuente de verdad
+  W3: Sincronización tags MusicLab con D1
+  W4: Desplegar Worker actualizado (npx wrangler deploy)
+  W5: git push origin roadmap-completo
+
+══════════════════════════════════════════════════════════════════
+  RESUMEN DE COMMITS (S50-S58)
+══════════════════════════════════════════════════════════════════
+
+Fase 0 — Estabilización (4 commits):
+  bca3b7b  S50 — Fix historial Q2/Q3 (localStorage playHistory)
+  8ab0953  S51 — Fix shuffle SH1 (pre-generado, solo restantes)
+  43467f2  S52 — Fix loop L1 (track absoluto)
+  addef9a  S53 — Q10 + Q14 (cola manual sobrevive + separación visual)
+
+Fase 1 — Infra Cloudflare (3 commits):
+  70a456f  S54 — D1 schema + Workers init + wrangler.toml
+  0006d05  S54 — Schema corregido: era_id, r2_key, drop_date
+  874030b  S54 — Worker sincronizado: drops + columnas nuevas
+
+Fases 1-6 — Roadmap completo (6 commits):
+  7810749  PROMPT_MAESTRO.md
+  ca119c3  S55-S56: JWT real + CRUD completo + eventos
+  41f622d  S57: FileUploadService + StatsEngine
+  1d54417  S57: PUT /api/upload/:key
+  e1a3ade  Fix review: whitelists, _manual, R2 serving, eventos
+  79978e7  Documentación de cierre
+
+Auditoría (1 commit):
+  485cee1  S58: 12 bugs corregidos — AP duplicado, props muertos, API wiring
+
+Total: 14 commits en 9 sesiones (S50-S58)
+
+══════════════════════════════════════════════════════════════════
+  DOCUMENTACIÓN PARA USUARIOS
+══════════════════════════════════════════════════════════════════
+
+  CHANGELOG:   docs/Nucleo/CHANGELOG.md — v2.0.0 "Roadmap Completo"
+  Contrato:    docs/Nucleo/CONTRATO.md — 27 ADRs vigentes
+  Estado:      docs/Nucleo/ESTADO.md — bugs activos + próximo pliego
+  Sesión:      docs/Nucleo/SESION.md — dispatcher de arranque
+======================================================================
