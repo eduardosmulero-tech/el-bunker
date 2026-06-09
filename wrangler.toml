@@ -1,0 +1,31 @@
+# ============================================================
+#  EL BÚNKER — wrangler.toml
+#  Cloudflare Workers + D1 + R2
+#  S54 · Fase 1 — Infraestructura Cloudflare
+# ============================================================
+name = "el-bunker-api"
+main = "workers/worker.js"
+compatibility_date = "2025-06-09"
+
+# ═══ D1 Database ═════════════════════════════════════════════
+# Crea la DB con: wrangler d1 create el-bunker-db
+# Luego copia el database_id aquí y ejecuta: wrangler d1 execute el-bunker-db --file=workers/schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "el-bunker-db"
+database_id = ""   # ← remplazar tras `wrangler d1 create el-bunker-db`
+
+# ═══ R2 Bucket ═══════════════════════════════════════════════
+# Crea el bucket con: wrangler r2 bucket create el-bunker
+[[r2_buckets]]
+binding = "BUNKER"
+bucket_name = "el-bunker"
+
+# ═══ Environment: production ═════════════════════════════════
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+# ═══ Observability ═══════════════════════════════════════════
+[observability]
+enabled = true
+head_sampling_rate = 1
