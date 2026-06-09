@@ -27,7 +27,7 @@ function getPeriodRange(period) {
   return { since: start.toISOString(), until: now.toISOString() };
 }
 
-export default function Recaps({ events = [], tracks = [], entries = [] }) {
+export default function Recaps({ events = [] }) {
   const [period, setPeriod] = useState("weekly");
   const range = getPeriodRange(period);
 

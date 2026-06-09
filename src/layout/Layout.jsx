@@ -4,8 +4,8 @@
 //  Stack: React + Tailwind CSS + Framer Motion
 // ============================================================
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { usePlayer } from "../core/PlayerContext";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
@@ -41,7 +41,7 @@ const NoiseOverlay = () => (
 
 // ─── CORNER BRACKETS ─────────────────────────────────────────
 // Decorative L-shaped corners — signals "secure terminal"
-const CornerBrackets = ({ color = ACID, size = 20, thickness = 2, accentColor = ACID }) => {
+const CornerBrackets = ({ color = ACID, thickness = 2 }) => {
   const style = { borderColor: color, borderWidth: thickness };
   const cls   = "absolute w-5 h-5 opacity-60";
   return (
@@ -55,7 +55,7 @@ const CornerBrackets = ({ color = ACID, size = 20, thickness = 2, accentColor = 
 };
 
 // ─── TOP STATUS BAR ──────────────────────────────────────────
-const StatusBar = ({ isAuthenticated, lastHeartbeat, dbStatus, onSignOut, accentColor = ACID }) => {
+const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
   const [tick, setTick] = useState(new Date());
 
   useEffect(() => {
@@ -232,8 +232,8 @@ const AmbientGlows = ({ accentColor = ACID }) => (
 export default function Layout({
   children,
   isAuthenticated = false,
-  dbStatus = "OFFLINE",
-  lastHeartbeat = null,
+  dbStatus: _dbStatus = "OFFLINE",
+  lastHeartbeat: _lastHeartbeat = null,
   activeTab = "vault",
   onTabChange = () => {},
   onSignOut,
@@ -257,29 +257,18 @@ export default function Layout({
       {/* ── Layer 2: Chrome ── */}
       <StatusBar
         isAuthenticated={isAuthenticated}
-        lastHeartbeat={lastHeartbeat}
-        dbStatus={dbStatus}
         onSignOut={onSignOut}
         accentColor={accentColor}
       />
 
       {/* ── Layer 3: Page Content ── */}
+      {/* NOTA: Las transiciones de página las maneja App.jsx (AuthenticatedApp).
+           No duplicar AnimatePresence aquí — causa doble animación y flicker. */}
       <main
         className="relative z-20 pt-10 pb-20 min-h-screen"
         style={{ scrollbarColor: `${ACID}44 transparent` }}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.35, ease: "easeOut" }}
-            className="h-full"
-          >
-            {children}
-          </motion.div>
-        </AnimatePresence>
+        {children}
       </main>
 
       {/* ── Layer 4: Bottom Nav ── */}

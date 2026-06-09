@@ -6,7 +6,7 @@
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-import { VaultProvider, useVault, BOOT } from "../core/VaultContext";
+import { VaultProvider, useVault } from "../core/VaultContext";
 import { useMusicActions }               from "../musiclab/useMusicActions";
 import { PlayerProvider, usePlayer }     from "../core/PlayerContext";
 import Layout                            from "./Layout";
@@ -17,7 +17,6 @@ import { DropAlertModal }               from "../musiclab/DropsManager";
 import Capsules                          from "../capsules/Capsules";
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
 const ACID   = "#bfff00";
-const PURPLE = "#bf00ff";
 const BG     = "#050505";
 const FONT   = "'JetBrains Mono', 'Courier New', monospace";
 
@@ -140,7 +139,7 @@ const ErrorScreen = ({ message, onRetry }) => (
 
 /** Wrapper para la pestaña VAULT */
 const VaultPage = () => {
-  const { db, patchDb } = useVault();
+  const { db } = useVault();
   return (
     <Vault
       db={db}
@@ -222,10 +221,14 @@ const MusicPage = () => {
 const CapsulesPage = () => {
   const { db, user, masterVolume, setMasterVolume } = useVault();
   const { activeTrack } = usePlayer();
+  // events y time_capsules viven en D1 (Worker API).
+  // Por ahora pasamos arrays vacíos — la integración con Worker se hace en S58+.
+  // TODO(S58): fetch desde GET /api/events y GET /api/time_capsules usando JWT.
   return (
     <Capsules
       db={db}
       userId={user?.id ?? null}
+      events={[]}
       activeTrack={activeTrack}
       masterVolume={masterVolume}
       onVolumeChange={setMasterVolume}
@@ -239,9 +242,9 @@ const TAB_MAP = { vault: VaultPage, music: MusicPage, capsules: CapsulesPage };
 // ─── AUTHENTICATED APP ───────────────────────────────────────
 const AuthenticatedApp = () => {
   const {
-      user, db, dbStatus, lastHeartbeat,
+      user: _user, db, dbStatus, lastHeartbeat,
       activeTab, setActiveTab,
-      masterVolume,
+      masterVolume: _masterVolume,
       logout,
       pendingDrop, clearPendingDrop,
     } = useVault();

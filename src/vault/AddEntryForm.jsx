@@ -3,9 +3,9 @@
 //  Formulario polimórfico: note, photo, milestone, letter
 //  S59 · Fase 2 — VAULT núcleo
 // ============================================================
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS } from "../tokens";
+import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS } from "../tokens";
 
 const ENTRY_TYPES = [
   { id: "note",      icon: "✎", label: "NOTA" },
@@ -14,7 +14,7 @@ const ENTRY_TYPES = [
   { id: "letter",    icon: "♥", label: "CARTA" },
 ];
 
-export default function AddEntryForm({ userId, eras = [], onAdd, onCancel }) {
+export default function AddEntryForm({ userId: _userId, eras = [], onAdd, onCancel }) {
   const [type, setType] = useState("note");
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
@@ -69,9 +69,9 @@ export default function AddEntryForm({ userId, eras = [], onAdd, onCancel }) {
       <div className="flex flex-wrap gap-1">
         {VIBE_TAGS.filter(t => t.namespace === "vault" || !t.namespace).map(tag => (
           <button key={tag.id} onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
-            className="text-xs px-2 py-1" style={{
-              color: tags.includes(tag.id) ? tag.seedColor : `${ACID}44`,
-              border: `1px solid ${tags.includes(tag.id) ? tag.seedColor : `${ACID}22`}`,
+            className="text-xs px-2 py-1"            style={{
+              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}44`,
+              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}22`}`,
               fontFamily: FONT_MONO,
             }}>
             {tag.icon} {tag.label}

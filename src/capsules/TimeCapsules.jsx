@@ -2,25 +2,59 @@
 //  EL BÚNKER — TimeCapsules.jsx
 //  Cápsulas de tiempo: crear, sellar, desbloquear (ADR-020)
 //  S68 · Fase 3 — CAPSULES núcleo
+//  Conectado a Worker API (POST/GET/PATCH /api/time_capsules)
 // ============================================================
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 
-export default function TimeCapsules({ userId, capsules = [] }) {
+const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+
+export default function TimeCapsules({ token, capsules: initialCapsules = [] }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [unlockAt, setUnlockAt] = useState("");
+  const [capsules, setCapsules] = useState(initialCapsules);
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch capsules from Worker API on mount
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE}/api/time_capsules`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => setCapsules(data))
+      .catch(err => { console.warn("[TimeCapsules] fetch:", err); });
+  }, [token]);
 
   const now = new Date();
   const locked = capsules.filter(c => !c.is_unlocked && new Date(c.unlock_at) > now);
   const unlocked = capsules.filter(c => c.is_unlocked || new Date(c.unlock_at) <= now);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!title || !unlockAt) return;
-    // TODO: POST /api/entries o endpoint específico de capsules
-    console.log("[TimeCapsules] Crear:", { title, description, unlock_at: unlockAt, created_by: userId });
-    setTitle(""); setDescription(""); setUnlockAt("");
+    setIsCreating(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/time_capsules`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ title, description, unlock_at: new Date(unlockAt).toISOString() }),
+      });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al crear");
+      const created = await res.json();
+      setCapsules(prev => [created, ...prev]);
+      setTitle(""); setDescription(""); setUnlockAt("");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
@@ -33,10 +67,13 @@ export default function TimeCapsules({ userId, capsules = [] }) {
           className="bg-transparent text-xs p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
         <input type="datetime-local" value={unlockAt} onChange={e => setUnlockAt(e.target.value)}
           className="bg-transparent text-xs p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
-        <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreate}
-          className="text-xs tracking-[0.2em] uppercase p-2" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
-          SELLAR CÁPSULA 🔮
+        <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreate} disabled={isCreating}
+          className="text-xs tracking-[0.2em] uppercase p-2" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO, opacity: isCreating ? 0.5 : 1 }}>
+          {isCreating ? "SELLANDO..." : "SELLAR CÁPSULA 🔮"}
         </motion.button>
+        {error && (
+          <p className="text-xs opacity-60" style={{ color: "#ff3b3b" }}>{error}</p>
+        )}
       </div>
 
       {/* Capsulas bloqueadas */}

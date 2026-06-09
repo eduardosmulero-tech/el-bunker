@@ -6,7 +6,7 @@
 // ============================================================
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, BG, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
+import { ACID, FONT_MONO } from "../tokens";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
@@ -19,11 +19,11 @@ const SUB_TABS = [
   { id: "recap",         label: "RECAP",           icon: "📊" },
 ];
 
-export default function Capsules({ db, userId, activeTrack, masterVolume, onVolumeChange }) {
+export default function Capsules({ db: _db, userId: _userId, events = [], activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
   const [subTab, setSubTab] = useState("timeline");
-  const events = db?.events ?? [];
-  const tracks = db?.music_lab?.tracks ?? [];
-  const entries = db?.entries ?? [];
+  // events, time_capsules vienen de D1 (Worker API), no de Drive JSON.
+  // El padre (App.jsx) los inyecta como prop separada.
+  // db se usa en SmokeSession (que accede via useVault internamente).
 
   return (
     <div className="px-4 py-4 max-w-lg mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
@@ -58,7 +58,7 @@ export default function Capsules({ db, userId, activeTrack, masterVolume, onVolu
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25 }}
         >
-          {subTab === "timeline" && <Timeline events={events} tracks={tracks} entries={entries} />}
+          {subTab === "timeline" && <Timeline events={events} />}
           {subTab === "smoke" && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 px-1">
@@ -70,8 +70,8 @@ export default function Capsules({ db, userId, activeTrack, masterVolume, onVolu
               <SmokeSession masterVolume={masterVolume} onVolumeChange={onVolumeChange} />
             </div>
           )}
-          {subTab === "timecapsules" && <TimeCapsules userId={userId} capsules={db?.time_capsules ?? []} />}
-          {subTab === "recap" && <Recaps events={events} tracks={tracks} entries={entries} />}
+          {subTab === "timecapsules" && <TimeCapsules token={null} capsules={[]} />}
+          {subTab === "recap" && <Recaps events={events} />}
         </motion.div>
       </AnimatePresence>
     </div>

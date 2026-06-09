@@ -7,7 +7,7 @@
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 
-export default function Timeline({ events = [], tracks = [], entries = [] }) {
+export default function Timeline({ events = [] }) {
   if (!events.length) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-12" style={{ fontFamily: FONT_MONO }}>
@@ -36,7 +36,9 @@ export default function Timeline({ events = [], tracks = [], entries = [] }) {
             const icon = e.event_type === "track_play" ? "▶" : e.event_type === "drop_sent" ? "♥" :
               e.event_type === "entry_created" ? "✎" : e.event_type === "smoke_session_completed" ? "⧖" : "●";
             const label = e.event_type.replace(/_/g, " ").toUpperCase();
-            const detail = e.payload ? (typeof e.payload === "string" ? JSON.parse(e.payload) : e.payload) : {};
+            const detail = e.payload
+              ? (typeof e.payload === "string" ? JSON.parse(e.payload) : e.payload)
+              : {};
             return (
               <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
