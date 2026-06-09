@@ -140,11 +140,12 @@ export default {
       // PATCH /api/tracks/:id (S55)
       if (path.startsWith("/api/tracks/") && request.method === "PATCH") {
         if (!userId) return err("Unauthorized", 401);
+        const TRACK_FIELDS = new Set(["era_id","title","artist","tag_id","r2_key","format","note","duration","thumbnail"]);
         const trackId = path.split("/")[3];
         const body = await request.json();
         const sets = []; const binds = [];
         for (const [k, v] of Object.entries(body)) {
-          if (["id","created_at","added_by","is_deleted"].includes(k)) continue;
+          if (!TRACK_FIELDS.has(k)) continue;
           sets.push(`${k} = ?${sets.length + 1}`);
           binds.push(v);
         }
@@ -207,17 +208,21 @@ export default {
         await env.DB.prepare(
           "INSERT INTO playlists (id, name, description, created_by) VALUES (?1,?2,?3,?4)"
         ).bind(id, body.name, body.description||"", userId).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
+        ).bind("playlist_created", userId, id, JSON.stringify({ name: body.name })).run();
         return json({ id, ...body, created_by: userId }, 201);
       }
 
       // PATCH /api/playlists/:id (S55)
-      if (path.startsWith("/api/playlists/") && !path.includes("/tracks") && request.method === "PATCH") {
+      if (path.startsWith("/api/playlists/") && !path.endsWith("/tracks") && request.method === "PATCH") {
         if (!userId) return err("Unauthorized", 401);
+        const PL_FIELDS = new Set(["name","description"]);
         const plId = path.split("/")[3];
         const body = await request.json();
         const sets = []; const binds = [];
         for (const [k, v] of Object.entries(body)) {
-          if (["id","created_at","created_by"].includes(k)) continue;
+          if (!PL_FIELDS.has(k)) continue;
           sets.push(`${k} = ?${sets.length + 1}`);
           binds.push(v);
         }
@@ -229,7 +234,7 @@ export default {
       }
 
       // DELETE /api/playlists/:id (S55)
-      if (path.startsWith("/api/playlists/") && !path.includes("/tracks") && request.method === "DELETE") {
+      if (path.startsWith("/api/playlists/") && !path.endsWith("/tracks") && request.method === "DELETE") {
         if (!userId) return err("Unauthorized", 401);
         const plId = path.split("/")[3];
         await env.DB.prepare("DELETE FROM playlists WHERE id = ?1").bind(plId).run();
@@ -237,7 +242,7 @@ export default {
       }
 
       // POST /api/playlists/:id/tracks (S55)
-      if (path.endsWith("/tracks") && request.method === "POST") {
+      if (path.startsWith("/api/playlists/") && path.endsWith("/tracks") && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const plId = path.split("/")[3];
         const body = await request.json();
@@ -272,17 +277,21 @@ export default {
         await env.DB.prepare(
           "INSERT INTO tags (id, namespace, label, icon, color, created_by) VALUES (?1,?2,?3,?4,?5,?6)"
         ).bind(id, body.namespace||"music", body.label, body.icon||"◈", body.color||"#ffffff", userId).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'tag',?3,?4)"
+        ).bind("tag_created", userId, id, JSON.stringify({ label: body.label, namespace: body.namespace })).run();
         return json({ id, ...body, created_by: userId }, 201);
       }
 
       // PATCH /api/tags/:id (S55)
       if (path.startsWith("/api/tags/") && request.method === "PATCH") {
         if (!userId) return err("Unauthorized", 401);
+        const TAG_FIELDS = new Set(["label","icon","color","sort_order","namespace"]);
         const tagId = path.split("/")[3];
         const body = await request.json();
         const sets = []; const binds = [];
         for (const [k, v] of Object.entries(body)) {
-          if (["id","created_at","created_by"].includes(k)) continue;
+          if (!TAG_FIELDS.has(k)) continue;
           sets.push(`${k} = ?${sets.length + 1}`);
           binds.push(v);
         }
@@ -339,12 +348,13 @@ export default {
       // PATCH /api/entries/:id (S56)
       if (path.startsWith("/api/entries/") && request.method === "PATCH") {
         if (!userId) return err("Unauthorized", 401);
+        const ENTRY_FIELDS = new Set(["era_id","type","title","content","to_user"]);
         const entryId = path.split("/")[3];
         const body = await request.json();
         const { tags, ...fields } = body;
         const sets = []; const binds = [];
         for (const [k, v] of Object.entries(fields)) {
-          if (["id","created_at","from_user","is_deleted"].includes(k)) continue;
+          if (!ENTRY_FIELDS.has(k)) continue;
           if (k === "content") { sets.push(`${k} = ?${sets.length + 1}`); binds.push(JSON.stringify(v)); }
           else { sets.push(`${k} = ?${sets.length + 1}`); binds.push(v); }
         }
@@ -383,7 +393,8 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT * FROM queue_items WHERE user_id = ?1 ORDER BY position"
         ).bind(queueUser).all();
-        return json(results);
+        // Transformar is_manual (0/1) → _manual (boolean) para frontend
+        return json(results.map(r => ({ ...r, _manual: !!r.is_manual })));
       }
 
       if (path.startsWith("/api/queue/") && request.method === "PUT") {
@@ -460,6 +471,22 @@ export default {
           httpMetadata: { contentType: request.headers.get("Content-Type") || "application/octet-stream" },
         });
         return json({ ok: true, r2_key, size: data.byteLength }, 201);
+      }
+
+      // ═══ R2: servir archivos (streaming audio, imágenes, etc.) ══
+      if (request.method === "GET" && !path.startsWith("/api/")) {
+        const r2_key = path.slice(1); // quitar / inicial
+        if (!r2_key) return err("Not found", 404);
+        const obj = await env.BUNKER.get(r2_key);
+        if (!obj) return err("Not found", 404);
+        return new Response(obj.body, {
+          headers: {
+            "Content-Type": obj.httpMetadata?.contentType || "application/octet-stream",
+            "Content-Length": obj.size,
+            "Accept-Ranges": "bytes",
+            ...CORS_HEADERS,
+          },
+        });
       }
 
       // ═══ 404 ══════════════════════════════════════════════

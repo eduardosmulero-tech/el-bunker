@@ -52,9 +52,6 @@ export async function uploadFile(file, prefix, metadata = {}) {
   const { r2_key, file_id } = await res.json();
 
   // Paso 2: subir el binario directamente al Worker
-  const form = new FormData();
-  form.append("file", file);
-
   const uploadRes = await fetch(`${API_BASE}/api/upload/${encodeURIComponent(r2_key)}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${_token}` },
