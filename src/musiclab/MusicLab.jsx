@@ -1330,11 +1330,12 @@ export default function MusicLab({
                           p.id === plId ? { ...p, track_ids: (p.track_ids ?? []).filter((id) => id !== trackId) } : p
                         ),
                       },
-                    }));
-                  } catch (err) {
-                    console.warn("[Búnker] removeTrackFromPlaylist falló:", err);
-                    return; // sin patchDb si D1 rechaza — estado local intacto
-                  }
+                    }));                    } catch (err) {
+                      console.warn("[Búnker] removeTrackFromPlaylist falló:", err);
+                      setToast("NO SE PUDO ELIMINAR");
+                      setTimeout(() => setToast(null), 2500);
+                      return; // sin patchDb si D1 rechaza — estado local intacto
+                    }
                 }}
                 onDeletePlaylist={(plId) => {
                   handleDeletePlaylist(plId);
@@ -1362,6 +1363,8 @@ export default function MusicLab({
                     }));
                   } catch (err) {
                     console.warn("[Búnker] reorderPlaylistTracks falló:", err);
+                    setToast("NO SE PUDO REORDENAR");
+                    setTimeout(() => setToast(null), 2500);
                     return; // sin patchDb si D1 rechaza — estado local intacto
                   }
                 }}

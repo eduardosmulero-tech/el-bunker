@@ -536,6 +536,9 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   const entries = db?.entries ?? [];
   const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
   const [exporting, setExporting] = useState(false);
+  // Toast state — usado por handleDeleteEntry (reemplaza alert) y otros catch.
+  // Mismo patrón que MusicLab: vibe-aware accent, fixed bottom, setTimeout 2500ms.
+  const [toast, setToast] = useState(null);
 
   // G2: crear era vía Worker API
   const handleAddEra = async () => {
@@ -602,7 +605,8 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
       await deleteEntry(entryId);
     } catch (e) {
       console.warn("[Vault] deleteEntry failed:", e);
-      alert("Error al eliminar la entrada. Reintenta.");
+      setToast("NO SE PUDO ELIMINAR");
+      setTimeout(() => setToast(null), 2500);
     }
   };
 
@@ -669,6 +673,24 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   const activeDisplayEra = displayEras.find((e) => e.id === activeEraId) ?? displayEras[0];
 
   return (
+    <>
+      {/* Toast — mismo patrón que MusicLab (vibe-aware, fixed bottom, 2500ms) */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.25 }}
+            style={{ position: "fixed", bottom: 90, left: 16, right: 16,
+              background: `${accent}18`, border: `1px solid ${accent}55`, color: accent,
+              fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
+              padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     <div
       className="flex flex-col gap-6 px-4 py-6 max-w-md mx-auto"
       style={{ fontFamily: FONT_MONO }}
@@ -914,12 +936,12 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
          transition={{ duration: 3, repeat: Infinity }}
          className="text-xs tracking-widest uppercase"
          style={{ color: accent }}
-       >
-         ◈ ENCRYPTED
+       >       ◈ ENCRYPTED
        </motion.span>
      </div>
    </motion.footer>
-    </div>
+   </div>
+   </>
   );
 }
 
