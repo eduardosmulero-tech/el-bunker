@@ -408,13 +408,35 @@ export default function MusicLab({
   const dragPlIdx = useRef(null);
   const handlePlDragStart = (i) => { dragPlIdx.current = i; };
   const handlePlDragOver  = (e) => { e.preventDefault(); };
+  // S84: handlePlDrop reordena cards en LISTS tab. Sister-bug fix del patrón
+  // DEL-PLAYLIST (S82): antes solo patchDb (Drive) — D1 mantenía el orden
+  // viejo, el próximo refreshDb restauraba el orden antiguo. Ahora el Worker
+  // es source of truth y el cliente se sincroniza vía patchDb en success.
+  // Patrón consistente con handleDeletePlaylist/Drop/Rename: Worker primero,
+  // patchDb solo en success. Sin optimistic UI (la latencia del Worker es
+  // baja y evita la complejidad de revertir en el catch).
   const handlePlDrop      = async (i) => {
-    if (dragPlIdx.current === null || dragPlIdx.current === i) return;
-    const next = [...dbPlaylists];
-    const [moved] = next.splice(dragPlIdx.current, 1);
-    next.splice(i, 0, moved);
+    const from = dragPlIdx.current;
+    if (from === null || from === i) return;
+    if (!_jwtToken) return;
     dragPlIdx.current = null;
-    patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
+    const next = [...dbPlaylists];
+    const [moved] = next.splice(from, 1);
+    next.splice(i, 0, moved);
+    try {
+      const res = await fetch(`${API_BASE_ML}/api/playlists/reorder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+        body: JSON.stringify({ playlist_ids: next.map((pl) => pl.id) }),
+      });
+      if (!res.ok) throw new Error(`reorderPlaylists: ${res.status}`);
+      await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
+    } catch (err) {
+      console.warn("[Búnker] reorderPlaylists falló:", err);
+      setToast("NO SE PUDO REORDENAR");
+      setTimeout(() => setToast(null), 2500);
+      return; // sin patchDb si D1 rechaza — estado local intacto
+    }
   };
 
   // renombrar playlist inline

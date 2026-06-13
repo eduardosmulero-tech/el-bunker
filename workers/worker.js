@@ -257,8 +257,10 @@ export default {
 
       // ═══ PLAYLISTS ════════════════════════════════════════
       if (path === "/api/playlists" && request.method === "GET") {
+        // S84: ordenar por sort_order (asc) con created_at (desc) como tie-breaker.
+        // Permite drag-reorder de cards en LISTS tab (handlePlDrop).
         const { results } = await env.DB.prepare(
-          "SELECT * FROM playlists ORDER BY created_at DESC"
+          "SELECT * FROM playlists ORDER BY sort_order ASC, created_at DESC"
         ).all();
         // S64 audit: incluir track_ids via playlist_tracks JOIN (batched)
         if (results.length) {
@@ -290,13 +292,51 @@ export default {
         // S64 audit: aceptar id y timestamps del cliente
         const id = body.id || crypto.randomUUID();
         const now = body.created_at || new Date().toISOString();
-        await env.DB.prepare(
-          "INSERT INTO playlists (id, name, description, created_by, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?5)"
-        ).bind(id, body.name, body.description||"", body.created_by || userId, now).run();
+        // S84: sort_order atómico via INSERT...SELECT MAX+1 (patrón de eras).
+        // Evita race condition cuando se crean 2 playlists en paralelo.
+        if (body.sort_order != null) {
+          await env.DB.prepare(
+            "INSERT INTO playlists (id, name, description, created_by, sort_order, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?6,?6)"
+          ).bind(id, body.name, body.description||"", body.created_by || userId, body.sort_order, now).run();
+        } else {
+          await env.DB.prepare(
+            `INSERT INTO playlists (id, name, description, created_by, sort_order, created_at, updated_at)
+             SELECT ?1,?2,?3,?4, COALESCE(MAX(sort_order), -1) + 1, ?5, ?5 FROM playlists`
+          ).bind(id, body.name, body.description||"", body.created_by || userId, now).run();
+        }
+        const created = await env.DB.prepare("SELECT sort_order FROM playlists WHERE id = ?1").bind(id).first();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
         ).bind("playlist_created", userId, id, JSON.stringify({ name: body.name })).run();
-        return json({ id, ...body, created_by: userId }, 201);
+        return json({ id, ...body, created_by: userId, sort_order: created?.sort_order ?? 0 }, 201);
+      }
+
+      // POST /api/playlists/reorder (S84) — REORDER de cards en LISTS tab.
+      // Sister-bug fix del patrón DEL-PLAYLIST (S82): handlePlDrop solo
+      // hacía patchDb (Drive) — D1 mantenía el orden viejo. Ahora el Worker
+      // es source of truth. Body: { playlist_ids: [...] } en nuevo orden.
+      if (path === "/api/playlists/reorder" && request.method === "POST") {
+        if (!userId) return err("Unauthorized", 401);
+        const body = await request.json();
+        const ids = body.playlist_ids;
+        if (!Array.isArray(ids) || ids.length === 0) return err("playlist_ids array required", 400);
+        // Validar que todos los IDs existen (404 si alguno no)
+        const placeholders = ids.map(() => "?").join(",");
+        const { results: existing } = await env.DB.prepare(
+          `SELECT id FROM playlists WHERE id IN (${placeholders})`
+        ).bind(...ids).all();
+        if (existing.length !== ids.length) {
+          return err(`Some playlists not found (${existing.length}/${ids.length})`, 404);
+        }
+        // Asignar sort_order incremental atómicamente via batch
+        // SQLite es single-writer, así que el batch es atómico de facto.
+        // Empezamos en 0 para que la primera playlist quede arriba.
+        const stmt = env.DB.prepare("UPDATE playlists SET sort_order = ?1, updated_at = datetime('now') WHERE id = ?2");
+        await env.DB.batch(ids.map((id, i) => stmt.bind(i, id)));
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
+        ).bind("playlists_reordered", userId, "bulk", JSON.stringify({ count: ids.length })).run();
+        return json({ ok: true, count: ids.length });
       }
 
       // PATCH /api/playlists/:id (S55)

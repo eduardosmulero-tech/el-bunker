@@ -127,9 +127,11 @@ CREATE TABLE playlists (
   name        TEXT NOT NULL,
   description TEXT DEFAULT '',
   created_by  TEXT NOT NULL REFERENCES users(id),
+  sort_order  INTEGER DEFAULT 0,    -- S84: orden de cards en LISTS tab (lower = higher)
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE INDEX idx_playlists_order ON playlists(sort_order, created_at);
 
 -- ═══ PLAYLIST_TRACKS (junction ordenada) ════════════════════
 CREATE TABLE playlist_tracks (
