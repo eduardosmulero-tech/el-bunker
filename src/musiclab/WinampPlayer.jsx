@@ -147,7 +147,7 @@ const skipDir = useCallback((dir) => {
     currentTRef.current = newTime;
     setCurrentT(newTime);
     if (duration) setProgress((newTime / duration) * 100);
-  }, [duration, vibrate]);
+  }, [duration, vibrate, audioRef]);
 
   // S78 UX5: Swipe handlers
   const onSwipeMove = useCallback((e) => {
@@ -291,6 +291,7 @@ return () => cancelAnimationFrame(raf);
         });
       } catch { /* noop */ }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef es estable (ref); setPlaying/skipDir son estables (useState/useCallback wrapper) y solo se invocan en handlers de mediaSession; track se desglosa en track?.id/era_id/etc. en deps
   }, [track?.id, track?.era_name, track?.era_id, track?.thumbnail, playing, duration, currentT]);
 
   return (

@@ -8,7 +8,7 @@
 //       _manual:false → cargado desde contexto de playlist
 // ============================================================
 
-/* eslint-disable react-hooks/refs, react-hooks/immutability */
+ 
 // ^ Los refs se acceden/modifican intencionalmente para evitar
 //   stale closures en callbacks de audio nativo (skip, loopMode,
 //   shuffle). Son patrones establecidos y funcionales del motor
@@ -192,7 +192,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       context_name: queueContextName || null,
     }));
     if (!items.length && !activeTrack) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setSyncStatus("syncing");
     const timer = setTimeout(() => {
       fetch(`${API_BASE}/api/queue/${userId}`, {
@@ -561,6 +561,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         _vibeTimerRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- activeVibe se lee (comparación ===) pero el efecto se re-dispara solo en trackVibe
   }, [trackVibe]);
 
   // Fase 4.6 T8: Aplicar pulso CSS al body durante 600ms
@@ -688,7 +689,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (!audioRef.current || _retryRef.current.trackId !== activeTrack?.id) return;
       audioRef.current.load();
     }, delay);
-  }, [activeTrack?.id]);
+  }, [activeTrack]);
 
   // Resetear contador de reintentos cuando el audio carga exitosamente
   const handleAudioCanPlay = useCallback(() => {
@@ -813,7 +814,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     return () => {
       cancelled = true;
     };
-  }, [activeTrack?.id]);
+  }, [activeTrack]);
 
   // Cleanup blob URLs al desmontar el provider
   useEffect(() => {
@@ -896,7 +897,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       } catch { /* noop */ }
     }, 5000);
     return () => clearInterval(interval);
-  }, [userId, activeTrack?.id, localQueue, loopMode, shuffle]);
+  }, [userId, activeTrack, localQueue, loopMode, shuffle]);
 
   // Restaurar estado tras OOM kill (solo en mount)
   useEffect(() => {
