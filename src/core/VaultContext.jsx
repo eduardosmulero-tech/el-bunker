@@ -239,7 +239,7 @@ export function VaultProvider({ children }) {
 
   // ── JWT helper: obtener token del Worker API ───────────────
   const _fetchJwt = useCallback(async (email, googleToken) => {
-    if (!email || !googleToken) return;
+    if (!email || !googleToken) return null;
     try {
       const res = await fetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
@@ -248,7 +248,7 @@ export function VaultProvider({ children }) {
       });
       if (!res.ok) {
         console.warn("[Búnker] JWT login failed:", res.status);
-        return;
+        return null;
       }
       const { token } = await res.json();
       if (token) {
@@ -257,11 +257,81 @@ export function VaultProvider({ children }) {
         setUploadToken(token);
         setStatsToken(token);
         console.info("[Búnker] JWT obtenido ✓");
+        return token;
       }
+      return null;
     } catch (e) {
       console.warn("[Búnker] JWT fetch error:", e.message);
+      return null;
     }
   }, []);
+
+  // ── S64: Worker API data fetchers ──────────────────────────
+  const _fetchWorkerEntries = useCallback(async (token) => {
+    const res = await fetch(`${API_BASE}/api/entries`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`entries: ${res.status}`);
+    return res.json();
+  }, []);
+
+  const _fetchWorkerEras = useCallback(async (token) => {
+    const res = await fetch(`${API_BASE}/api/eras`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`eras: ${res.status}`);
+    return res.json();
+  }, []);
+
+  const _fetchWorkerTracks = useCallback(async (token) => {
+    const res = await fetch(`${API_BASE}/api/tracks`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error(`tracks: ${res.status}`);
+    return res.json();
+  }, []);
+
+  /**
+   * _refreshWorkerData(token)
+   * Fetch entries, eras y tracks desde Worker API y mergearlos en db.
+   * Worker data reemplaza las secciones correspondientes en el state db.
+   * Si falla, usa los datos de Drive JSON como fallback silencioso.
+   * S64 — migración progresiva Drive→D1.
+   */
+  const _refreshWorkerData = useCallback(async (token) => {
+    if (!token) return;
+    try {
+      const [entries, eras, tracks] = await Promise.all([
+        _fetchWorkerEntries(token),
+        _fetchWorkerEras(token),
+        _fetchWorkerTracks(token),
+      ]);
+      // Parsear content de entries: D1 lo guarda como JSON string, consumidores esperan objeto
+      const safeParse = (v) => {
+        if (typeof v !== "string") return v;
+        try { return JSON.parse(v); } catch { return v; }
+      };
+      const parsedEntries = entries.map((e) => ({ ...e, content: safeParse(e.content) }));
+      setDb((prev) => ({
+        ...prev,
+        entries: entries.length ? parsedEntries : (prev?.entries ?? []),
+        eras: eras.length ? eras : (prev?.eras ?? []),
+        music_lab: {
+          ...prev?.music_lab,
+          tracks: tracks.length ? tracks : (prev?.music_lab?.tracks ?? []),
+        },
+      }));
+      setDbStatus("ONLINE");
+      console.info("[Búnker] Worker data loaded:", {
+        entries: entries.length,
+        eras: eras.length,
+        tracks: tracks.length,
+      });
+    } catch (e) {
+      console.warn("[Búnker] Worker data fetch failed, using Drive fallback:", e.message);
+      // No bloquear — Drive JSON ya está cargado
+    }
+  }, [_fetchWorkerEntries, _fetchWorkerEras, _fetchWorkerTracks]);
 
   // ── Restaurar JWT de localStorage al montar ───────────────
   useEffect(() => {
@@ -276,6 +346,7 @@ export function VaultProvider({ children }) {
   }, []);
 
   // ── Step 2: Fetch user info + DB ──────────────────────────
+  // eslint-disable-next-line react-hooks/exhaustive-deps — stable refs, fire-and-forget _refreshWorkerData
   const _fetchUserAndDb = useCallback(async (token) => {
     setBootPhase(BOOT.INIT_DB);
     setDbStatus("SYNCING");
@@ -308,8 +379,9 @@ export function VaultProvider({ children }) {
 
       // Obtener JWT del Worker API (S55) usando el token de Google
       const googleToken = token ?? window.gapi?.client?.getToken?.()?.access_token;
+      let jwt = jwtToken; // usar el ya restaurado de localStorage si existe
       if (googleToken && fullUser.email) {
-        _fetchJwt(fullUser.email, googleToken);
+        jwt = await _fetchJwt(fullUser.email, googleToken) || jwt;
       }
 
       const data = await initDatabase();
@@ -317,6 +389,11 @@ export function VaultProvider({ children }) {
       setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
       setDbStatus("ONLINE");
       setBootPhase(BOOT.READY);
+
+      // S64: Cargar datos del Worker API (entries, eras, tracks) y mergear en db
+      if (jwt) {
+        _refreshWorkerData(jwt);
+      }
 
       _scheduleHeartbeat();
     } catch (err) {
@@ -444,12 +521,17 @@ export function VaultProvider({ children }) {
       const fresh = await fetchData();
       setDb(fresh);
       setLastHeartbeat(fresh.heartbeat ?? new Date().toISOString());
-      setDbStatus("ONLINE");
+      // S64: también refrescar datos del Worker API
+      if (jwtToken) {
+        _refreshWorkerData(jwtToken);
+      } else {
+        setDbStatus("ONLINE");
+      }
     } catch (err) {
       console.error("[Búnker] refreshDb failed:", err);
       setDbStatus("ERROR");
     }
-  }, []);
+  }, [jwtToken, _refreshWorkerData]);
 
   /**
    * patchDb(updater)
