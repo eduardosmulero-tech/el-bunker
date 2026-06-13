@@ -6,3 +6,34 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* ── Fase 4.6 T8: Pulso sutil cuando mismo tag suena otra vez ── */
+body.vibe-pulse {
+  animation: vibePulse 600ms ease-out;
+}
+@keyframes vibePulse {
+  0%   { filter: brightness(1); }
+  30%  { filter: brightness(1.12) saturate(1.2); }
+  100% { filter: brightness(1); }
+}
+
+/* ── Fase 3.7 UX8: Portrait lock forzado ── */
+@media (orientation: landscape) {
+  body::before {
+    content: "◈ GIRA EL DISPOSITIVO ◈";
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050505;
+    color: #bfff00;
+    font-family: "JetBrains Mono", "Courier New", monospace;
+    font-size: 14px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    text-align: center;
+    pointer-events: all;
+  }
+}

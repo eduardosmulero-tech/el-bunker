@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 
 function withAlpha(color, alpha) {
@@ -11,13 +12,36 @@ function withAlpha(color, alpha) {
   return color + hex;
 }
 
-export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => {
+export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, onRequestFullscreen }) => {
   const canvasRef    = useRef(null);
   const analyserRef  = useRef(null);
   const sourceRef    = useRef(null);
   const animFrameRef = useRef(null);
   const audioCtxRef  = useRef(null);
   const dataArrayRef = useRef(null);
+  // Fase 4.7 — VIZ1: Fullscreen expandido
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Pre-generar partículas estables (evita Math.random en render)
+  const particles = useMemo(() =>
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: 10 + (i * 37 + 13) % 80,
+      y: 10 + (i * 53 + 7) % 80,
+      size: 0.5 + (i % 3) * 0.3,
+      driftY: -30 - (i * 17) % 50,
+      duration: 1.5 + (i * 0.7) % 2,
+      delay: (i * 0.7) % 3,
+    })), []
+  );
+
+  const handleTap = () => {
+    if (onRequestFullscreen) {
+      onRequestFullscreen();
+    } else {
+      setIsFullscreen((p) => !p);
+    }
+  };
 
   const setupAudio = useCallback(() => {
     if (!audioRef?.current || audioCtxRef.current) return;
@@ -158,6 +182,25 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
     };
   }, [isPlaying, accentColor]);
 
+  // Resize canvas when entering fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const raf = requestAnimationFrame(() => {
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (w && h) {
+        canvas.width = w * window.devicePixelRatio;
+        canvas.height = h * window.devicePixelRatio;
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [isFullscreen]);
+
   useEffect(() => {
     if (isPlaying) {
       setupAudio();
@@ -165,11 +208,120 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
     }
   }, [isPlaying, setupAudio]);
 
+  const fullscreenCanvasHeight = isFullscreen ? "70vh" : 72;
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full"
-      style={{ height: 72, display: "block" }}
-    />
+    <>
+      <canvas
+        ref={canvasRef}
+        className={`w-full cursor-pointer ${isFullscreen ? "fixed inset-0 z-50" : ""}`}
+        style={{
+          height: fullscreenCanvasHeight,
+          display: "block",
+          background: isFullscreen ? "rgba(0,0,0,0.95)" : "transparent",
+        }}
+        onClick={handleTap}
+        title={isFullscreen ? "Tap para cerrar visualizador" : "Tap para visualizador a pantalla completa"}
+      />
+
+      {/* Fase 4.7 — VIZ1-VIZ5: Fullscreen inmersivo (overlay sobre el canvas expandido) */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 pointer-events-none"
+          >
+            {/* VIZ5: Fondo plasma/humo */}
+            <div
+              className="absolute inset-0 opacity-[0.04]"
+              style={{
+                background: `radial-gradient(ellipse at center, ${accentColor}44 0%, transparent 70%)`,
+              }}
+            />
+
+            {/* VIZ3: Partículas reactivas (estables, pre-generadas) */}
+            {isPlaying && particles.map((p) => (
+              <motion.div
+                key={p.id}
+                className="absolute rounded-full"
+                style={{
+                  background: accentColor,
+                  width: `${p.size * 4}px`,
+                  height: `${p.size * 4}px`,
+                  left: `${p.x}%`,
+                  top: `${p.y}%`,
+                  boxShadow: `0 0 6px ${accentColor}`,
+                }}
+                animate={{
+                  opacity: [0, 0.8, 0],
+                  scale: [0, 1.5, 0],
+                  y: [0, p.driftY],
+                }}
+                transition={{
+                  duration: p.duration,
+                  repeat: Infinity,
+                  delay: p.delay,
+                  ease: "easeOut",
+                }}
+              />
+            ))}
+
+            {/* VIZ4: VU Meters laterales */}
+            <div className="absolute left-4 top-[15%] bottom-[15%] w-1 rounded-full overflow-hidden"
+              style={{ background: `${accentColor}22` }}>
+              <motion.div
+                className="w-full rounded-full"
+                style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
+                animate={{ height: isPlaying ? ["10%", "70%", "30%", "80%", "10%"] : "10%" }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+            </div>
+            <div className="absolute right-4 top-[15%] bottom-[15%] w-1 rounded-full overflow-hidden"
+              style={{ background: `${accentColor}22` }}>
+              <motion.div
+                className="w-full rounded-full"
+                style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
+                animate={{ height: isPlaying ? ["20%", "90%", "40%", "85%", "20%"] : "20%" }}
+                transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Cerrar fullscreen */}
+      <AnimatePresence>
+        {isFullscreen && (
+          <>
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsFullscreen(false)}
+              className="fixed top-6 right-6 z-[60] w-10 h-10 flex items-center justify-center rounded-sm text-sm"
+              style={{
+                color: accentColor,
+                border: `1px solid ${accentColor}44`,
+                background: `${accentColor}0d`,
+              }}
+            >
+              ✕
+            </motion.button>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.4 }}
+              exit={{ opacity: 0 }}
+              className="fixed bottom-8 left-0 right-0 text-center text-xs tracking-[0.3em] uppercase z-[60]"
+              style={{ color: accentColor, fontFamily: "'JetBrains Mono', monospace" }}
+            >
+              VISUALIZADOR
+            </motion.p>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 };

@@ -186,7 +186,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // S76: Save queue to Worker API (D1) instead of Drive
   useEffect(() => {
     if (!userId || !jwtToken) return;
-    const items = localQueue.map((t, i) => ({
+    const items = localQueue.map((t) => ({
       track_id: t.id,
       is_manual: t._manual ? 1 : 0,
       context_name: queueContextName || null,
@@ -273,6 +273,17 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!list.length) return;
     const idx  = list.findIndex((t) => t.id === activeTrack?.id);
     const base = idx < 0 ? 0 : idx;
+
+    // Fase 5.5 — EC-C4: Loop de lista → volver al track 1 al agotar el contexto
+    if (dir === 1 && loopModeRef.current === "list" && !shuffle && base >= list.length - 1) {
+      if (activeTrack) {
+        trackSkip(activeTrack.id, "loop_restart");
+        setPlayHistory((h) => [...h, activeTrack]);
+      }
+      setActiveTrack(list[0]);
+      setAutoPlaySignal((n) => n + 1);
+      return;
+    }
 
     // loopMode "off" → parar al llegar al último track (BUG-09)
     // Fase 5.4 — C5: Fin de cola → parada consciente con fade del vibe
@@ -517,6 +528,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // Mantener el vibe anterior durante 2s tras cambio de track, luego transicionar.
   const [activeVibe, setActiveVibe] = useState(null);  // vibe visible en UI
   const _vibeTimerRef = useRef(null);
+  // Fase 4.6 T8: pulso sutil cuando el mismo tag suena otra vez
+  const [vibePulse, setVibePulse] = useState(0);
 
   useEffect(() => {
     if (_vibeTimerRef.current) {
@@ -524,15 +537,23 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       _vibeTimerRef.current = null;
     }
     if (trackVibe) {
-      // Si mismo vibe, mantener sin cambio
-      if (trackVibe === activeVibe) return;
-      // Aplicar el nuevo vibe tras 2s de delay
+      // Fase 4.6 T8: Mismo tag → pulso sutil de intensidad (sin transición de 2s)
+      if (trackVibe === activeVibe) {
+        setVibePulse((n) => n + 1);
+        return;
+      }
+      // Fase 4.6 T5: Transición interrumpida — cancelar timer anterior y arrancar
+      // nuevo desde el estado actual (activeVibe se mantiene durante la transición)
       _vibeTimerRef.current = setTimeout(() => {
         setActiveVibe(trackVibe);
         _vibeTimerRef.current = null;
       }, 2000);
     } else {
-      setActiveVibe(null);
+      // Fase 4.6 T9: Track sin tag → fade 1s a color base oscuro (VB8)
+      _vibeTimerRef.current = setTimeout(() => {
+        setActiveVibe(null);
+        _vibeTimerRef.current = null;
+      }, 1000);
     }
     return () => {
       if (_vibeTimerRef.current) {
@@ -542,12 +563,28 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     };
   }, [trackVibe]);
 
+  // Fase 4.6 T8: Aplicar pulso CSS al body durante 600ms
+  useEffect(() => {
+    if (vibePulse === 0) return;
+    document.body.classList.add("vibe-pulse");
+    const timer = setTimeout(() => document.body.classList.remove("vibe-pulse"), 600);
+    return () => {
+      clearTimeout(timer);
+      document.body.classList.remove("vibe-pulse");
+    };
+  }, [vibePulse]);
+
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
+  // Fase 4.6 T9: Transición CSS de 1s al cambiar de vibe (track sin tag → base oscuro)
   useEffect(() => {
     if (activeVibe) {
       const accent = resolveVibeAccent(activeVibe);
-      if (accent) document.body.style.setProperty("--vibe-accent", accent);
+      if (accent) {
+        document.body.style.transition = "--vibe-accent 1s ease";
+        document.body.style.setProperty("--vibe-accent", accent);
+      }
     } else {
+      document.body.style.transition = "--vibe-accent 1s ease";
       document.body.style.removeProperty("--vibe-accent");
     }
   }, [activeVibe, resolveVibeAccent]);
@@ -924,6 +961,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       activeVibe,
       // Fase 1.5 — EC-P2: estado de red
       networkStatus,
+      // Fase 4.1 — VB5/4.6-T8: pulso sutil cuando mismo tag suena otra vez
+      vibePulse,
       // Shared listening (S82)
       sharedListening: false, setSharedListening: () => {},
     }}>
