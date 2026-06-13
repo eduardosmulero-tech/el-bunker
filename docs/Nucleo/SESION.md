@@ -5,6 +5,24 @@
 
 ---
 
+## S63 — Verificación: CRUD eras en Worker (Junio 2026)
+
+**Objetivo:** Verificar si los 5 endpoints /api/eras existen en worker.js.
+
+### Resultado
+✅ GET /api/eras (line 466) — listado con conteo de entradas
+✅ GET /api/eras/:id (line 485) — detalle de una era
+✅ POST /api/eras (line 499) — crear era
+✅ PATCH /api/eras/:id (line 523) — actualizar con validación
+✅ DELETE /api/eras/:id (line 547) — eliminar era
+
+Todos los endpoints ya estaban implementados. 0 cambios de código.
+
+### Archivos modificados
+Ninguno (solo docs)
+
+---
+
 ## S66 — WALL masonry responsive + long-press preview + zoom modal (Junio 2026)
 
 **Objetivo:** Implementar galería WALL con masonry CSS columns responsive, 3 densidades reales,

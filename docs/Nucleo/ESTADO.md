@@ -3,7 +3,7 @@
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** S67 — Galería CINEMA full-bleed swipe
-**Última sesión:** S66 — WALL masonry responsive + long-press preview + zoom modal
+**Última sesión:** S63 — verificado: 5 endpoints /api/eras ya existen
 **Rama activa:** `master`
 
 ---

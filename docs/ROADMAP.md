@@ -10,8 +10,8 @@
 | Métrica | Valor |
 |---|---|
 | **Sesiones totales planificadas** | 38 |
-| **Sesiones completadas (master)** | 14 (S50-S66) |
-| **Sesiones pendientes** | 12 (S67-S78) |
+| **Sesiones completadas (master)** | 15 (S50-S66) |
+| **Sesiones pendientes** | 11 (S67-S78) |
 | **Sesiones diferidas (Fase C)** | 9 (S79-S87) |
 | **Progreso** | `███████████░░░░░░░░░░░░░░░░░` 38% |
 | **Rama activa** | `master` (desplegada en Vercel) |
@@ -128,7 +128,7 @@ git push origin master   # → Vercel redeploy automático
 | **S60** | **Fix imports rotos** — MusicLab importa ACID desde `../layout/Layout` → `../tokens`; SmokeSession no existe en `src/capsules/` | `src/musiclab/MusicLab.jsx`, `AddTrackForm.jsx`, `PlaylistManager.jsx`, `src/capsules/Capsules.jsx` | — | — | 🤖 | ~30min | ✅ |
 | **S61** | **Wiring JWT frontend** — `setUploadToken`, `setStatsToken`, fetch con jwtToken de VaultContext | `src/layout/App.jsx`, `src/core/VaultContext.jsx`, `FileUploadService.js`, `StatsEngine.js` | ADR-024 | S60 | 🤖 | ~1h | ✅ |
 | **S62** | **Worker: CRUD entries D1** — GET/POST/PATCH/DELETE /api/entries | `workers/worker.js` | ADR-019 | — | 🤖 | ~1h | ✅ |
-| **S63** | **Worker: CRUD eras + files** — Eras D1, listado R2 files | `workers/worker.js` | ADR-019, ADR-022 | S62 | 🤖 | ~1h | 🔴 |
+| **S63** | **Worker: CRUD eras + files** — Eras D1, listado R2 files | `workers/worker.js` | ADR-019, ADR-022 | S62 | 🤖 | ~1h | ✅ |
 | **S64** | **VaultContext → Worker API** — fetchDb desde Worker, no GoogleDriveService | `src/core/VaultContext.jsx`, `GoogleDriveService.js` | ADR-024 | S61, S63 | 🤖 | ~1.5h | 🔴 |
 | **S65** | **VAULT editar + eliminar entradas** — Edit form, soft delete, ver detalle | `src/vault/Vault.jsx`, `AddEntryForm.jsx` | Taxonomía, EC-TR | S64 | 🤖 | ~1h | 🔴 |
 | **S66** | **Galería WALL — zoom densidad** — compact/normal/expanded funcional, long-press preview | `src/vault/VaultGallery.jsx` | ADR-021 WALL | S65 | 🤖 | ~1h | ✅ |
