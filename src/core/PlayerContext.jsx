@@ -153,6 +153,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const wakeLockRef     = useRef(null);
   // Fase 1.4 — P2: estado de reintentos por error de red
   const _retryRef = useRef({ trackId: null, attempt: 0, timer: null });
+  // Fase 1.5 — EC-P2: detección de desconexión de red
+  const [networkStatus, setNetworkStatus] = useState(() => navigator.onLine ? "online" : "offline");
+  const _wasPlayingBeforeOffline = useRef(false);
 
   // ── Persistencia cola en Drive ────────────────────────────
   // S76: Fetch queue from Worker API (D1) instead of Drive
@@ -574,6 +577,40 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     _retryRef.current.attempt = 0;
     _retryRef.current.trackId = activeTrack?.id ?? null;
   }, [activeTrack?.id]);
+
+  // Mantener ref de isPlaying para el handler de offline (evita stale closure)
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+
+  // ── Fase 1.5 — EC-P2: Detección de desconexión de red ─────
+  // Pausa automática al perder conexión. Reanuda al recuperar.
+  useEffect(() => {
+    const handleOffline = () => {
+      console.info("[Búnker] 📡 Sin conexión");
+      setNetworkStatus("offline");
+      if (isPlayingRef.current && audioRef.current) {
+        _wasPlayingBeforeOffline.current = true;
+        audioRef.current.pause();
+      }
+    };
+
+    const handleOnline = () => {
+      console.info("[Búnker] 📡 Conexión recuperada");
+      setNetworkStatus("online");
+      if (_wasPlayingBeforeOffline.current && audioRef.current) {
+        _wasPlayingBeforeOffline.current = false;
+        audioRef.current.play().catch(() => {});
+      }
+    };
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
   // Antes de hacer stream desde R2, verifica si el track ya está en Cache API.
   // Si existe en caché → blob URL (reproducción instantánea, sin red).
   // Si no existe → URL de red (el SW lo cacheará para la siguiente vez).
@@ -746,6 +783,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // S78: Position restore
       restorePosition,
       vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern); } catch { /* noop */ } }, []),
+      // Fase 1.5 — EC-P2: estado de red
+      networkStatus,
       // Shared listening (S82)
       sharedListening: false, setSharedListening: () => {},
     }}>

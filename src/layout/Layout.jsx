@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePlayer } from "../core/PlayerContext";
 import { ACID } from "../tokens";
 
@@ -356,7 +356,7 @@ export default function Layout({
   onTabChange = () => {},
   onSignOut,
 }) {
-  const { trackVibe, resolveVibeAccent } = usePlayer();
+  const { trackVibe, resolveVibeAccent, networkStatus } = usePlayer();
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   return (
@@ -378,6 +378,30 @@ export default function Layout({
         onSignOut={onSignOut}
         accentColor={accentColor}
       />
+
+      {/* ── Fase 1.5 — EC-P2: Toast de desconexión de red ── */}
+      <AnimatePresence>
+        {networkStatus === "offline" && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-sm"
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "10px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              background: "rgba(255,59,59,0.12)",
+              border: "1px solid rgba(255,59,59,0.3)",
+              color: "#ff3b3b",
+              textShadow: "0 0 8px rgba(255,59,59,0.4)",
+            }}
+          >
+            ◉ Sin conexión
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Layer 3: Page Content ── */}
       {/* NOTA: Las transiciones de página las maneja App.jsx (AuthenticatedApp).
