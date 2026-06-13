@@ -293,7 +293,10 @@ export function VaultProvider({ children }) {
         fetch(`${API_BASE}/api/drops`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`drops ${r.status}`)),
         // S64 audit: añadir /api/files al export — antes faltaba en el JSON
         // de backup, así que los file metadata de R2 nunca se capturaban.
-        fetch(`${API_BASE}/api/files`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`files ${r.status}`)),
+        // S64b: .catch(() => []) — un 500 transient en /api/files no debe
+        // tumbar los otros 6 endpoints. Si files falla, el export sigue
+        // válido con files=[] (se re-populará en el próximo refresh).
+        fetch(`${API_BASE}/api/files`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`files ${r.status}`)).catch(() => []),
       ]);
       const safeParse = (v) => {
         if (typeof v !== "string") return v;
@@ -563,7 +566,7 @@ export function VaultProvider({ children }) {
           try {
             const wData = await _buildDbFromWorker(jwtToken);
             if (wData) {
-              data = { ...data, entries: wData.entries, eras: wData.eras, files: wData.files, music_lab: { ...data.music_lab, tracks: wData.music_lab?.tracks, tags: wData.music_lab?.tags, playlists: wData.music_lab?.playlists, drops: wData.music_lab?.drops } };
+              data = { ...data, entries: wData.entries, eras: wData.eras, files: wData.files || [], music_lab: { ...data.music_lab, tracks: wData.music_lab?.tracks, tags: wData.music_lab?.tags, playlists: wData.music_lab?.playlists, drops: wData.music_lab?.drops } };
             }
           } catch { /* keep Drive data */ }
         }
