@@ -303,7 +303,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (dir === 1 && loopModeRef.current === "off" && !shuffle && base >= list.length - 1) {
         setIsPlaying(false);
         document.body.style.removeProperty("--vibe-accent");
-        // eslint-disable-next-line no-use-before-define -- setActiveVibe es un setter (estable); la referencia se resuelve en la closure cuando skip() se invoca
         setActiveVibe(null);
         return;
       }
@@ -571,7 +570,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     } else {
       // Fase 4.6 T9: Track sin tag → fade 1s a color base oscuro (VB8)
       _vibeTimerRef.current = setTimeout(() => {
-        setActiveVibe(null);
         _vibeTimerRef.current = null;
       }, 1000);
     }
@@ -607,6 +605,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     } else {
       document.body.style.transition = "--vibe-accent 1s ease";
       document.body.style.removeProperty("--vibe-accent");
+        setActiveVibe(null);
     }
   }, [activeVibe, resolveVibeAccent]);
 
