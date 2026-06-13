@@ -423,10 +423,35 @@ export default function MusicLab({
   const [renamingPlId, setRenamingPlId] = useState(null);
   const [renameVal,    setRenameVal]    = useState("");
   const handleRenamePlaylist = async (plId) => {
-    if (!renameVal.trim()) { setRenamingPlId(null); return; }
-    const updated = dbPlaylists.map((pl) => pl.id === plId ? { ...pl, name: renameVal.trim() } : pl);
+    if (!plId || !_jwtToken) return;
+    const newName = renameVal.trim();
+    if (!newName) { setRenamingPlId(null); return; }
     setRenamingPlId(null);
-    await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
+    try {
+      // RENAME-PLAYLIST regression fix: route through Worker API (D1) so
+      // refreshDb no restaure el nombre viejo. Antes solo se llamaba patchDb
+      // (Drive) — D1 seguía con el nombre anterior. Mirror del patrón
+      // handleDeletePlaylist (S82) / handleDeleteDrop (S83).
+      const res = await fetch(`${API_BASE_ML}/api/playlists/${plId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (!res.ok) throw new Error(`renamePlaylist: ${res.status}`);
+      // Sincronizar estado local para que coincida con D1.
+      await patchDb((prev) => ({
+        ...prev,
+        music_lab: {
+          ...prev.music_lab,
+          playlists: (prev.music_lab?.playlists ?? []).map((pl) => pl.id === plId ? { ...pl, name: newName } : pl),
+        },
+      }));
+    } catch (err) {
+      console.warn("[Búnker] renamePlaylist falló:", err);
+      return; // sin patchDb si D1 rechaza — nombre local preservado para retry
+    }
+    setToast("PLAYLIST RENOMBRADA");
+    setTimeout(() => setToast(null), 2500);
   };
 
   // confirmar eliminar playlist inline
