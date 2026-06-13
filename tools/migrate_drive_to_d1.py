@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 EL BÚNKER — migrate_drive_to_d1.py
-Migración unidireccional: Google Drive JSON → Cloudflare D1 (Worker API)
+Migración unidireccional: Google Drive JSON > Cloudflare D1 (Worker API)
 
 USO:
   1. Obtener un JWT del Worker API:
@@ -21,7 +21,7 @@ REQUISITOS:
 
 FLUJO:
   1. Lee entidades del archivo JSON (o Drive)
-  2. Las ordena por dependencias: users → eras → tags → entries → tracks → drops → playlists
+  2. Las ordena por dependencias: users > eras > tags > entries > tracks > drops > playlists
   3. POST cada entidad al Worker API correspondiente
   4. Reporta resultados (éxitos/fallos/saltos)
 
@@ -64,16 +64,16 @@ def migrate_entity(entity_type, path, items, jwt, id_field="id", batch_size=50):
         try:
             resp = api_post(path, item, jwt)
             if resp.status_code in (200, 201):
-                print("✅")
+                print("[OK]")
                 ok += 1
             elif resp.status_code == 409:
-                print("⏭️  duplicado")
+                print("[SKIP]  duplicado")
                 skip += 1
             else:
-                print(f"❌ {resp.status_code}: {resp.text[:100]}")
+                print(f"[FAIL] {resp.status_code}: {resp.text[:100]}")
                 fail += 1
         except Exception as e:
-            print(f"💥 {e}")
+            print(f"[ERR] {e}")
             fail += 1
 
         # Rate limiting: pausa breve cada batch_size
@@ -86,7 +86,7 @@ def migrate_entity(entity_type, path, items, jwt, id_field="id", batch_size=50):
 def migrate_from_json(filepath, jwt):
     """Migra todas las entidades desde un archivo JSON."""
     print(f"\n{'='*60}")
-    print(f"  MIGRACIÓN DRIVE → D1")
+    print(f"  MIGRACIÓN DRIVE > D1")
     print(f"  Fuente: {filepath}")
     print(f"  API:    {API_BASE}")
     print(f"{'='*60}\n")
@@ -96,24 +96,24 @@ def migrate_from_json(filepath, jwt):
 
     totals = {"ok": 0, "fail": 0, "skip": 0}
 
-    # ── 1. Users (seed data ya existe en schema.sql, skip) ──
-    print("\n📁 1. USUARIOS (seed en schema.sql — saltando)")
+    # --- 1. Users (seed data ya existe en schema.sql, skip) ---
+    print("\n[SKIP] 1. USUARIOS (seed en schema.sql — saltando)")
     # Los usuarios ya están insertados por el seed de schema.sql
 
-    # ── 2. Eras ──────────────────────────────────────────────
-    print("\n📁 2. ERAS")
+    # --- 2. Eras ---------------------------------------------------------------------
+    print("\n[SKIP] 2. ERAS")
     eras = db.get("eras", [])
     o, f, s = migrate_entity("Era", "/api/eras", eras, jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
-    # ── 3. Tags ──────────────────────────────────────────────
-    print("\n📁 3. TAGS (MusicLab)")
+    # --- 3. Tags ---------------------------------------------------------------------
+    print("\n[SKIP] 3. TAGS (MusicLab)")
     tags = db.get("music_lab", {}).get("tags", [])
     o, f, s = migrate_entity("Tag", "/api/tags", tags, jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
-    # ── 4. Entries (VAULT) ───────────────────────────────────
-    print("\n📁 4. ENTRIES (VAULT)")
+    # --- 4. Entries (VAULT) ---------------------------------------------------─
+    print("\n[SKIP] 4. ENTRIES (VAULT)")
     entries = db.get("entries", [])
     o, f, s = migrate_entity("Entry", "/api/entries", [
         {**{k: v for k, v in e.items() if k not in ("is_deleted", "from", "to", "tags")},
@@ -124,8 +124,8 @@ def migrate_from_json(filepath, jwt):
     ], jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
-    # ── 5. Tracks (MusicLab) ─────────────────────────────────
-    print("\n📁 5. TRACKS (MusicLab)")
+    # --- 5. Tracks (MusicLab) ------------------------------------------------─
+    print("\n[SKIP] 5. TRACKS (MusicLab)")
     tracks = db.get("music_lab", {}).get("tracks", [])
     o, f, s = migrate_entity("Track", "/api/tracks", [
         {
@@ -150,8 +150,8 @@ def migrate_from_json(filepath, jwt):
     ], jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
-    # ── 6. Drops ─────────────────────────────────────────────
-    print("\n📁 6. DROPS")
+    # --- 6. Drops ------------------------------------------------------------------─
+    print("\n[SKIP] 6. DROPS")
     drops = db.get("music_lab", {}).get("drops", [])
     o, f, s = migrate_entity("Drop", "/api/drops", [
         {
@@ -170,8 +170,8 @@ def migrate_from_json(filepath, jwt):
     ], jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
-    # ── 7. Playlists ─────────────────────────────────────────
-    print("\n📁 7. PLAYLISTS")
+    # --- 7. Playlists ------------------------------------------------------------─
+    print("\n[SKIP] 7. PLAYLISTS")
     playlists = db.get("music_lab", {}).get("playlists", [])
     o, f, s = migrate_entity("Playlist", "/api/playlists", [
         {
@@ -185,8 +185,8 @@ def migrate_from_json(filepath, jwt):
     ], jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
-    # ── 7b. Playlist tracks ──────────────────────────────────
-    print("\n📁 7b. PLAYLIST TRACKS")
+    # --- 7b. Playlist tracks ---------------------------------------------------
+    print("\n[SKIP] 7b. PLAYLIST TRACKS")
     for p in playlists:
         track_ids = p.get("track_ids", [])
         if not track_ids:
@@ -200,25 +200,25 @@ def migrate_from_json(filepath, jwt):
                 resp = api_post(f"/api/playlists/{pl_id}/tracks", {"track_id": tid}, jwt)
                 if resp.status_code not in (200, 201):
                     print(f"⚠️ track {tid}: {resp.status_code}")
-            print("✅")
+            print("[OK]")
             totals["ok"] += 1
         except Exception as e:
-            print(f"💥 {e}")
+            print(f"[ERR] {e}")
             totals["fail"] += 1
 
-    # ── Resumen ──────────────────────────────────────────────
+    # --- Resumen ---------------------------------------------------------------------
     print(f"\n{'='*60}")
     print(f"  MIGRACIÓN COMPLETADA")
-    print(f"  ✅ {totals['ok']} éxitos")
-    print(f"  ⏭️  {totals['skip']} saltos")
-    print(f"  ❌ {totals['fail']} fallos")
+    print(f"  [OK] {totals['ok']} éxitos")
+    print(f"  [SKIP]  {totals['skip']} saltos")
+    print(f"  [FAIL] {totals['fail']} fallos")
     print(f"{'='*60}\n")
 
     if totals["fail"] > 0:
         print("⚠️  Algunas entidades fallaron. Revisa los errores arriba.")
         print("   El script es IDEMPOTENTE — puedes volver a ejecutarlo.")
     else:
-        print("✅ Migración completada sin errores.")
+        print("[OK] Migración completada sin errores.")
 
     return totals
 
@@ -226,18 +226,18 @@ def migrate_from_json(filepath, jwt):
 def login(email, google_token):
     """Obtiene un JWT del Worker API usando Google token."""
     import requests
-    print(f"\n🔐 Solicitando JWT para {email}...")
+    print(f"\n[KEY] Solicitando JWT para {email}...")
     resp = requests.post(f"{API_BASE}/api/auth/login", json={
         "email": email,
         "google_token": google_token,
     }, timeout=15)
     if resp.status_code == 200:
         data = resp.json()
-        print(f"✅ JWT obtenido: {data['token'][:40]}...")
+        print(f"[OK] JWT obtenido: {data['token'][:40]}...")
         print(f"   Usuario: {data['user']['id']} ({data['user']['email']})")
         return data["token"]
     else:
-        print(f"❌ Error {resp.status_code}: {resp.text}")
+        print(f"[FAIL] Error {resp.status_code}: {resp.text}")
         return None
 
 
@@ -257,19 +257,19 @@ if __name__ == "__main__":
     if args.login:
         jwt = login(args.login[0], args.login[1])
         if jwt:
-            print(f"\n💾 Guarda este JWT para usarlo con --jwt:")
+            print(f"\n[SAVE] Guarda este JWT para usarlo con --jwt:")
             print(f"   export WORKER_JWT={jwt}")
         sys.exit(0)
 
     if not jwt:
-        print("❌ Se requiere --jwt o env WORKER_JWT")
+        print("[FAIL] Se requiere --jwt o env WORKER_JWT")
         print("   Obtenlo con: python3 tools/migrate_drive_to_d1.py --login <email> <google_token>")
         sys.exit(1)
 
     if args.file:
         migrate_from_json(args.file, jwt)
     elif args.drive:
-        print("❌ Modo --drive no implementado. Exporta el JSON desde la app (botón '↓ BACKUP JSON')")
+        print("[FAIL] Modo --drive no implementado. Exporta el JSON desde la app (botón '↓ BACKUP JSON')")
         print("   y usa --file <archivo.json>")
         sys.exit(1)
     else:
