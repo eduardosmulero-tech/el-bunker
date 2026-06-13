@@ -293,10 +293,9 @@ export function VaultProvider({ children }) {
         fetch(`${API_BASE}/api/drops`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`drops ${r.status}`)),
         // S64 audit: añadir /api/files al export — antes faltaba en el JSON
         // de backup, así que los file metadata de R2 nunca se capturaban.
-        // S64b: .catch(() => []) — un 500 transient en /api/files no debe
-        // tumbar los otros 6 endpoints. Si files falla, el export sigue
-        // válido con files=[] (se re-populará en el próximo refresh).
-        fetch(`${API_BASE}/api/files`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`files ${r.status}`)).catch(() => []),
+        // S64b: .catch silencia la falla para que no tumbe los otros 6 endpoints.
+        // S64c: warn en consola — breadcrumb para debugging sin romper resiliencia.
+        fetch(`${API_BASE}/api/files`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`files ${r.status}`)).catch((e) => { console.warn("[Búnker] /api/files failed (non-fatal):", e); return []; }),
       ]);
       const safeParse = (v) => {
         if (typeof v !== "string") return v;
