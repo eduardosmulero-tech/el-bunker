@@ -8,9 +8,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { ACID } from "../tokens";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const ACID    = "#bfff00";
 const PURPLE  = "#bf00ff";
 const RED     = "#ff3b3b";
 const ORANGE  = "#ff6b35";

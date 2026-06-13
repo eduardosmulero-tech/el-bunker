@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
 import VaultGallery from "./VaultGallery";
 import { entryCreated } from "../core/StatsEngine";
+import { ACID } from "../tokens";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
@@ -21,7 +22,6 @@ const DEMO_ERAS = [
 ];
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const ACID        = "#bfff00";
 const PURPLE      = "#bf00ff";
 const GLASS_BG    = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";

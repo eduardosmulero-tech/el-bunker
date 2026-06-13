@@ -15,8 +15,8 @@ import Vault                             from "../vault/Vault";
 import MusicLab                          from "../musiclab/MusicLab";
 import { DropAlertModal }               from "../musiclab/DropsManager";
 import Capsules                          from "../capsules/Capsules";
+import { ACID } from "../tokens";
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
-const ACID   = "#bfff00";
 const BG     = "#050505";
 const FONT   = "'JetBrains Mono', 'Courier New', monospace";
 const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";

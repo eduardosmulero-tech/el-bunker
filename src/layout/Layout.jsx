@@ -7,9 +7,9 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { usePlayer } from "../core/PlayerContext";
+import { ACID } from "../tokens";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-const ACID   = "#bfff00";
 const PURPLE = "#bf00ff";
 const BG     = "#050505";
 
