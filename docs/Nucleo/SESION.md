@@ -5,6 +5,24 @@
 
 ---
 
+## S62 — Verificación: CRUD entries en Worker (Junio 2026)
+
+**Objetivo:** Verificar si los 5 endpoints /api/entries existen en worker.js.
+
+### Resultado
+✅ GET /api/entries (line 315) — listado con tags y archivos
+✅ GET /api/entries/:id (line 362) — detalle de entrada
+✅ POST /api/entries (line 384) — crear entrada
+✅ PATCH /api/entries/:id (line 410) — actualizar con validación
+✅ DELETE /api/entries/:id (line 450) — soft delete con validación
+
+Todos los endpoints ya estaban implementados desde S55-S56.
+
+### Archivos modificados
+Ninguno (solo docs)
+
+---
+
 ## S60+S61 — Verificación: imports ACID y JWT wiring (Junio 2026)
 
 **Objetivo:** Verificar si S60 y S61 estaban pendientes o ya implementados.

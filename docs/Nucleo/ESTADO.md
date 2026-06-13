@@ -2,8 +2,8 @@
 > Fuente de verdad de sesión. MAX 60 líneas. UN bug activo.
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S62 — verificar CRUD entries en Worker
-**Última sesión:** S60+S61 — verificados como ya implementados (0 cambios de código)
+**Próximo pliego:** S63 — verificar CRUD eras en Worker
+**Última sesión:** S62 — verificado: 5 endpoints /api/entries ya existen
 **Rama activa:** `master`
 
 ---
