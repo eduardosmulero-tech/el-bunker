@@ -9,6 +9,7 @@ import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
+import { ColorPicker } from "../musiclab/TagManager";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
@@ -739,18 +740,9 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
                   className="bg-transparent text-sm p-2 outline-none"
                   style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
                 />
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={newEraColor}
-                    onChange={e => setNewEraColor(e.target.value)}
-                    className="w-8 h-8 cursor-pointer rounded-sm"
-                    style={{ border: `1px solid ${accent}44`, background: "transparent" }}
-                  />
-                  <span className="text-xs opacity-40" style={{ color: accent, fontFamily: FONT_MONO }}>
-                    COLOR
-                  </span>
-                  <div className="flex-1" />
+                {/* Phase 2.2: ColorPicker unificado con el de tags — paleta 12 colores + custom hex + preview */}
+                <ColorPicker value={newEraColor} onChange={setNewEraColor} />
+                <div className="flex items-center justify-end">
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleAddEra}

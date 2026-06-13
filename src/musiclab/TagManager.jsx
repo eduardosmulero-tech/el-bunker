@@ -17,7 +17,7 @@ const PALETTE = [
   "#7fff00", "#ff4500", "#1effbc", "#c77dff",
 ];
 
-const ColorPicker = ({ value, onChange }) => {
+export const ColorPicker = ({ value, onChange }) => {
   const [custom, setCustom] = useState(value ?? "#00ffcc");
 
   const handleCustom = (hex) => {
