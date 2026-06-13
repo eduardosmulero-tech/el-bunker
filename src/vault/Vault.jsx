@@ -4,14 +4,16 @@
 //  Stack: React + Tailwind CSS + Framer Motion
 // ============================================================
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
-import VaultGallery from "./VaultGallery";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID } from "../tokens";
+
+// Code splitting: VaultGallery (el componente más pesado, incluye leaflet) se carga lazy
+const VaultGallery = lazy(() => import("./VaultGallery"));
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
@@ -864,13 +866,22 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               </motion.div>
             )}
           </AnimatePresence>
-          {/* Galería de la Era activa */}
+          {/* Galería de la Era activa — lazy loaded */}
           <div className="mt-4">
-            <VaultGallery
-              entries={entries.filter(e => e.era_id === activeDisplayEra.id && !e.is_deleted)}
-              eras={displayEras}
-              jwtToken={jwtToken}
-            />
+            <Suspense fallback={
+              <div className="flex items-center justify-center py-8" style={{ fontFamily: FONT_MONO }}>
+                <motion.span animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
+                  className="text-xs tracking-[0.3em] uppercase" style={{ color: accent }}>
+                  CARGANDO GALERÍA...
+                </motion.span>
+              </div>
+            }>
+              <VaultGallery
+                entries={entries.filter(e => e.era_id === activeDisplayEra.id && !e.is_deleted)}
+                eras={displayEras}
+                jwtToken={jwtToken}
+              />
+            </Suspense>
           </div>
         </motion.section>
       )}

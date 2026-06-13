@@ -2,21 +2,80 @@
 //  EL BÚNKER — Timeline.jsx
 //  Feed cronológico unificado (ADR-020)
 //  Consume eventos vía props (datos de D1)
-//  S67 · Fase 3 — CAPSULES núcleo
+//  S72 — Filtros Era/module/tipo, banner "Un día como hoy"
 // ============================================================
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
+import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, PURPLE } from "../tokens";
 
 const PAGE_SIZE = 50;
 
-export default function Timeline({ events = [], accentColor = ACID }) {
-  const [viewMode, setViewMode] = useState("timeline"); // timeline | compact
+const EVENT_ICONS = {
+  track_play: "▶", track_pause: "⏸", track_skip: "⏭",
+  entry_created: "✎", entry_updated: "✏", entry_deleted: "✕",
+  drop_sent: "♥", drop_seen: "👁",
+  smoke_session_started: "⧖", smoke_session_completed: "✓",
+  smoke_session_abandoned: "⌁",
+  era_created: "◈",
+  capsule_sealed: "🔮", capsule_opened: "✨",
+  playlist_created: "♫",
+};
+
+export default function Timeline({ events = [], accentColor = ACID, eras = [] }) {
+  const [viewMode, setViewMode] = useState("timeline");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [filterModule, setFilterModule] = useState("all"); // all | vault | music | smoke | system
+  const [filterType, setFilterType] = useState("all");
+  const [filterEra, setFilterEra] = useState("all");
   const accent = accentColor ?? ACID;
 
-  const visibleEvents = events.slice(0, visibleCount);
-  const hasMore = visibleCount < events.length;
+  // S72: Filtered & sorted events
+  const filteredEvents = useMemo(() => {
+    let result = events;
+    if (filterModule !== "all") {
+      result = result.filter(e => {
+        if (filterModule === "vault") return e.event_type?.startsWith("entry_") || e.event_type === "era_created";
+        if (filterModule === "music") return e.event_type?.startsWith("track_") || e.event_type?.startsWith("drop_") || e.event_type === "playlist_created";
+        if (filterModule === "smoke") return e.event_type?.startsWith("smoke_");
+        if (filterModule === "system") return e.event_type?.startsWith("capsule_") || !e.event_type?.match(/^(entry_|track_|drop_|smoke_|era_|playlist_)/);
+        return true;
+      });
+    }
+    if (filterType !== "all") {
+      result = result.filter(e => e.event_type === filterType);
+    }
+    if (filterEra !== "all") {
+      result = result.filter(e => {
+        try {
+          const p = typeof e.payload === "string" ? JSON.parse(e.payload || "{}") : (e.payload || {});
+          return p.era_id === filterEra || p.era_name === filterEra;
+        } catch { return false; }
+      });
+    }
+    return result;
+  }, [events, filterModule, filterType, filterEra]);
+
+  // S72: "Un día como hoy" — events from this day in past years
+  const todayEvents = useMemo(() => {
+    const today = new Date();
+    const mmdd = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    return events.filter(e => {
+      if (!e.created_at) return false;
+      const eventYear = new Date(e.created_at).getFullYear();
+      if (eventYear === today.getFullYear()) return false;
+      const eventMMDD = e.created_at.slice(5, 10);
+      return eventMMDD === mmdd;
+    });
+  }, [events]);
+
+  // Unique event types for filter
+  const eventTypes = useMemo(() =>
+    [...new Set(events.map(e => e.event_type).filter(Boolean))].sort(),
+    [events]
+  );
+
+  const visibleEvents = filteredEvents.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredEvents.length;
 
   if (!events.length) {
     return (
@@ -37,9 +96,128 @@ export default function Timeline({ events = [], accentColor = ACID }) {
     grouped[day].push(e);
   }
 
+  // Module filter options
+  const MODULES = [
+    { id: "all", label: "TODO" },
+    { id: "vault", label: "VAULT" },
+    { id: "music", label: "MUSIC" },
+    { id: "smoke", label: "SMOKE" },
+  ];
+
   return (
-    <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
-      {/* G5: Toggle modos de vista + paginación */}
+    <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
+      {/* S72: "Un día como hoy" banner */}
+      {todayEvents.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-sm"
+          style={{ background: `${PURPLE}0d`, border: `1px solid ${PURPLE}33` }}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-sm" style={{ color: PURPLE }}>📅</span>
+            <span className="text-xs tracking-[0.2em] uppercase font-bold" style={{ color: PURPLE }}>
+              UN DÍA COMO HOY
+            </span>
+          </div>
+          <p className="text-xs opacity-50" style={{ color: ACID }}>
+            {todayEvents.length} evento{todayEvents.length > 1 ? "s" : ""} en esta fecha de años anteriores
+          </p>
+          <div className="flex gap-1 mt-1.5 flex-wrap">
+            {todayEvents.slice(0, 3).map((e, i) => {
+              const year = e.created_at?.slice(0, 4);
+              const icon = EVENT_ICONS[e.event_type] || "●";
+              return (
+                <span key={i} className="text-xs px-1.5 py-0.5 rounded-sm" style={{ background: `${PURPLE}15`, color: PURPLE }}>
+                  {icon} {year}
+                </span>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+
+      {/* S72: Filter bar */}
+      <div className="flex flex-col gap-2">
+        {/* Module filters */}
+        <div className="flex gap-1 overflow-x-auto">
+          {MODULES.map(m => (
+            <motion.button
+              key={m.id}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => { setFilterModule(m.id); setVisibleCount(PAGE_SIZE); }}
+              className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+              style={{
+                color: filterModule === m.id ? accent : `${accent}55`,
+                border: `1px solid ${filterModule === m.id ? `${accent}44` : `${accent}18`}`,
+                background: filterModule === m.id ? `${accent}0d` : "transparent",
+              }}
+            >
+              {m.label}
+            </motion.button>
+          ))}
+        </div>
+
+        {/* Type filter — horizontal scroll */}
+        {eventTypes.length > 2 && (
+          <div className="flex gap-1 overflow-x-auto">
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => { setFilterType("all"); setVisibleCount(PAGE_SIZE); }}
+              className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+              style={{
+                color: filterType === "all" ? accent : `${accent}40`,
+                border: `1px solid ${filterType === "all" ? `${accent}33` : `${accent}14`}`,
+                background: filterType === "all" ? `${accent}08` : "transparent",
+              }}
+            >
+              TIPOS
+            </motion.button>
+            {eventTypes.slice(0, 10).map(t => (
+              <motion.button
+                key={t}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => { setFilterType(filterType === t ? "all" : t); setVisibleCount(PAGE_SIZE); }}
+                className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+                style={{
+                  color: filterType === t ? accent : `${accent}40`,
+                  border: `1px solid ${filterType === t ? `${accent}33` : `${accent}14`}`,
+                  background: filterType === t ? `${accent}08` : "transparent",
+                }}
+              >
+                {EVENT_ICONS[t] || "●"} {t.replace(/_/g, " ").slice(0, 14)}
+              </motion.button>
+            ))}
+          </div>
+        )}
+
+        {/* Era filter — if eras provided */}
+        {eras.length > 0 && (
+          <div className="flex gap-1 overflow-x-auto">
+            <motion.button
+              whileTap={{ scale: 0.92 }}
+              onClick={() => { setFilterEra("all"); setVisibleCount(PAGE_SIZE); }}
+              className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+              style={{ color: filterEra === "all" ? accent : `${accent}40`, border: `1px solid ${filterEra === "all" ? `${accent}33` : `${accent}14`}` }}
+            >
+              TODAS
+            </motion.button>
+            {eras.slice(0, 6).map(era => (
+              <motion.button
+                key={era.id}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => { setFilterEra(filterEra === era.id ? "all" : era.id); setVisibleCount(PAGE_SIZE); }}
+                className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+                style={{ color: filterEra === era.id ? era.color : `${accent}40`, border: `1px solid ${filterEra === era.id ? `${era.color}44` : `${accent}14`}` }}
+              >
+                ◈ {era.name}
+              </motion.button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* View mode toggle + count */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-1">
           {[
@@ -54,19 +232,23 @@ export default function Timeline({ events = [], accentColor = ACID }) {
           ))}
         </div>
         <span className="text-xs opacity-30" style={{ color: accent, fontFamily: FONT_MONO }}>
-          {visibleEvents.length}/{events.length}
+          {visibleEvents.length}/{filteredEvents.length}
         </span>
       </div>
 
-      {viewMode === "compact" ? (
-        /* Modo compacto: lista plana sin agrupar por día */
+      {filteredEvents.length === 0 ? (
+        <p className="text-xs opacity-25 text-center py-6" style={{ color: accent }}>Sin eventos con estos filtros</p>
+      ) : viewMode === "compact" ? (
+        /* Modo compacto */
         <div className="flex flex-col gap-1">
           {visibleEvents.map((e, i) => {
+            const icon = EVENT_ICONS[e.event_type] || "●";
             const label = e.event_type?.replace(/_/g, " ").toUpperCase() ?? "EVENTO";
             return (
-              <motion.div key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
+              <motion.div key={`${e.id || i}-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
                 className="flex items-center gap-2 px-2 py-1 text-xs"
                 style={{ borderBottom: `1px solid ${accent}11` }}>
+                <span style={{ color: accent }}>{icon}</span>
                 <span className="opacity-30" style={{ color: accent, fontFamily: FONT_MONO }}>
                   {e.created_at?.slice(11, 16) ?? "--:--"}
                 </span>
@@ -77,27 +259,27 @@ export default function Timeline({ events = [], accentColor = ACID }) {
           })}
         </div>
       ) : (
-        /* Modo timeline: agrupado por día */
+        /* Modo timeline */
         <>
       {Object.entries(grouped).map(([day, items]) => (
         <div key={day} className="flex flex-col gap-2">
           <p className="text-xs tracking-[0.3em] uppercase opacity-40" style={{ color: accent }}>{day}</p>
           {items.map((e, i) => {
-            const icon = e.event_type === "track_play" ? "▶" : e.event_type === "drop_sent" ? "♥" :
-              e.event_type === "entry_created" ? "✎" : e.event_type === "smoke_session_completed" ? "⧖" : "●";
-            const label = e.event_type.replace(/_/g, " ").toUpperCase();
-            const detail = e.payload
-              ? (typeof e.payload === "string" ? JSON.parse(e.payload) : e.payload)
-              : {};
+            const icon = EVENT_ICONS[e.event_type] || "●";
+            const label = e.event_type?.replace(/_/g, " ").toUpperCase() ?? "EVENTO";
+            let detail = {};
+            try {
+              detail = e.payload ? (typeof e.payload === "string" ? JSON.parse(e.payload) : e.payload) : {};
+            } catch { /* keep empty */ }
             return (
-              <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+              <motion.div key={`${e.id || day}-${i}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
                 className="flex items-center gap-3 px-3 py-2 text-xs"
                 style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
                 <span style={{ color: accent }}>{icon}</span>
                 <span className="opacity-50" style={{ color: accent }}>{label}</span>
-                <span className="opacity-30 ml-auto" style={{ color: accent }}>
-                  {e.user_id} · {detail.title || detail.track_id || ""}
+                <span className="opacity-30 ml-auto truncate" style={{ color: accent }}>
+                  {e.user_id} {detail.title || detail.track_id || detail.era_name || ""}
                 </span>
               </motion.div>
             );
@@ -107,15 +289,15 @@ export default function Timeline({ events = [], accentColor = ACID }) {
         </>
       )}
 
-      {/* G5: Botón cargar más */}
+      {/* Load more */}
       {hasMore && (
         <motion.button
           whileTap={{ scale: 0.96 }}
-          onClick={() => setVisibleCount(c => Math.min(c + PAGE_SIZE, events.length))}
+          onClick={() => setVisibleCount(c => Math.min(c + PAGE_SIZE, filteredEvents.length))}
           className="text-xs tracking-[0.2em] uppercase py-2 px-4 mx-auto opacity-50 hover:opacity-100 transition-opacity"
           style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
         >
-          ↓ CARGAR MÁS ({events.length - visibleCount} restantes)
+          ↓ CARGAR MÁS ({filteredEvents.length - visibleCount} restantes)
         </motion.button>
       )}
     </div>

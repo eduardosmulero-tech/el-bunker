@@ -9,4 +9,18 @@ export default defineConfig({
       `${new Date().toISOString().slice(0,10)}-${Date.now()}`
     ),
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/framer-motion')) {
+            return 'vendor-motion';
+          }
+        },
+      },
+    },
+  },
 })

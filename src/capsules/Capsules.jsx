@@ -137,7 +137,7 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25 }}
         >
-          {subTab === "timeline" &&          <Timeline events={events} accentColor={accent} />}
+          {subTab === "timeline" &&          <Timeline events={events} accentColor={accent} eras={_db?.eras || []} />}
           {subTab === "smoke" && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 px-1">
@@ -150,7 +150,7 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
             </div>
           )}
           {subTab === "timecapsules" && (
-            <TimeCapsules token={jwtToken} capsules={capsules} accentColor={accent} />
+            <TimeCapsules token={jwtToken} capsules={capsules} accentColor={accent} entries={_db?.entries || []} playlists={_db?.music_lab?.playlists || []} />
           )}
           {subTab === "recap" && <Recaps events={events} accentColor={accent} />}
         </motion.div>

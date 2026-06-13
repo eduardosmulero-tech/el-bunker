@@ -54,7 +54,16 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     skip,
     masterVolume, setMasterVolume,
     trackVibe,
+    vibrate, softDeletedIds, undoRemoveFromQueue,
   } = usePlayer();
+
+  // S78 UX5: Swipe gesture state
+  const swipeStartRef = useRef(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+
+  // S78 UX1: Double-tap detection
+  const lastTapRef = useRef(0);
+  const DOUBLE_TAP_MS = 300;
 
   const mountedRef   = useRef(false);
   const currentTRef  = useRef(0);
@@ -117,11 +126,54 @@ const skipDir = useCallback((dir) => {
   };
 
 
+  // S78 UX1: Double-tap seek (±10s)
+  const handleDoubleTapSeek = useCallback((e) => {
+    if (!audioRef.current) return;
+    const now = Date.now();
+    const isDoubleTap = now - lastTapRef.current < DOUBLE_TAP_MS;
+    lastTapRef.current = now;
+    if (!isDoubleTap) return;
+    vibrate?.([10]); // haptic only on actual double-tap
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.touches?.[0]?.clientX || e.changedTouches?.[0]?.clientX || e.clientX;
+    if (!x) return;
+    const isRight = x - rect.left > rect.width / 2;
+    const seekAmount = isRight ? 10 : -10;
+    const newTime = Math.max(0, Math.min(duration || 0, (currentTRef.current || 0) + seekAmount));
+    audioRef.current.currentTime = newTime;
+    currentTRef.current = newTime;
+    setCurrentT(newTime);
+    if (duration) setProgress((newTime / duration) * 100);
+  }, [duration, vibrate]);
+
+  // S78 UX5: Swipe handlers
+  const onSwipeStart = useCallback((e) => {
+    swipeStartRef.current = e.touches?.[0]?.clientX || e.clientX;
+  }, []);
+  const onSwipeEnd = useCallback((e) => {
+    const startX = swipeStartRef.current;
+    if (startX == null) return;
+    const endX = e.changedTouches?.[0]?.clientX || e.clientX;
+    const diff = endX - startX;
+    if (Math.abs(diff) > 60) {
+      vibrate?.([15]);
+      if (diff > 0) skipDir(-1);
+      else skipDir(1);
+    }
+    swipeStartRef.current = null;
+    setSwipeOffset(0);
+  }, [skipDir, vibrate]);
+  const onSwipeMove = useCallback((e) => {
+    const startX = swipeStartRef.current;
+    if (startX == null) return;
+    setSwipeOffset((e.touches?.[0]?.clientX || e.clientX) - startX);
+  }, []);
+
   const seekTo = (pct) => {
     if (!audioRef.current || !duration) return;
     const targetTime = (pct / 100) * duration;
     audioRef.current.currentTime = targetTime;
-    // BUG-NUEVO-06: actualizar visual aunque esté en pausa
     currentTRef.current = targetTime;
     setCurrentT(targetTime);
     setProgress(pct);
@@ -192,39 +244,37 @@ return () => cancelAnimationFrame(raf);
 
   const accentColor = vibeConf?.palette?.accent ?? ACID;
 
+  // S79: Enhanced MediaSession — era-aware metadata
   useEffect(() => {
     if (!("mediaSession" in navigator) || !track) return;
+    const eraTag = track.era_name || track.era_id || "";
     const artwork = track.thumbnail
-      ? [{ src: track.thumbnail, sizes: "480x360", type: "image/jpeg" }]
+      ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
       : [];
     navigator.mediaSession.metadata = new MediaMetadata({
-      title: track.title ?? "Sin título", artist: track.artist ?? "", album: "el búnker", artwork,
+      title: track.title ?? "Sin título",
+      artist: track.artist ?? "El Búnker",
+      album: eraTag ? `ERA: ${eraTag}` : "Music Lab",
+      artwork,
     });
     navigator.mediaSession.playbackState = playing ? "playing" : "paused";
-    navigator.mediaSession.setActionHandler("play", () => {
-      audioRef.current?.play(); setPlaying(true);
-    });
-    navigator.mediaSession.setActionHandler("pause", () => {
-      audioRef.current?.pause(); setPlaying(false);
-    });
+    // MediaSession action handlers (in addition to PlayerContext's handlers)
+    navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play(); setPlaying(true); });
+    navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setPlaying(false); });
     navigator.mediaSession.setActionHandler("previoustrack", () => skipDir(-1));
-    navigator.mediaSession.setActionHandler("nexttrack",     () => skipDir(1));
-    navigator.mediaSession.setActionHandler("seekto", (details) => {
-      if (!audioRef.current || !details.seekTime) return;
-      audioRef.current.currentTime = details.seekTime;
-      currentTRef.current = details.seekTime;
-      setCurrentT(details.seekTime);
-      if (audioRef.current.duration) {
-        setProgress((details.seekTime / audioRef.current.duration) * 100);
-      }
-    });
-    return () => {
-      ["play", "pause", "previoustrack", "nexttrack", "seekto"].forEach((action) => {
-        try { navigator.mediaSession.setActionHandler(action, null); } catch { /* noop */ }
-      });
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track?.id, playing, skip, skipDir]);
+    navigator.mediaSession.setActionHandler("nexttrack", () => skipDir(1));
+    navigator.mediaSession.setActionHandler("seekto", (d) => { if (audioRef.current && d.seekTime != null) { audioRef.current.currentTime = d.seekTime; currentTRef.current = d.seekTime; setCurrentT(d.seekTime); } });
+    // S79: Set position state for lock screen progress bar
+    if ("setPositionState" in navigator.mediaSession) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: duration || 0,
+          playbackRate: playing ? 1 : 0,
+          position: currentT || 0,
+        });
+      } catch { /* noop */ }
+    }
+  }, [track?.id, track?.era_name, track?.era_id, track?.thumbnail, playing, duration, currentT]);
 
   return (
     <motion.div
@@ -234,10 +284,15 @@ return () => cancelAnimationFrame(raf);
         border: `1px solid ${withAlpha(accentColor, 0.2)}`,
         boxShadow: `0 0 30px ${withAlpha(accentColor, 0.07)}, inset 0 0 40px rgba(0,0,0,0.6)`,
         fontFamily: FONT_MONO,
+        touchAction: "none",
       }}
       initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ opacity: 1, y: 0, x: swipeOffset * 0.3 }}
       transition={{ duration: 0.45 }}
+      onTouchStart={onSwipeStart}
+      onTouchMove={onSwipeMove}
+      onTouchEnd={onSwipeEnd}
+      onClick={handleDoubleTapSeek}
     >
       {/* <audio> vive en PlayerProvider (ADR-004 Enmienda S21) */}
 
@@ -274,6 +329,22 @@ return () => cancelAnimationFrame(raf);
           </span>
         </div>
       </div>
+
+      {/* S77 Q16: Soft-delete undo bar */}
+      {track && softDeletedIds?.has(track.id) && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="px-3 py-1.5 text-xs text-center"
+          style={{ background: `${accentColor}15`, borderBottom: `1px solid ${accentColor}22`, fontFamily: FONT_MONO }}
+        >
+          <button onClick={() => undoRemoveFromQueue?.(track.id)}
+            className="underline" style={{ color: accentColor }}>
+            Deshacer
+          </button>
+          <span className="opacity-40 ml-2" style={{ color: accentColor }}>eliminado de la cola</span>
+        </motion.div>
+      )}
 
       {/* Visualizer */}
       <div className="px-3 pt-3 pb-1" style={{ background: "rgba(0,0,0,0.4)" }}>

@@ -1,14 +1,16 @@
 // ============================================================
 //  EL BÚNKER — SmokeSession.jsx
 //  Componente Especial · Temporizador Circular Neón
-//  Feature: Fade-Out de volumen automático en los últimos 2 min
+//  S73 — Nombrado, historial, rachas, vibe-aware, notificaciones
 //  Stack: React 18 + Framer Motion + SVG
 // ============================================================
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
+
+const SMOKE_HISTORY_KEY = "el_bunker_smoke_history";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const PURPLE  = "#bf00ff";
@@ -165,7 +167,8 @@ const VolumeFadeBar = ({ volume, isFading }) => (
  *   onVolumeChange    — (vol: number) => void
  */
 export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeChange: onVolumeChangeProp }) {
-  const { masterVolume: ctxVolume, setMasterVolume } = usePlayer();
+  // S73 fix: single usePlayer() call
+  const { masterVolume: ctxVolume, setMasterVolume, trackVibe, resolveVibeAccent } = usePlayer();
   const masterVolume   = ctxVolume  ?? masterVolumeProp  ?? 80;
   const onVolumeChange = setMasterVolume ?? onVolumeChangeProp;
   const [selectedPreset, setSelectedPreset] = useState(PRESETS[1]); // 30 min default
@@ -177,6 +180,76 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
   const [showCustom,     setShowCustom]     = useState(false);
   const [fadedVolume,    setFadedVolume]    = useState(masterVolume);
   const [originalVolume, setOriginalVolume] = useState(masterVolume);
+
+  // S73: Session name, history, streaks, vibe-aware
+  const [sessionName, setSessionName] = useState("");
+  const sessionNameRef = useRef(""); // S73 fix: avoid stale closure in timer callback
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(SMOKE_HISTORY_KEY) || "[]"); }
+    catch { return []; }
+  });
+  const vibeAccent = useMemo(() => {
+    if (!trackVibe) return null;
+    return resolveVibeAccent?.(trackVibe) || null;
+  }, [trackVibe, resolveVibeAccent]);
+
+  // Use vibe accent as preset color override when music is playing
+  const effectiveActiveColor = useMemo(() => {
+    if (vibeAccent && isRunning) return vibeAccent;
+    return activeColor;
+  }, [vibeAccent, isRunning, activeColor]);
+
+  // S73: Streak — días consecutivos con sesiones completadas
+  const streak = useMemo(() => {
+    if (!history.length) return 0;
+    const completedDates = [...new Set(
+      history.filter(h => h.completed).map(h => h.date?.slice(0, 10))
+    )].sort().reverse();
+    if (!completedDates.length) return 0;
+    let count = 1;
+    const oneDay = 86400000;
+    for (let i = 1; i < completedDates.length; i++) {
+      const diff = new Date(completedDates[i - 1]).getTime() - new Date(completedDates[i]).getTime();
+      if (Math.abs(diff - oneDay) < 3600000) count++;
+      else break;
+    }
+    // Check if today is in the streak
+    const today = new Date().toISOString().slice(0, 10);
+    if (completedDates[0] !== today) return 0;
+    return count;
+  }, [history]);
+
+  // S73: Save completed session to history
+  const saveToHistory = useCallback((completed, durationSecs, name) => {
+    const entry = {
+      id: crypto.randomUUID(),
+      date: new Date().toISOString(),
+      name: name || "Sin nombre",
+      duration: durationSecs,
+      completed,
+    };
+    setHistory(prev => {
+      const updated = [entry, ...prev].slice(0, 50);
+      try { localStorage.setItem(SMOKE_HISTORY_KEY, JSON.stringify(updated)); }
+      catch { /* noop */ }
+      return updated;
+    });
+  }, []);
+
+  // S73: Notification when session completes
+  const notifyComplete = useCallback((name, durationSecs) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      new Notification("Smoke Session completada", {
+        body: `${name || "Sesión sin nombre"} · ${formatTime(durationSecs)}`,
+        icon: "/manifest-icon-192.png",
+        tag: "smoke-complete",
+      });
+    } else if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const intervalRef   = useRef(null);
   const fadeStartRef  = useRef(null);  // volume when fade begins
@@ -246,6 +319,9 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           // Restore volume after session ends
           if (onVolumeChange) onVolumeChange(originalVolume);
           setFadedVolume(originalVolume);
+          // S73: Save to history + notify (use ref for correct name at completion)
+          saveToHistory(true, totalSeconds, sessionNameRef.current);
+          notifyComplete(sessionNameRef.current, totalSeconds);
           return 0;
         }
         return prev - 1;
@@ -282,8 +358,9 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     setFadedVolume(masterVolume);
     setIsDone(false);
     setIsRunning(true);
+    sessionNameRef.current = sessionName; // S73: capture name at session start
     endTimeRef.current = Date.now() + remaining * 1000;
-  }, [masterVolume, remaining]);
+  }, [masterVolume, remaining, sessionName]);
 
   const pauseSession = useCallback(() => {
     setIsRunning(false);
@@ -352,33 +429,116 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
       ))}
 
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <motion.span
-            animate={{ opacity: isRunning ? [0.5, 1, 0.5] : 1 }}
-            transition={{ duration: 1.4, repeat: isRunning ? Infinity : 0 }}
-            style={{ color: activeColor, fontSize: 16 }}
-          >
-            ◉
-          </motion.span>
-          <span
-            className="text-xs tracking-[0.35em] uppercase font-bold"
-            style={{ color: activeColor, textShadow: isRunning ? `0 0 8px ${activeColor}` : "none" }}
-          >
-            SMOKE SESSION
-          </span>
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <motion.span
+              animate={{ opacity: isRunning ? [0.5, 1, 0.5] : 1 }}
+              transition={{ duration: 1.4, repeat: isRunning ? Infinity : 0 }}
+              style={{ color: effectiveActiveColor, fontSize: 16 }}
+            >
+              ◉
+            </motion.span>
+            <span
+              className="text-xs tracking-[0.35em] uppercase font-bold"
+              style={{ color: effectiveActiveColor, textShadow: isRunning ? `0 0 8px ${effectiveActiveColor}` : "none" }}
+            >
+              SMOKE SESSION
+            </span>
+            {/* S73: Vibe indicator */}
+            {vibeAccent && isRunning && (
+              <span className="text-xs opacity-40" style={{ color: vibeAccent }}>
+                ♫
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* S73: Streak counter */}
+            {streak >= 2 && (
+              <span className="text-xs px-1.5 py-0.5 rounded-sm" style={{ color: ORANGE, background: `${ORANGE}15`, fontFamily: FONT }}>
+                🔥 {streak}
+              </span>
+            )}
+            {/* S73: History button */}
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowHistory(p => !p)}
+              className="text-xs px-2 py-1 rounded-sm"
+              style={{
+                color: showHistory ? ACID : `${ACID}44`,
+                border: `1px solid ${showHistory ? `${ACID}44` : `${ACID}18`}`,
+                fontFamily: FONT,
+              }}
+            >
+              {showHistory ? "✕" : `${history.length} 📋`}
+            </motion.button>
+            {isRunning && isFading && (
+              <motion.span
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 0.7, repeat: Infinity }}
+                className="text-xs tracking-widest uppercase"
+                style={{ color: RED, textShadow: `0 0 8px ${RED}` }}
+              >
+                ⚠ FADE OUT
+              </motion.span>
+            )}
+          </div>
         </div>
 
-        {isRunning && isFading && (
-          <motion.span
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 0.7, repeat: Infinity }}
-            className="text-xs tracking-widest uppercase"
-            style={{ color: RED, textShadow: `0 0 8px ${RED}` }}
-          >
-            ⚠ FADE OUT
-          </motion.span>
+        {/* S73: Session name input */}
+        {!isRunning && (
+          <input
+            type="text"
+            value={sessionName}
+            onChange={e => setSessionName(e.target.value)}
+            placeholder="Nombre de la sesión..."
+            maxLength={40}
+            className="w-full px-3 py-1.5 rounded-sm text-xs bg-transparent outline-none"
+            style={{
+              color: ACID,
+              border: `1px solid ${ACID}18`,
+              fontFamily: FONT,
+              letterSpacing: "0.05em",
+            }}
+          />
         )}
+
+        {/* S73: History panel */}
+        <AnimatePresence>
+          {showHistory && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="pt-2 flex flex-col gap-1" style={{ maxHeight: 180, overflowY: "auto" }}>
+                {history.length === 0 ? (
+                  <p className="text-xs opacity-25 text-center py-2" style={{ color: ACID }}>Sin sesiones aún</p>
+                ) : (
+                  history.slice(0, 12).map((h, i) => (
+                    <div key={h.id || i} className="flex items-center gap-2 text-xs py-1 px-2"
+                      style={{ borderBottom: `1px solid ${ACID}0a`, fontFamily: FONT }}>
+                      <span style={{ color: h.completed ? PURPLE : `${ACID}33` }}>
+                        {h.completed ? "✓" : "⌁"}
+                      </span>
+                      <span className="truncate flex-1 opacity-50" style={{ color: ACID }}>
+                        {h.name || "Sin nombre"}
+                      </span>
+                      <span className="opacity-25 flex-shrink-0" style={{ color: ACID }}>
+                        {formatTime(h.duration)}
+                      </span>
+                      <span className="opacity-15 flex-shrink-0 text-xs" style={{ color: ACID }}>
+                        {h.date?.slice(0, 10)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Circular Timer ──────────────────────────────────── */}

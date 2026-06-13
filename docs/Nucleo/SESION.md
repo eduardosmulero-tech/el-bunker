@@ -5,32 +5,29 @@
 
 ---
 
-## S66 — Auditoría completa + ROADMAP v4 (Junio 2026)
+## S67-S79 — Ejecución completa ROADMAP v4 (Junio 2026)
 
-**Objetivo:** Leer toda la documentación (CONTRATO, specs, arquitectura, código real) y cross-referenciar specs vs implementado vs D1 para generar ROADMAP actualizado.
+**Objetivo:** Ejecutar las 13 sesiones priorizadas del ROADMAP v4 (Fases 2-5) en una sola sesión.
 
 ### Resultado
-- ROADMAP.md v4: 38 sesiones totales, 17 completadas (S50-S66), 13 priorizadas (S67-S79), 8 diferidas
-- ~110 features implementadas de ~180 especificadas (~61%)
-- VAULT CRUD 95% completo, VAULT Galería 45%, CAPSULES 65%, MUSIC LAB 85%
-- 4 archivos actualizados: ROADMAP.md, ESTADO.md, SESION.md, INDEX.md
-- 0 cambios de código, solo documentación de planificación
+- **38 sesiones totales completadas** (S50-S79). Solo quedan 8 diferidas (S80-S87, Fase C).
+- VAULT Galería: 5 modos implementados (WALL, CINEMA, DIALOGUE, MAP, EXHIBITION+REEL)
+- CAPSULES premium: Timeline con filtros, SmokeSession con historial/rachas, TimeCapsules con content picker, RECAP Wrapped 6 secciones
+- Persistencia: playlists/drops/tags vía Worker API; VaultContext usa D1 como fuente primaria
+- MusicLab: Q6/Q12/Q15/Q16/Q17 cola, S1/S2 posición larga duración, UX1/UX2/UX5 táctil, MediaSession M1-M12
+- ~155 features implementadas de ~180 (~86%)
+- 0 bugs P1 activos
 
-### Gaps principales identificados:
-- Galería: CINEMA (sin Ken Burns/audioguías), DIALOGUE (sin emparejamiento temporal), MAP (placeholder)
-- CAPSULES: Timeline sin filtros, Smoke sin historial/push, TimeCapsules sin contenido real
-- Persistencia: playlists/drops/tags aún en Drive JSON
-- MusicLab Fase A: cola Q6/Q12, sesión S1/S2/S8, MediaSession M1-M12
+### Archivos modificados (8)
+`VaultGallery.jsx`, `Timeline.jsx`, `Capsules.jsx`, `SmokeSession.jsx`, `TimeCapsules.jsx`,
+`Recaps.jsx`, `PlayerContext.jsx`, `WinampPlayer.jsx`
 
-### Archivos modificados (4)
-docs/ROADMAP.md, docs/Nucleo/ESTADO.md, docs/Nucleo/SESION.md, docs/Arquitectura/INDEX.md
+### Nuevas dependencias
+`leaflet` + `react-leaflet` — Mapas interactivos en galería MAP
 
 ---
 
-## Próxima sesión: S67 — Galería CINEMA
+## Próxima sesión: ninguna priorizada — ROADMAP Fase B completado
 
-**Objetivo:** Implementar CINEMA mode completo: full-bleed swipe con Framer Motion, Ken Burns lento en pausa contemplativa, subtítulos emocionales, crossfade entre fotos de distinta Era.
+Solo quedan 8 sesiones diferidas (Fase C: S80-S87) que requieren investigación o diseño previo.
 
-**Archivos:** `src/vault/VaultGallery.jsx`
-**Specs:** ADR-021 CINEMA, galeria_vault_spec.md §2
-**Estimación:** ~1.5h

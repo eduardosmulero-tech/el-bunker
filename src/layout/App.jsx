@@ -3,7 +3,7 @@
 //  Orquestador Principal · Router · State Orchestration
 //  Stack: React 18 + Framer Motion
 // ============================================================
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { VaultProvider, useVault } from "../core/VaultContext";
@@ -12,10 +12,26 @@ import { PlayerProvider, usePlayer }     from "../core/PlayerContext";
 import Layout                            from "./Layout";
 import LoginScreen                       from "./LoginScreen";
 import Vault                             from "../vault/Vault";
-import MusicLab                          from "../musiclab/MusicLab";
 import { DropAlertModal }               from "../musiclab/DropsManager";
-import Capsules                          from "../capsules/Capsules";
 import { ACID } from "../tokens";
+
+// Code splitting: lazy-load los dos módulos más pesados
+const MusicLab = lazy(() => import("../musiclab/MusicLab"));
+const Capsules = lazy(() => import("../capsules/Capsules"));
+
+// Suspense fallback compartido
+const PageLoader = () => (
+  <div className="flex items-center justify-center py-12" style={{ fontFamily: FONT }}>
+    <motion.p
+      animate={{ opacity: [0.3, 0.7, 0.3] }}
+      transition={{ duration: 1.5, repeat: Infinity }}
+      className="text-xs tracking-[0.3em] uppercase"
+      style={{ color: ACID }}
+    >
+      CARGANDO...
+    </motion.p>
+  </div>
+);
 // ─── DESIGN TOKENS (mirrored for this file) ──────────────────
 const BG     = "#050505";
 const FONT   = "'JetBrains Mono', 'Courier New', monospace";
@@ -239,21 +255,23 @@ const MusicPage = () => {
   };
 
   return (
-    <MusicLab
-      db={db}
-      userId={user?.id ?? null}
-      jwtToken={jwtToken}
-      onAddTrack={onAddTrack}
-      onAddDrop={onAddDrop}
-      onDeleteTrack={onDeleteTrack}
-      onEditTrack={onEditTrack}
-      onMasterVolumeChange={setMasterVolume}
-      onMarkDropSeen={onMarkDropSeen}
-      patchDb={patchDb}
-      onAddTag={handleAddTag}
-      onUpdateTag={handleUpdateTag}
-      onDeleteTag={handleDeleteTag}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <MusicLab
+        db={db}
+        userId={user?.id ?? null}
+        jwtToken={jwtToken}
+        onAddTrack={onAddTrack}
+        onAddDrop={onAddDrop}
+        onDeleteTrack={onDeleteTrack}
+        onEditTrack={onEditTrack}
+        onMasterVolumeChange={setMasterVolume}
+        onMarkDropSeen={onMarkDropSeen}
+        patchDb={patchDb}
+        onAddTag={handleAddTag}
+        onUpdateTag={handleUpdateTag}
+        onDeleteTag={handleDeleteTag}
+      />
+    </Suspense>
   );
 };
 
@@ -264,14 +282,16 @@ const CapsulesPage = () => {
   const { db, user, masterVolume, setMasterVolume, jwtToken } = useVault();
   const { activeTrack } = usePlayer();
   return (
-    <Capsules
-      db={db}
-      userId={user?.id ?? null}
-      jwtToken={jwtToken}
-      activeTrack={activeTrack}
-      masterVolume={masterVolume}
-      onVolumeChange={setMasterVolume}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <Capsules
+        db={db}
+        userId={user?.id ?? null}
+        jwtToken={jwtToken}
+        activeTrack={activeTrack}
+        masterVolume={masterVolume}
+        onVolumeChange={setMasterVolume}
+      />
+    </Suspense>
   );
 };
 

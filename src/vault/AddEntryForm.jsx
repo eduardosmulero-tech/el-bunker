@@ -7,6 +7,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS } from "../tokens";
+import { uploadFile } from "../core/FileUploadService";
 
 const ENTRY_TYPES = [
   { id: "note",      icon: "✎", label: "NOTA" },
@@ -60,7 +61,6 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       // Si es foto y hay archivo nuevo, subir a R2
       if (type === "photo" && photoFile) {
         try {
-          const { uploadFile } = await import("../core/FileUploadService");
           const { r2_key } = await uploadFile(photoFile, "vault/photos");
           entryData.content = { text: entryData.content.text, images: [{ r2_key, filename: photoFile.name }] };
         } catch {

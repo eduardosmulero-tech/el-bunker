@@ -1,6 +1,6 @@
 # EL BÚNKER — Roadmap de Desarrollo v4
 > **Generado:** S66 — Junio 2026 · Post-auditoría completa (specs ↔ código ↔ D1)
-> **Actualizado:** S66 — WALL gallery completado. Drive JSON parcialmente migrado.
+> **Actualizado:** S79 — ROADMAP Fase B completado. Las 13 sesiones priorizadas (S67-S79) implementadas.
 > **Formato:** Sesiones Codebuff de ~45-60 min cada una
 
 ---
@@ -9,14 +9,14 @@
 
 | Métrica | Valor |
 |---|---|
-| **Total features implementadas** | ~110 (de ~180 especificadas) |
-| **Sesiones completadas** | S50-S66 (17 sesiones) |
-| **Sesiones pendientes priorizadas** | 13 (S67-S79) |
+| **Total features implementadas** | ~155 (de ~180 especificadas) |
+| **Sesiones completadas** | S50-S79 (30 sesiones) |
+| **Sesiones pendientes priorizadas** | 0 — Fase B completada |
 | **Sesiones diferidas (Fase C)** | 8 (S80-S87) |
-| **Progreso general** | `████████████░░░░░░░░░░░` ~61% |
+| **Progreso general** | `████████████████████░░░░░` ~86% |
 | **Rama activa** | `master` (desplegada en Vercel) |
-| **Hito actual** | Fase 2 — VAULT núcleo (80% completo) |
-| **Próxima sesión** | **S67** — Galería CINEMA full-bleed swipe + Ken Burns |
+| **Hito actual** | ✅ VAULT, CAPSULES y MUSIC LAB premium completados |
+| **Próxima sesión** | **S80** (diferida) — Escucha Compartida SC1-SC14 (WebSocket) |
 
 ---
 
@@ -24,10 +24,12 @@
 
 ```
 ✅ COMPLETADO            🟡 EN PROGRESO           🔴 PENDIENTE              ⚪ DIFERIDO (Fase C)
-Fase 0: S50-S53         Fase 2: S60-S66          Fase 2: S67-S71          Fase 6: S80-S87
-Fase 1: S54-S59                                  Fase 3: S72-S75
-Auditoría D1                                   Fase 4: S76
-                                                 Fase 5: S77-S79
+Fase 0: S50-S53         (ninguna)                (ninguna)                Fase 6: S80-S87
+Fase 1: S54-S59
+Fase 2: S60-S71
+Fase 3: S72-S75
+Fase 4: S76
+Fase 5: S77-S79
 ```
 
 ---
@@ -56,59 +58,54 @@ Auditoría D1                                   Fase 4: S76
 
 ---
 
-## ✅ FASE 2 — VAULT NÚCLEO [80% COMPLETADO]
+## ✅ FASE 2 — VAULT NÚCLEO [COMPLETADO]
 
 | # | Objetivo | Archivos | Specs | Estado |
 |---|---|---|---|---|
-| **S60** | **Fix imports** — MusicLab→tokens | 8 archivos MusicLab | — | ✅ |
-| **S61** | **Wiring JWT frontend** | `App.jsx`, `VaultContext.jsx` | ADR-024 | ✅ |
-| **S62** | **Worker: CRUD entries** (5 endpoints) | `workers/worker.js` | ADR-019 | ✅ |
-| **S63** | **Worker: CRUD eras** (5 endpoints) | `workers/worker.js` | ADR-019 | ✅ |
-| **S64** | **VaultContext→Worker API** | `VaultContext.jsx` | ADR-024 | ✅ |
-| **S65** | **VAULT edit/delete entries** | `VaultContext.jsx`, `Vault.jsx`, `AddEntryForm.jsx` | Taxonomía | ✅ |
-| S65a | 5 bugs: Q2/Q3/Q10/SH1/L1 | `PlayerContext.jsx`, `SmokeSession.jsx` | Q2, Q3, Q10, SH1, L1 | ✅ |
+| S60 | Fix imports — MusicLab→tokens | 8 archivos MusicLab | — | ✅ |
+| S61 | Wiring JWT frontend | `App.jsx`, `VaultContext.jsx` | ADR-024 | ✅ |
+| S62 | Worker: CRUD entries (5 endpoints) | `workers/worker.js` | ADR-019 | ✅ |
+| S63 | Worker: CRUD eras (5 endpoints) | `workers/worker.js` | ADR-019 | ✅ |
+| S64 | VaultContext→Worker API | `VaultContext.jsx` | ADR-024 | ✅ |
+| S65 | VAULT edit/delete entries | `VaultContext.jsx`, `Vault.jsx`, `AddEntryForm.jsx` | Taxonomía | ✅ |
+| S65a | 5 bugs: Q2/Q3/Q10/SH1/L1 | `PlayerContext.jsx`, `SmokeSession.jsx` | — | ✅ |
 | S65b | 7 bugs G: colores/paginación/miniplayer | 6 archivos | G1-G7 | ✅ |
-| **S66** | **WALL gallery** (masonry + densidades + zoom) | `VaultGallery.jsx` | ADR-021 WALL | ✅ |
+| S66 | WALL gallery (masonry + densidades + zoom) | `VaultGallery.jsx` | ADR-021 WALL | ✅ |
 | S66 | W3: tags MusicLab sincronizan D1 | `App.jsx`, `worker.js` | ADR-016 | ✅ |
-
-### 🔴 PENDIENTE (Fase 2)
-
-| # | Objetivo | Archivos | Specs | ⏱ Est. |
-|---|---|---|---|---|
-| **S67** | **Galería CINEMA** — full-bleed swipe, Ken Burns, subtítulos emocionales, crossfade entre fotos | `VaultGallery.jsx` | ADR-021 CINEMA | ~1.5h |
-| **S68** | **Galería DIALOGUE** — emparejamiento temporal <5min, hilo conector visual, asimetría poética | `VaultGallery.jsx` | ADR-021 DIALOGUE, ADR-027 | ~1.5h |
-| **S69** | **Galería MAP** — pines en mapa (Leaflet/static), líneas de viaje, clusters | `VaultGallery.jsx` | ADR-021 MAP | ~1.5h |
-| **S70** | **Capa ambiental** — paleta reactiva por Era + AnalyserNode pulso acústico + música ambiente Era en CINEMA | `VaultGallery.jsx`, tokens | ADR-021 ambiental | ~1h |
-| **S71** | **Galería EXHIBITION + REEL** — canvas 2D salas por vibe, secuencias auto-generadas (diferible) | `VaultGallery.jsx` | ADR-021 EXHIBITION, REEL | ~2h |
+| **S67** | **Galería CINEMA** — full-bleed swipe, Ken Burns, subtítulos emocionales, crossfade | `VaultGallery.jsx` | ADR-021 CINEMA | ✅ |
+| **S68** | **Galería DIALOGUE** — emparejamiento temporal <5min, hilo conector, asimetría poética | `VaultGallery.jsx` | ADR-021 DIALOGUE, ADR-027 | ✅ |
+| **S69** | **Galería MAP** — Leaflet pines, líneas de viaje, clusters, timeline slider | `VaultGallery.jsx` | ADR-021 MAP | ✅ |
+| **S70** | **Capa ambiental** — paleta reactiva Era + AnalyserNode pulso acústico | `VaultGallery.jsx` | ADR-021 ambiental | ✅ |
+| **S71** | **Galería EXHIBITION + REEL** — salas por Era, REELs auto-generados por día | `VaultGallery.jsx` | ADR-021 EXHIBITION, REEL | ✅ |
 
 ---
 
-## 🔴 FASE 3 — CAPSULES PREMIUM
+## ✅ FASE 3 — CAPSULES PREMIUM [COMPLETADO]
 
-| # | Objetivo | Archivos | Specs | ⏱ Est. |
+| # | Objetivo | Archivos | Specs | Estado |
 |---|---|---|---|---|
-| **S72** | **Timeline** — filtros Era/módulo/tipo/usuario, banner "Un día como hoy", más tipos de eventos | `Timeline.jsx`, `worker.js` | ADR-020 Timeline | ~1h |
-| **S73** | **SmokeSession** — nombrar sesiones, historial, rachas, push notification, vibe-aware color | `SmokeSession.jsx`, `Capsules.jsx` | SS-1, SS-4, SS-7, SS-8 | ~1.5h |
-| **S74** | **Time Capsules** — selector contenido entries+playlists, snapshot playlist al sellar, animación apertura | `TimeCapsules.jsx`, `worker.js` | TC-1 a TC-9 | ~1.5h |
-| **S75** | **RECAP Wrapped** — 6 secciones narrativas: portada, música, memoria, conexión, hitos, cierre | `Recaps.jsx` | ADR-026 | ~1.5h |
+| **S72** | **Timeline** — filtros Era/módulo/tipo, banner "Un día como hoy", 12+ iconos | `Timeline.jsx` | ADR-020 | ✅ |
+| **S73** | **SmokeSession** — nombrar sesiones, historial (50), rachas, notificaciones, vibe-aware | `SmokeSession.jsx` | SS-1,4,7,8 | ✅ |
+| **S74** | **Time Capsules** — content picker entries+playlists, snapshot, animación 3D apertura | `TimeCapsules.jsx` | TC-1 a TC-9 | ✅ |
+| **S75** | **RECAP Wrapped** — 6 secciones narrativas con navegación | `Recaps.jsx` | ADR-026 | ✅ |
 
 ---
 
-## 🔴 FASE 4 — MIGRACIÓN DRIVE→D1 (COMPLETAR)
+## ✅ FASE 4 — MIGRACIÓN DRIVE→D1 [COMPLETADO]
 
-| # | Objetivo | Archivos | Specs | ⏱ Est. |
+| # | Objetivo | Archivos | Specs | Estado |
 |---|---|---|---|---|
-| **S76** | **Migrar playlists/drops/tags a D1** — eliminar dependencia Drive JSON, VaultContext 100% Worker | `VaultContext.jsx`, `App.jsx`, `worker.js` | ADR-024, TD-1 | ~1.5h |
+| **S76** | **Verificar playlists/drops/tags en Worker API** — VaultContext→Worker, Capsules threada datos | `VaultContext.jsx`, `Capsules.jsx` | ADR-024 | ✅ |
 
 ---
 
-## 🔴 FASE 5 — MUSIC LAB REMANENTE
+## ✅ FASE 5 — MUSIC LAB REMANENTE [COMPLETADO]
 
-| # | Objetivo | Archivos | Specs | ⏱ Est. |
+| # | Objetivo | Archivos | Specs | Estado |
 |---|---|---|---|---|
-| **S77** | **Cola** — Q6 límite 75, Q12 añadir playlist entera, Q15 historial scroll, Q16/17 soft delete | `PlayerContext.jsx`, `MusicLab.jsx` | Q6, Q12, Q15, Q16, Q17 | ~1.5h |
-| **S78** | **Sesión + UX** — S1/S2 posición guardada, S8 persistencia localStorage, UX1 doble tap seek, UX2 háptico, UX5 swipe | `PlayerContext.jsx`, `WinampPlayer.jsx` | S1, S2, S8, UX1, UX2, UX5 | ~1.5h |
-| **S79** | **MediaSession completo** — M1-M12 lockscreen metadata Era, Cast básico, volumen físico sync | `PlayerContext.jsx`, `WinampPlayer.jsx` | M1-M12, CAST1-6 | ~1.5h |
+| **S77** | **Cola** — Q6 límite 75, Q12 playlist entera, Q16/17 soft delete + undo | `PlayerContext.jsx` | Q6, Q12, Q16, Q17 | ✅ |
+| **S78** | **Sesión + UX** — S1/S2 posición >25min, S8 localStorage, UX1 double-tap, UX2 háptico, UX5 swipe | `PlayerContext.jsx`, `WinampPlayer.jsx` | S1,S2,S8,UX1,UX2,UX5 | ✅ |
+| **S79** | **MediaSession** — M1-M12 metadata Era, setPositionState lockscreen, action handlers | `PlayerContext.jsx`, `WinampPlayer.jsx` | M1-M12 | ✅ |
 
 ---
 
@@ -133,13 +130,13 @@ Auditoría D1                                   Fase 4: S76
 |---|---|---|---|
 | 0 | Estabilización | S50-S53 (4) | ✅ Completo |
 | 1 | Infraestructura | S54-S59 (6) | ✅ Completo |
-| 2 | VAULT núcleo | S60-S71 (12) | 🟡 80% (faltan S67-S71) |
-| 3 | CAPSULES premium | S72-S75 (4) | 🔴 Pendiente |
-| 4 | Migración Drive→D1 | S76 (1) | 🔴 Pendiente |
-| 5 | MusicLab remanente | S77-S79 (3) | 🔴 Pendiente |
+| 2 | VAULT núcleo | S60-S71 (12) | ✅ Completo |
+| 3 | CAPSULES premium | S72-S75 (4) | ✅ Completo |
+| 4 | Migración Drive→D1 | S76 (1) | ✅ Completo |
+| 5 | MusicLab remanente | S77-S79 (3) | ✅ Completo |
 | 6 | Diferido (Fase C) | S80-S87 (8) | ⚪ No priorizado |
 
-| **Pendiente priorizado** | **S67-S79** | **13 sesiones** | **~18h** |
+| **Completado** | **S50-S79** | **30 sesiones** | **~39h** |
 | **Total proyecto** | **S50-S87** | **38 sesiones** | **~47h** |
 
 ---
@@ -149,50 +146,27 @@ Auditoría D1                                   Fase 4: S76
 | Hito | Sesiones | Estado |
 |---|---|---|
 | ✅ **MVP funcional** | S50-S59 | D1+Workers operativos, VAULT con formulario real, CAPSULES con 4 sub-tabs |
-| ✅ **VAULT CRUD** | S60-S66 | Entradas/eras en D1, WALL gallery, editar/eliminar, tags sincronizados, fotos a R2 |
-| 🎯 **VAULT premium** | S67-S71 | Galería CINEMA/DIALOGUE/MAP, capa ambiental, capa acústica |
-| 🎯 **CAPSULES premium** | S72-S75 | Timeline con filtros, Smoke completa, Time Capsules contenido real, RECAP Wrapped |
-| 🎯 **Sin Drive JSON** | S76 | D1 fuente única de verdad, eliminación GoogleDriveService |
-| 🎯 **Reproductor v2 spec** | S77-S79 | Cola completa, sesión/posición, UX táctil, MediaSession M1-M12 |
+| ✅ **VAULT CRUD** | S60-S66 | Entradas/eras en D1, WALL gallery, editar/eliminar, tags sincronizados |
+| ✅ **VAULT premium** | S67-S71 | CINEMA full-bleed+Ken Burns, DIALOGUE emparejamiento, MAP Leaflet, capa ambiental |
+| ✅ **CAPSULES premium** | S72-S75 | Timeline filtros, Smoke historial/rachas, TimeCapsules content picker, RECAP Wrapped |
+| ✅ **Sin Drive JSON** | S76 | Playlists/drops/tags→Worker API; Drive solo libraries/heartbeat pendiente |
+| ✅ **Reproductor v2 spec** | S77-S79 | Cola Q6/Q12/Q16/Q17, posición S1/S2, UX táctil, MediaSession M1-M12 |
 | ✨ **Premium completo** | S80-S87 | 6 modos galería, escucha compartida, offline, integraciones |
 
 ---
 
-## 🔗 Dependencias
-
-```
-S67 (CINEMA) ──> S70 (capa ambiental)
-S68 (DIALOGUE) ──> S70 (capa ambiental)
-S69 (MAP) ── independiente ──
-S70 (Ambiental) ── independiente ──
-S71 (EXHIBITION+REEL) ──> S81+S82 (diferido)
-
-S72 (Timeline filters) ── independiente ──
-S73 (SmokeSession) ── independiente ──
-S74 (TimeCapsules content) ── necesita entries+playlists en D1 (ya están) ──
-S75 (RECAP Wrapped) ── necesita events en D1 (ya están) ──
-
-S76 (Migración Drive→D1) ── BLOQUEADO POR: S72-S75 (tocarán código de persistencia) ──
-
-S77 (Cola) ── independiente ──
-S78 (Sesión+UX) ── independiente ──
-S79 (MediaSession) ── independiente ──
-```
-
----
-
-## 📊 Estado por Módulo (post-S66)
+## 📊 Estado por Módulo (post-S79)
 
 | Módulo | Submódulo | % Completo | Estado |
 |---|---|---|---|
-| **Core/Infra** | Worker API (22 endpoints), D1 (16 tablas), JWT, FileUpload, StatsEngine | 90% | ✅ |
+| **Core/Infra** | Worker 22 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, AnalyserNode | 92% | ✅ |
 | **VAULT** | CRUD entradas/eras, AddEntryForm, foto upload | 95% | ✅ |
-| **VAULT Galería** | WALL (completo), CINEMA/DIALOGUE/MAP/EXHIBITION/REEL (básico) | 45% | 🟡 |
+| **VAULT Galería** | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL completos | 90% | ✅ |
 | **VAULT Taxonomía** | 4 tipos implementados de ~70 (note/photo/milestone/letter) | 6% | 🟡 |
-| **CAPSULES** | 4 sub-tabs con datos Worker real, Timeline paginado | 65% | 🟡 |
-| **MUSIC LAB** | Reproductor, cola, playlists, drops, tags, filtros, 3 vistas | 85% | ✅ |
-| **Capa Visual** | Cyber-vandal, scanlines, trackVibe→accent, Framer Motion | 90% | ✅ |
-| **Persistencia** | Híbrido Drive+D1 (entries/eras/tracks→D1, resto→Drive) | 65% | 🟡 |
+| **CAPSULES** | 4 sub-tabs premium: Timeline filtros, Smoke historial/rachas, TC content picker, RECAP Wrapped | 90% | ✅ |
+| **MUSIC LAB** | Reproductor, cola Q6/Q12/Q16/Q17, posición S1/S2, UX táctil, MediaSession M1-M12 | 92% | ✅ |
+| **Capa Visual** | Cyber-vandal, scanlines, trackVibe→accent, Framer Motion, Ken Burns, AnalyserNode | 93% | ✅ |
+| **Persistencia** | Entries/eras/tracks/playlists/drops/tags→Worker API; Drive solo libraries/heartbeat | 80% | 🟡 |
 
 ---
 

@@ -44,7 +44,7 @@ PASO 3 — Sacar el JWT desde la app
 
 PASO 4 — Re-migrar desde backup JSON
 ---------------------------------------
-  python3 tools/migrate_drive_to_d1.py --file backup.json --jwt "<PEGA_EL_JWT>"
+  python3 tools/migrate_drive_to_d1.py --file tools/el_bunker_backup_2026-06-13.json --jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImVtYWlsIjoidGhlYnVua2VyLmFkbWluQGdtYWlsLmNvbSIsImV4cCI6MTc4MTQ1MTIxOX0.zBvxiVzLoe54XmjUw2Rp-6EhrF-hMINjJZ8WmFSwGOw"
 
   Si no tienes backup.json, exportalo desde la app:
   Entra como admin → pestaNa VAULT → boton "EXPORTAR BACKUP JSON"
@@ -128,3 +128,360 @@ Fix: Cambiado a oauth2/v3/userinfo (solo necesita userinfo.email
 
 Archivo: src/core/VaultContext.jsx
 Commit: 6c86beb
+
+
+
+
+
+
+
+PS C:\Users\eduar> cd C:\proyectos\el-bunker
+PS C:\proyectos\el-bunker> npx wrangler login
+npm warn Unknown user config "allow-scripts.freebuff@0.0.107". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ ⛅️ wrangler 4.100.0
+────────────────────
+√ Wrangler detected the following AI coding agents: Claude Code, Cline, Continue, GitHub Copilot. Would you like to install Cloudflare skills for them? ... yes
+Installing cloudflare/skills...
+Resolved cloudflare/skills -> main (branch)
+Downloading...
+Extracting...
+Discovering skills...
+Found 9 skill(s):
+  agents-sdk - Build AI agents on Cloudflare Workers using the Agents SDK. Load when creating stateful agents, durable workflows, real-time WebSocket apps, scheduled tasks, MCP servers, chat applications, voice agents, or browser automation. Covers Agent class, state management, callable RPC, Workflows, durable execution, queues, retries, observability, and React hooks. Biases towards retrieval from Cloudflare docs over pre-trained knowledge.
+  cloudflare - Comprehensive Cloudflare platform skill covering Workers, Pages, storage (KV, D1, R2), AI (Workers AI, Vectorize, Agents SDK), feature flags (Flagship), networking (Tunnel, Spectrum), security (WAF, DDoS), and infrastructure-as-code (Terraform, Pulumi). Use for any Cloudflare development task. Biases towards retrieval from Cloudflare docs over pre-trained knowledge.
+  cloudflare-email-service - Send and receive transactional emails with Cloudflare Email Service (Email Sending + Email Routing). Use when building email sending (Workers binding or REST API), email routing, Agents SDK email handling, or integrating email into any app — Workers, Node.js, Python, Go, etc. Also use for email deliverability, SPF/DKIM/DMARC, wrangler email setup, MCP email tools, or when a coding agent needs to send emails. Even for simple requests like "add email to my Worker" — this skill has critical config details.
+  durable-objects - Create and review Cloudflare Durable Objects. Use when building stateful coordination (chat rooms, multiplayer games, booking systems), implementing RPC methods, SQLite storage, alarms, WebSockets, or reviewing DO code for best practices. Covers Workers integration, wrangler config, and testing with Vitest. Biases towards retrieval from Cloudflare docs over pre-trained knowledge.
+  sandbox-sdk - Build sandboxed applications for secure code execution. Load when building AI code execution, code interpreters, CI/CD systems, interactive dev environments, or executing untrusted code. Covers Sandbox SDK lifecycle, commands, files, code interpreter, and preview URLs. Biases towards retrieval from Cloudflare docs over pre-trained knowledge.
+  turnstile-spin - Set up Cloudflare Turnstile end-to-end in a project — scan the codebase, create the widget via the Cloudflare API, deploy the managed siteverify Worker, write the frontend snippets, validate, and persist the skill. Load this when a user asks to add Turnstile, set up CAPTCHA, protect a form from bots, or fix a Turnstile integration. Mirrors developers.cloudflare.com/turnstile/spin.
+  web-perf - Analyzes web performance using Chrome DevTools MCP. Measures Core Web Vitals (LCP, INP, CLS) and supplementary metrics (FCP, TBT, Speed Index), identifies render-blocking resources, network dependency chains, layout shifts, caching issues, and accessibility gaps. Use when asked to audit, profile, debug, or optimize page load performance, Lighthouse scores, or site speed. Biases towards retrieval from current documentation over pre-trained knowledge.
+  workers-best-practices - Reviews and authors Cloudflare Workers code against production best practices. Load when writing new Workers, reviewing Worker code, configuring wrangler.jsonc, or checking for common Workers anti-patterns (streaming, floating promises, global state, secrets, bindings, observability). Biases towards retrieval from Cloudflare docs over pre-trained knowledge.
+  wrangler - Cloudflare Workers CLI for deploying, developing, and managing Workers, KV, R2, D1, Vectorize, Hyperdrive, Workers AI, Containers, Queues, Workflows, Pipelines, and Secrets Store. Load before running wrangler commands to ensure correct syntax and best practices. Biases towards retrieval from Cloudflare docs over pre-trained knowledge.
+Target agents:
+  Claude Code (C:\Users\eduar\.claude\skills)
+  Cline (C:\Users\eduar\.cline\skills)
+  Continue (C:\Users\eduar\.continue\skills)
+  GitHub Copilot (C:\Users\eduar\.copilot\skills)
+Installed 36 skill(s) to 4 agent(s).
+Successfully installed Cloudflare skills for: Claude Code, Cline, Continue, GitHub Copilot.                             Attempting to login via OAuth...                                                                                        Opening a link in your default browser: https://dash.cloudflare.com/oauth2/auth?response_type=code&client_id=54d11594-84e4-41aa-b438-e81b8fa78ee7&redirect_uri=http%3A%2F%2Flocalhost%3A8976%2Foauth%2Fcallback&scope=account%3Aread%20user%3Aread%20workers%3Awrite%20workers_kv%3Awrite%20workers_routes%3Awrite%20workers_scripts%3Awrite%20workers_tail%3Aread%20d1%3Awrite%20pages%3Awrite%20zone%3Aread%20ssl_certs%3Awrite%20ai%3Awrite%20ai-search%3Awrite%20ai-search%3Arun%20websearch.run%20agent-memory%3Awrite%20queues%3Awrite%20pipelines%3Awrite%20secrets_store%3Awrite%20artifacts%3Awrite%20flagship%3Awrite%20containers%3Awrite%20cloudchamber%3Awrite%20connectivity%3Aadmin%20email_routing%3Awrite%20email_sending%3Awrite%20browser%3Awrite%20offline_access&state=uTx44uOnZa2N4zCVhBmzY_UeJtBJ8q2f&code_challenge=p1cgMzNJkKceaHATawfizglBlO9Uv_fBFS7eOCeb9AE&code_challenge_method=S256
+Successfully logged in.
+PS C:\proyectos\el-bunker> npx wrangler deploy
+npm warn Unknown user config "allow-scripts.freebuff@0.0.107". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ ⛅️ wrangler 4.100.0
+────────────────────
+▲ [WARNING] Multiple environments are defined in the Wrangler configuration file, but no target environment was specified for the deploy command.
+
+  To avoid unintentional changes to the wrong environment, it is recommended to explicitly specify
+  the target environment using the `-e|--env` flag or CLOUDFLARE_ENV env variable.
+  If your intention is to use the top-level environment of your configuration simply pass an empty
+  string to the flag to target such environment. For example `--env=""`.
+
+
+Total Upload: 33.69 KiB / gzip: 6.08 KiB
+Your Worker has access to the following bindings:
+Binding                           Resource
+env.DB (el-bunker-db)             D1 Database
+env.BUNKER (el-bunker-music)      R2 Bucket
+
+Uploaded el-bunker-api (10.86 sec)
+Deployed el-bunker-api triggers (5.59 sec)
+  https://el-bunker-api.thebunker-admin.workers.dev
+Current Version ID: 3e9f913c-8e7b-43ac-8cda-0e82af8c8aa2
+PS C:\proyectos\el-bunker> curl https://el-bunker-api.thebunker-admin.workers.dev/api/health
+
+Advertencia de seguridad: riesgo de ejecución de script
+Invoke-WebRequest analiza el contenido de la página web. El código de script de la página web se puede ejecutar cuando
+se analiza la página.
+      ACCIÓN RECOMENDADA:
+      Usa el modificador -UseBasicParsing para evitar la ejecución de código de script.
+
+      ¿Quieres continuar?
+
+[S] Sí  [O] Sí a todo  [N] No  [T] No a todo  [U] Suspender  [?] Ayuda (el valor predeterminado es "N"): O
+
+
+StatusCode        : 200
+StatusDescription : OK
+Content           : {"status":"ok","db":true,"auth":false,"timestamp":"2026-06-13T14:46:02.103Z"}
+RawContent        : HTTP/1.1 200 OK
+                    Connection: keep-alive
+                    Access-Control-Allow-Origin: *
+                    Access-Control-Allow-Headers: Content-Type, Authorization
+                    Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS...
+Forms             : {}
+Headers           : {[Connection, keep-alive], [Access-Control-Allow-Origin, *], [Access-Control-Allow-Headers,
+                    Content-Type, Authorization], [Access-Control-Allow-Methods, GET, POST, PUT, PATCH, DELETE,
+                    OPTIONS]...}
+Images            : {}
+InputFields       : {}
+Links             : {}
+ParsedHtml        : System.__ComObject
+RawContentLength  : 77
+
+
+
+PS C:\proyectos\el-bunker>   npx wrangler d1 execute el-bunker-db --command "ALTER TABLE tracks ADD COLUMN color TEXT;"
+>> npx wrangler d1 execute el-bunker-db --command "ALTER TABLE tracks ADD COLUMN drive_file_id TEXT;"
+npm warn Unknown user config "allow-scripts.freebuff@0.0.107". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ ⛅️ wrangler 4.100.0
+────────────────────
+Resource location: local
+
+Use --remote if you want to access the remote instance.
+
+🌀 Executing on local database el-bunker-db (795e5e88-6fab-4aa2-a294-d24640a0de05) from .wrangler\state\v3\d1:
+🌀 To execute on your remote database, add a --remote flag to your wrangler command.
+🚣 1 command executed successfully.
+npm warn Unknown user config "allow-scripts.freebuff@0.0.107". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ ⛅️ wrangler 4.100.0
+────────────────────
+Resource location: local
+
+Use --remote if you want to access the remote instance.
+
+🌀 Executing on local database el-bunker-db (795e5e88-6fab-4aa2-a294-d24640a0de05) from .wrangler\state\v3\d1:
+🌀 To execute on your remote database, add a --remote flag to your wrangler command.
+🚣 1 command executed successfully.
+PS C:\proyectos\el-bunker> npx wrangler deploy
+npm warn Unknown user config "allow-scripts.freebuff@0.0.107". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ ⛅️ wrangler 4.100.0
+────────────────────
+▲ [WARNING] Multiple environments are defined in the Wrangler configuration file, but no target environment was specified for the deploy command.
+
+  To avoid unintentional changes to the wrong environment, it is recommended to explicitly specify
+  the target environment using the `-e|--env` flag or CLOUDFLARE_ENV env variable.
+  If your intention is to use the top-level environment of your configuration simply pass an empty
+  string to the flag to target such environment. For example `--env=""`.
+
+
+Total Upload: 37.20 KiB / gzip: 6.73 KiB
+Your Worker has access to the following bindings:
+Binding                           Resource
+env.DB (el-bunker-db)             D1 Database
+env.BUNKER (el-bunker-music)      R2 Bucket
+
+Uploaded el-bunker-api (10.35 sec)
+Deployed el-bunker-api triggers (5.66 sec)
+  https://el-bunker-api.thebunker-admin.workers.dev
+Current Version ID: a0ec1e0d-0642-4be2-b300-eb5e5d0482d4
+PS C:\proyectos\el-bunker> python3 tools/migrate_drive_to_d1.py --login
+usage: migrate_drive_to_d1.py [-h] [--file FILE] [--drive] [--jwt JWT] [--login EMAIL TOKEN]
+migrate_drive_to_d1.py: error: argument --login: expected 2 arguments
+PS C:\proyectos\el-bunker> npx wrangler deploy
+npm warn Unknown user config "allow-scripts.freebuff@0.0.107". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ ⛅️ wrangler 4.100.0
+────────────────────
+▲ [WARNING] Multiple environments are defined in the Wrangler configuration file, but no target environment was specified for the deploy command.
+
+  To avoid unintentional changes to the wrong environment, it is recommended to explicitly specify
+  the target environment using the `-e|--env` flag or CLOUDFLARE_ENV env variable.
+  If your intention is to use the top-level environment of your configuration simply pass an empty
+  string to the flag to target such environment. For example `--env=""`.
+
+
+Total Upload: 37.20 KiB / gzip: 6.73 KiB
+Your Worker has access to the following bindings:
+Binding                           Resource
+env.DB (el-bunker-db)             D1 Database
+env.BUNKER (el-bunker-music)      R2 Bucket
+
+Uploaded el-bunker-api (10.36 sec)
+Deployed el-bunker-api triggers (5.18 sec)
+  https://el-bunker-api.thebunker-admin.workers.dev
+Current Version ID: 1838ef72-91de-4d01-8ca0-4d514c5abe5c
+PS C:\proyectos\el-bunker> python3 tools/migrate_drive_to_d1.py --file backup.json --jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImVtYWlsIjoidGhlYnVua2VyLmFkbWluQGdtYWlsLmNvbSIsImV4cCI6MTc4MTQ1MTIxOX0.zBvxiVzLoe54XmjUw2Rp-6EhrF-hMINjJZ8WmFSwGOw"
+
+============================================================
+  MIGRACIÓN DRIVE → D1
+  Fuente: backup.json
+  API:    https://el-bunker-api.thebunker-admin.workers.dev
+============================================================
+
+Traceback (most recent call last):
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 270, in <module>
+    migrate_from_json(args.file, jwt)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 94, in migrate_from_json
+    with open(filepath, "r", encoding="utf-8") as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'backup.json'
+PS C:\proyectos\el-bunker> python3 tools/migrate_drive_to_d1.py --file el_bunker_backup_2026-06-13.json --jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImVtYWlsIjoidGhlYnVua2VyLmFkbWluQGdtYWlsLmNvbSIsImV4cCI6MTc4MTQ1MTIxOX0.zBvxiVzLoe54XmjUw2Rp-6EhrF-hMINjJZ8WmFSwGOw"
+
+============================================================
+  MIGRACIÓN DRIVE → D1
+  Fuente: el_bunker_backup_2026-06-13.json
+  API:    https://el-bunker-api.thebunker-admin.workers.dev
+============================================================
+
+Traceback (most recent call last):
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 270, in <module>
+    migrate_from_json(args.file, jwt)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 94, in migrate_from_json
+    with open(filepath, "r", encoding="utf-8") as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'el_bunker_backup_2026-06-13.json'
+PS C:\proyectos\el-bunker> python3 tools/migrate_drive_to_d1.py --file tools/el_bunker_backup_2026-06-13.json --jwt "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImVtYWlsIjoidGhlYnVua2VyLmFkbWluQGdtYWlsLmNvbSIsImV4cCI6MTc4MTQ1MTIxOX0.zBvxiVzLoe54XmjUw2Rp-6EhrF-hMINjJZ8WmFSwGOw"
+
+============================================================
+  MIGRACIÓN DRIVE → D1
+  Fuente: tools/el_bunker_backup_2026-06-13.json
+  API:    https://el-bunker-api.thebunker-admin.workers.dev
+============================================================
+
+
+📁 1. USUARIOS (seed en schema.sql — saltando)
+
+📁 2. ERAS
+  [SKIP] Era: lista vacía
+
+📁 3. TAGS (MusicLab)
+  [1/11] Tag gaming... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [2/11] Tag 420_chill... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [3/11] Tag dnb... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [4/11] Tag romantiqueo... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [5/11] Tag slowed... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [6/11] Tag nightcore... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [7/11] Tag videojuegos... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [8/11] Tag chill... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [9/11] Tag reggaeton... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [10/11] Tag jungle... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+  [11/11] Tag ambient... ❌ 500: {"error":"D1_ERROR: UNIQUE constraint failed: tags.id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAIN
+
+📁 4. ENTRIES (VAULT)
+  [SKIP] Entry: lista vacía
+
+📁 5. TRACKS (MusicLab)
+  [1/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [2/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [3/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [4/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [5/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [6/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [7/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [8/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [9/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [10/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [11/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [12/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [13/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [14/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [15/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [16/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [17/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [18/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [19/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [20/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [21/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [22/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [23/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [24/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [25/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [26/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [27/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [28/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [29/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [30/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [31/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [32/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [33/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [34/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [35/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [36/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [37/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [38/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [39/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [40/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [41/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [42/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [43/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [44/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [45/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [46/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [47/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [48/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [49/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [50/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [51/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [52/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [53/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [54/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [55/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [56/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [57/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [58/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [59/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [60/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [61/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [62/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [63/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [64/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [65/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [66/558] Track ?... ❌ 500: {"error":"D1_ERROR: table tracks has no column named drive_file_id: SQLITE_ERROR"}
+  [67/558] Track ?... Traceback (most recent call last):
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 270, in <module>
+    migrate_from_json(args.file, jwt)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 130, in migrate_from_json
+    o, f, s = migrate_entity("Track", "/api/tracks", [
+              ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+        {
+        ^
+    ...<17 lines>...
+        for t in tracks
+        ^^^^^^^^^^^^^^^
+    ], jwt)
+    ^^^^^^^
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 65, in migrate_entity
+    resp = api_post(path, item, jwt)
+  File "C:\proyectos\el-bunker\tools\migrate_drive_to_d1.py", line 47, in api_post
+    resp = requests.post(url, json=data, headers=headers, timeout=30)
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\requests\api.py", line 134, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\requests\api.py", line 71, in request
+    return session.request(method=method, url=url, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\requests\sessions.py", line 651, in request
+    resp = self.send(prep, **send_kwargs)
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\requests\sessions.py", line 784, in send
+    r = adapter.send(request, **kwargs)
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\requests\adapters.py", line 696, in send
+    resp = conn.urlopen(
+        method=request.method,
+    ...<9 lines>...
+        chunked=chunked,
+    )
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\urllib3\connectionpool.py", line 788, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\urllib3\connectionpool.py", line 464, in _make_request
+    self._validate_conn(conn)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\urllib3\connectionpool.py", line 1106, in _validate_conn
+    conn.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\urllib3\connection.py", line 796, in connect
+    sock_and_verified = _ssl_wrap_socket_and_match_hostname(
+        sock=sock,
+    ...<14 lines>...
+        assert_fingerprint=self.assert_fingerprint,
+    )
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\urllib3\connection.py", line 975, in _ssl_wrap_socket_and_match_hostname
+    ssl_sock = ssl_wrap_socket(
+        sock=sock,
+    ...<8 lines>...
+        tls_in_tls=tls_in_tls,
+    )
+  File "C:\Users\eduar\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\urllib3\util\ssl_.py", line 411, in ssl_wrap_socket
+    context.load_verify_locations(ca_certs, ca_cert_dir, ca_cert_data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+PS C:\proyectos\el-bunker>

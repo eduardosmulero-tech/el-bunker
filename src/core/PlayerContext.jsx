@@ -27,6 +27,12 @@ export const usePlayer = () => {
   return ctx;
 };
 
+// S77: Queue constants
+const MAX_QUEUE_SIZE = 75;
+
+// S78: localStorage keys
+const SESSION_KEY = (uid) => `el_bunker_session_${uid}`;
+
 export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   // Resolver acento desde tags de DB primero, fallback a canonicos de tokens.js
   const resolveVibeAccent = useCallback((tagId) => {
@@ -76,6 +82,41 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
     } catch { return []; }
   };
   const [playHistory,      setPlayHistory]      = useState(loadHistory);
+
+  // S78: Restore play position for tracks >25min from localStorage
+  const trackPositionRef = useRef({});
+  useEffect(() => {
+    if (!userId) return;
+    try {
+      const saved = localStorage.getItem(SESSION_KEY(userId));
+      if (saved) trackPositionRef.current = JSON.parse(saved);
+    } catch { /* noop */ }
+  }, [userId]);
+
+  // S78: Save position periodically for tracks >25min
+  useEffect(() => {
+    if (!userId || !activeTrack?.id || !audioRef.current) return;
+    const DURATION_THRESHOLD = 25 * 60;
+    const interval = setInterval(() => {
+      const dur = audioRef.current?.duration;
+      const pos = audioRef.current?.currentTime;
+      if (dur && dur > DURATION_THRESHOLD && pos != null) {
+        trackPositionRef.current = { ...trackPositionRef.current, [activeTrack.id]: pos };
+        try { localStorage.setItem(SESSION_KEY(userId), JSON.stringify(trackPositionRef.current)); }
+        catch { /* noop */ }
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [userId, activeTrack?.id]);
+
+  // S78: Restore position when loading a track that was saved
+  const restorePosition = useCallback((track) => {
+    if (!track?.id) return;
+    const savedPos = trackPositionRef.current[track.id];
+    if (savedPos && savedPos > 5 && audioRef.current) {
+      audioRef.current.currentTime = savedPos;
+    }
+  }, []);
 
   // Persistir/limpiar historial en localStorage cuando cambia
   useEffect(() => {
@@ -252,14 +293,36 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
 
   // ── Handlers cola ─────────────────────────────────────────
 
+  // S77 Q6: enforce MAX_QUEUE_SIZE in queue operations
+  const enforceQueueLimit = useCallback((q) => {
+    if (q.length <= MAX_QUEUE_SIZE) return q;
+    // Keep manual tracks, trim oldest non-active context tracks
+    const manual = q.filter(t => t._manual);
+    const context = q.filter(t => !t._manual);
+    if (manual.length > MAX_QUEUE_SIZE) return manual.slice(-MAX_QUEUE_SIZE);
+    const contextBudget = MAX_QUEUE_SIZE - manual.length;
+    return [...context.slice(0, contextBudget), ...manual];
+  }, []);
+
   // addToQueue — C4-B: añade al final, _manual:true
   const addToQueue = useCallback((track, force = false) => {
     if (!track) return "added";
     const isDup = localQueue.some((t) => t.id === track.id);
     if (isDup && !force) return "duplicate";
-    setLocalQueue((q) => [...q, { ...track, _manual: true }]);
+    setLocalQueue((q) => enforceQueueLimit([...q, { ...track, _manual: true }]));
     return "added";
-  }, [localQueue]);
+  }, [localQueue, enforceQueueLimit]);
+
+  // S77 Q12: add entire playlist to queue
+  const addPlaylistToQueue = useCallback((playlistTracks, clearFirst = false) => {
+    if (!Array.isArray(playlistTracks) || !playlistTracks.length) return "empty";
+    setLocalQueue((q) => {
+      const base = clearFirst ? [] : q;
+      const newTracks = playlistTracks.map(t => ({ ...t, _manual: true }));
+      return enforceQueueLimit([...base, ...newTracks]);
+    });
+    return "added";
+  }, [enforceQueueLimit]);
 
   // addNext — C4-A: inserta tras el track activo, _manual:true
   const addNext = useCallback((track, force = false) => {
@@ -270,10 +333,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       const base = force ? q.filter((t) => t.id !== track.id) : q;
       const idx = base.findIndex((t) => t.id === activeTrack?.id);
       const insertAt = idx >= 0 ? idx + 1 : 0;
-      return [...base.slice(0, insertAt), { ...track, _manual: true }, ...base.slice(insertAt)];
+      return enforceQueueLimit([...base.slice(0, insertAt), { ...track, _manual: true }, ...base.slice(insertAt)]);
     });
     return "added";
-  }, [localQueue, activeTrack?.id]);
+  }, [localQueue, activeTrack?.id, enforceQueueLimit]);
 
   // setPlaybackContext — C2/C4: carga playlist como contexto, _manual:false
   // Q10: preserva tracks manuales (_manual:true) al cambiar de playlist.
@@ -289,8 +352,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   // playbackContext — computed desde localQueue para compatibilidad con consumidores externos
   const playbackContext = localQueue.filter((t) => !t._manual);
 
-  const removeFromQueue = useCallback((trackId) => {
+  // S77 Q16/Q17: soft delete from queue (mark _deleted)
+  const [softDeletedIds, setSoftDeletedIds] = useState(() => new Set());
+
+  const removeFromQueue = useCallback((trackId, softDelete = true) => {
     setLocalQueue((q) => {
+      if (softDelete) {
+        setSoftDeletedIds(prev => new Set([...prev, trackId]));
+        // Don't skip if active — just mark for UI dimming
+        return q;
+      }
       const isActive = activeTrack?.id === trackId;
       const filtered = q.filter((t) => t.id !== trackId);
       if (isActive) {
@@ -300,7 +371,22 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       }
       return filtered;
     });
+    // Auto-clear soft delete after 3s
+    setTimeout(() => setSoftDeletedIds(prev => {
+      const next = new Set(prev);
+      next.delete(trackId);
+      return next;
+    }), 3000);
   }, [activeTrack?.id, tracks]);
+
+  // S77 Q17: undo soft delete
+  const undoRemoveFromQueue = useCallback((trackId) => {
+    setSoftDeletedIds(prev => {
+      const next = new Set(prev);
+      next.delete(trackId);
+      return next;
+    });
+  }, []);
 
   const playTrack = useCallback((track) => {
     if (activeTrack?.id === track.id) {
@@ -399,8 +485,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       audioRef,
       skip, addToQueue, addNext, removeFromQueue, playTrack,
       playbackContext, setPlaybackContext,
+      // S77: Cola features
+      addPlaylistToQueue,
+      softDeletedIds,
+      undoRemoveFromQueue,
+      MAX_QUEUE_SIZE,
       playHistory,
       queueContextName, setQueueContextName,
+      // S78: Position restore
+      restorePosition,
       vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern); } catch { /* noop */ } }, []),
       // Shared listening (S82)
       sharedListening: false, setSharedListening: () => {},
@@ -423,6 +516,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
         }}
         onTimeUpdate={() => {
           // WinampPlayer se suscribe a audioRef.current directamente para progreso visual
+        }}
+        onLoadedMetadata={() => {
+          // S78: Restore saved position for long tracks
+          if (activeTrack) restorePosition(activeTrack);
         }}
       />
       {children}
