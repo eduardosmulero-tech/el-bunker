@@ -5,6 +5,26 @@
 
 ---
 
+## S63 — Worker: CRUD eras (5 endpoints) + files GET (Junio 2026)
+
+**Objetivo:** Crear endpoints CRUD para eras y listado de archivos R2 en la Worker API.
+
+### Cambios realizados
+- GET /api/eras: listado con batch entry_count vía COUNT GROUP BY
+- GET /api/eras/:id: detalle con entry_count, 404 si no existe
+- POST /api/eras: INSERT...SELECT atómico para sort_order, override explícito
+- PATCH /api/eras/:id: whitelist ERA_FIELDS (7 campos), 404, evento era_updated
+- DELETE /api/eras/:id: hard delete + desvincula entries (SET era_id=NULL), 404, evento
+- GET /api/files: listado con filtros entry_id/prefix/track_id, LIMIT 200
+
+### Archivos modificados (1)
+workers/worker.js
+
+### Resultado
+6 endpoints nuevos. Code review aprobado (0 issues bloqueantes).
+
+---
+
 ## S62 — Worker: CRUD entries D1 mejorado (Junio 2026)
 
 **Objetivo:** Mejorar el CRUD de entries en el Worker API con tags+files en GET,

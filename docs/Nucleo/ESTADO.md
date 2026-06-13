@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. UN bug activo.
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S63 — Worker: CRUD eras + files (GET/POST/PATCH/DELETE /api/eras)
-**Última sesión:** S62 — Worker CRUD entries: 5 endpoints con tags+files, validación 404
-**Rama activa:** `master` (13 commits, +2,415 líneas, 17 archivos)
+**Próximo pliego:** S64 — VaultContext → Worker API (migración de fetchDb)
+**Última sesión:** S63 — Worker CRUD eras: 5 endpoints + files GET
+**Rama activa:** `master` (14 commits, +2,440 líneas, 17 archivos)
 
 ---
 
