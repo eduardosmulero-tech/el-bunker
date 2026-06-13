@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 > Actualizar antes de cerrar sesión.
 
-**Próximo pliego:** ninguno — ROADMAP Fase B completado (S67-S79)
-**Última sesión:** S79 — MediaSession completo M1-M12 + UX táctil
-**Rama activa:** `master` · `origin/master`
+**Próximo pliego:** ROADMAP Fases 8-15 — pendiente priorización
+**Última sesión:** S80 — Bugfixes TDZ + ref-during-render (commit `b6c90f8`, pusheado a origin/master)
+**Rama activa:** `master` · `origin/master` (1 commit ahead of pre-S80)
 
 ---
 
@@ -18,12 +18,12 @@
 ---
 
 ## ESLint
-✅ 0 errores, 0 warnings en src/
+✅ 0 errores en src/ · 8 warnings pre-existentes (PlayerContext.jsx, WinampPlayer.jsx — exhaustive-deps y unused-disable no bloqueantes)
 
 ---
 
 ## Docs stale
-Actualizados en S79: SESION.md, ESTADO.md, ROADMAP.md.
+Actualizados en S80: SESION.md, ESTADO.md. Próxima actualización tras Fase 8+.
 
 ---
 
@@ -48,4 +48,4 @@ ninguno
 | MUSIC LAB | 92% | Cola Q6/Q12/Q15-Q17, posición S1/S2, UX táctil, MediaSession M1-M12 ✅ |
 | Persistencia | 80% | Entries/eras/tracks/playlists/drops/tags → Worker API; Drive solo libraries/heartbeat 🟡 |
 
-**Pendiente:** Solo Fase C diferida (S80-S87, 8 sesiones).
+**Pendiente:** Roadmap Fases 8-15 (XL, requiere priorización). S80 resolvió los blockers TDZ.
