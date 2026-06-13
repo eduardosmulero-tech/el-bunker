@@ -284,13 +284,16 @@ export function VaultProvider({ children }) {
     if (!token) return null;
     const headers = { Authorization: `Bearer ${token}` };
     try {
-      const [entries, eras, tracks, tags, playlists, drops] = await Promise.all([
+      const [entries, eras, tracks, tags, playlists, drops, files] = await Promise.all([
         fetch(`${API_BASE}/api/entries`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`entries ${r.status}`)),
         fetch(`${API_BASE}/api/eras`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`eras ${r.status}`)),
         fetch(`${API_BASE}/api/tracks`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`tracks ${r.status}`)),
         fetch(`${API_BASE}/api/tags`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`tags ${r.status}`)),
         fetch(`${API_BASE}/api/playlists`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`playlists ${r.status}`)),
         fetch(`${API_BASE}/api/drops`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`drops ${r.status}`)),
+        // S64 audit: añadir /api/files al export — antes faltaba en el JSON
+        // de backup, así que los file metadata de R2 nunca se capturaban.
+        fetch(`${API_BASE}/api/files`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`files ${r.status}`)),
       ]);
       const safeParse = (v) => {
         if (typeof v !== "string") return v;
@@ -303,7 +306,7 @@ export function VaultProvider({ children }) {
         from: e.from_user || e.from,
         to: e.to_user || e.to,
       }));
-      console.info("[Búnker] Worker DB built:", { entries: entries.length, eras: eras.length, tracks: tracks.length, tags: tags.length, playlists: playlists.length, drops: drops.length });
+      console.info("[Búnker] Worker DB built:", { entries: entries.length, eras: eras.length, tracks: tracks.length, tags: tags.length, playlists: playlists.length, drops: drops.length, files: files.length });
       return {
         entries: parsedEntries,
         eras: eras || [],
@@ -314,6 +317,9 @@ export function VaultProvider({ children }) {
           // S64 audit: mapear from_user→from, to_user→to en drops
           drops: (drops || []).map(d => ({ ...d, from: d.from_user || d.from, to: d.to_user || d.to })),
         },
+        // S64 audit: añadir files al export (top-level, junto a entries/eras).
+        // Antes faltaba — el JSON de backup nunca capturó file metadata de R2.
+        files: files || [],
         libraries: [],
         schema_version: "5.0.0",
         heartbeat: new Date().toISOString(),
@@ -557,7 +563,7 @@ export function VaultProvider({ children }) {
           try {
             const wData = await _buildDbFromWorker(jwtToken);
             if (wData) {
-              data = { ...data, entries: wData.entries, eras: wData.eras, music_lab: { ...data.music_lab, tracks: wData.music_lab?.tracks, tags: wData.music_lab?.tags, playlists: wData.music_lab?.playlists, drops: wData.music_lab?.drops } };
+              data = { ...data, entries: wData.entries, eras: wData.eras, files: wData.files, music_lab: { ...data.music_lab, tracks: wData.music_lab?.tracks, tags: wData.music_lab?.tags, playlists: wData.music_lab?.playlists, drops: wData.music_lab?.drops } };
             }
           } catch { /* keep Drive data */ }
         }
