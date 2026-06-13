@@ -83,6 +83,7 @@ CREATE TABLE tracks (
   note        TEXT DEFAULT '',
   duration    INTEGER,                     -- seconds
   thumbnail   TEXT,                        -- R2 key for thumbnail
+  color       TEXT,                        -- user-set custom color (≠ tag color)
   play_count  INTEGER DEFAULT 0,
   last_played TEXT,
   is_deleted  INTEGER NOT NULL DEFAULT 0,  -- soft delete

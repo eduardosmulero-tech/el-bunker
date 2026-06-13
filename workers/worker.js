@@ -110,14 +110,25 @@ export default {
       if (path === "/api/tracks" && request.method === "GET") {
         const era = url.searchParams.get("era_id");
         const vibe = url.searchParams.get("tag_id");
-        let q = "SELECT * FROM tracks WHERE is_deleted = 0";
+        let q = `SELECT t.*, tg.label as tag_label, tg.icon as tag_icon, tg.color as tag_color
+                 FROM tracks t
+                 LEFT JOIN tags tg ON t.tag_id = tg.id
+                 WHERE t.is_deleted = 0`;
         const binds = [];
-        if (era) { q += " AND era_id = ?1"; binds.push(era); }
-        if (vibe) { q += ` AND tag_id = ?${binds.length + 1}`; binds.push(vibe); }
-        q += " ORDER BY created_at DESC";
+        if (era) { q += " AND t.era_id = ?1"; binds.push(era); }
+        if (vibe) { q += ` AND t.tag_id = ?${binds.length + 1}`; binds.push(vibe); }
+        q += " ORDER BY t.created_at DESC";
         const stmt = env.DB.prepare(q);
         const { results } = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-        return json(results);
+        // Mapear: tag_id → tag (string ID, compatible con frontend track.tag)
+        //         tag_color → color (compatible con Drive JSON track.color)
+        const mapped = results.map((r) => ({
+          ...r,
+          tag: r.tag_id,
+          color: r.color || r.tag_color || '#bfff00',
+          tag_label: undefined, tag_icon: undefined, tag_color: undefined,
+        }));
+        return json(mapped);
       }
 
       if (path === "/api/tracks" && request.method === "POST") {
@@ -140,7 +151,7 @@ export default {
       // PATCH /api/tracks/:id (S55)
       if (path.startsWith("/api/tracks/") && request.method === "PATCH") {
         if (!userId) return err("Unauthorized", 401);
-        const TRACK_FIELDS = new Set(["era_id","title","artist","tag_id","r2_key","format","note","duration","thumbnail"]);
+        const TRACK_FIELDS = new Set(["era_id","title","artist","tag_id","r2_key","format","note","duration","thumbnail","color"]);
         const trackId = path.split("/")[3];
         const body = await request.json();
         const sets = []; const binds = [];
