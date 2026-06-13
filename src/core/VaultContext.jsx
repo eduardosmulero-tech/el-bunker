@@ -581,7 +581,17 @@ export function VaultProvider({ children }) {
     setDbStatus("SYNCING");
     try {
       setDb((prev) => updater(prev));
-      await updateData(updater);
+      // P2.5: Solo escribir campos de Drive (libraries, heartbeat, adventures).
+      // Entries, eras, music_lab.* están en D1 (Worker API) — no contaminar Drive JSON.
+      await updateData((prev) => {
+        const full = updater(prev);
+        return {
+          libraries: full.libraries ?? prev?.libraries ?? [],
+          heartbeat: full.heartbeat ?? prev?.heartbeat ?? new Date().toISOString(),
+          adventures_start_date: full.adventures_start_date ?? prev?.adventures_start_date ?? new Date().toISOString(),
+          schema_version: full.schema_version ?? prev?.schema_version ?? "5.0.0",
+        };
+      });
       setDbStatus("ONLINE");
     } catch (err) {
       console.error("[Búnker] patchDb failed:", err);

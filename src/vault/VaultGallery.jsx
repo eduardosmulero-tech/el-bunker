@@ -5,7 +5,7 @@
 // ============================================================
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
+import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
 
 // ─── LONG PRESS THRESHOLD ───────────────────────────────────
 const LONG_PRESS_MS = 500;
@@ -26,8 +26,8 @@ const DENSITY_CONFIG = {
   expanded: { columns: 2, gap: 10, minCol: "220px", label: "EXPANDED" },
 };
 
-const R2_PUBLIC_BASE = "https://el-bunker-api.thebunker-admin.workers.dev";
 
+// ─── UTILIDADES ────────────────────────────────────────────
 const getImageUrl = (entry) => {
   const images = entry.content?.images;
   if (!images?.length) return null;
@@ -35,6 +35,15 @@ const getImageUrl = (entry) => {
   if (img.r2_key) return `${R2_PUBLIC_BASE}/${img.r2_key}`;
   if (img.dataUrl) return img.dataUrl;
   return null;
+};
+
+// ─── WALL MASONRY (JS — respeta cronología left→right) ──────
+const buildMasonryColumns = (items, columnCount) => {
+  const columns = Array.from({ length: columnCount }, () => []);
+  items.forEach((item, i) => {
+    columns[i % columnCount].push(item);
+  });
+  return columns;
 };
 
 // ─── WALL MASONRY ITEM ──────────────────────────────────────
@@ -335,32 +344,35 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
         ))}
       </div>
 
-      {/* S66: Masonry grid con CSS columns responsive */}
-      <motion.div
-        layout
-        style={{
-          columnCount: DENSITY_CONFIG[density].columns,
-          columnGap: `${DENSITY_CONFIG[density].gap}px`,
-        }}
-        className="[&>*]:break-inside-avoid"
-      >
-        {photoEntries.map((entry) => {
-          const era = eras.find(e => e.id === entry.era_id);
-          return (
-            <WallItem
-              key={entry.id}
-              entry={entry}
-              era={era}
-              density={density}
-              onLongPress={(e) => {
-                setPreviewEntry(e);
-                setPreviewPos({ x: window.innerWidth / 2, y: window.innerHeight / 3 });
-              }}
-              onTap={(e) => setZoomEntry(e)}
-            />
-          );
-        })}
-      </motion.div>
+      {/* S66: Masonry grid con columnas JS (respeta cronología left→right) */}
+      {(() => {
+        const config = DENSITY_CONFIG[density];
+        const columns = buildMasonryColumns(photoEntries, config.columns);
+        return (
+          <div style={{ display: "flex", gap: `${config.gap}px` }}>
+            {columns.map((colItems, colIdx) => (
+              <div key={colIdx} style={{ flex: 1, display: "flex", flexDirection: "column", gap: `${config.gap}px`, minWidth: config.minCol }}>
+                {colItems.map((entry) => {
+                  const era = eras.find(e => e.id === entry.era_id);
+                  return (
+                    <WallItem
+                      key={entry.id}
+                      entry={entry}
+                      era={era}
+                      density={density}
+                      onLongPress={(e) => {
+                        setPreviewEntry(e);
+                        setPreviewPos({ x: window.innerWidth / 2, y: window.innerHeight / 3 });
+                      }}
+                      onTap={(e) => setZoomEntry(e)}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        );
+      })()}
 
       {!photoEntries.length && (
         <p className="text-xs opacity-30 text-center py-4" style={{ color: ACID, fontFamily: FONT_MONO }}>
@@ -446,9 +458,9 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
       <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>◆ EXHIBITION · Por eras</p>
       <div className="flex flex-wrap gap-2">
-        {eras.map(era => {
+        {eras.filter(era => photoEntries.some(e => e.era_id === era.id)).map(era => {
           const eraEntries = photoEntries.filter(e => e.era_id === era.id);
-          const firstImg = eraEntries[0] ? getImageUrl(eraEntries[0]) : null;
+          const firstImg = getImageUrl(eraEntries[0]);
           return (
             <div key={era.id} className="p-3 text-xs" style={{ background: `${era.color}11`, border: `1px solid ${era.color}44` }}>
               {firstImg && (

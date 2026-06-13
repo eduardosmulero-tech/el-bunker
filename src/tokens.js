@@ -12,6 +12,9 @@ export const RED    = "#ff3b3b";
 export const ORANGE = "#ff6b35";
 export const BG     = "#050505";
 
+// ─── INFRASTRUCTURE URLS (fuente única de verdad) ───────────
+export const R2_PUBLIC_BASE = "https://el-bunker-r2-proxy.thebunker-admin.workers.dev";
+
 // ─── TYPOGRAPHY ──────────────────────────────────────────────
 export const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
@@ -117,3 +120,14 @@ export const getVibeConfig = (tagId) =>
 // Atajo para PlayerContext y cualquier uso que solo necesite el acento.
 export const getVibeAccent = (tagId) =>
   getVibeConfig(tagId).palette.accent;
+
+// ─── UTIL: hash string → color HSL consistente ──────────────
+// Usado para tags huérfanos (en tracks pero no en DB de tags).
+// Mismo input → mismo output siempre. Saturación al 55% para legibilidad.
+export const stringToColor = (str) => {
+  if (!str) return "#555555";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 55%, 55%)`;
+};

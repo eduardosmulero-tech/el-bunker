@@ -469,6 +469,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   const audioSrc = activeTrack
     ? getStreamUrl(activeTrack)
     : null;
+  // P2.7: crossOrigin solo para R2 (workers.dev). Drive no devuelve CORS → crash.
+  const audioCrossOrigin = audioSrc?.includes("workers.dev") ? "anonymous" : undefined;
 
   return (
     <PlayerContext.Provider value={{
@@ -501,7 +503,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
         ref={audioRef}
-        crossOrigin="anonymous"
+        crossOrigin={audioCrossOrigin}
         src={audioSrc ?? undefined}
         loop={false}
         style={{ display: "none" }}

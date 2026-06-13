@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { ACID } from "../tokens";
+import { ACID, stringToColor } from "../tokens";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
@@ -179,11 +179,13 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
 };
 
 export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig, viewMode = "list" }) => {
-  // Si no hay vibeConfig (tag legacy o desconocido), usar neutro gris — nunca ACID
+  // Resolver color: 1) vibeConfig.tag.color  2) track.color (del worker/D1)  3) hash del tag ID  4) gris
   const vibe = vibeConfig ?? null;
-  const vibeColor = vibe?.color ?? "#555555";
+  const vibeColor = vibe?.color ?? track?.color ?? stringToColor(track?.tag ?? track?.vibe ?? track?.tag_id);
   const ytId = extractYouTubeId(track.url ?? "");
   const [showCtx, setShowCtx] = useState(false);
+  // Multi-tags desde D1 (track_tags junction) o desde el array tags del track
+  const multiTags = track?.tags ?? [];
 
   return (
     <>
@@ -352,6 +354,21 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
           <p className="text-xs opacity-40 truncate" style={{ color: vibeColor }}>{track.artist}</p>
           {track.note && (
             <p className="text-xs opacity-25 truncate mt-0.5 italic" style={{ color: vibeColor }}>{track.note}</p>
+          )}
+          {multiTags.length > 0 && (
+            <div className="flex gap-1 flex-wrap mt-1">
+              {multiTags.map((t) => {
+                const tl = typeof t === "string" ? t : (t.label ?? t.id ?? "?");
+                const tk = typeof t === "string" ? t : (t.id ?? t.label ?? "?");
+                const tc = typeof t === "object" ? (t.color ?? vibeColor) : vibeColor;
+                return (
+                  <span key={tk} className="text-[9px] px-1.5 py-0.5 rounded-sm"
+                    style={{ color: tc, background: `${tc}12`, border: `1px solid ${tc}22`, opacity: 0.7 }}>
+                    {tl}
+                  </span>
+                );
+              })}
+            </div>
           )}
         </div>
         <div className="flex flex-row items-center gap-2 flex-shrink-0">

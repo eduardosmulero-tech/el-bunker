@@ -220,26 +220,41 @@ const AmbientGlows = ({ accentColor = ACID }) => (
 // ─── MINI PLAYER (G7: persistente entre pestañas) ───────────
 const MiniPlayer = ({ accentColor = ACID }) => {
   const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(() => {
+    const a = audioRef.current;
+    if (a?.duration && a?.currentTime != null) return (a.currentTime / a.duration) * 100;
+    return 0;
+  });
+  const [currentT, setCurrentT] = useState(() => audioRef.current?.currentTime || 0);
+  const [duration, setDuration] = useState(() => audioRef.current?.duration || 0);
 
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio || !activeTrack) return;
+    if (!audio) return;
     const onTime = () => {
+      setCurrentT(audio.currentTime || 0);
+      setDuration(audio.duration || 0);
       if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100);
     };
     audio.addEventListener("timeupdate", onTime);
     return () => audio.removeEventListener("timeupdate", onTime);
-  }, [audioRef, activeTrack]);
+  }, [audioRef]);
 
   if (!activeTrack) return null;
 
-  // G7: solo controla el audio, no el estado (PlayerContext lo gestiona)
   const toggle = () => {
     if (!audioRef.current) return;
     if (isPlaying) { audioRef.current.pause(); }
     else { audioRef.current.play().catch(() => {}); }
   };
+
+  const fmtTime = (s) => {
+    if (!s || isNaN(s)) return "0:00";
+    return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  };
+
+  // Tag pill from track's primary tag
+  const tagLabel = activeTrack?.tag_label ?? activeTrack?.tag ?? activeTrack?.tag_id ?? null;
 
   return (
     <motion.div
@@ -249,48 +264,72 @@ const MiniPlayer = ({ accentColor = ACID }) => {
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       <div
-        className="flex items-center gap-2 px-3 py-2 rounded-sm cursor-pointer"
+        className="flex items-center gap-2.5 px-3 py-2.5 rounded-sm cursor-pointer select-none"
         style={{
-          background: `linear-gradient(90deg, rgba(5,5,5,0.95) 0%, rgba(10,10,10,0.95) 100%)`,
-          border: `1px solid ${accentColor}33`,
-          boxShadow: `0 0 16px ${accentColor}11`,
+          background: `linear-gradient(135deg, rgba(5,5,5,0.97) 0%, rgba(12,12,12,0.97) 100%)`,
+          border: `1px solid ${accentColor}44`,
+          boxShadow: `0 0 20px ${accentColor}15, 0 2px 8px rgba(0,0,0,0.5)`,
         }}
         onClick={toggle}
       >
         {/* Play/Pause */}
-        <motion.span
-          whileTap={{ scale: 0.85 }}
-          className="text-sm flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm"
-          style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}33`, color: accentColor }}
+        <motion.div
+          whileTap={{ scale: 0.88 }}
+          className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-sm"
+          style={{
+            background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}08 100%)`,
+            border: `1px solid ${accentColor}55`,
+            boxShadow: `0 0 12px ${accentColor}22`,
+          }}
         >
-          {isPlaying ? "⏸" : "▶"}
-        </motion.span>
+          <motion.span
+            key={isPlaying ? "pause" : "play"}
+            initial={{ scale: 0.6, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-base"
+            style={{ color: accentColor, textShadow: `0 0 8px ${accentColor}88` }}
+          >
+            {isPlaying ? "⏸" : "▶"}
+          </motion.span>
+        </motion.div>
 
         {/* Track info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold truncate" style={{ color: accentColor }}>
+        <div className="flex-1 min-w-0" onClick={toggle}>
+          <p className="text-[11px] font-bold truncate leading-tight"
+            style={{ color: accentColor, textShadow: `0 0 6px ${accentColor}44` }}>
             {activeTrack.title || "Sin título"}
           </p>
-          <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>
+          <p className="text-[10px] opacity-45 truncate leading-tight" style={{ color: accentColor }}>
             {activeTrack.artist || "—"}
+            {tagLabel && <span className="ml-2 opacity-50">· {tagLabel}</span>}
           </p>
         </div>
 
+        {/* Time */}
+        <span className="text-[9px] opacity-35 tabular-nums flex-shrink-0 hidden sm:block" style={{ color: accentColor }}>
+          {fmtTime(currentT)} / {fmtTime(duration)}
+        </span>
+
         {/* Skip */}
-        <motion.span
+        <motion.div
           whileTap={{ scale: 0.85 }}
           onClick={(e) => { e.stopPropagation(); skip(1); }}
-          className="text-sm flex-shrink-0 w-7 h-7 flex items-center justify-center opacity-50"
-          style={{ color: accentColor }}
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm"
+          style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
+          title="Siguiente"
         >
-          ▶▶
-        </motion.span>
+          <span className="text-xs opacity-60" style={{ color: accentColor }}>▶▶</span>
+        </motion.div>
       </div>
 
       {/* Progress bar */}
-      <div className="h-0.5" style={{ background: `${accentColor}22` }}>
-        <div className="h-full transition-all duration-300"
-          style={{ width: `${progress}%`, background: accentColor, boxShadow: `0 0 4px ${accentColor}` }} />
+      <div className="h-[2px] rounded-full overflow-hidden" style={{ background: `${accentColor}15` }}>
+        <motion.div
+          className="h-full rounded-full"
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.3, ease: "linear" }}
+          style={{ background: `linear-gradient(90deg, ${accentColor}cc 0%, ${accentColor} 100%)`, boxShadow: `0 0 6px ${accentColor}88` }}
+        />
       </div>
     </motion.div>
   );

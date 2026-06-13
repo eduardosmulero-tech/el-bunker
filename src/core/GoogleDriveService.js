@@ -4,6 +4,7 @@
 //  Arquitectura Serverless · Carpeta Compartida Drive
 //  v3.0.0 — Multi-usuario, bibliotecas, alertas de capacidad
 // ============================================================
+import { R2_PUBLIC_BASE } from "../tokens";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const CONFIG = {
@@ -1482,8 +1483,6 @@ export const uploadMusicFile = async (file) => {
   console.info(`[Búnker] Archivo de música subido ✓ (fileId: ${result.id})`);
   return result.id;
 };
-const R2_PUBLIC_BASE = "https://el-bunker-r2-proxy.thebunker-admin.workers.dev";
-
 export const getStreamUrl = (track) => {
   if (!track) return null;
 

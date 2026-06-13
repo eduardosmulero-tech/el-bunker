@@ -59,14 +59,14 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
   const todayEvents = useMemo(() => {
     const today = new Date();
     const mmdd = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    return events.filter(e => {
+    return filteredEvents.filter(e => {
       if (!e.created_at) return false;
       const eventYear = new Date(e.created_at).getFullYear();
       if (eventYear === today.getFullYear()) return false;
       const eventMMDD = e.created_at.slice(5, 10);
       return eventMMDD === mmdd;
     });
-  }, [events]);
+  }, [filteredEvents]);
 
   // Unique event types for filter
   const eventTypes = useMemo(() =>

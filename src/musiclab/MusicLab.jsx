@@ -7,9 +7,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "../tokens";
+import { ACID, PURPLE, stringToColor } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
-import { fetchPlaylists, createPlaylist, addTrackToPlaylist } from "../core/GoogleDriveService";
+import { createPlaylist, addTrackToPlaylist } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
@@ -24,14 +24,9 @@ const PURPLE_BG    = "rgba(191,0,255,0.04)";
 const PURPLE_BORDER= "rgba(191,0,255,0.2)";
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
-// ─── VIBE TAGS CONFIG — fallback para demo/sin DB ────────────
-const DEFAULT_VIBE_TAGS = [
-  { id: "gaming",      label: "GAMING", icon: "◉", color: "#00ffcc" },
-  { id: "420_chill",   label: "420",    icon: "◎", color: "#aaff44" },
-  { id: "dnb",         label: "DnB",    icon: "⚡", color: "#ff6b35" },
-  { id: "romantiqueo", label: "♥",      icon: "♥", color: PURPLE    },
-];
 // "all" es filtro de UI, nunca en DB (VB2)
+// Tags se cargan exclusivamente desde D1 (db.music_lab.tags).
+// Sin hardcodeos — el usuario los crea/modifica/elimina desde TagManager.
 const ALL_TAG = { id: "all", label: "ALL", icon: "◈", color: "#ffffff" };
 
 // ─── DEMO DATA ───────────────────────────────────────────────
@@ -67,11 +62,24 @@ export default function MusicLab({
   onDeleteTag,
 }) {
   const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
-  const rawDrops  = db?.music_lab?.drops  ?? [];
-  const userDrops = userId ? rawDrops.filter((d) => d.to === userId || d.from === userId) : rawDrops;
+  const EMPTY_ARR = useMemo(() => [], []);
+  const rawDrops  = db?.music_lab?.drops  ?? EMPTY_ARR;
+  const userDrops = useMemo(() =>
+    userId ? rawDrops.filter((d) => d.to === userId || d.from === userId) : rawDrops,
+    [userId, rawDrops]
+  );
   // VIBE_TAGS dinámico desde DB — "all" se inyecta en runtime como filtro de UI (VB2)
-  const VIBE_TAGS = [ALL_TAG, ...(db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS)];
-  const getVibeConfig = (vibeId) => VIBE_TAGS.find((v) => v.id === vibeId) ?? null;
+  const VIBE_TAGS = [ALL_TAG, ...(db?.music_lab?.tags ?? [])];
+  const getVibeConfig = (vibeId) => {
+    if (!vibeId) return null;
+    const found = VIBE_TAGS.find((v) => v.id === vibeId);
+    // "all" es filtro de UI, no tag real — devolver null para que TrackCard use fallbacks
+    if (found) return found.id === "all" ? null : found;
+    // Tag huérfano (en tracks pero no en DB) → crear config sintético desde el ID
+    // para que los tracks siempre tengan color, icono y label visibles
+    const label = vibeId.replace(/_/g, " ").toUpperCase();
+    return { id: vibeId, label, icon: "◎", color: stringToColor(vibeId) };
+  };
   // resolveVibeConf — normaliza tag de DB al schema que WinampPlayer espera.
   // Tags de DB: {id, label, icon, color/seedColor} — sin palette.
   // WinampPlayer consume vibeConf.palette.accent → necesita al menos ese campo.
@@ -91,7 +99,6 @@ export default function MusicLab({
   const [showEdit,          setShowEdit]           = useState(false);
   const [editingTrack,      setEditingTrack]       = useState(null);
   const [activeTab,         setActiveTab]          = useState("tracks");
-  const [localTracks,       setLocalTracks]        = useState(rawTracks);
   const [viewMode,          setViewMode]            = useState(() => {
     try { return localStorage.getItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`) ?? "list"; }
     catch { return "list"; }
@@ -102,8 +109,7 @@ export default function MusicLab({
     try { localStorage.setItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`, next);    } catch { /* noop */ }
   };
   const VIEW_MODE_ICON = { list: "☰", grid: "⊞", card: "❒" };
-  const [localDrops,        setLocalDrops]         = useState(userDrops);
-  const [localPlaylists,    setLocalPlaylists]     = useState(db?.music_lab?.playlists ?? []);
+  const dbPlaylists = db?.music_lab?.playlists ?? EMPTY_ARR;
   const [showPlaylistModal,  setShowPlaylistModal]  = useState(false);
   const [showPlaylistDetail, setShowPlaylistDetail] = useState(null); // playlist id
   const [pendingTrack,       setPendingTrack]       = useState(null);
@@ -139,17 +145,11 @@ export default function MusicLab({
   useEffect(() => { setVisibleCount(50); }, [libraryFilter]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(50); }, [trackSearch]);
-  useEffect(() => {
-    if (!db) return;
-    fetchPlaylists()
-      .then(setLocalPlaylists)
-      .catch(() => { /* noop */ });
-  }, [db]);
   // ── Handlers Playlist ────────────────────────────────────
   const handleAddToPlaylist = (track) => { setPendingTrack(track); setShowPlaylistModal(true); };
 
   const handleEditPlaylist = (updatedPlaylists) => {
-    setLocalPlaylists(updatedPlaylists);
+    patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updatedPlaylists } })).catch(() => {});
   };
 
   const handleDeletePlaylist = async (playlistId) => {
@@ -164,7 +164,6 @@ export default function MusicLab({
     } catch (err) {
       console.warn("[Búnker] deletePlaylist falló:", err);
     }
-    setLocalPlaylists((p) => p.filter((pl) => pl.id !== playlistId));
     setToast("PLAYLIST ELIMINADA");
     setTimeout(() => setToast(null), 2500);
   };
@@ -172,8 +171,7 @@ export default function MusicLab({
   const handleSelectPlaylist = async (playlistId) => {
     if (!pendingTrack) return;
     try {
-      const updated = await addTrackToPlaylist(playlistId, pendingTrack.id);
-      setLocalPlaylists((p) => p.map((pl) => pl.id === playlistId ? updated : pl));
+      await addTrackToPlaylist(playlistId, pendingTrack.id);
       setToast("AÑADIDO A PLAYLIST");
       setTimeout(() => setToast(null), 2500);
     } catch (err) { console.warn("[Búnker] addTrackToPlaylist falló:", err); }
@@ -184,10 +182,8 @@ export default function MusicLab({
     if (!name?.trim() || !userId) return;
     try {
       const newPl = await createPlaylist(name, userId);
-      setLocalPlaylists((p) => [...p, newPl]);
       if (pendingTrack) {
-        const updated = await addTrackToPlaylist(newPl.id, pendingTrack.id);
-        setLocalPlaylists((p) => p.map((pl) => pl.id === newPl.id ? updated : pl));
+        await addTrackToPlaylist(newPl.id, pendingTrack.id);
       }
       setToast("PLAYLIST CREADA");
       setTimeout(() => setToast(null), 2500);
@@ -196,24 +192,24 @@ export default function MusicLab({
   };
 
   // ── Handlers Tracks ──────────────────────────────────────
-  const filteredTracks = useMemo(() => localTracks
+  const filteredTracks = useMemo(() => rawTracks
     .filter((t) => libraryFilter === "all" || (t.tag ?? t.vibe) === libraryFilter)
     .filter((t) => {
       if (!trackSearch.trim()) return true;
       const q = trackSearch.toLowerCase();
       return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
-    }), [localTracks, libraryFilter, trackSearch]);
+    }), [rawTracks, libraryFilter, trackSearch]);
 
   const [listTagFilter, setListTagFilter] = useState("all");
-  const filteredPlaylists = useMemo(() => localPlaylists.filter((pl) => {
+  const filteredPlaylists = useMemo(() => dbPlaylists.filter((pl) => {
     if (listTagFilter !== "all") {
-      const plTracks = (pl.track_ids ?? []).map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
+      const plTracks = (pl.track_ids ?? []).map((id) => rawTracks.find((t) => t.id === id)).filter(Boolean);
       if (!plTracks.some((t) => (t.tag ?? t.vibe) === listTagFilter)) return false;
     }
     if (!listSearch.trim()) return true;
     const q = listSearch.toLowerCase();
     return pl.name?.toLowerCase().includes(q);
-  }), [localPlaylists, listTagFilter, localTracks, listSearch]);
+  }), [dbPlaylists, listTagFilter, rawTracks, listSearch]);
 
   const [queueTagFilter, setQueueTagFilter] = useState("all");
   const filteredQueue = localQueue.filter((t) => {
@@ -224,7 +220,6 @@ export default function MusicLab({
   });
 
   const handleAddTrack = (trackData) => {
-    setLocalTracks((p) => [...p, trackData]);
     onAddTrack?.(trackData);
     setShowAdd(false);
     setToast("TRACK AÑADIDO");
@@ -232,7 +227,7 @@ export default function MusicLab({
   };
 
   const handleEditTrack = (trackId) => {
-    const track = localTracks.find((t) => t.id === trackId);
+    const track = rawTracks.find((t) => t.id === trackId);
     if (!track) return;
     setEditingTrack(track);
     setShowEdit(true);
@@ -241,7 +236,6 @@ export default function MusicLab({
   };
 
   const handleSaveEdit = (updatedData) => {
-    setLocalTracks((p) => p.map((t) => t.id === editingTrack.id ? { ...t, ...updatedData } : t));
     onEditTrack?.({ ...editingTrack, ...updatedData });
     if (activeTrack?.id === editingTrack.id) setActiveTrack((t) => ({ ...t, ...updatedData }));
     setToast("TRACK ACTUALIZADO");
@@ -250,9 +244,8 @@ export default function MusicLab({
   };
 
   const handleDeleteTrack = (trackId) => {
-    setLocalTracks((p) => p.filter((t) => t.id !== trackId));
     onDeleteTrack?.(trackId);
-    if (activeTrack?.id === trackId) setActiveTrack(localTracks.find((t) => t.id !== trackId) ?? null);
+    if (activeTrack?.id === trackId) setActiveTrack(rawTracks.find((t) => t.id !== trackId) ?? null);
     setToast("TRACK ELIMINADO");
     setTimeout(() => setToast(null), 2500);
     setShowDelete(false);
@@ -306,14 +299,11 @@ export default function MusicLab({
   const handlePlDragOver  = (e) => { e.preventDefault(); };
   const handlePlDrop      = async (i) => {
     if (dragPlIdx.current === null || dragPlIdx.current === i) return;
-    setLocalPlaylists((pls) => {
-      const next = [...pls];
-      const [moved] = next.splice(dragPlIdx.current, 1);
-      next.splice(i, 0, moved);
-      dragPlIdx.current = null;
-      patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
-      return next;
-    });
+    const next = [...dbPlaylists];
+    const [moved] = next.splice(dragPlIdx.current, 1);
+    next.splice(i, 0, moved);
+    dragPlIdx.current = null;
+    patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
   };
 
   // renombrar playlist inline
@@ -321,8 +311,7 @@ export default function MusicLab({
   const [renameVal,    setRenameVal]    = useState("");
   const handleRenamePlaylist = async (plId) => {
     if (!renameVal.trim()) { setRenamingPlId(null); return; }
-    const updated = localPlaylists.map((pl) => pl.id === plId ? { ...pl, name: renameVal.trim() } : pl);
-    setLocalPlaylists(updated);
+    const updated = dbPlaylists.map((pl) => pl.id === plId ? { ...pl, name: renameVal.trim() } : pl);
     setRenamingPlId(null);
     await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
   };
@@ -336,9 +325,9 @@ export default function MusicLab({
 
   // ── Handlers Drops ───────────────────────────────────────
   const handleDropSend = (dropData) => {
-    const toUserId = userId === "edu" ? "david" : "edu";
+    const RECIPIENTS = ["edu", "david"];
+    const toUserId = RECIPIENTS.find(r => r !== userId) || RECIPIENTS[0];
     const newDrop  = { ...dropData, id: uuid(), from: userId, to: toUserId, seen: false, created_at: new Date().toISOString() };
-    setLocalDrops((p) => [...p, newDrop]);
     onAddDrop?.(newDrop);
   };
 
@@ -370,7 +359,7 @@ export default function MusicLab({
       <AnimatePresence>
         {showPlaylistModal && (
           <PlaylistModal
-            playlists={localPlaylists}
+            playlists={dbPlaylists}
             onSelectPlaylist={handleSelectPlaylist}
             onCreatePlaylist={handleCreatePlaylist}
             onClose={() => setShowPlaylistModal(false)}
@@ -390,8 +379,8 @@ export default function MusicLab({
           >
             <div style={{ maxWidth: 448, margin: "0 auto" }}>
               <TagManager
-                tags={db?.music_lab?.tags ?? DEFAULT_VIBE_TAGS}
-                tracks={localTracks}
+                tags={db?.music_lab?.tags ?? []}
+                tracks={rawTracks}
                 onAdd={onAddTag}
                 onUpdate={onUpdateTag}
                 onDelete={onDeleteTag}
@@ -436,7 +425,7 @@ export default function MusicLab({
             ...(localQueue.length > 0 ? [{ id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "▶" }] : []),
             { id: "tracks",    label: "TRACKS",                        icon: "◎" },
             { id: "playlists", label: "LISTS",                         icon: "◈" },
-            ...(localDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${localDrops.length}]`, icon: "⚡" }] : []),
+            ...(userDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${userDrops.length}]`, icon: "⚡" }] : []),
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const tabColor = tab.id === "drops" ? PURPLE : accentColor;
@@ -577,7 +566,7 @@ export default function MusicLab({
                         const next = localQueue.find((t) => t.id !== activeTrack.id);
                         handleRemoveFromQueue(activeTrack.id);
                         if (next) { setActiveTrack(next); setAutoPlaySignal((n) => n + 1); }
-                        else setActiveTrack(localTracks[0] ?? null);
+                        else setActiveTrack(rawTracks[0] ?? null);
                       }}
                       className="ml-3 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
                       style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
@@ -595,7 +584,7 @@ export default function MusicLab({
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
                       const trackColor = qVibe?.color ?? ACID;
                       const activePl = queueContextName
-                        ? localPlaylists.find((p) => p.name === queueContextName)
+                        ? dbPlaylists.find((p) => p.name === queueContextName)
                         : null;
                       const queuePos = localQueue.filter((t) => t.id !== activeTrack?.id && t._manual).findIndex((t) => t.id === track.id);
                       return (
@@ -629,8 +618,7 @@ export default function MusicLab({
                                 const activeIdxInPl = newIds.indexOf(activeTrack?.id);
                                 const insertAt = activeIdxInPl >= 0 ? activeIdxInPl + 1 + queuePos : newIds.length;
                                 newIds.splice(insertAt, 0, track.id);
-                                const updated = localPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
-                                setLocalPlaylists(updated);
+                                const updated = dbPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
                                 await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
                                 setToast(`AÑADIDO A ${activePl.name.toUpperCase()}`);
                                 setTimeout(() => setToast(null), 2500);
@@ -812,10 +800,10 @@ export default function MusicLab({
                     exit={{ opacity: 0, y: 10 }} className="flex flex-col gap-2 p-3 rounded-sm"
                     style={{ background: "rgba(255,68,68,0.04)", border: "1px solid #ff444422", fontFamily: FONT_MONO }}>
                     <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}>◈ ELIMINAR TRACK</p>
-                    {localTracks.length === 0 ? (
+                    {rawTracks.length === 0 ? (
                       <p className="text-xs opacity-40" style={{ color: "#ff4444" }}>NO HAY TRACKS</p>
                     ) : (
-                      localTracks.map((track) => (
+                      rawTracks.map((track) => (
                         <div key={track.id} className="flex items-center justify-between px-3 py-2 rounded-sm"
                           style={{ background: "rgba(255,68,68,0.03)", border: "1px solid #ff444418" }}>
                           <div className="flex flex-col gap-0.5 min-w-0">
@@ -959,7 +947,7 @@ export default function MusicLab({
               ) : (
                 <div className="flex flex-col gap-2">
                   {filteredPlaylists.map((pl, i) => {
-                    const plTracks = pl.track_ids.map((id) => localTracks.find((t) => t.id === id)).filter(Boolean);
+                    const plTracks = pl.track_ids.map((id) => rawTracks.find((t) => t.id === id)).filter(Boolean);
                     const isEmpty = plTracks.length === 0;
                     const plVibe = getVibeConfig(pl.tag ?? plTracks[0]?.tag ?? plTracks[0]?.vibe);
                     const totalSec = plTracks.reduce((acc, t) => acc + (t.duration ?? 0), 0);
@@ -1064,7 +1052,7 @@ export default function MusicLab({
                   <span style={{ color: PURPLE }}>⚡</span>
                   <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>THE DROPS</span>
                   <span className="text-xs opacity-30 tabular-nums" style={{ color: PURPLE }}>
-                    [{String(localDrops.length).padStart(2, "0")}]
+                    [{String(userDrops.length).padStart(2, "0")}]
                   </span>
                 </div>
               </div>
@@ -1072,18 +1060,22 @@ export default function MusicLab({
                 style={{ color: PURPLE, background: PURPLE_BG, border: `1px solid ${PURPLE_BORDER}`, fontFamily: FONT_MONO }}>
                 Cuando lanzas un Drop, aparece como una alerta intrusiva la próxima vez que tu persona abra el Búnker. Selecciona un track y toca ⚡ LANZAR DROP.
               </div>
-              <DropsHistory drops={localDrops} tracks={localTracks} userId={userId}
+              <DropsHistory drops={userDrops} tracks={rawTracks} userId={userId}
                 onPlay={(track) => playTrack(track)}
                 onMarkSeen={(dropId) => {
-                  setLocalDrops((prev) => prev.map((d) => d.id === dropId ? { ...d, seen: true } : d));
                   onMarkDropSeen?.(dropId);
                 }}
                 onSaveDropSeen={(dropId) => {
-                  setLocalDrops((prev) => prev.map((d) => d.id === dropId ? { ...d, favorited: true, seen: true } : d));
                   onMarkDropSeen?.(dropId);
                 }}
-                onDeleteDrop={(dropId) => {
-                  setLocalDrops((prev) => prev.filter((d) => d.id !== dropId));
+                onDeleteDrop={async (dropId) => {
+                  await patchDb((prev) => ({
+                    ...prev,
+                    music_lab: {
+                      ...prev.music_lab,
+                      drops: (prev.music_lab?.drops ?? []).filter((d) => d.id !== dropId),
+                    },
+                  })).catch(() => {});
                 }}
               />
             </motion.div>
@@ -1094,19 +1086,19 @@ export default function MusicLab({
         {/* PlaylistDetailModal */}
         <AnimatePresence>
           {showPlaylistDetail && (() => {
-            const pl = localPlaylists.find((p) => p.id === showPlaylistDetail);
+            const pl = dbPlaylists.find((p) => p.id === showPlaylistDetail);
             if (!pl) return null;
             return (
               <PlaylistDetailModal
                 playlist={pl}
-                tracks={localTracks}
+                tracks={rawTracks}
                 userId={userId}
                 VIBE_TAGS={VIBE_TAGS}
                 onClose={() => setShowPlaylistDetail(null)}
                 onPlay={(t) => { playTrack(t); setShowPlaylistDetail(null); }}
                 onAddToQueue={addToQueue}
                 onRemoveTrack={(plId, trackId) => {
-                  const updated = localPlaylists.map((p) =>
+                  const updated = dbPlaylists.map((p) =>
                     p.id === plId ? { ...p, track_ids: p.track_ids.filter((id) => id !== trackId) } : p
                   );
                   handleEditPlaylist(updated);
@@ -1115,10 +1107,9 @@ export default function MusicLab({
                   handleDeletePlaylist(plId);
                 }}
                 onReorderTracks={async (plId, newIds) => {
-                  const updated = localPlaylists.map((pl) =>
+                  const updated = dbPlaylists.map((pl) =>
                     pl.id === plId ? { ...pl, track_ids: newIds } : pl
                   );
-                  setLocalPlaylists(updated);
                   await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
                 }}
               />

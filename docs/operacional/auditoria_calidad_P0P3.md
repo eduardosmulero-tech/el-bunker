@@ -9,15 +9,12 @@
 ## 🚨 P0 — CRÍTICOS (rompen funcionalidad)
 
 ### 1. Espiral de peticiones a Drive + estado roto en MusicLab
-- **Archivo:** `src/musiclab/MusicLab.jsx` ~L148
-- **Problema:** `useEffect(() => { fetchPlaylists()... }, [db])` — cada vez que `db` cambia (cada heartbeat, cada `patchDb`), descarga la BD entera de Google Drive. Revienta la cuota API en minutos.
-- **Agravante:** `localTracks`, `localDrops`, `localPlaylists` usan `useState(initialValue)` sin `useEffect` de sincronización. Si la BD se refresca desde Worker API, MusicLab nunca ve los nuevos datos.
-- **Fix:** Eliminar estados locales. Derivar directo de props: `db.music_lab.tracks`. Eliminar el `useEffect` que llama a Drive.
+- **Archivo:** `src/musiclab/MusicLab.jsx` ~L148 — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `fetchPlaylists` eliminado. `localTracks`/`localDrops`/`localPlaylists` eliminados — datos derivados directo de props (`rawTracks`, `userDrops`, `dbPlaylists`). Sin `useEffect` de Drive.
 
 ### 2. Reproductor muestra 0:00 al cambiar de tab
-- **Archivos:** `src/musiclab/WinampPlayer.jsx` ~L85, `src/layout/Layout.jsx` MiniPlayer ~L210
-- **Problema:** Ambos inicializan `currentT = useState(0)`. Al remontar con audio pausado, `timeupdate` no dispara → muestra "0:00 / 0:00" hasta que el usuario pulse play.
-- **Fix:** `useState(audioRef.current?.currentTime || 0)`.
+- **Archivos:** `src/musiclab/WinampPlayer.jsx`, `src/layout/Layout.jsx` — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `currentT`, `duration`, `progress` inicializados desde `audioRef.current`.
 
 ---
 
@@ -36,38 +33,32 @@
 ## 🔍 P2 — IMPORTANTES (mantenibilidad, arquitectura)
 
 ### 5. `patchDb` contamina Drive JSON con datos de D1
-- **Archivo:** `src/core/VaultContext.jsx` ~L514
-- **Problema:** Cada `patchDb` escribe TODO el objeto `db` (incluyendo entries/eras/tracks ya migrados a D1) de vuelta a Drive JSON. Violación de ADR-024.
-- **Fix:** `updateData` debe excluir las ramas ya migradas a Worker API.
+- **Archivo:** `src/core/VaultContext.jsx` — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `patchDb` ahora solo escribe campos Drive (libraries, heartbeat, adventures_start_date, schema_version) en `updateData`. Campos D1 (entries, eras, music_lab.*) excluidos.
 
 ### 6. Filtro "Un día como hoy" ignora selección del usuario
-- **Archivo:** `src/capsules/Timeline.jsx` ~L48
-- **Problema:** `todayEvents` usa `events` raw, no `filteredEvents`. Si filtras por "VAULT", igual ves drops musicales de hace años.
-- **Fix:** Cambiar a `filteredEvents`.
+- **Archivo:** `src/capsules/Timeline.jsx` ~L48 — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `todayEvents` usa `filteredEvents` en vez de `events` raw — respeta filtros de módulo/tipo/era.
 
 ### 7. `crossOrigin="anonymous"` rompe fallback de Drive
-- **Archivo:** `src/core/PlayerContext.jsx`
-- **Problema:** `<audio crossOrigin="anonymous">` + `getStreamUrl` con fallback a Drive. Google Drive no devuelve CORS → crash de audio.
-- **Fix:** CrossOrigin solo para dominios `.workers.dev`.
+- **Archivo:** `src/core/PlayerContext.jsx` — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `crossOrigin` condicional: `"anonymous"` solo para URLs `.workers.dev` (R2), `undefined` para Drive.
 
 ---
 
 ## 🎨 P3 — MENORES (polish)
 
 ### 8. Exhibition mode muestra Eras vacías
-- **Archivo:** `src/vault/VaultGallery.jsx`
-- **Problema:** Eras sin fotos renderizan tarjeta con "0".
-- **Fix:** Filtrar `eras.filter(e => photoEntries.some(...))`.
+- **Archivo:** `src/vault/VaultGallery.jsx` — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. Exhibition filtra eras con `photoEntries.some(...)` — no muestra Eras sin fotos.
 
 ### 9. Hardcoding de destinatario en Drops
-- **Archivo:** `src/musiclab/MusicLab.jsx` ~L288
-- **Problema:** `userId === "edu" ? "david" : "edu"`. Admin rompe la lógica.
-- **Fix:** Selector dinámico de destinatario.
+- **Archivo:** `src/musiclab/MusicLab.jsx` ~L288 — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `handleDropSend` usa `RECIPIENTS.find(r => r !== userId)` — maneja admin y cualquier user ID.
 
 ### 10. `DEFAULT_VIBE_TAGS` divergen de tags reales en D1
-- **Archivo:** `src/musiclab/MusicLab.jsx` L28-34
-- **Problema:** gaming, 420_chill, dnb, romantiqueo hardcodeados. Los tags reales de los usuarios (rapidin, steven, etc.) no están.
-- **Estado:** Mitigado con `stringToColor` + synthetic tags en `getVibeConfig`. Pendiente: migrar tags reales a D1 y eliminar `DEFAULT_VIBE_TAGS`.
+- **Archivo:** `src/musiclab/MusicLab.jsx` L28-34 — **CORREGIDO S66**
+- **Estado:** ✅ Resuelto. `DEFAULT_VIBE_TAGS` eliminado. Tags se cargan exclusivamente desde D1. Sin hardcodeos. Tags huérfanos usan `stringToColor` como fallback sintético.
 
 ---
 
@@ -75,11 +66,11 @@
 
 | Prioridad | Cantidad | Corregidos | Pendientes |
 |-----------|----------|------------|------------|
-| P0 — Crítico | 2 | 0 | 2 |
+| P0 — Crítico | 2 | 2 | 0 |
 | P1 — Grave | 2 | 2 | 0 |
-| P2 — Importante | 3 | 0 | 3 |
-| P3 — Menor | 3 | 0 | 3 |
-| **Total** | **10** | **2** | **8** |
+| P2 — Importante | 3 | 3 | 0 |
+| P3 — Menor | 3 | 3 | 0 |
+| **Total** | **10** | **10** | **0** |
 
 ---
 
@@ -91,4 +82,4 @@
 | ADR-014 | 3 tabs definitivos: VAULT · MUSIC LAB · CAPSULES | ✅ Cumple |
 | ADR-018 | Stats engine único: tabla events en D1, append-only | ✅ Cumple |
 | ADR-020 | Google OAuth2 solo para auth. No Drive para DB | ⚠️ Drive aún se usa como fallback |
-| ADR-024 | Worker API como fuente primaria. Drive JSON solo legado | ❌ `patchDb` sigue escribiendo a Drive |
+| ADR-024 | Worker API como fuente primaria. Drive JSON solo legado | ✅ `patchDb` ya no escribe campos D1 a Drive |
