@@ -681,6 +681,54 @@ export function VaultProvider({ children }) {
     return info;
   }, []);
 
+  // ── S65: VAULT entry edit/delete via Worker API ──────────
+
+  /**
+   * updateEntry(entryId, patch)
+   * Actualiza una entrada vía Worker API (PATCH /api/entries/:id).
+   * Actualiza el estado local optimistamente.
+   */
+  const updateEntry = useCallback(async (entryId, patch) => {
+    if (!jwtToken) throw new Error("No JWT token");
+    const res = await fetch(`${API_BASE}/api/entries/${entryId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) throw new Error(`updateEntry failed: ${res.status}`);
+    const updated = await res.json();
+    // Actualizar estado local optimistamente
+    setDb((prev) => ({
+      ...prev,
+      entries: (prev?.entries ?? []).map((e) =>
+        e.id === entryId ? { ...e, ...patch, updated_at: new Date().toISOString() } : e
+      ),
+    }));
+    return updated;
+  }, [jwtToken]);
+
+  /**
+   * deleteEntry(entryId)
+   * Soft-delete de una entrada vía Worker API (DELETE /api/entries/:id).
+   * Actualiza el estado local optimistamente (marca is_deleted).
+   */
+  const deleteEntry = useCallback(async (entryId) => {
+    if (!jwtToken) throw new Error("No JWT token");
+    const res = await fetch(`${API_BASE}/api/entries/${entryId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    });
+    if (!res.ok) throw new Error(`deleteEntry failed: ${res.status}`);
+    // Actualizar estado local — marcar como eliminada
+    setDb((prev) => ({
+      ...prev,
+      entries: (prev?.entries ?? []).map((e) =>
+        e.id === entryId ? { ...e, is_deleted: true, updated_at: new Date().toISOString() } : e
+      ),
+    }));
+    return { ok: true, id: entryId };
+  }, [jwtToken]);
+
   // ── Context Value ─────────────────────────────────────────
   const value = {
     // Auth
@@ -731,6 +779,10 @@ export function VaultProvider({ children }) {
     markLibraryHeartbeat,
     getLibraryContents,
     refreshLibraryCapacity,
+
+    // Acciones de entrada (S65 — Worker API)
+    updateEntry,
+    deleteEntry,
 
     // Drops globales (ERROR 33)
     pendingDrop,

@@ -15,15 +15,23 @@ const ENTRY_TYPES = [
   { id: "letter",    icon: "♥", label: "CARTA" },
 ];
 
-export default function AddEntryForm({ eras = [], onAdd, onCancel }) {
-  const [type, setType] = useState("note");
-  const [title, setTitle] = useState("");
-  const [text, setText] = useState("");
-  const [eraId, setEraId] = useState(eras[0]?.id ?? null);
-  const [toUser, setToUser] = useState("both");
-  const [tags, setTags] = useState([]);
+export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel }) {
+  const isEditing = !!entry;
+  const [type, setType] = useState(entry?.type ?? "note");
+  const [title, setTitle] = useState(entry?.title ?? "");
+  const [text, setText] = useState(typeof entry?.content?.text === "string" ? entry.content.text : "");
+  const [eraId, setEraId] = useState(entry?.era_id ?? eras[0]?.id ?? null);
+  const [toUser, setToUser] = useState(entry?.to_user ?? entry?.to ?? "both");
+  const [tags, setTags] = useState(entry?.tags?.map((t) => t.id) ?? entry?.tags ?? []);
   const [photoFile, setPhotoFile] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(() => {
+    // Pre-visualizar imagen existente si la entrada ya tiene una
+    if (!entry?.content?.images?.length) return null;
+    const img = entry.content.images[0];
+    if (img.dataUrl) return img.dataUrl;
+    if (img.r2_key) return `https://el-bunker-api.thebunker-admin.workers.dev/${img.r2_key}`;
+    return null;
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -38,29 +46,33 @@ export default function AddEntryForm({ eras = [], onAdd, onCancel }) {
   };
 
   const handleSubmit = async () => {
-    if (!text.trim() && !title.trim() && !photoFile) return;
+    if (!text.trim() && !title.trim() && !photoFile && !isEditing) return;
     setIsSubmitting(true);
     try {
       const entryData = {
         type,
         title,
-        content: { text, images: [] },
+        content: { text: isEditing && !text.trim() ? (entry?.content?.text ?? "") : text, images: entry?.content?.images ?? [] },
         era_id: eraId,
         to_user: toUser,
         tags,
       };
-      // Si es foto y hay archivo, subir a R2
+      // Si es foto y hay archivo nuevo, subir a R2
       if (type === "photo" && photoFile) {
         try {
           const { uploadFile } = await import("../core/FileUploadService");
           const { r2_key } = await uploadFile(photoFile, "vault/photos");
-          entryData.content = { text, images: [{ r2_key, filename: photoFile.name }] };
+          entryData.content = { text: entryData.content.text, images: [{ r2_key, filename: photoFile.name }] };
         } catch {
           console.warn("[AddEntryForm] Upload a R2 falló, guardando preview local");
-          entryData.content = { text, images: [{ dataUrl: photoPreview, filename: photoFile.name }] };
+          entryData.content = { text: entryData.content.text, images: [{ dataUrl: photoPreview, filename: photoFile.name }] };
         }
       }
-      await onAdd?.(entryData);
+      if (isEditing) {
+        await onUpdate?.(entry.id, entryData);
+      } else {
+        await onAdd?.(entryData);
+      }
       setTitle(""); setText(""); setPhotoFile(null); setPhotoPreview(null);
       setTags([]);
     } finally {
@@ -71,6 +83,17 @@ export default function AddEntryForm({ eras = [], onAdd, onCancel }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="flex flex-col gap-3 p-4 max-w-md mx-auto" style={{ fontFamily: FONT_MONO, background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
+      {/* Header con título de edición */}
+      {isEditing && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: ACID, fontFamily: FONT_MONO }}>
+            ✎ EDITANDO ENTRADA
+          </span>
+          <span className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>
+            {entry.id?.slice(0, 8)}…
+          </span>
+        </div>
+      )}
       {/* Tipo */}
       <div className="flex gap-2">
         {ENTRY_TYPES.map(t => (
@@ -153,7 +176,7 @@ export default function AddEntryForm({ eras = [], onAdd, onCancel }) {
       <div className="flex gap-2">
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting}
           className="text-xs tracking-[0.2em] uppercase p-2 flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
-          {isSubmitting ? "GUARDANDO..." : type === "photo" ? "SUBIR FOTO" : "GUARDAR"}
+          {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : type === "photo" ? "SUBIR FOTO" : "GUARDAR"}
         </motion.button>
         {onCancel && (
           <motion.button whileTap={{ scale: 0.95 }} onClick={onCancel}

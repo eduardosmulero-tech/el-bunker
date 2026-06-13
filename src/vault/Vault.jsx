@@ -408,8 +408,8 @@ const EraCard = ({ era, isActive, onClick }) => {
 };
 
 // ─── ERA DETAIL PANEL ────────────────────────────────────────
-const EraDetailPanel = ({ era, entries = [] }) => {
-  const eraEntries = entries.filter((e) => e.era_id === era.id);
+const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
+  const eraEntries = entries.filter((e) => e.era_id === era.id && !e.is_deleted);
 
   return (
     <AnimatePresence mode="wait">
@@ -455,17 +455,40 @@ const EraDetailPanel = ({ era, entries = [] }) => {
             <motion.div
               key={entry.id}
               whileHover={{ x: 4 }}
-              className="flex items-center gap-3 py-2 border-b opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+              className="flex items-center gap-2 py-2 border-b opacity-60 hover:opacity-100 transition-opacity cursor-pointer group"
               style={{ borderColor: `${era.color ?? ACID}14` }}
             >
               <span style={{ color: era.color ?? ACID }}>
                 {entry.type === "photo" ? "◎" : entry.type === "milestone" ? "◈" : "◉"}
               </span>
-              <span className="text-xs tracking-wide truncate flex-1" style={{ color: era.color ?? ACID }}>
-                {entry.content?.title ?? entry.content?.body?.slice(0, 40) ?? "—"}
+              <span
+                className="text-xs tracking-wide truncate flex-1"
+                style={{ color: era.color ?? ACID }}
+                onClick={() => onEditEntry?.(entry)}
+              >
+                {entry.title ?? entry.content?.body?.slice(0, 40) ?? "—"}
               </span>
               <span className="text-xs opacity-40" style={{ color: era.color ?? ACID }}>
                 {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}
+              </span>
+              {/* S65: Botones editar/eliminar */}
+              <span className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onEditEntry?.(entry); }}
+                  className="text-xs px-1 hover:scale-110 transition-transform"
+                  style={{ color: era.color ?? ACID }}
+                  title="Editar entrada"
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeleteEntry?.(entry.id); }}
+                  className="text-xs px-1 hover:scale-110 transition-transform"
+                  style={{ color: "#ff3b3b" }}
+                  title="Eliminar entrada"
+                >
+                  ✕
+                </button>
               </span>
             </motion.div>
           ))}
@@ -493,7 +516,8 @@ const EraDetailPanel = ({ era, entries = [] }) => {
 export default function Vault({ db = null, jwtToken = null, onAddEra = () => {}, onOpenEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
-  const { user, patchDb } = useVault();
+  const [editingEntry, setEditingEntry] = useState(null);
+  const { user, patchDb, updateEntry, deleteEntry } = useVault();
   const entries = db?.entries ?? [];
   const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
   const [exporting, setExporting] = useState(false);
@@ -513,6 +537,28 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
     // Emitir evento de entrada creada
     entryCreated(newEntry.id, newEntry.type, newEntry.title);
     setShowAddEntry(false);
+  };
+
+  // S65: editar entrada existente vía Worker API
+  const handleEditEntry = async (entryId, patch) => {
+    try {
+      await updateEntry(entryId, patch);
+      setEditingEntry(null);
+    } catch (e) {
+      console.warn("[Vault] updateEntry failed:", e);
+      alert("Error al actualizar la entrada. Reintenta.");
+    }
+  };
+
+  // S65: eliminar entrada vía Worker API
+  const handleDeleteEntry = async (entryId) => {
+    if (!window.confirm("¿Eliminar esta entrada? Se marcará como eliminada.")) return;
+    try {
+      await deleteEntry(entryId);
+    } catch (e) {
+      console.warn("[Vault] deleteEntry failed:", e);
+      alert("Error al eliminar la entrada. Reintenta.");
+    }
   };
 
    const handleExport = () => {
@@ -544,6 +590,14 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eras_arr.length]);
+
+  // S65: bloquear scroll del body cuando el modal de edición está abierto
+  useEffect(() => {
+    if (editingEntry) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [editingEntry]);
 
   // ── Drag-to-scroll on desktop ─────────────────────────────
   const onMouseDown = (e) => {
@@ -693,11 +747,37 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
           <EraDetailPanel
             era={activeDisplayEra}
             entries={entries}
+            onEditEntry={setEditingEntry}
+            onDeleteEntry={handleDeleteEntry}
           />
+          {/* S65: Modal de edición */}
+          <AnimatePresence>
+            {editingEntry && (
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
+                style={{ background: "rgba(0,0,0,0.85)" }}
+                onClick={() => setEditingEntry(null)}
+              >
+                <motion.div
+                  initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                  className="w-full max-w-md"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <AddEntryForm
+                    eras={displayEras}
+                    entry={editingEntry}
+                    onUpdate={handleEditEntry}
+                    onCancel={() => setEditingEntry(null)}
+                  />
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {/* Galería de la Era activa */}
           <div className="mt-4">
             <VaultGallery
-              entries={entries.filter(e => e.era_id === activeDisplayEra.id)}
+              entries={entries.filter(e => e.era_id === activeDisplayEra.id && !e.is_deleted)}
               eras={displayEras}
               jwtToken={jwtToken}
             />
