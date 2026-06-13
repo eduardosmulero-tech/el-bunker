@@ -171,13 +171,19 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
     }
 
     // Cola unificada: si hay tracks en cola, avanzar en orden (Q1 — prioridad absoluta)
+    // Q2: iterar hasta encontrar un track distinto del activo (evita loop en duplicados)
     if (dir === 1 && localQueue.length > 0) {
-      const next = localQueue[0];
+      let skipCount = 0;
+      let next = localQueue[skipCount];
+      while (next && next.id === activeTrack?.id && skipCount < localQueue.length - 1) {
+        skipCount++;
+        next = localQueue[skipCount];
+      }
       if (activeTrack) {
         trackSkip(activeTrack.id, "queue_advance");
         setPlayHistory((h) => [...h, activeTrack]);
       }
-      setLocalQueue((q) => q.slice(1));
+      setLocalQueue((q) => q.slice(skipCount + 1));
       setActiveTrack(next);
       setAutoPlaySignal((n) => n + 1);
       return;
@@ -203,7 +209,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
     if (shuffle) {
       // Regenerar orden aleatorio si está vacío
       if (shuffledListRefStable.current.length === 0) {
-        const remaining = [...list];
+        // Q3: shuffle solo tracks no escuchados (excluir playHistory)
+        const historyIds = new Set(playHistory.map((t) => t.id));
+        let remaining = list.filter((t) => t.id !== activeTrack?.id && !historyIds.has(t.id));
+        // Si todos ya fueron escuchados, reiniciar incluyendo todos
+        if (remaining.length === 0) {
+          remaining = list.filter((t) => t.id !== activeTrack?.id);
+          if (remaining.length === 0) remaining = [...list];
+        }
         for (let i = remaining.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
@@ -224,7 +237,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
     const nextIdx = (base + dir + list.length) % list.length;
     setActiveTrack(list[nextIdx]);
     setAutoPlaySignal((n) => n + 1);
-  }, [tracks, localQueue, activeTrack, shuffle]);
+  }, [tracks, localQueue, activeTrack, shuffle, playHistory]);
 
   // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
@@ -301,9 +314,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       }
       return;
     }
+    // Q10: añadir track actual al historial antes de cambiar de track
+    if (activeTrack) {
+      setPlayHistory((h) => [...h, activeTrack]);
+    }
     setActiveTrack(track);
     setAutoPlaySignal((n) => n + 1);
-  }, [activeTrack?.id, isPlaying]);
+  }, [activeTrack, isPlaying]);
 
   const toggleLoopMode = useCallback(() => {
     setLoopMode((m) => m === "off" ? "list" : m === "list" ? "track" : "off");

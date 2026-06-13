@@ -593,6 +593,13 @@ export function VaultProvider({ children }) {
       ...prev,
       libraries: [...(prev?.libraries ?? []), newLib],
     }));
+    // L1: refrescar capacidad de la nueva biblioteca
+    try {
+      const info = await checkLibraryCapacity(newLib);
+      setLibraryCapacity((prev) => ({ ...prev, [newLib.id]: info }));
+    } catch (e) {
+      console.warn("[Búnker] Capacity check for new library failed:", e);
+    }
     return newLib;
   }, []);
 

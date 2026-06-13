@@ -180,6 +180,48 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
 
   const intervalRef   = useRef(null);
   const fadeStartRef  = useRef(null);  // volume when fade begins
+  const endTimeRef    = useRef(null);  // SH1: timestamp cuando termina la sesión (Date.now() + remaining*1000)
+
+  // ── SH1: Restaurar estado del timer desde localStorage ───
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    try {
+      const saved = localStorage.getItem("el_bunker_smoke");
+      if (!saved) return;
+      const { endTime, totalSecs, wasRunning } = JSON.parse(saved);
+      if (wasRunning && typeof endTime === "number" && typeof totalSecs === "number") {
+        const now = Date.now();
+        const remainingSecs = Math.max(0, Math.round((endTime - now) / 1000));
+        if (remainingSecs > 0) {
+          setTotalSeconds(totalSecs);
+          setRemaining(remainingSecs);
+          setIsRunning(true);
+          endTimeRef.current = endTime;
+        } else {
+          // Sesión ya terminó mientras la pestaña estaba cerrada
+          setTotalSeconds(totalSecs);
+          setRemaining(0);
+          setIsDone(true);
+        }
+      }
+    } catch { /* noop */ }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  // ── SH1: Persistir estado del timer en localStorage ──────
+  useEffect(() => {
+    try {
+      if (isRunning && endTimeRef.current) {
+        localStorage.setItem("el_bunker_smoke", JSON.stringify({
+          endTime: endTimeRef.current,
+          totalSecs: totalSeconds,
+          wasRunning: true,
+        }));
+      } else if (!isRunning) {
+        localStorage.removeItem("el_bunker_smoke");
+      }
+    } catch { /* noop */ }
+  }, [isRunning, totalSeconds, remaining]);
 
   // ── Color by remaining time ───────────────────────────────
   const isFading       = isRunning && remaining <= FADE_START_SECS && remaining > 0;
@@ -240,10 +282,12 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     setFadedVolume(masterVolume);
     setIsDone(false);
     setIsRunning(true);
-  }, [masterVolume]);
+    endTimeRef.current = Date.now() + remaining * 1000;
+  }, [masterVolume, remaining]);
 
   const pauseSession = useCallback(() => {
     setIsRunning(false);
+    endTimeRef.current = null;
     clearInterval(intervalRef.current);
   }, []);
 
@@ -253,6 +297,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     setRemaining(totalSeconds);
     clearInterval(intervalRef.current);
     fadeStartRef.current = null;
+    endTimeRef.current = null;
     // Restore volume
     if (onVolumeChange) onVolumeChange(originalVolume);
     setFadedVolume(originalVolume);
