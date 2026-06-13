@@ -593,9 +593,9 @@ export default function MusicLab({
                   onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span style={{ color: ACID }}>▶</span>
-                    <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>COLA</span>
-                    <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
+                    <span style={{ color: accentColor }}>▶</span>
+                    <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accentColor }}>COLA</span>
+                    <span className="text-xs opacity-30 tabular-nums" style={{ color: accentColor }}>
                       [{String(localQueue.length).padStart(2, "0")}]
                     </span>
                   </div>
@@ -603,7 +603,7 @@ export default function MusicLab({
                     <motion.button whileTap={{ scale: 0.9 }} title="Buscar en cola"
                       onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
                       className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                      style={{ color: ACID, border: `1px solid ${showQueueSearch ? ACID + "66" : ACID + "33"}`, background: showQueueSearch ? `${ACID}15` : `${ACID}06` }}>
+                      style={{ color: accentColor, border: `1px solid ${showQueueSearch ? accentColor + "66" : accentColor + "33"}`, background: showQueueSearch ? `${accentColor}15` : `${accentColor}06` }}>
                       ⌕
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} title="Guardar cola como playlist"
@@ -613,7 +613,7 @@ export default function MusicLab({
                         handleCreatePlaylist(name.trim());
                       }}
                       className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                      style={{ color: ACID, border: `1px solid ${ACID}33`, background: `${ACID}06` }}>
+                      style={{ color: accentColor, border: `1px solid ${accentColor}33`, background: `${accentColor}06` }}>
                       ◈
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} title="Vaciar cola"
@@ -625,7 +625,7 @@ export default function MusicLab({
                   </div>
                 </div>
                 {queueContextName && (
-                  <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
+                  <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor, fontFamily: FONT_MONO }}>
                     DESDE: {queueContextName}
                   </span>
                 )}
@@ -638,8 +638,8 @@ export default function MusicLab({
                       CONFIRMAR VACIAR
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmClearQueue(false)}
-                      style={{ padding: "5px 12px", background: "transparent", border: `1px solid ${ACID}22`,
-                        color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                      style={{ padding: "5px 12px", background: "transparent", border: `1px solid ${accentColor}22`,
+                        color: `${accentColor}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
                       CANCELAR
                     </motion.button>
                   </div>
@@ -653,8 +653,8 @@ export default function MusicLab({
                       value={queueSearch}
                       onChange={(e) => setQueueSearch(e.target.value)}
                       placeholder="BUSCAR EN COLA..."
-                      style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                        color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                      style={{ width: "100%", background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
+                        color: accentColor, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
                         letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
                     />
                   </motion.div>
@@ -662,7 +662,7 @@ export default function MusicLab({
               </AnimatePresence>
               {playHistory.length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>anterior</span>
+                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: accentColor }}>anterior</span>
                   <div className="flex flex-col gap-2" style={{ opacity: 0.35 }}>
                     {[...playHistory].reverse().map((track, i) => {
                       const hVibe = getVibeConfig(track.tag ?? track.vibe);
@@ -670,17 +670,17 @@ export default function MusicLab({
                         <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                            style={{ background: `${hVibe?.color ?? ACID}12`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
+                            style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: hVibe?.color ?? ACID, fontSize: 10 }}>◎</span>}
+                              : <span style={{ color: hVibe?.color ?? accentColor, fontSize: 10 }}>◎</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? ACID }}>{track.title}</p>
-                            <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                            <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? accentColor }}>{track.title}</p>
+                            <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
-                            style={{ color: hVibe?.color ?? ACID, background: `${hVibe?.color ?? ACID}15`, border: `1px solid ${hVibe?.color ?? ACID}33` }}>
+                            style={{ color: hVibe?.color ?? accentColor, background: `${hVibe?.color ?? accentColor}15`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
                             {hVibe?.icon}
                           </span>
                         </div>
@@ -691,13 +691,13 @@ export default function MusicLab({
               )}
               {activeTrack && (
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: ACID }}>ahora</span>
+                  <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: accentColor }}>ahora</span>
                   <div className="flex items-center gap-3 p-3 rounded-sm"
-                    style={{ background: `${ACID}10`, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
-                    <span style={{ color: ACID, fontSize: 14 }}>◉</span>
+                    style={{ background: `${accentColor}10`, border: `1px solid ${accentColor}44`, fontFamily: FONT_MONO }}>
+                    <span style={{ color: accentColor, fontSize: 14 }}>◉</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold truncate" style={{ color: ACID }}>{activeTrack.title}</p>
-                      <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{activeTrack.artist}</p>
+                      <p className="text-xs font-bold truncate" style={{ color: accentColor }}>{activeTrack.title}</p>
+                      <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{activeTrack.artist}</p>
                     </div>
                     <motion.button whileTap={{ scale: 0.9 }}
                       onClick={() => {
@@ -716,11 +716,11 @@ export default function MusicLab({
               {/* Q14: cola manual — tracks añadidos explícitamente por el usuario */}
               {filteredQueue.filter((t) => t.id !== activeTrack?.id && t._manual).length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs opacity-50 tracking-widest uppercase px-1" style={{ color: ACID }}>cola manual</span>
+                  <span className="text-xs opacity-50 tracking-widest uppercase px-1" style={{ color: accentColor }}>cola manual</span>
                   <div className="flex flex-col gap-2">
                     {filteredQueue.filter((t) => t.id !== activeTrack?.id && t._manual).map((track, i) => {
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
-                      const trackColor = qVibe?.color ?? ACID;
+                      const trackColor = qVibe?.color ?? accentColor;
                       const activePl = queueContextName
                         ? dbPlaylists.find((p) => p.name === queueContextName)
                         : null;
@@ -733,7 +733,7 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${trackColor}33`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
                             {track.thumbnail
@@ -742,7 +742,7 @@ export default function MusicLab({
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: trackColor }}>{track.title}</p>
-                            <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                            <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
@@ -762,7 +762,7 @@ export default function MusicLab({
                                 setTimeout(() => setToast(null), 2500);
                               }}
                               className="flex-shrink-0 text-xs px-2 py-1 rounded-sm"
-                              style={{ color: ACID, border: `1px solid ${ACID}44`, background: `${ACID}12` }}>
+                              style={{ color: accentColor, border: `1px solid ${accentColor}44`, background: `${accentColor}12` }}>
                               ◈
                             </motion.button>
                           )}
@@ -780,7 +780,7 @@ export default function MusicLab({
               {/* Q14: cola de contexto — tracks cargados desde playlist */}
               {filteredQueue.filter((t) => t.id !== activeTrack?.id && !t._manual).length > 0 && (
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs opacity-50 tracking-widest uppercase px-1" style={{ color: ACID }}>
+                  <span className="text-xs opacity-50 tracking-widest uppercase px-1" style={{ color: accentColor }}>
                     {queueContextName ? `playlist · ${queueContextName}` : 'contexto'}
                   </span>
                   <div className="flex flex-col gap-2">
@@ -794,19 +794,19 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                            style={{ background: `${ACID}12`, border: `1px solid ${ACID}33` }}>
+                            style={{ background: `${accentColor}12`, border: `1px solid ${accentColor}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: ACID, fontSize: 10 }}>⌕</span>}
+                              : <span style={{ color: accentColor, fontSize: 10 }}>⌕</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate" style={{ color: ACID }}>{track.title}</p>
-                            <p className="text-xs opacity-40 truncate" style={{ color: ACID }}>{track.artist}</p>
+                            <p className="text-xs font-bold truncate" style={{ color: accentColor }}>{track.title}</p>
+                            <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
-                            style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33` }}>
+                            style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33` }}>
                             {qVibe?.icon}
                           </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
