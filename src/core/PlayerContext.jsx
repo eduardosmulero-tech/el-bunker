@@ -11,6 +11,7 @@
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
+import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 const PlayerContext = createContext(null);
 
 export const usePlayer = () => {
@@ -148,6 +149,7 @@ useEffect(() => {
 
     // skip(-1) — navega por historial (Q2)
     if (dir === -1) {
+      if (activeTrack?.id) trackSkip(activeTrack.id, "history");
       setPlayHistory((h) => {
         if (h.length === 0) return h;
         const prev = h[h.length - 1];
@@ -161,7 +163,10 @@ useEffect(() => {
     // Cola unificada: si hay tracks en cola, avanzar en orden (Q1 — prioridad absoluta)
     if (dir === 1 && localQueue.length > 0) {
       const next = localQueue[0];
-      if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
+      if (activeTrack) {
+        trackSkip(activeTrack.id, "queue_advance");
+        setPlayHistory((h) => [...h, activeTrack]);
+      }
       setLocalQueue((q) => q.slice(1));
       setActiveTrack(next);
       setAutoPlaySignal((n) => n + 1);
@@ -180,7 +185,10 @@ useEffect(() => {
       return;
     }
 
-    if (activeTrack) setPlayHistory((h) => [...h, activeTrack]);
+    if (activeTrack) {
+      trackSkip(activeTrack.id, shuffle ? "shuffle" : "next");
+      setPlayHistory((h) => [...h, activeTrack]);
+    }
     // SH1: shuffle usa orden pre-generado, no random cada vez
     if (shuffle) {
       // Regenerar orden aleatorio si está vacío
@@ -377,8 +385,14 @@ useEffect(() => {
         loop={false}
         style={{ display: "none" }}
         onEnded={handleAudioEnded}
-        onPause={() => setIsPlaying(false)}
-        onPlay={() => setIsPlaying(true)}
+        onPause={() => {
+          setIsPlaying(false);
+          if (activeTrack) trackPause(activeTrack.id, audioRef.current?.currentTime || 0);
+        }}
+        onPlay={() => {
+          setIsPlaying(true);
+          if (activeTrack) trackPlay(activeTrack.id, activeTrack.title);
+        }}
         onTimeUpdate={(e) => {
           // WinampPlayer se suscribe a audioRef directamente para el progreso visual
         }}

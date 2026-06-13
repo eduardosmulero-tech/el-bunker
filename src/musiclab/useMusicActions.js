@@ -1,6 +1,7 @@
 // EL BUNKER - useMusicActions.js
 // Hook de mutaciones de DB para MusicLab
 import { useVault } from "../core/VaultContext";
+import { dropSent } from "../core/StatsEngine";
 
 export function useMusicActions() {
   const { patchDb } = useVault();
@@ -45,6 +46,9 @@ export function useMusicActions() {
         drops: [...(prev.music_lab?.drops ?? []), dropData],
       },
     }));
+    // Emitir evento de drop al StatsEngine
+    const toUser = dropData.to === "david" ? "david" : "edu";
+    dropSent(dropData.track_id, toUser);
   };
 
   const onMarkDropSeen = async (dropId) => {

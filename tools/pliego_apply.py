@@ -89,6 +89,17 @@ def parse_cambio(content: str) -> str:
     return "descripción"
 
 
+def parse_tipo(content: str) -> str:
+    """Extrae TIPO: del pliego. Retorna 'documentacion' o 'codigo' (default)."""
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.upper().startswith("TIPO:"):
+            valor = stripped.split(":", 1)[1].strip().lower()
+            if "doc" in valor:
+                return "documentacion"
+    return "codigo"
+
+
 def _extract_pair(block: str) -> tuple[str, str] | None:
     """
     Dado un bloque de texto que contiene SEARCH: y REPLACE:,
@@ -392,6 +403,20 @@ def update_estado_backlog_flow(root: Path, pliego_id: str,
         print(f"  {'✓' if ok else '⚠'} BACKLOG.md — {'fila añadida en tabla RESUELTOS' if ok else 'sin cambios (ya registrado)'}")
 
 
+def update_estado_doc_flow(root: Path, pliego_id: str) -> None:
+    """Flujo automático para pliegos de documentación: solo incrementa ESTADO.md."""
+    nucleo = find_nucleo(root)
+    estado_path = nucleo / "ESTADO.md"
+
+    if not estado_path.exists():
+        return
+
+    print()
+    print("  ── Estado del proyecto ──────────────────────────────────")
+    ok = update_proximo_pliego(estado_path, pliego_id)
+    print(f"  {'✓' if ok else '⚠'} ESTADO.md — próximo pliego {'actualizado' if ok else 'sin cambios (revisar formato)'}")
+
+
 # ─── GIT ─────────────────────────────────────────────────────────────────────
 
 
@@ -510,8 +535,6 @@ def main():
                     help="Fuerza un archivo concreto (útil si el pliego lista varios)")
     ap.add_argument("--dry-run", action="store_true",
                     help="Simula la operación sin escribir nada")
-    ap.add_argument("--skip-build", action="store_true",
-                    help="Omite npm run build (útil para pliegos de documentación)")
     args = ap.parse_args()
 
     # ── Leer pliego ──────────────────────────────────────────────────────────
@@ -527,10 +550,12 @@ def main():
     pairs      = parse_pairs(content)
     pliego_id  = parse_pliego_id(content, pliego_path.name)
     cambio     = parse_cambio(content)
+    tipo       = parse_tipo(content)
 
     print()
     print("=" * 62)
     print(f"  PLIEGO:   {pliego_path.name}")
+    print(f"  TIPO:     {tipo}")
     print(f"  ARCHIVOS: {', '.join(archivos) if archivos else '(ninguno detectado)'}")
     print(f"  Bloques SEARCH/REPLACE: {len(pairs)}")
     print("=" * 62)
@@ -597,7 +622,7 @@ def main():
             print()
         else:
             print(f"  RESULTADO: {len(pairs)}/{len(pairs)} aplicados — archivo guardado ✓")
-            if not args.skip_build:
+            if tipo == "codigo":
                 print()
                 print("  ── Build ────────────────────────────────────────────────")
                 print("  Ejecutando npm run build...")
@@ -613,10 +638,13 @@ def main():
                     sys.exit(1)
                 print("  ✓ Build OK")
             if pliego_id:
-                update_estado_backlog_flow(root, pliego_id, cambio, archivos)
+                if tipo == "documentacion":
+                    update_estado_doc_flow(root, pliego_id)
+                else:
+                    update_estado_backlog_flow(root, pliego_id, cambio, archivos)
                 git_commit_flow(target_rel, backup_path, pliego_id, cambio, root)
             else:
-                print("  Sin ID numérico — commit omitido (pliego de documentación).")
+                print("  Sin ID numérico — commit omitido.")
                 _offer_backup_delete(backup_path)
 
     print()

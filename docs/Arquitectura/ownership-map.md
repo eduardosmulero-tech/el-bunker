@@ -1,42 +1,43 @@
 ---
-describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, GoogleDriveService.js
-sincronizado_con: PLIEGO-055
-stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx
-stale: true — PLIEGO-066/069/070 modificaron PlayerContext.jsx sin actualizar este doc
+describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, PlaylistManager.jsx
+sincronizado_con: S49 (Refundación del producto)
+stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx
 ---
 
-# ownership-map.md
+# Ownership Map (post-S49)
 
-# Ownership Map
+## Dueños del dato (OWNERS)
 
-| Estado | Owner | Quién puede leer | Quién puede modificar |
-|---|---|---|---|
-| `db` (Base de datos JSON) | VaultContext | Toda la aplicación | VaultContext (via `patchDb`) |
-| `activeTab` | VaultContext | Router (`App.jsx`), Layout | Router (`App.jsx`), Layout |
-| Reproductor Nativo (Refs) | PlayerContext | PlayerContext, WinampPlayer | PlayerContext, WinampPlayer |
-| Progreso Audio (UI) | WinampPlayer | WinampPlayer, AudioVisualizer | WinampPlayer |
-| `masterVolume` | PlayerContext | PlayerContext, WinampPlayer, SmokeSession | PlayerContext (slider) |
-| Track mutations (onAdd, etc.) | Router (App.jsx)* | MusicLab | MusicLab |---
+| Dato | Dueño | Persistencia |
+|---|---|---|
+| eras[] | VAULT (Vault.jsx) | Drive JSON → D1 `eras` table |
+| entries[] | VAULT (Vault.jsx) | Drive JSON → D1 `entries` table |
+| tracks[] | MUSIC LAB (MusicLab.jsx) | Drive JSON → D1 `tracks` table |
+| playlists[] | MUSIC LAB (PlaylistManager.jsx) | Drive JSON → D1 `playlists` table |
+| drops[] | MUSIC LAB (DropsManager.jsx) | Drive JSON → D1 `drops` table |
+| tags (vibe) | MUSIC LAB (TagManager.jsx) | `music_lab.tags[]` → D1 `tags` (namespace: music) |
+| tags (contexto) | VAULT (TagManager.jsx) | `vault.tags[]` → D1 `tags` (namespace: vault) |
+| queue | MUSIC LAB (PlayerContext.jsx) | `queue_[userId].json` → D1 `queue_items` |
+| time_capsules | CAPSULES (TimeCapsules.jsx) | Drive JSON → D1 `time_capsules` |
+| events | STATS ENGINE (StatsEngine.js) | D1 `events` table (append-only) |
 
-# Reglas de ownership
+## Clientes (CONSUMERS, no owners)
 
-## Playback
-- El `<audio>` físico y el Iframe de YouTube pertenecen al nodo raíz del reproductor, nunca se desmontan.
-- El progreso temporal pertenece al estado local del componente visual, nunca al estado global.
+| Módulo | Consume de |
+|---|---|
+| TIMELINE | `events` table → feed visual |
+| RECAP | `events` table → resúmenes agregados |
+| SMOKE SESSION | PlayerContext (volumen) + `events` (historial) |
+| TIME CAPSULES | VAULT (entries) + MusicLab (playlists) |
+| GALERÍA | VAULT (entries con category=photo/video) |
+| WINAMP PLAYER | PlayerContext (track activo, volumen) |
+| LAYOUT | PlayerContext (trackVibe → --vibe-accent) |
 
-## Queue
-- `PlayerContext` es dueño de la verdad lógica. Se sincroniza hacia Google Drive, pero Drive no inyecta cambios a la cola de forma bidireccional en tiempo real.
+## Servicios compartidos (SHARED)
 
-## Persistence
-- `GoogleDriveService.js` posee los métodos de red. `VaultContext` posee la posesión y ciclo de vida de los datos locales en React.
-
-## UI
-- `App.jsx` debe decidir *qué* se ve. `tokens.js` decide *cómo* se ve (variables CSS).
-
----
-
-# Violaciones actuales detectadas
-
-- **App.jsx**: Posee y expone lógica de negocio profunda de la base de datos (`onAddTrack`, `onDeleteTrack`) hacia `MusicLab`. Debería solo renderizar `<MusicPage />`.
-- **VaultContext**: Posee variables de estado visual puro de UI (`activeTab`, `masterVolume`) mezcladas con la base de datos central.
-- **PlayerContext**: Posee llamadas asíncronas directas de red (`fetchQueue`, `saveQueue`), violando la separación de la capa de Persistencia.
+| Servicio | Consumido por |
+|---|---|
+| FileUploadService | MusicLab (MP3) + VAULT (fotos, vídeos, docs, audio) |
+| TagManager UI | MusicLab (vibe tags) + VAULT (context tags) — distintos namespaces |
+| StatsEngine (emitter) | Todos los módulos → emiten eventos |
+| StatsEngine (aggregator) | Timeline + RECAP → consultan |

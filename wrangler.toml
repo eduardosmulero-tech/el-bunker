@@ -13,13 +13,13 @@ compatibility_date = "2025-06-09"
 [[d1_databases]]
 binding = "DB"
 database_name = "el-bunker-db"
-database_id = ""   # ← remplazar tras `wrangler d1 create el-bunker-db`
+database_id = "795e5e88-6fab-4aa2-a294-d24640a0de05"   # ← remplazar tras `wrangler d1 create el-bunker-db`
 
 # ═══ R2 Bucket ═══════════════════════════════════════════════
 # Crea el bucket con: wrangler r2 bucket create el-bunker
 [[r2_buckets]]
 binding = "BUNKER"
-bucket_name = "el-bunker"
+bucket_name = "el-bunker-music"
 
 # ═══ Environment: production ═════════════════════════════════
 [env.production]

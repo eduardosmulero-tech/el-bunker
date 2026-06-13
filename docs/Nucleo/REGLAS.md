@@ -1,5 +1,6 @@
 # REGLAS.md — el_bunker
 > Workflow y conducta de Claude. Normativo — prevalencia absoluta.
+> Última actualización: S49 — Refundación del producto.
 
 ## ROL
 Edu es desarrollador novato — Claude es el responsable técnico.
@@ -21,17 +22,50 @@ Regresión = explicación antes de fix.
 ADR y convenciones son vinculantes.
 Cierre de sesión obligatorio.
 Loop es triestado.
+**🔑 SUDO = PEDIR:** Si un comando requiere sudo/contraseña, Claude debe pedir a Edu que lo ejecute manualmente. Nunca intentar sudo sin avisar.
 
-## PLANTILLA DE PLIEGO
-PLIEGO-[NNN] — [nombre]
-Fecha: YYYY-MM-DD
-Estado: [pendiente | aplicado | descartado]
+## REGLAS NUEVAS (S49)
+- **Motor de audio único:** Nunca instanciar `<audio>` fuera de MusicLab (ADR-018, 🔒-3).
+- **3 tabs definitivos:** VAULT · MUSIC LAB · CAPSULES. No crear nuevas tabs sin ADR (ADR-017, 🔒-4).
+- **Stats engine único:** Todos los eventos emiten a tabla `events` en D1 (ADR-019, 🔒-5).
+- **No duplicar uploaders:** Usar FileUploadService unificado a R2 (ADR-022).
+- **Namespaces de tags:** `music_lab.tags[]` y `vault.tags[]` separados (ADR-023).
+- **Galería 6 modos:** WALL, CINEMA, MAP, DIALOGUE, REEL, EXHIBITION (ADR-021).
 
-SEARCH/REPLACE 2 — reemplazar tabla de modelos
-ARCHIVOS: [ruta desde raíz]
-CAMBIO: [descripción técnica]
-CRITERIO DE ÉXITO: [comportamiento observable]
-RESULTADO: [rellenar tras aplicar]
+## MAPA DE ARCHIVOS JSX (actual)
+
+| Archivo | Rol |
+|---------|-----|
+| `src/layout/App.jsx` | Root — monta PlayerProvider, VaultContext, routing de tabs |
+| `src/layout/Layout.jsx` | Shell visual — header, nav, grid, glows. Consume trackVibe |
+| `src/layout/LoginScreen.jsx` | Pantalla de login |
+| `src/core/PlayerContext.jsx` | Estado global de reproducción — ADR-004 |
+| `src/core/VaultContext.jsx` | Estado global de BD y autenticación |
+| `src/core/GoogleDriveService.js` | Auth OAuth2 + API Drive (transición a D1) |
+| `src/musiclab/MusicLab.jsx` | Orquestación principal Music Lab |
+| `src/musiclab/WinampPlayer.jsx` | Reproductor visual — ÚNICO `<audio>` de la app |
+| `src/musiclab/TrackCard.jsx` | Card de track + VibeTagBar |
+| `src/musiclab/TagManager.jsx` | Gestor de tags/vibes (reutilizable para vault.tags) |
+| `src/musiclab/PlaylistManager.jsx` | Modales de playlist |
+| `src/musiclab/AddTrackForm.jsx` | Formulario añadir/editar track |
+| `src/musiclab/AudioVisualizer.jsx` | Visualizador de audio |
+| `src/musiclab/DropsManager.jsx` | Sistema de drops |
+| `src/musiclab/useMusicActions.js` | Custom hook: acciones de MusicLab |
+| `src/vault/Vault.jsx` | Motor VAULT: Eras, widgets, entradas |
+| `src/smoke/SmokeSession.jsx` | Temporizador con fade-out (migrará a src/capsules/) |
+| `src/tokens.js` | Design tokens — colores, tipografía, paletas de vibe |
+| `src/main.jsx` | Entry point Vite |
+
+### Archivos futuros (no crear hasta que toque su pliego)
+| Archivo | Rol |
+|---------|-----|
+| `src/vault/VaultGallery.jsx` | Galería 6 modos (ADR-021) |
+| `src/capsules/Capsules.jsx` | Tab CAPSULES con 4 sub-tabs |
+| `src/capsules/Timeline.jsx` | Feed cronológico unificado |
+| `src/capsules/TimeCapsules.jsx` | Cápsulas del tiempo |
+| `src/capsules/Recaps.jsx` | Resúmenes semanales/mensuales/anuales |
+| `src/services/FileUploadService.js` | Subida unificada a R2 (ADR-022) |
+| `src/services/StatsEngine.js` | Emisor/agregador de eventos (ADR-019) |
 
 Formato compatible con pliego_apply.py (ver tools/README.md):
 - SEARCH: y REPLACE: solos en su línea, sin backticks, sin texto adicional.
@@ -60,15 +94,11 @@ Modelo | Cuándo
 deepseek/deepseek-chat    | Todo uso diario: pliegos, bugs, refactors
 deepseek/deepseek-r1-0528 | Arquitectura o decisiones complejas
 
-SEARCH/REPLACE 3 — actualizar checklist de cierre de pliego con rutas correctas
-
 ## CHECKLIST CIERRE DE PLIEGO
  Marcar stale en docs/Arquitectura/INDEX.md si el pliego toca archivos listados
  Actualizar docs/Nucleo/CONTRATO.md si hay ADR nuevo
  Actualizar docs/Nucleo/ESTADO.md (próximo pliego + bugs)
  pliego_apply.py actualiza ESTADO.md y BACKLOG.md automáticamente
-
-SEARCH/REPLACE 4 — actualizar checklist de cierre de sesión con rutas correctas
 
 ## CHECKLIST CIERRE DE SESIÓN
  Actualizar docs/Nucleo/SESION.md con resumen de la sesión

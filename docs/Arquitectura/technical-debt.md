@@ -1,57 +1,54 @@
 ---
-describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, src/ (estructura general)
-sincronizado_con: PLIEGO-053
-stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx
+describe: cualquier refactor estructural
+sincronizado_con: S49 (Refundación del producto)
+stale_si_pliego_toca: cualquier refactor estructural
 ---
 
-# technical-debt.md
+# Technical Debt (post-S49)
 
-# Technical Debt
+## Deuda resuelta ✅
+- YouTube Engine eliminado (M1). Motor exclusivo HTMLAudioElement + R2.
+- Schema v5.0.0 con tags en Drive JSON.
 
-## Deuda crítica
+## Deuda activa
 
-| Problema | Impacto | Prioridad | Solución propuesta |
-|---|---|---|---|
-| **VaultContext Monolítico** | Re-renders masivos al mezclar UI, red y DB | CRÍTICA | Extraer UI (activeTab/volume) a UIContext, separar DB Auth de consumo de módulos. |
-| **Lógica de mutación en App.jsx** | Rompe encapsulación. Router conoce esquema interno de DB | ALTA | Mover los `patchDb` de `onAddTrack`, etc., dentro de `MusicPage`/`MusicLab`. |
+### TD-1: Migración Drive JSON → D1 + Workers + R2 (ADR-024)
+**Impacto:** ALTO. Todo el sistema de persistencia cambia.
+**Riesgo:** Pérdida de datos durante la migración, concurrencia en transición.
+**Plan:** Workers API como thin REST layer. D1 schema normalizado. R2 para archivos.
+**Estimación:** 5-8 sesiones.
 
----
+### TD-2: GoogleDriveService.js como monolito
+**Impacto:** MEDIO. Mezcla auth OAuth2, operaciones Drive, migraciones.
+**Riesgo:** Acoplamiento. Difícil testear.
+**Plan:** Extraer auth a `AuthService.js`. Drive ops a `DriveService.js` (deprecar progresivamente).
 
-# Deuda React
+### TD-3: App.jsx como God Component
+**Impacto:** BAJO. Lógica de `patchDb` y mutaciones mezclada con routing.
+**Riesgo:** Re-renders innecesarios, difícil mantenimiento.
+**Plan:** Extraer mutaciones a custom hooks. App.jsx solo routing.
 
-- **PlayerContext Side-Effects:** Mezcla estado de React, mutaciones de red asíncronas y APIs del navegador (WakeLock). 
-- **Fuga del Entry Point:** `App.jsx` existe en `src/layout/` en lugar de la raíz, dividiendo la inicialización lógica respecto a `main.jsx`.
-- **Stale Closures potenciales:** El uso dependiente de referencias como `currentTRef` y `loopModeRef` denota una lucha manual contra el modelo de render de React (necesario por interactuar con motores nativos, pero peligroso de extender).
+### TD-4: VaultContext monolítico
+**Impacto:** MEDIO. Asume auth + DB + UI state simultáneamente.
+**Riesgo:** Re-renders en cascada (polling de drops cada 30s → toda la app).
+**Plan:** Separar en capas: AuthLayer, DBLayer, UILayer (post-D1).
 
----
+### TD-5: Sin tests
+**Impacto:** ALTO a largo plazo. Solo testing manual en dispositivo.
+**Riesgo:** Regresiones silenciosas.
+**Plan:** Tests de integración para PlayerContext. Tests E2E con Cypress/Playwright (Fase B).
 
-# Deuda arquitectura
+### TD-6: Virtualización pendiente en galería
+**Impacto:** ALTO. Sin virtualización, OOM en Android con >100 fotos.
+**Riesgo:** Crash de la PWA.
+**Plan:** Implementar con la galería WALL (Fase 2).
 
-- **Polling global ineficiente:** El intervalo de 30s en `VaultContext` buscando drops inyecta nuevas copias del objeto JSON, impactando la memoria a largo plazo.
-- **Ausencia de Boundaries:** Si la sincronización de Google Drive falla silenciosamente, no hay fallbacks robustos de red, dependiendo exclusivamente de timeouts implícitos de la API Fetch.
+### TD-7: Sin manejo de archivos corruptos en R2
+**Impacto:** BAJO. Fallback estético Cyber-Vandal previsto.
+**Riesgo:** Experiencia rota si R2 falla.
+**Plan:** Glitch visual + reintento 3s + skip (mismo patrón que P2).
 
----
-
-# Deuda IA workflow
-
-- **Documentación operativa mezclada:** `MANUAL_USUARIO_EL_BUNKER.md` reside en `src/`, ensuciando el AST y el listado de directorios fuente de la lógica real.
-- **Gestión de secretos rudimentaria:** `tokens.js` en la raíz de `src/` (si contuviera lógicas de proxy o claves quemadas).
-
----
-
-# Hacks temporales existentes
-
-| Hack | Motivo | Riesgo | Debe eliminarse |
-|---|---|---|---|
-| Div YT imperativo | Evitar que React destruya el iframe al re-renderizar | Bajo. Es una solución elegante y documentada. | NO (ADR-004) |
-| loopModeRef | El callback de onStateChange perdía estado en stale closures | Bajo, pero verboso de mantener. | NO, necesario |
-| currentTRef | El callback skipDir de MediaSession leía currentTime obsoleto del closure | Bajo, mismo patrón que loopModeRef. | NO, necesario |
-
----
-
-# Refactors pendientes
-
-- Limpiar `App.jsx` de mutaciones de base de datos.
-- Extraer `activeTab` y `masterVolume` a un `UIProvider`.
-- Extraer lógica WakeLock a hook nativo `useWakeLock(isPlaying)`.
-- Extraer polling de drops global a su propio worker o servicio inyectado.
+## Deuda diferida (Fase C)
+- DRAG-GLOBAL-C: Unificar animaciones de drag & drop.
+- Soporte HEIC/RAW en galería.
+- FLAC + OPUS en reproductor.

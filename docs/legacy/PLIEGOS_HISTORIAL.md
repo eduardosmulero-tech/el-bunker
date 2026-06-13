@@ -160,4 +160,42 @@ visibleCount 50 inicial — reset al cambiar libraryFilter — botón CARGAR MÁ
 - **PLIEGO-161:** Intento de scroll fix eliminando contenedor flex externo. [Aplicado]
 - **PLIEGO-162:** Ajuste de z-index y padding para evitar solapamiento de overlay con header. [Aplicado]
 - **PLIEGO-163:** Fix definitivo scroll Android eliminando el listener `whileTap` de framer-motion. [Aplicado]
-- **PLIEGO-164/165:** Intentos fallidos/parciales de corregir corte de bordes por colisión con `overflow-x`. [Descartado/Revertido]
+- **PLIEGO-164/165:** Intentos fallidos/parciales de corregir corte de bordes por colisión con `overflow-x`. [Descartado/Revertido]| PLIEGO-172 | Reemplazar el archivo vacío con el formato definit… | SESION.md | 2026-06-01 |
+| PLIEGO-173 | Crear BACKLOG.md canónico en docs/Nucleo/ con los … | BACKLOG.md | 2026-06-01 |
+| PLIEGO-175 | Eliminar audit histórico S42-S43 de BACKLOG.md par… | BACKLOG.md | 2026-06-01 |
+| PLIEGO-176 | append_resuelto_backlog mantiene maximo 5 filas en… | pliego_apply.py | 2026-06-01 |
+| PLIEGO-177 | Propagar trackVibe a todo el shell — StatusBar, Bo… | Layout.jsx | 2026-06-01 |
+| PLIEGO-178 | Quitar setPlaybackContext del onClick de TrackCard… | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-179 | PlayerProvider recibe tags como prop y resuelve ge… | PlayerContext.jsx | 2026-06-01 |
+| PLIEGO-180 | Pasar tags de DB a PlayerProvider para que resuelv… | App.jsx | 2026-06-01 |
+| PLIEGO-184 | Fix regex update_proximo_pliego — ampliar patron p… | pliego_apply.py | 2026-06-01 |
+| PLIEGO-185 | Exponer resolveVibeAccent en el valor del contexto… | PlayerContext.jsx | 2026-06-01 |
+| PLIEGO-186 | Reemplazar getVibeAccent (solo conoce 4 tags canón… | Layout.jsx | 2026-06-01 |
+| PLIEGO-187 | El botón LANZAR DROP tiene PURPLE hardcodeado. Deb… | WinampPlayer.jsx | 2026-06-01 |
+| PLIEGO-188 | Añadir prop vibeConf opcional. Si se pasa, se usa … | WinampPlayer.jsx | 2026-06-01 |
+| PLIEGO-189 | Pasar vibeConf del activeTrack (resuelto desde DB)… | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-190 | ALL se corta al inicio y botón config desalineado … | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-191 | getVibeConfig local devuelve tags con "color" dire… | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-192 | resolveVibeAccent busca palette?.accent y seedColo… | PlayerContext.jsx | 2026-06-01 |
+| PLIEGO-193 | (1) El botón ⚡ del card tiene PURPLE hardcodeado —… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-194 | (1) El artista y la nota del card tienen color:ACI… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-195 | El título "TRACKS [558]", el icono ◎, los botones … | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-196 | El botón ⚙ tiene position:absolute top:0 y queda p… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-198 | Alinear botón ⚙ con las pastillas de tags en VibeT… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-199 | Botón ⚙ altura igual a pastillas, color accentColo… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-200 | Pasar accentColor a VibeTagBar y botón editar ✎ en… | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-201 | Botón ⚙ altura 24px para igualar visualmente las p… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-202 | Botón ⚙ sin height fijo — padding idéntico a las p… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-203 | Eliminar botón ⚡ lanzar drop de las TrackCards | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-204 | Menú de track como bottom sheet con botón ⋯ — elim… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-205 | Layout derecho card en fila, icono tag más grande … | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-206 | Bottom sheet en portal + icono tag doble tamaño al… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-207 | Icono tag fontSize 24, botón ⋮ fontSize 22 | TrackCard.jsx | 2026-06-01 |
+| VB9 | Vibe propagado a shell completo — TRACKS Fase A ready | PlayerContext.jsx | 2026-06-01 |
+| PLIEGO-211 | Toggle viewMode lista/grid/tarjeta con persistenci… | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-212 | Modo tarjeta expandida (viewMode card) + component… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-213 | Añadir TrackCardGrid al import de TrackCard | MusicLab.jsx | 2026-06-01 |
+| PLIEGO-216 | CTX-1 fix AnimatePresence anidado en TrackCard — m… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-217 | Botón ⋮ modo portada con borde y área táctil mínim… | TrackCard.jsx | 2026-06-01 |
+| PLIEGO-218 | Tabs inactivas de nav suben de 4d a 88 (opacidad 5… | Layout.jsx | 2026-06-01 |
+| PLIEGO-219 | Mueve botón ⋮ de TrackCardGrid fuera del motion.di… | TrackCard.jsx | 2026-06-01 |

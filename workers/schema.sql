@@ -108,7 +108,7 @@ CREATE TABLE files (
   entry_id    TEXT REFERENCES entries(id) ON DELETE CASCADE,
   track_id    TEXT REFERENCES tracks(id) ON DELETE SET NULL,
   r2_key      TEXT NOT NULL,
-  r2_bucket   TEXT NOT NULL DEFAULT 'el-bunker',
+  r2_bucket   TEXT NOT NULL DEFAULT 'el-bunker-music',
   prefix      TEXT NOT NULL,                 -- music|vault/photos|vault/videos|vault/docs|vault/audio
   filename    TEXT NOT NULL,
   mime_type   TEXT,

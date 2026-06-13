@@ -33,3 +33,9 @@ tools/*.bak_*
 tools/ingest_music.py
 tools/inject_tracks.py
 tools/*.txt
+
+# Temp / local state
+.tmp.driveupload/
+.wrangler/
+*.bak_*
+docs.zip

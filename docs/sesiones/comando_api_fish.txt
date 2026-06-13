@@ -1,0 +1,18 @@
+COMANDO PARA PONER LA API KEY DE FISH AUDIO
+═══════════════════════════════════════════
+
+Pega esto en tu terminal WSL (bash):
+
+echo 'FISH_API_KEY=TU_API_KEY_AQUI' >> ~/.hermes/.env
+
+Sustituye TU_API_KEY_AQUI por la key que copiaste de https://fish.audio/app/api-keys/
+
+Ejemplo (NO uses esta key, es falsa):
+echo 'FISH_API_KEY=fsk_abc123def456ghi789' >> ~/.hermes/.env
+
+═══════════════════════════════════════════
+Para verificar que se guardó:
+cat ~/.hermes/.env | grep FISH
+
+Para probar la voz (sustituye la key primero):
+python3 ~/.hermes/tts_fish.py "Hola, soy Loquendo Jorge" /tmp/test_fish.mp3

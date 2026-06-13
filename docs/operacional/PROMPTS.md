@@ -81,7 +81,7 @@ ESTADO.md → 100 líneas
 
 
 
-Genera solo los archivos que hayan cambiado. Si un doc no cambió, indícalo explícitamente.
+Genera pliego para el script solo de la documentacion que cambió. Si un doc no cambió, indícalo explícitamente.
 
 ---
 

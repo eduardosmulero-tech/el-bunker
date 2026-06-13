@@ -1,54 +1,43 @@
 ---
 describe: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, WinampPlayer.jsx
-sincronizado_con: PLIEGO-067
+sincronizado_con: S49 (Refundación del producto)
 stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx
 ---
 
 # Data Flow
 
-## Flujo principal de reproducción
+## Flujo principal de reproducción (post-S49)
+1. Usuario selecciona track → `playTrack(track)` en `PlayerContext`.
+2. Contexto actualiza `activeTrack`, dispara `autoPlaySignal`.
+3. `audioRef.current.src = r2_signed_url` (pre-signed URL desde Workers/R2).
+4. Solo MusicLab instancia `<audio>`. Sin iframes ni APIs externas.
 
-1. Usuario selecciona track (tap en UI) -> `playTrack(track)` en `PlayerContext`.
-2. Contexto actualiza `activeTrack` y dispara `autoPlaySignal`.
-3. Según el `type` ("youtube" o "drive"), se delega a `ytPlayerRef.current.loadVideoById` o se inyecta `getStreamUrl` al `audioRef.current.src`.
+## Flujo Queue → Playback
+- `addToQueue(track)` → mutación local → persistencia en `queue_[userId].json` (Drive transición) o `queue_items` (D1 futuro).
+- `onEnded` → `skip(1)` calcula próximo track considerando `shuffle`, `loopMode`, `_manual`.
+- `setActiveTrack(next)` → re-render del reproductor.
 
----
+## Flujo Persistencia (transición Drive→D1)
+### Actual (Drive JSON)
+- `patchDb(updater)` → actualización optimista local → `updateData()` → Drive.
+- `loadDatabase()` → descarga JSON → migración → hidratación de `db` state.
+### Futuro (D1 + Workers)
+- Workers API → D1 SQL queries → JSON responses.
+- `events` table: append-only, alimenta Timeline y RECAP.
+- R2 pre-signed URLs: PUT para uploads, GET para streams.
 
-# Flujo Queue -> Playback
+## Flujo Stats Engine
+- Cada acción significativa emite evento → `POST /api/events` → tabla `events` en D1.
+- Agregador consulta `events` para: Timeline feed, RECAPs, stats de escucha, rachas.
+- Timeline consume el agregador para mostrar el feed unificado.
 
-## Entrada
-`addToQueue(track)` inyecta objeto en `localQueue` de `PlayerContext`. Un efecto secundario guarda asíncronamente en Drive.
-## Transformación
-Al terminar un track (`onEnded`), `skip(1)` calcula el próximo índice considerando `shuffle`, `loopMode` y existencia de `localQueue`.
-## Salida
-`setActiveTrack(next)` dispara un re-render del reproductor y cambia el source del audio activo.
+## Flujo VAULT (galería)
+- Fotos/vídeos → R2 (pre-signed PUT) → referencia en `entries`.
+- Galería 6 modos consulta `entries` filtradas por `era_id` y `category`.
+- Capa ambiental: paleta reactiva por Era + AnalyserNode para pulso acústico.
 
----
-
-# Flujo YouTube
-
-## Inicialización
-`PlayerProvider` detecta URL, inyecta tag `<script>` del API si no existe. El div contenedor se crea imperativamente en el `<body>` (fuera de React).
-## Eventos
-`onStateChange` nativo mapea a `setIsPlaying(true/false)` de React. `onReady` setea el volumen global.
-## Sincronización
-`WinampPlayer.jsx` ejecuta un `setInterval` local reactivo a `isPlaying` que hace polling a `ytPlayerRef.current.getCurrentTime()` para actualizar la UI sin re-renders globales.
-
----
-
-# Flujo Persistencia
-
-## Guardado
-`patchDb(updater)` en `VaultContext` realiza una actualización optimista local -> llama a `updateData()` para mutar en Drive.
-## Restauración
-`initGoogleServices()` -> validación OAuth -> descarga JSON de la bóveda compartida.
-## Hydration
-Los datos JSON hidratan el `db` state de `VaultContext`, propagándose en cascada al `PlayerContext` y a la interfaz.
-
----
-
-# Posibles cuellos de botella
-
-- `patchDb` invocado en `App.jsx` obliga a re-evaluar todo el contexto de Vault, re-renderizando todas las vistas.
-- Polling global de drops en `VaultContext` (cada 30s) inyecta un nuevo objeto `db`, disparando ciclos de render masivos.
-- Mutaciones concurrentes en `patchDb` si dos usuarios guardan un cambio en el mismo lapso (sobreescritura).
+## Flujo CAPSULES
+- Timeline: consume `events` table → feed visual.
+- Smoke Session: controla `masterVolume` vía PlayerContext.
+- Time Capsules: consulta `time_capsules` + `capsule_items`.
+- RECAP: agrega `events` por período (semana/mes/año).

@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Búnker — Roadmap Tracker</title>
+<style>
+  :root {
+    --bg: #050505;
+    --acid: #bfff00;
+    --purple: #bf00ff;
+    --red: #ff3b3b;
+    --orange: #ff6b35;
+    --cyan: #00ffcc;
+    --glass: rgba(191,255,0,0.03);
+    --border: rgba(191,255,0,0.12);
+    --font: 'JetBrains Mono', 'Courier New', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--acid);
+    font-family: var(--font);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 1.4rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 20px var(--acid);
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    opacity: 0.4;
+    margin-bottom: 2rem;
+  }
+
+  /* ── Progress bar ── */
+  .progress-container {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    border-radius: 2px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    margin-bottom: 0.5rem;
+  }
+  .progress-bar {
+    height: 4px;
+    background: rgba(191,255,0,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--acid), var(--cyan));
+    box-shadow: 0 0 10px var(--acid);
+    transition: width 0.5s ease;
+    border-radius: 2px;
+  }
+
+  /* ── Phase ── */
+  .phase {
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    border-radius: 2px;
+  }
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .phase-header:hover { background: rgba(191,255,0,0.02); }
+  .phase-title {
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .phase-stats {
+    font-size: 0.65rem;
+    opacity: 0.6;
+  }
+  .phase-arrow {
+    transition: transform 0.3s ease;
+    font-size: 0.6rem;
+  }
+  .phase.collapsed .phase-arrow { transform: rotate(-90deg); }
+  .phase.collapsed .phase-sessions { display: none; }
+
+  /* ── Sessions ── */
+  .phase-sessions { padding: 0.5rem 1rem 1rem; }
+  .session {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid rgba(191,255,0,0.04);
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .session:hover { background: rgba(191,255,0,0.015); }
+  .session:last-child { border-bottom: none; }
+
+  .session-check {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    transition: all 0.3s ease;
+    background: transparent;
+    cursor: pointer;
+  }
+  .session-check.done {
+    background: var(--acid);
+    border-color: var(--acid);
+    color: var(--bg);
+    box-shadow: 0 0 8px var(--acid);
+  }
+  .session-check.active {
+    border-color: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse-border 1.5s infinite;
+  }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 4px var(--cyan); }
+    50% { box-shadow: 0 0 14px var(--cyan); }
+  }
+
+  .session-content { flex: 1; min-width: 0; }
+  .session-id {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    opacity: 0.5;
+    margin-bottom: 0.15rem;
+  }
+  .session-name {
+    font-size: 0.75rem;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+  }
+  .session-files {
+    font-size: 0.6rem;
+    opacity: 0.35;
+    margin-top: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .session-badge {
+    font-size: 0.55rem;
+    padding: 2px 6px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+  }
+  .badge-impact { border: 1px solid var(--acid); color: var(--acid); }
+  .badge-infra { border: 1px solid var(--purple); color: var(--purple); }
+  .badge-done { background: rgba(191,255,0,0.08); color: var(--acid); opacity: 0.5; text-decoration: line-through; }
+
+  /* ── Buttons ── */
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--font);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    color: var(--acid);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: rgba(191,255,0,0.06); border-color: var(--acid); }
+  .btn.danger { border-color: rgba(255,59,59,0.4); color: var(--red); }
+  .btn.danger:hover { background: rgba(255,59,59,0.06); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    font-size: 0.6rem;
+    opacity: 0.25;
+    margin-top: 3rem;
+    letter-spacing: 0.2em;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--acid);
+    color: var(--bg);
+    padding: 0.5rem 1.2rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 100;
+    font-family: var(--font);
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── Hito ── */
+  .hito {
+    padding: 0.5rem 1rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    opacity: 0.5;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    margin-top: 0.3rem;
+  }
+  .hito.done { color: var(--acid); opacity: 0.7; }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    body { padding: 1rem; }
+    .session-badge { display: none; }
+    h1 { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<h1>◈ EL BÚNKER ◈</h1>
+<p class="subtitle">ROADMAP TRACKER · S49 · JUNIO 2026</p>
+
+<div class="controls">
+  <button class="btn" onclick="expandAll()">▸ EXPANDIR TODO</button>
+  <button class="btn" onclick="collapseAll()">▾ COLAPSAR TODO</button>
+  <button class="btn" onclick="markNextUndone()">● MARCAR SIGUIENTE</button>
+  <button class="btn danger" onclick="resetAll()">↺ RESET</button>
+</div>
+
+<div class="progress-container">
+  <div class="progress-label">
+    <span>PROGRESO GENERAL</span>
+    <span id="progressText">0 / 29 sesiones</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+  </div>
+</div>
+
+<div id="phases"></div>
+
+<div class="toast" id="toast"></div>
+<p class="footer">THE_VAULT · ENCRYPTED · S49</p>
+
+<script>
+const roadmap = [
+  {
+    id: 0, name: "FASE 0 — ESTABILIZACIÓN", icon: "🔧", sessions: [
+      { id: "S50", name: "Fix historial (Q2/Q3)", files: "PlayerContext.jsx", impact: "impact", specs: "Q2, Q3, Q15" },
+      { id: "S51", name: "Fix shuffle (SH1)", files: "PlayerContext.jsx", impact: "impact", specs: "SH1, SH2, SH3" },
+      { id: "S52", name: "Fix loop (L1)", files: "PlayerContext.jsx", impact: "impact", specs: "L1, L2, L3, L4" },
+      { id: "S53", name: "Q14 + Q10 — Cola manual", files: "PlayerContext.jsx", impact: "impact", specs: "Q14, Q10, Q4" }
+    ],
+    hito: "✅ Reproductor sin bugs conocidos. Base sólida."
+  },
+  {
+    id: 1, name: "FASE 1 — INFRAESTRUCTURA CLOUDFLARE", icon: "🔧", sessions: [
+      { id: "S54", name: "D1 schema + Workers init", files: "workers/, schema.sql", impact: "infra", specs: "ADR-024, ADR-019" },
+      { id: "S55", name: "Workers API CRUD", files: "workers/api/", impact: "infra", specs: "ADR-024" },
+      { id: "S56", name: "FileUploadService — R2", files: "workers/upload.js, FileUploadService.js", impact: "infra", specs: "ADR-022, ADR-014" },
+      { id: "S57", name: "StatsEngine emitter", files: "workers/events.js, StatsEngine.js", impact: "infra", specs: "ADR-019, ADR-026" },
+      { id: "S58", name: "Migrar tracks a R2", files: "workers/migrate.js", impact: "infra", specs: "ADR-010, ADR-024" }
+    ],
+    hito: "✅ D1 + Workers + R2 operativos. App sin dependencia Drive."
+  },
+  {
+    id: 2, name: "FASE 2 — VAULT NÚCLEO", icon: "🏛️", sessions: [
+      { id: "S59", name: "CRUD de entradas", files: "Vault.jsx, AddEntryForm.jsx, Workers API", impact: "impact", specs: "Taxonomía VAULT" },
+      { id: "S60", name: "Subida de archivos al VAULT", files: "Vault.jsx, FileUploadService.js", impact: "impact", specs: "ADR-022" },
+      { id: "S61", name: "Galería WALL — masonry + virtualización", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (WALL)" },
+      { id: "S62", name: "Panel de detalle — metadatos emocionales", files: "VaultGallery.jsx", impact: "impact", specs: "Galería spec (detalle)" }
+    ],
+    hito: "✅ VAULT usable. Entradas, fotos, galería WALL."
+  },
+  {
+    id: 3, name: "FASE 3 — CAPSULES NÚCLEO", icon: "⧖", sessions: [
+      { id: "S63", name: "Capsules.jsx — 4 sub-tabs", files: "Capsules.jsx, App.jsx, Layout.jsx", impact: "impact", specs: "ADR-017, ADR-020" },
+      { id: "S64", name: "Migrar + mejorar Smoke Session", files: "SmokeSession.jsx", impact: "impact", specs: "SS-1, SS-4, SS-7, SS-8" },
+      { id: "S65", name: "Timeline con datos reales", files: "Timeline.jsx", impact: "impact", specs: "ADR-020 (Timeline)" },
+      { id: "S66", name: "Time Capsules reales — CRUD + sellar", files: "TimeCapsules.jsx", impact: "impact", specs: "TC-1 a TC-9" }
+    ],
+    hito: "✅ CAPSULES funcional. 4 experiencias con datos reales."
+  },
+  {
+    id: 4, name: "FASE 4 — RECAP + GALERÍA AVANZADA", icon: "📊", sessions: [
+      { id: "S67", name: "RECAP semanal", files: "Recaps.jsx, Workers", impact: "impact", specs: "ADR-026" },
+      { id: "S68", name: "RECAP mensual + anual", files: "Recaps.jsx", impact: "impact", specs: "ADR-026" },
+      { id: "S69", name: "Galería CINEMA + MAP", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (CINEMA, MAP)" },
+      { id: "S70", name: "Galería DIALOGUE — killer feature", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (DIALOGUE), ADR-027" }
+    ],
+    hito: "✅ RECAP funcional. DIALOGUE activo."
+  },
+  {
+    id: 5, name: "FASE 5 — MUSICLAB PENDIENTE", icon: "🎵", sessions: [
+      { id: "S71", name: "Cola avanzada (Q6, Q12, Q15)", files: "PlayerContext.jsx, MusicLab.jsx", impact: "impact", specs: "Q6, Q12, Q15" },
+      { id: "S72", name: "Sesión + UX (S1, S2, UX1, UX5)", files: "PlayerContext.jsx, WinampPlayer.jsx", impact: "impact", specs: "S1, S2, S8, UX1, UX2, UX5" },
+      { id: "S73", name: "Android + MediaSession completos", files: "PlayerContext.jsx, WinampPlayer.jsx", impact: "impact", specs: "A, M" },
+      { id: "S74", name: "Escucha compartida (SC1-SC14)", files: "PlayerContext.jsx, WinampPlayer.jsx", impact: "impact", specs: "SC" },
+      { id: "S75", name: "Soft delete + ID3 metadatos", files: "MusicLab.jsx, AddTrackForm.jsx", impact: "impact", specs: "S3, EC-TR6" }
+    ],
+    hito: "✅ Reproductor completo según spec v2. Escucha compartida."
+  },
+  {
+    id: 6, name: "FASE 6 — PULIDO Y REFINAMIENTO", icon: "✨", sessions: [
+      { id: "S81", name: "Galería EXHIBITION + REEL", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (EXHIBITION, REEL)" },
+      { id: "S82", name: "Integraciones finales", files: "Varios", impact: "impact", specs: "DA-6, DA-7, DA-8" },
+      { id: "S83", name: "Pulido general — edge cases, rendimiento", files: "Varios", impact: "impact", specs: "Varios" }
+    ],
+    hito: "✨ Experiencia premium. Sin bugs. 6 modos de galería."
+  }
+];
+
+// ── State ──
+const STORAGE_KEY = 'el_bunker_roadmap';
+let doneSessions = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...doneSessions]));
+  render();
+}
+
+function toggleSession(sessionId) {
+  if (doneSessions.has(sessionId)) {
+    doneSessions.delete(sessionId);
+  } else {
+    doneSessions.add(sessionId);
+  }
+  save();
+  toast(doneSessions.has(sessionId) ? '✓ ' + sessionId + ' completada' : sessionId + ' pendiente');
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+function expandAll() {
+  document.querySelectorAll('.phase').forEach(p => p.classList.remove('collapsed'));
+}
+
+function collapseAll() {
+  document.querySelectorAll('.phase').forEach(p => p.classList.add('collapsed'));
+}
+
+function markNextUndone() {
+  for (const phase of roadmap) {
+    for (const s of phase.sessions) {
+      if (!doneSessions.has(s.id)) {
+        doneSessions.add(s.id);
+        save();
+        toast('✓ ' + s.id + ' marcada como completada');
+        return;
+      }
+    }
+  }
+  toast('¡Todas las sesiones completadas! ✨');
+}
+
+function resetAll() {
+  if (confirm('¿Resetear todo el progreso? Esta acción no se puede deshacer.')) {
+    doneSessions.clear();
+    save();
+    toast('↺ Progreso reseteado');
+  }
+}
+
+function togglePhase(phaseId) {
+  const el = document.querySelector(`[data-phase="${phaseId}"]`);
+  if (el) el.classList.toggle('collapsed');
+}
+
+// ── Render ──
+function render() {
+  const container = document.getElementById('phases');
+  let totalDone = 0;
+  let totalSessions = 0;
+
+  let html = '';
+  for (const phase of roadmap) {
+    let phaseDone = 0;
+    let phaseTotal = phase.sessions.length;
+    totalSessions += phaseTotal;
+
+    let sessionItems = '';
+    for (const s of phase.sessions) {
+      const isDone = doneSessions.has(s.id);
+      if (isDone) phaseDone++;
+      const badgeClass = isDone ? 'badge-done' : (s.impact === 'infra' ? 'badge-infra' : 'badge-impact');
+      const badgeText = isDone ? '✓ DONE' : (s.impact === 'infra' ? 'INFRA' : 'FEATURE');
+      
+      sessionItems += `
+        <div class="session" onclick="toggleSession('${s.id}')">
+          <div class="session-check ${isDone ? 'done' : ''}">${isDone ? '✓' : ''}</div>
+          <div class="session-content">
+            <div class="session-id">${s.id}</div>
+            <div class="session-name">${s.name}</div>
+            <div class="session-files">${s.files} · ${s.specs}</div>
+          </div>
+          <div class="session-badge ${badgeClass}">${badgeText}</div>
+        </div>`;
+    }
+    totalDone += phaseDone;
+
+    const allPhaseDone = phaseDone === phaseTotal;
+    html += `
+      <div class="phase collapsed" data-phase="${phase.id}">
+        <div class="phase-header" onclick="togglePhase(${phase.id})">
+          <span class="phase-title">${phase.icon} ${phase.name}</span>
+          <span class="phase-stats">${phaseDone}/${phaseTotal} · <span class="phase-arrow">▼</span></span>
+        </div>
+        <div class="phase-sessions">${sessionItems}</div>
+        <div class="hito ${allPhaseDone ? 'done' : ''}">${phase.hito}</div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
+
+  document.getElementById('progressText').textContent = `${totalDone} / ${totalSessions} sesiones`;
+  document.getElementById('progressFill').style.width = (totalDone / totalSessions * 100) + '%';
+}
+
+render();
+</script>
+
+</body>
+</html>

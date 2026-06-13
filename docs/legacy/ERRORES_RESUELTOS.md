@@ -66,3 +66,10 @@
 - **BUG-C01:** Corrupción de sintaxis en `AddTrackForm.jsx`. Resuelto manualmente limpiando tags del parser inyectados erróneamente.
 - **BUG-S02:** Lógica invertida en salto de pista `skipDir` en `WinampPlayer.jsx`. Fix condicional < 3s.
 - **BUG-SCR03:** Scroll de marquesina `shouldScroll` omitía el desbordamiento. Resuelto calculando contra el `parentElement`.
+| BUG-skipDir | Skip atrás ignoraba currentTRef — stale closure en MediaSession (skipDir no en deps) | PLIEGO-088 | bbce744 |
+| BUG-deletePlaylist | patchDb no definido en MusicLab — no se pasaba como prop desde App | PLIEGO-090/091 | 146959b/e121410 |
+BUG-NUEVO-21 — Cola no permite duplicados. Resuelto PLIEGO-117/118. S39.
+
+- **TAG-01:** `TagManager` crasheaba en renderizado por importación faltante de `useRef`, variables reasignadas y referencias fantasma a `IconPicker`. Resuelto en P-156.
+- **SCROLL-01 (Core):** `VibeTagBar` no permitía scroll en dispositivos Android. La causa raíz no era CSS nativo, sino intercepción de eventos touch por parte de `framer-motion`. Resuelto eliminando tags `<motion.button>` en favor de tags estáticos en P-163.
+- **UI-OVERLAY:** Overlay global del `TagManager` se solapaba con el header fijo superior de la aplicación. Resuelto añadiendo padding-top compensatorio en P-162.

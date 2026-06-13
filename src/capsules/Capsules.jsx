@@ -4,13 +4,15 @@
 //  Timeline · Smoke Session · Time Capsules · RECAP
 //  S59-S70 · Fases 3-4
 // ============================================================
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, FONT_MONO } from "../tokens";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
 import Recaps from "./Recaps";
+
+const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
 const SUB_TABS = [
   { id: "timeline",      label: "TIMELINE",      icon: "◎" },
@@ -19,11 +21,52 @@ const SUB_TABS = [
   { id: "recap",         label: "RECAP",           icon: "📊" },
 ];
 
-export default function Capsules({ db: _db, userId: _userId, events = [], activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
+export default function Capsules({ db: _db, userId: _userId, jwtToken = null, activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
   const [subTab, setSubTab] = useState("timeline");
-  // events, time_capsules vienen de D1 (Worker API), no de Drive JSON.
-  // El padre (App.jsx) los inyecta como prop separada.
-  // db se usa en SmokeSession (que accede via useVault internamente).
+  const [events, setEvents] = useState([]);
+  const [capsules, setCapsules] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+
+  // Fetch real events y time_capsules desde Worker API cuando hay JWT
+  useEffect(() => {
+    if (!jwtToken) return;
+    let cancelled = false;
+
+    const fetchData = async () => {
+      setLoadingEvents(true);
+      setFetchError(null);
+      try {
+        const [eventsRes, capsulesRes] = await Promise.all([
+          fetch(`${API_BASE}/api/events?limit=200`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+          }),
+          fetch(`${API_BASE}/api/time_capsules`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+          }),
+        ]);
+        if (!cancelled) {
+          if (eventsRes.ok) {
+            const data = await eventsRes.json();
+            setEvents(data);
+          } else {
+            setFetchError(`Events API: ${eventsRes.status}`);
+          }
+          if (capsulesRes.ok) {
+            const data = await capsulesRes.json();
+            setCapsules(data);
+          }
+        }
+      } catch (e) {
+        console.warn("[Capsules] fetch error:", e.message);
+        if (!cancelled) setFetchError(e.message);
+      } finally {
+        if (!cancelled) setLoadingEvents(false);
+      }
+    };
+    fetchData();
+    return () => { cancelled = true; };
+  }, [jwtToken]);
 
   return (
     <div className="px-4 py-4 max-w-lg mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
@@ -60,6 +103,27 @@ export default function Capsules({ db: _db, userId: _userId, events = [], active
         <style>{`.capsules-subnav::-webkit-scrollbar { display: none; }`}</style>
       </nav>
 
+      {/* Loading indicator */}
+      {loadingEvents && (
+        <div className="flex items-center justify-center gap-2 py-3">
+          <motion.span
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+            className="text-xs tracking-[0.3em] uppercase"
+            style={{ color: ACID }}
+          >
+            ◌ CARGANDO EVENTOS...
+          </motion.span>
+        </div>
+      )}
+
+      {/* Error feedback */}
+      {fetchError && !loadingEvents && (
+        <div className="py-2 px-3 text-xs opacity-40 text-center" style={{ color: ACID, fontFamily: FONT_MONO }}>
+          ⚠ {fetchError}
+        </div>
+      )}
+
       {/* Sub-tab content */}
       <AnimatePresence mode="wait">
         <motion.div
@@ -81,7 +145,9 @@ export default function Capsules({ db: _db, userId: _userId, events = [], active
               <SmokeSession masterVolume={masterVolume} onVolumeChange={onVolumeChange} />
             </div>
           )}
-          {subTab === "timecapsules" && <TimeCapsules token={null} capsules={[]} />}
+          {subTab === "timecapsules" && (
+            <TimeCapsules token={jwtToken} capsules={capsules} />
+          )}
           {subTab === "recap" && <Recaps events={events} />}
         </motion.div>
       </AnimatePresence>

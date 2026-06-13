@@ -1,269 +1,1202 @@
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>EL BÚNKER — Roadmap v3</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: var(--font-mono, 'JetBrains Mono', monospace); }
-  .wrap { padding: 8px 0; }
-  .phase-header { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; }
-  .phase-badge { font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 4px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
-  .phase-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
-  .phase-sub { font-size: 11px; color: var(--color-text-tertiary); margin-top: 2px; }
-
-  .file-block { border: 1px solid var(--color-border-tertiary); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
-  .file-header { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--color-background-secondary); border-bottom: 1px solid var(--color-border-tertiary); cursor: pointer; user-select: none; }
-  .file-header:hover { background: var(--color-background-tertiary); }
-  .file-name { font-size: 12px; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-mono); flex: 1; }
-  .file-count { font-size: 10px; color: var(--color-text-tertiary); }
-  .chevron { font-size: 10px; color: var(--color-text-tertiary); transition: transform .2s; }
-  .chevron.open { transform: rotate(90deg); }
-
-  .items { padding: 6px 0; display: none; }
-  .items.open { display: block; }
-  .item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 12px; }
-  .item:hover { background: var(--color-background-secondary); }
-  .tag { font-size: 9px; font-weight: 500; padding: 2px 6px; border-radius: 3px; white-space: nowrap; letter-spacing: .1em; text-transform: uppercase; min-width: 54px; text-align: center; flex-shrink: 0; margin-top: 1px; }
-  .tag-bug { background: #FCEBEB; color: #791F1F; }
-  .tag-pliego { background: #E6F1FB; color: #0C447C; }
-  .tag-feat { background: #EAF3DE; color: #27500A; }
-  .tag-adr { background: #EEEDFE; color: #3C3489; }
-  @media (prefers-color-scheme: dark) {
-    .tag-bug { background: #501313; color: #F7C1C1; }
-    .tag-pliego { background: #042C53; color: #B5D4F4; }
-    .tag-feat { background: #173404; color: #C0DD97; }
-    .tag-adr { background: #26215C; color: #CECBF6; }
+  /* ── Reset ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  /* ── Theme ── */
+  :root {
+    --bg: #050505;
+    --surface: #0a0a0a;
+    --surface2: #111;
+    --border: rgba(191, 255, 0, 0.12);
+    --border-hover: rgba(191, 255, 0, 0.25);
+    --acid: #bfff00;
+    --purple: #bf00ff;
+    --red: #ff3b3b;
+    --orange: #ff6b35;
+    --cyan: #00ffcc;
+    --text: rgba(191, 255, 0, 0.85);
+    --text-dim: rgba(191, 255, 0, 0.35);
+    --text-muted: rgba(191, 255, 0, 0.55);
+    --font: 'JetBrains Mono', 'Courier New', monospace;
+    --radius: 4px;
   }
-  .item-label { font-size: 12px; color: var(--color-text-primary); line-height: 1.4; }
-  .item-sub { font-size: 11px; color: var(--color-text-tertiary); line-height: 1.3; margin-top: 1px; }
-  .pliego-id { font-size: 10px; color: var(--color-text-tertiary); font-family: var(--font-mono); white-space: nowrap; flex-shrink: 0; padding-top: 3px; }
 
-  .legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; padding: 8px 12px; border: 1px solid var(--color-border-tertiary); border-radius: 6px; background: var(--color-background-secondary); }
-  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--color-text-secondary); }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    padding: 12px 10px 40px;
+    font-size: 12px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
 
-  .divider { height: 1px; background: var(--color-border-tertiary); margin: 18px 0 4px; }
+  /* ── Scanlines ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    padding: 20px 10px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .header h1 {
+    font-size: 18px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--acid);
+    text-shadow: 0 0 20px rgba(191, 255, 0, 0.3);
+  }
+  .header .sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .header .version {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.2em;
+    margin-top: 2px;
+  }
+
+  /* ── Global progress bar ── */
+  .global-progress-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .gp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .gp-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .gp-pct {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--acid);
+    text-shadow: 0 0 8px rgba(191, 255, 0, 0.3);
+  }
+  .gp-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .gp-fill {
+    height: 100%;
+    background: var(--acid);
+    box-shadow: 0 0 8px var(--acid);
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    margin-bottom: 14px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-tag {
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+  }
+
+  /* ── Phase ── */
+  .phase {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 10px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid transparent;
+    transition: background 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .phase-header:hover { background: var(--surface2); }
+  .phase-header.open { border-bottom-color: var(--border); }
+
+  .phase-badge {
+    font-size: 8px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .phase-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .phase-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.15em;
+  }
+  .phase-sub {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    margin-top: 1px;
+  }
+  .phase-chevron {
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .phase-chevron.open { transform: rotate(90deg); }
+  .phase-progress {
+    width: 60px;
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .phase-progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .phase-count {
+    font-size: 9px;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+  }
+
+  .phase-body { display: none; }
+  .phase-body.open { display: block; }
+
+  /* ── Session card ── */
+  .session {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(191, 255, 0, 0.06);
+    transition: background 0.1s;
+  }
+  .session:last-child { border-bottom: none; }
+  .session:hover { background: var(--surface2); }
+
+  .session-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .session-id {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-dim);
+    min-width: 28px;
+    flex-shrink: 0;
+    padding-top: 1px;
+    letter-spacing: 0.05em;
+  }
+  .session-main { flex: 1; min-width: 0; }
+  .session-title {
+    font-size: 11px;
+    color: var(--text);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    line-height: 1.4;
+  }
+  .session-files {
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .session-spec {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-top: 1px;
+  }
+  .session-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Tags ── */
+  .tag {
+    font-size: 7px;
+    font-weight: 600;
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1.6;
+  }
+  .tag-complete { background: rgba(191, 255, 0, 0.12); color: var(--acid); border: 1px solid rgba(191, 255, 0, 0.2); }
+  .tag-active  { background: rgba(0, 255, 204, 0.12); color: var(--cyan); border: 1px solid rgba(0, 255, 204, 0.2); }
+  .tag-pending { background: rgba(255, 107, 53, 0.12); color: var(--orange); border: 1px solid rgba(255, 107, 53, 0.2); }
+  .tag-future  { background: rgba(191, 0, 255, 0.12); color: var(--purple); border: 1px solid rgba(191, 0, 255, 0.2); }
+  .tag-bot    { background: rgba(191, 255, 0, 0.08); color: var(--acid); border: 1px solid rgba(191, 255, 0, 0.15); }
+  .tag-user   { background: rgba(0, 255, 204, 0.08); color: var(--cyan); border: 1px solid rgba(0, 255, 204, 0.15); }
+  .tag-nobody { background: rgba(255, 59, 59, 0.08); color: var(--red); border: 1px solid rgba(255, 59, 59, 0.15); }
+  .tag-est    { background: rgba(191, 255, 0, 0.06); color: var(--text-muted); border: 1px solid rgba(191, 255, 0, 0.1); }
+  .tag-dep    { background: rgba(191, 0, 255, 0.06); color: var(--purple); border: 1px solid rgba(191, 0, 255, 0.1); }
+
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 24px 16px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 20px 10px 10px;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    border-top: 1px solid var(--border);
+    margin-top: 10px;
+  }
+
+  /* ── Responsive ── */
+  @media (min-width: 600px) {
+    body { padding: 20px 24px 60px; max-width: 720px; margin: 0 auto; }
+    .header h1 { font-size: 22px; }
+    .session-title { font-size: 12px; }
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f5f0;
+      --surface: #fff;
+      --surface2: #f0f0eb;
+      --border: rgba(0,0,0,0.1);
+      --text: #1a1a1a;
+      --text-dim: rgba(0,0,0,0.4);
+      --text-muted: rgba(0,0,0,0.55);
+    }
+    body::after { opacity: 0.05; }
+    .tag-complete { background: rgba(191, 255, 0, 0.2); }
+    .tag-bot { background: rgba(100, 200, 0, 0.1); }
+    .tag-user { background: rgba(0, 200, 180, 0.1); }
+    .tag-nobody { background: rgba(200, 50, 50, 0.08); }
+  }
 </style>
+</head>
+<body>
 
-<div class="wrap">
+<div class="header">
+  <div style="position:absolute;top:10px;left:10px;font-size:9px;color:var(--text-dim);letter-spacing:0.15em;">v3.0</div>
+  <div style="position:absolute;top:10px;right:10px;">
+    <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--acid);box-shadow:0 0 6px var(--acid);animation:pulse 2s infinite;"></span>
+  </div>
+  <h1>⧖ EL BÚNKER</h1>
+  <div class="sub">Roadmap de Desarrollo</div>
+  <div class="version">S50–S78 · 38 sesiones · Actualizado Junio 2026</div>
+</div>
 
+<!-- Global Progress -->
+<div class="global-progress-wrap">
+  <div class="gp-row">
+    <span class="gp-label">Progreso total</span>
+    <span class="gp-pct">26%</span>
+  </div>
+  <div class="gp-bar">
+    <div class="gp-fill" style="width:26%"></div>
+  </div>
+  <div class="gp-row" style="margin-top:2px;">
+    <span class="gp-label" style="font-size:8px;">10/38 sesiones completadas</span>
+    <span class="gp-label" style="font-size:8px;">~21.5h restantes</span>
+  </div>
+</div>
+
+<!-- Legend -->
 <div class="legend">
-  <div class="leg-item"><span class="tag tag-bug">bug</span> Bug confirmado</div>
-  <div class="leg-item"><span class="tag tag-pliego">pliego</span> Cambio técnico</div>
-  <div class="leg-item"><span class="tag tag-feat">feat</span> Feature nueva</div>
-  <div class="leg-item"><span class="tag tag-adr">adr</span> Decisión arquitectónica</div>
+  <span class="legend-item"><span class="legend-dot" style="background:var(--acid);"></span>Completado</span>
+  <span class="legend-item"><span class="legend-dot" style="background:var(--cyan);"></span>En curso</span>
+  <span class="legend-item"><span class="legend-dot" style="background:var(--orange);"></span>Pendiente</span>
+  <span class="legend-item"><span class="legend-dot" style="background:var(--purple);"></span>Diferido</span>
+  <span class="legend-item"><span class="legend-tag tag-bot">🤖</span>Buffy</span>
+  <span class="legend-item"><span class="legend-tag tag-user">👤</span>Tú</span>
+  <span class="legend-item"><span class="legend-tag tag-nobody">❌</span>Nadie</span>
+  <span class="legend-item"><span class="legend-tag tag-est">⏱</span>Estimación</span>
+  <span class="legend-item"><span class="legend-tag tag-dep">⬡</span>Dependencia</span>
 </div>
 
-<!-- FASE 1 -->
-<div class="phase-header">
-  <span class="phase-badge" style="background:#FCEBEB;color:#791F1F;">Fase 1 — Crítico</span>
-  <div>
-    <div class="phase-title">Reproducción funcional</div>
-    <div class="phase-sub">Pliegos 041–045 · Bugs P1 + P2 que bloquean el uso real</div>
+<!-- ──────────────────── FASE 0 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header open" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(191,255,0,0.12);color:var(--acid);border:1px solid rgba(191,255,0,0.2);">✅ Fase 0</span>
+    <div class="phase-info">
+      <div class="phase-name">Estabilización</div>
+      <div class="phase-sub">Arreglar lo roto antes de construir lo nuevo · S50–S53</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:100%;background:var(--acid);"></div></div>
+    <span class="phase-count">4/4</span>
+    <span class="phase-chevron open">▶</span>
   </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron open">▶</span>
-    <span class="file-name">WinampPlayer.jsx</span>
-    <span class="file-count">4 items · PLIEGO-041</span>
-  </div>
-  <div class="items open">
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-036 — autoPlay como señal incremental</div><div class="item-sub">Reemplazar booleano estático por contador/timestamp para que useEffect se dispare en taps sucesivos</div></div><span class="pliego-id">041</span></div>
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-039 — Skip opera sobre allTracks, no filteredTracks</div><div class="item-sub">Recibir prop allTracks separada; la cola se resuelve sobre el conjunto completo independiente del filtro visual</div></div><span class="pliego-id">041</span></div>
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-002-003 — Race condition initYTPlayer</div><div class="item-sub">Guardar intento de autoPlay pendiente; ejecutar cuando ytPlayerRef.current esté listo</div></div><span class="pliego-id">041</span></div>
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">MediaSession para YouTube</div><div class="item-sub">Mapear action handlers (play/pause/next) a postMessage hacia iframe cuando audioRef es null</div></div><span class="pliego-id">041</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">MusicLab.jsx</span>
-    <span class="file-count">5 items · PLIEGO-042</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-041 — Borrar track activo avanza al siguiente</div><div class="item-sub">Antes de limpiar estado, buscar siguiente en cola o en lista; no dejar reproductor en null</div></div><span class="pliego-id">042</span></div>
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-035 — Track actual no debe añadirse a la cola</div><div class="item-sub">Separar lógica "reproducir ahora" de "encolar"; tap directo nunca muta queue</div></div><span class="pliego-id">042</span></div>
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R02 — Restructura de pestañas</div><div class="item-sub">Cola condicional primera; Drops condicional última; orden: Cola · Tracks · Lists · Drops</div></div><span class="pliego-id">042</span></div>
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R03 — Botones Añadir/Editar/Eliminar en Tracks y Lists</div><div class="item-sub">Actúan sobre item activo/seleccionado global, no inline por card</div></div><span class="pliego-id">042</span></div>
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-046 — Playlists creadas no aparecen en LISTS</div><div class="item-sub">Verificar lectura del array desde DB tras createPlaylist; forzar re-render</div></div><span class="pliego-id">042</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">AudioVisualizer.jsx</span>
-    <span class="file-count">1 item · PLIEGO-043</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-008 — Canvas negro en primer render</div><div class="item-sub">ResizeObserver con reintentos; no abortar draw loop si offsetWidth===0 en mount; reintentar hasta dimensiones válidas</div></div><span class="pliego-id">043</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">GoogleDriveService.js</span>
-    <span class="file-count">2 items · PLIEGO-044</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-024-PERSIST — Editar/eliminar track no persiste en Drive</div><div class="item-sub">Verificar que patchDb recibe payload correcto; confirmar que updateTrack/removeTrack del schema 3.4.0 están cableados</div></div><span class="pliego-id">044</span></div>
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-016b-v2 — Revisión getStreamUrl post-scope drive</div><div class="item-sub">Prerequisito de PLIEGO-R06; confirmar que stream MP3 desde Drive funciona con scope actual</div></div><span class="pliego-id">044</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">DropsManager.jsx / MusicLab.jsx</span>
-    <span class="file-count">2 items · PLIEGO-045</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">ERROR 33 — Drops solo detectados al entrar a MusicLab</div><div class="item-sub">Mover polling/detección de drops a VaultContext o App mount; no depender del ciclo de vida de MusicLab</div></div><span class="pliego-id">045</span></div>
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R05 — Drops favoritos UI</div><div class="item-sub">Toggle favorited/favorited_by en DropAlertModal y DropsHistory; schema 3.4.0 ya tiene los campos</div></div><span class="pliego-id">045</span></div>
-  </div>
-</div>
-
-<div class="divider"></div>
-
-<!-- FASE 2 -->
-<div class="phase-header">
-  <span class="phase-badge" style="background:#E6F1FB;color:#0C447C;">Fase 2 — Premium</span>
-  <div>
-    <div class="phase-title">Experiencia premium</div>
-    <div class="phase-sub">Pliegos 046–053 · Lo que hace que David abra MusicLab antes que YouTube Music</div>
+  <div class="phase-body open">
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S50</span>
+        <div class="session-main">
+          <div class="session-title">Fix historial — localStorage Q2/Q3</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: Q2, Q3, Q15</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~45m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S51</span>
+        <div class="session-main">
+          <div class="session-title">Fix shuffle — solo restantes SH1</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: SH1, SH2, SH3</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~45m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S52</span>
+        <div class="session-main">
+          <div class="session-title">Fix loop — seek inicio L1</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: L1, L2, L3, L4</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~45m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S53</span>
+        <div class="session-main">
+          <div class="session-title">Cola manual Q14 + sobrevive Q10</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: Q14, Q10, Q4</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">VaultContext.jsx <span style="font-weight:400;color:var(--color-text-tertiary)">+ nuevo</span> PlayerContext.jsx</span>
-    <span class="file-count">3 items · PLIEGO-046 + PLIEGO-047</span>
+<!-- ──────────────────── FASE 1 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header open" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(191,255,0,0.12);color:var(--acid);border:1px solid rgba(191,255,0,0.2);">✅ Fase 1</span>
+    <div class="phase-info">
+      <div class="phase-name">Infraestructura Cloudflare</div>
+      <div class="phase-sub">Migración Drive → D1 + Workers + R2 · S54–S59</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:100%;background:var(--acid);"></div></div>
+    <span class="phase-count">6/6</span>
+    <span class="phase-chevron open">▶</span>
   </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-adr">adr</span><div><div class="item-label">ADR-004 — Elevar estado de reproducción a PlayerContext global</div><div class="item-sub">currentTrack, queue, isPlaying, progress salen de MusicLab y viven en un Context propio; MusicLab se convierte en consumidor</div></div><span class="pliego-id">046</span></div>
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Mini-Player global persistente</div><div class="item-sub">Barra inferior flotante visible en Vault y SmokeSession; estado de reproducción no muere al cambiar de módulo</div></div><span class="pliego-id">046</span></div>
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Sesión compartida (Listening Party)</div><div class="item-sub">Monitorear queue_[userId].json del otro usuario; botón "acoplarse" sincroniza track y posición</div></div><span class="pliego-id">047</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">WinampPlayer.jsx</span>
-    <span class="file-count">3 items · PLIEGO-048</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">PLIEGO-R06 — AddTrackForm rediseñado + type drive/youtube</div><div class="item-sub">Player bifurcado: iframe YT para youtube, audio nativo para drive; integra lógica 017b</div></div><span class="pliego-id">048</span></div>
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Radio Infinita — Autoplay inteligente por vibe</div><div class="item-sub">Al vaciar cola, seleccionar aleatoriamente tracks con mismo vibe o era que el último track; nunca silencio</div></div><span class="pliego-id">048</span></div>
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Crossfade y gapless entre tracks drive</div><div class="item-sub">Doble elemento audio en paralelo; fade-out/in de 2–4 s; solo aplica a type:drive</div></div><span class="pliego-id">048</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">MusicLab.jsx</span>
-    <span class="file-count">3 items · PLIEGO-049</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-R04 — Cola táctil con drag & drop + swipe</div><div class="item-sub">Reordenamiento visual manteniendo pulsado; eliminación por swipe lateral; botón inline ✕ por track</div></div><span class="pliego-id">049</span></div>
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Play All en pestaña LISTS</div><div class="item-sub">Botón ▶ por playlist limpia cola manual e inyecta todos los tracks en orden; PLIEGO-PLAYLIST-C desbloqueado tras esto</div></div><span class="pliego-id">049</span></div>
-    <div class="item"><span class="tag tag-bug">bug</span><div><div class="item-label">BUG-005 — Shuffle funcional</div><div class="item-sub">Fisher-Yates sobre allTracks filtrados por vibe; respetar track activo como posición 0</div></div><span class="pliego-id">049</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">sw.js</span>
-    <span class="file-count">1 item · PLIEGO-050</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Modo Offline real — cache-first para MP3 de Drive</div><div class="item-sub">Interceptar getStreamUrl; cachear respuesta con Cache API; reproducción fluida sin cobertura</div></div><span class="pliego-id">050</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">SmokeSession.jsx</span>
-    <span class="file-count">1 item · PLIEGO-051</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Sleep Timer sincronizado con SmokeSession</div><div class="item-sub">Al finalizar sesión/ritual activo, fade-out y stop automático del reproductor vía PlayerContext</div></div><span class="pliego-id">051</span></div>
-  </div>
-</div>
-
-<div class="divider"></div>
-
-<!-- FASE 3 -->
-<div class="phase-header">
-  <span class="phase-badge" style="background:#EAF3DE;color:#27500A;">Fase 3 — Diferencial</span>
-  <div>
-    <div class="phase-title">Lo que ningún streamer puede dar</div>
-    <div class="phase-sub">Pliegos 052–058 · Features íntimas que solo tienen sentido para 2 usuarios</div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">nuevo BurningBoard.jsx</span>
-    <span class="file-count">2 items · PLIEGO-052</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">The Burning Board — panel de estadísticas de pareja</div><div class="item-sub">Musical Soulmate Index; contadores Edu vs David; alerta cuando ambos han quemado el mismo track</div></div><span class="pliego-id">052</span></div>
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">Schema 3.5.0 — campo play_count + last_played_by</div><div class="item-sub">Incrementar en cada play; migración automática desde 3.4.0</div></div><span class="pliego-id">052</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">WinampPlayer.jsx <span style="font-weight:400;color:var(--color-text-tertiary)">+ nuevo LyricsPanel.jsx</span></span>
-    <span class="file-count">1 item · PLIEGO-053</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Panel de letras embebido en el reproductor</div><div class="item-sub">Campo lyrics en schema; renderizado en panel deslizable desde WinampPlayer; edición inline por el admin</div></div><span class="pliego-id">053</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">WinampPlayer.jsx <span style="font-weight:400;color:var(--color-text-tertiary)">+ App.jsx</span></span>
-    <span class="file-count">1 item · PLIEGO-054</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-feat">feat</span><div><div class="item-label">Casteo nativo Chromecast</div><div class="item-sub">Google Cast SDK; botón cast en WinampPlayer; enviar stream URL o YouTube URL al dispositivo Cast</div></div><span class="pliego-id">054</span></div>
-  </div>
-</div>
-
-<div class="file-block">
-  <div class="file-header" onclick="toggle(this)">
-    <span class="chevron">▶</span>
-    <span class="file-name">Sin urgencia / strings</span>
-    <span class="file-count">2 items · PLIEGO-018-STRINGS</span>
-  </div>
-  <div class="items">
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-018-STRINGS — Textos al español, tono Edu→David</div><div class="item-sub">Pasada completa MusicLab + manifest.json (encoding roto BÃºnker). Tras estabilizar F1+F2</div></div><span class="pliego-id">—</span></div>
-    <div class="item"><span class="tag tag-pliego">pliego</span><div><div class="item-label">PLIEGO-PLAYLIST-C — Borrado de playlist</div><div class="item-sub">Solo creador, solo si vacía. Desbloquear tras Play All (F2)</div></div><span class="pliego-id">—</span></div>
+  <div class="phase-body open">
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S54</span>
+        <div class="session-main">
+          <div class="session-title">D1 schema + Workers init + health endpoint</div>
+          <div class="session-files">workers/, schema.sql</div>
+          <div class="session-spec">Specs: ADR-024, ADR-019</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S55</span>
+        <div class="session-main">
+          <div class="session-title">Workers API: tracks + playlists CRUD</div>
+          <div class="session-files">workers/</div>
+          <div class="session-spec">Specs: ADR-024</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S56</span>
+        <div class="session-main">
+          <div class="session-title">Workers API: entries + tags + JWT auth</div>
+          <div class="session-files">workers/</div>
+          <div class="session-spec">Specs: ADR-024</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S57</span>
+        <div class="session-main">
+          <div class="session-title">FileUploadService + StatsEngine + R2 upload</div>
+          <div class="session-files">src/core/FileUploadService.js, StatsEngine.js</div>
+          <div class="session-spec">Specs: ADR-022, ADR-014</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S58</span>
+        <div class="session-main">
+          <div class="session-title">Auditoría: 12 bugs corregidos</div>
+          <div class="session-files">12 archivos (Layout, Capsules, AddEntryForm, tokens, etc.)</div>
+          <div class="session-spec">—</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~2h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S59</span>
+        <div class="session-main">
+          <div class="session-title">AddEntryForm real + VaultGallery + photo upload + Capsules sub-tab swipeable</div>
+          <div class="session-files">src/vault/, src/capsules/</div>
+          <div class="session-spec">Taxonomía, ADR-021</div>
+          <div class="session-meta">
+            <span class="tag tag-complete">✅ Hecho</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- ──────────────────── FASE 2 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header open" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(0,255,204,0.12);color:var(--cyan);border:1px solid rgba(0,255,204,0.2);">🟡 Fase 2</span>
+    <div class="phase-info">
+      <div class="phase-name">VAULT núcleo</div>
+      <div class="phase-sub">Entradas reales, subida fotos, galería WALL / CINEMA / MAP / DIALOGUE · S60–S68</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:0%;background:var(--cyan);"></div></div>
+    <span class="phase-count">0/9</span>
+    <span class="phase-chevron open">▶</span>
+  </div>
+  <div class="phase-body open">
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S60</span>
+        <div class="session-main">
+          <div class="session-title">Fix imports rotos — ACID desde tokens.js, SmokeSession en ruta correcta</div>
+          <div class="session-files">src/musiclab/MusicLab.jsx, AddTrackForm.jsx, PlaylistManager.jsx, src/capsules/Capsules.jsx</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~30m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S61</span>
+        <div class="session-main">
+          <div class="session-title">Wiring JWT frontend — setUploadToken, setStatsToken, fetch con jwtToken</div>
+          <div class="session-files">src/layout/App.jsx, VaultContext.jsx, FileUploadService.js, StatsEngine.js</div>
+          <div class="session-spec">Specs: ADR-024</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S60</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S62</span>
+        <div class="session-main">
+          <div class="session-title">Worker: CRUD entries D1 — GET/POST/PATCH/DELETE /api/entries</div>
+          <div class="session-files">workers/worker.js</div>
+          <div class="session-spec">Specs: ADR-019</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S63</span>
+        <div class="session-main">
+          <div class="session-title">Worker: CRUD eras + files list — GET/POST/PATCH eras, GET /api/files/list</div>
+          <div class="session-files">workers/worker.js</div>
+          <div class="session-spec">Specs: ADR-019, ADR-022</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-dep">⬡ S62</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session" style="border-left:2px solid var(--orange);padding-left:8px;">
+      <div class="session-row">
+        <span class="session-id">S64</span>
+        <div class="session-main">
+          <div class="session-title">VaultContext → Worker API — fetchDb desde D1, no GoogleDriveService</div>
+          <div class="session-files">src/core/VaultContext.jsx, GoogleDriveService.js</div>
+          <div class="session-spec">Specs: ADR-024</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S61, S63</span>
+            <span class="tag tag-est">~1.5h</span>
+            <span class="tag" style="background:rgba(255,59,59,0.1);color:var(--red);border:1px solid rgba(255,59,59,0.2);">⚠️ Backup</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S65</span>
+        <div class="session-main">
+          <div class="session-title">VAULT: editar + eliminar entradas, soft delete, ver detalle</div>
+          <div class="session-files">src/vault/Vault.jsx, AddEntryForm.jsx</div>
+          <div class="session-spec">Taxonomía, EC-TR</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S64</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S66</span>
+        <div class="session-main">
+          <div class="session-title">Galería WALL — zoom densidad (compact/normal/expanded), long-press preview</div>
+          <div class="session-files">src/vault/VaultGallery.jsx</div>
+          <div class="session-spec">Specs: ADR-021 WALL</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S65</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S67</span>
+        <div class="session-main">
+          <div class="session-title">Galería CINEMA — full-bleed swipe, transiciones Framer Motion, subtítulos emocionales</div>
+          <div class="session-files">src/vault/VaultGallery.jsx</div>
+          <div class="session-spec">Specs: ADR-021 CINEMA</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S66</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S68</span>
+        <div class="session-main">
+          <div class="session-title">Galería MAP + DIALOGUE — pines y líneas de viaje + perspectiva dual</div>
+          <div class="session-files">src/vault/VaultGallery.jsx</div>
+          <div class="session-spec">Specs: ADR-021 MAP, DIALOGUE</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S67</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="empty-state">— Hito parcial: VAULT con D1, galerías WALL + CINEMA funcionales —</div>
+  </div>
+</div>
+
+<!-- ──────────────────── FASE 3 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(255,107,53,0.12);color:var(--orange);border:1px solid rgba(255,107,53,0.2);">🔴 Fase 3</span>
+    <div class="phase-info">
+      <div class="phase-name">CAPSULES núcleo</div>
+      <div class="phase-sub">Timeline real, SmokeSession completa, Time Capsules funcional · S69–S71</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:0%;background:var(--orange);"></div></div>
+    <span class="phase-count">0/3</span>
+    <span class="phase-chevron">▶</span>
+  </div>
+  <div class="phase-body">
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S69</span>
+        <div class="session-main">
+          <div class="session-title">SmokeSession migrada a src/capsules/ — nombrar sesiones, vibe-aware, notificación push, Timeline event</div>
+          <div class="session-files">src/smoke/SmokeSession.jsx → src/capsules/</div>
+          <div class="session-spec">Specs: SS-1, SS-4, SS-7, SS-8</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S61</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S70</span>
+        <div class="session-main">
+          <div class="session-title">Timeline con datos reales — filtros Era/módulo/tipo/usuario, banner "Un día como hoy"</div>
+          <div class="session-files">src/capsules/Timeline.jsx</div>
+          <div class="session-spec">Specs: ADR-020 Timeline</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S61</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S71</span>
+        <div class="session-main">
+          <div class="session-title">Time Capsules completas — selector contenido, snapshot playlist, sellar, animación apertura</div>
+          <div class="session-files">src/capsules/TimeCapsules.jsx</div>
+          <div class="session-spec">Specs: TC-1 a TC-8</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S65</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────────── FASE 4 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(255,107,53,0.12);color:var(--orange);border:1px solid rgba(255,107,53,0.2);">🔴 Fase 4</span>
+    <div class="phase-info">
+      <div class="phase-name">RECAP</div>
+      <div class="phase-sub">Resúmenes semanal / mensual / anual tipo Spotify Wrapped · S72–S73</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:0%;background:var(--orange);"></div></div>
+    <span class="phase-count">0/2</span>
+    <span class="phase-chevron">▶</span>
+  </div>
+  <div class="phase-body">
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S72</span>
+        <div class="session-main">
+          <div class="session-title">RECAP semanal + mensual — card compacta con stats reales desde Worker, guardable</div>
+          <div class="session-files">src/capsules/Recaps.jsx</div>
+          <div class="session-spec">Specs: ADR-026</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S61</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S73</span>
+        <div class="session-main">
+          <div class="session-title">RECAP anual — 6 secciones: portada, música, memoria, conexión, hitos, cierre</div>
+          <div class="session-files">src/capsules/Recaps.jsx</div>
+          <div class="session-spec">Specs: ADR-026</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-dep">⬡ S72</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ──────────────────── FASE 5 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(255,107,53,0.12);color:var(--orange);border:1px solid rgba(255,107,53,0.2);">🔴 Fase 5</span>
+    <div class="phase-info">
+      <div class="phase-name">MusicLab completo</div>
+      <div class="phase-sub">Cola, sesión, UX táctil, MediaSession — spec reproductor v2 · S74–S78</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:0%;background:var(--orange);"></div></div>
+    <span class="phase-count">0/5</span>
+    <span class="phase-chevron">▶</span>
+  </div>
+  <div class="phase-body">
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S74</span>
+        <div class="session-main">
+          <div class="session-title">Cola: Q6 límite 75 + Q12 añadir playlist entera</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: Q6, Q12</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S75</span>
+        <div class="session-main">
+          <div class="session-title">Cola: Q15 historial scroll + Q16/Q17 soft delete tracks en cola</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: Q15, Q16, Q17</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S76</span>
+        <div class="session-main">
+          <div class="session-title">Sesión: S1/S2 posición tracks + S8 localStorage por usuario</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: S1, S2, S8</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S77</span>
+        <div class="session-main">
+          <div class="session-title">UX: doble tap seek + feedback háptico + swipe horizontal cambiar track</div>
+          <div class="session-files">src/musiclab/WinampPlayer.jsx</div>
+          <div class="session-spec">Specs: UX1, UX2, UX5</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S78</span>
+        <div class="session-main">
+          <div class="session-title">MediaSession M1-M12 completo — notificación lockscreen, controles, seek, Cast básico</div>
+          <div class="session-files">src/core/PlayerContext.jsx, src/musiclab/WinampPlayer.jsx</div>
+          <div class="session-spec">Specs: M1-M12, CAST1-6</div>
+          <div class="session-meta">
+            <span class="tag tag-pending">🔴 Pendiente</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="empty-state">— Hito: Reproductor completo según spec v2 —</div>
+  </div>
+</div>
+
+<!-- ──────────────────── FASE 6 ──────────────────── -->
+<div class="phase">
+  <div class="phase-header" onclick="togglePhase(this)">
+    <span class="phase-badge" style="background:rgba(191,0,255,0.12);color:var(--purple);border:1px solid rgba(191,0,255,0.2);">🔮 Fase 6</span>
+    <div class="phase-info">
+      <div class="phase-name">Pulido y Diferido (Fase C)</div>
+      <div class="phase-sub">No priorizado. Requiere APIs externas, diseño UX o datos reales · S79–S87</div>
+    </div>
+    <div class="phase-progress"><div class="phase-progress-fill" style="width:0%;background:var(--purple);"></div></div>
+    <span class="phase-count">0/9</span>
+    <span class="phase-chevron">▶</span>
+  </div>
+  <div class="phase-body">
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S79</span>
+        <div class="session-main">
+          <div class="session-title">Escucha Compartida SC1-SC14 — corazón + sincronización vía Worker WebSocket</div>
+          <div class="session-files">src/core/PlayerContext.jsx</div>
+          <div class="session-spec">Specs: SC</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(255,59,59,0.08);color:var(--red);border:1px solid rgba(255,59,59,0.15);">❌ Bloqueado</span>
+            <span class="tag tag-est">~3h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S80</span>
+        <div class="session-main">
+          <div class="session-title">Galería EXHIBITION — canvas 2D por vibes (Figma/Miro-like)</div>
+          <div class="session-files">src/vault/VaultGallery.jsx</div>
+          <div class="session-spec">ADR-021 EXHIBITION</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 Diseño</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~2h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S81</span>
+        <div class="session-main">
+          <div class="session-title">Galería REEL — auto-generados + pinning manual</div>
+          <div class="session-files">src/vault/VaultGallery.jsx</div>
+          <div class="session-spec">ADR-021 REEL</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 No priorizado</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~2h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S82</span>
+        <div class="session-main">
+          <div class="session-title">Integraciones — Drop→Entrada VAULT + link entrada→track</div>
+          <div class="session-files">Varios</div>
+          <div class="session-spec">DA-6, DA-7</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 Diseño</span>
+            <span class="tag tag-user">👤 Tú</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S83</span>
+        <div class="session-main">
+          <div class="session-title">Cápsulas colaborativas — snapshot playlist + ambos editan</div>
+          <div class="session-files">src/capsules/TimeCapsules.jsx</div>
+          <div class="session-spec">DA-8, TC-9</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 No priorizado</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S84</span>
+        <div class="session-main">
+          <div class="session-title">Sonido ambiente CINEMA/EXHIBITION — playlist Era automática</div>
+          <div class="session-files">src/vault/VaultGallery.jsx</div>
+          <div class="session-spec">ADR-021</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 No priorizado</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S85</span>
+        <div class="session-main">
+          <div class="session-title">Modo offline — Service Worker cache-first fotos + tracks</div>
+          <div class="session-files">public/sw.js</div>
+          <div class="session-spec">—</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 No priorizado</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S86</span>
+        <div class="session-main">
+          <div class="session-title">Soporte HEIC/RAW — conversión al subir</div>
+          <div class="session-files">src/core/FileUploadService.js</div>
+          <div class="session-spec">—</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 No priorizado</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~1h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="session">
+      <div class="session-row">
+        <span class="session-id">S87</span>
+        <div class="session-main">
+          <div class="session-title">Pulido general — edge cases, rendimiento, animaciones transiciones</div>
+          <div class="session-files">Varios</div>
+          <div class="session-spec">—</div>
+          <div class="session-meta">
+            <span class="tag" style="background:rgba(191,0,255,0.06);color:var(--purple);border:1px solid rgba(191,0,255,0.1);">🔮 No priorizado</span>
+            <span class="tag tag-bot">🤖 Buffy</span>
+            <span class="tag tag-est">~2h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="empty-state">— Requiere decisión para activar —</div>
+  </div>
+</div>
+
+<!-- Milestones -->
+<div class="global-progress-wrap" style="margin-top:4px;">
+  <div class="gp-row">
+    <span class="gp-label">Hitos del proyecto</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:9px;color:var(--acid);">✅</span>
+      <span style="font-size:9px;color:var(--text);letter-spacing:0.05em;">MVP funcional</span>
+      <span style="font-size:8px;color:var(--text-dim);margin-left:auto;">S50-S59</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:9px;color:var(--orange);">🟡</span>
+      <span style="font-size:9px;color:var(--text);letter-spacing:0.05em;">VAULT premium</span>
+      <span style="font-size:8px;color:var(--text-dim);margin-left:auto;">S60-S68 · Próximo</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:9px;color:var(--text-muted);">🔴</span>
+      <span style="font-size:9px;color:var(--text);letter-spacing:0.05em;">CAPSULES real</span>
+      <span style="font-size:8px;color:var(--text-dim);margin-left:auto;">S69-S71</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:9px;color:var(--text-muted);">🔴</span>
+      <span style="font-size:9px;color:var(--text);letter-spacing:0.05em;">RECAP operativo</span>
+      <span style="font-size:8px;color:var(--text-dim);margin-left:auto;">S72-S73</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:9px;color:var(--text-muted);">🔴</span>
+      <span style="font-size:9px;color:var(--text);letter-spacing:0.05em;">Reproductor spec v2</span>
+      <span style="font-size:8px;color:var(--text-dim);margin-left:auto;">S74-S78</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:9px;color:var(--purple);">🔮</span>
+      <span style="font-size:9px;color:var(--text);letter-spacing:0.05em;">Premium completo</span>
+      <span style="font-size:8px;color:var(--text-dim);margin-left:auto;">S79-S87 · No priorizado</span>
+    </div>
+  </div>
+</div>
+
+<!-- User instructions -->
+<div class="global-progress-wrap" style="border-color:rgba(0,255,204,0.2);margin-top:4px;">
+  <div class="gp-row">
+    <span class="gp-label" style="color:var(--cyan);">👤 Tu parte — comandos por bloque</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px;">
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.05em;line-height:1.6;font-family:var(--font);">
+      <span style="color:var(--text);">B1</span> Después de S62-S64 → <code style="background:var(--surface2);padding:1px 5px;border-radius:2px;font-size:8px;color:var(--acid);">npx wrangler deploy</code>
+    </div>
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.05em;line-height:1.6;">
+      <span style="color:var(--text);">B2</span> Después de S64 (migración D1, backup primero) → <code style="background:var(--surface2);padding:1px 5px;border-radius:2px;font-size:8px;color:var(--acid);">git push + wrangler deploy</code>
+    </div>
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.05em;line-height:1.6;">
+      <span style="color:var(--text);">B3</span> Después de S68 (VAULT completo) → <code style="background:var(--surface2);padding:1px 5px;border-radius:2px;font-size:8px;color:var(--acid);">git push + wrangler deploy</code>
+    </div>
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.05em;line-height:1.6;">
+      <span style="color:var(--text);">B4</span> Después de S73 (RECAP completo) → <code style="background:var(--surface2);padding:1px 5px;border-radius:2px;font-size:8px;color:var(--acid);">git push</code>
+    </div>
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.05em;line-height:1.6;">
+      <span style="color:var(--text);">B5</span> Después de S78 (MusicLab completo) → <code style="background:var(--surface2);padding:1px 5px;border-radius:2px;font-size:8px;color:var(--acid);">git push</code>
+    </div>
+    <div style="font-size:9px;color:var(--text-muted);letter-spacing:0.05em;line-height:1.6;">
+      <span style="color:var(--text);">B6</span> <strong style="color:var(--cyan);">FINAL</strong> Merge a master + deploy Vercel → <code style="background:var(--surface2);padding:1px 5px;border-radius:2px;font-size:8px;color:var(--acid);">git checkout master && git merge && git push origin master</code>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  ⧖ EL BÚNKER · Roadmap v3.0 · 38 sesiones planificadas · 10 completadas<br>
+  Autogenerado desde docs/ROADMAP.md · Última actualización: Junio 2026
 </div>
 
 <script>
-function toggle(header) {
-  const items = header.nextElementSibling;
-  const ch = header.querySelector('.chevron');
-  const open = items.classList.toggle('open');
-  ch.classList.toggle('open', open);
+function togglePhase(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.phase-chevron');
+  const open = body.classList.toggle('open');
+  header.classList.toggle('open', open);
+  chevron.classList.toggle('open', open);
 }
-document.querySelectorAll('.file-header').forEach(h => {
-  const items = h.nextElementSibling;
-  const ch = h.querySelector('.chevron');
-  if (items.classList.contains('open')) ch.classList.add('open');
-});
+
+// Pulse animation keyframe injection
+const style = document.createElement('style');
+style.textContent = `@keyframes pulse { 0%, 100% { opacity:1; } 50% { opacity:0.4; } }`;
+document.head.appendChild(style);
 </script>
+
+</body>
+</html>

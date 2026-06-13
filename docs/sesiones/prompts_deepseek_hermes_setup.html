@@ -1,0 +1,572 @@
+<style>
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+*{box-sizing:border-box}
+.wrap{padding:4px 0 20px}
+.top{margin-bottom:20px}
+.top h2{font-size:17px;font-weight:500;margin:0 0 6px;color:var(--color-text-primary)}
+.top p{font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.6}
+.flow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.flow-step{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--color-background-secondary);color:var(--color-text-secondary);border:0.5px solid var(--color-border-tertiary)}
+.flow-arrow{color:var(--color-text-tertiary);font-size:12px}
+.cards{display:flex;flex-direction:column;gap:12px}
+.card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden}
+.ch{display:flex;align-items:flex-start;gap:12px;padding:14px 16px}
+.num{min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;margin-top:1px}
+.n1{background:#FAEEDA;color:#633806}
+.n2{background:#FAEEDA;color:#633806}
+.n3{background:#E1F5EE;color:#085041}
+@media(prefers-color-scheme:dark){.n1,.n2{background:#412402;color:#FAC775}.n3{background:#04342C;color:#9FE1CB}}
+.ci{flex:1;min-width:0}
+.ci h3{font-size:14px;font-weight:500;margin:0 0 3px;color:var(--color-text-primary)}
+.ci p{font-size:12px;color:var(--color-text-secondary);margin:0;line-height:1.5}
+.cbtn{padding:6px 13px;border-radius:6px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all 0.15s;font-family:var(--font-sans)}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.ok{color:var(--color-text-success);border-color:var(--color-border-success)}
+.tags{display:flex;gap:5px;padding:0 16px 10px;flex-wrap:wrap}
+.tag{font-size:10px;padding:2px 7px;border-radius:3px;font-weight:500}
+.ti{background:var(--color-background-info);color:var(--color-text-info)}
+.to{background:var(--color-background-success);color:var(--color-text-success)}
+.cb{border-top:0.5px solid var(--color-border-tertiary)}
+.pt{width:100%;min-height:160px;max-height:340px;resize:vertical;padding:12px 14px;background:var(--color-background-secondary);color:var(--color-text-secondary);font-family:var(--font-mono);font-size:10.5px;line-height:1.7;border:none;outline:none;display:block}
+</style>
+<h2 class="sr-only">Prompts para DeepSeek Pro V4 — setup completo de Hermes</h2>
+<div class="wrap">
+  <div class="top">
+    <h2>Prompts para DeepSeek Pro V4</h2>
+    <p>Úsalos en orden. Aplica el resultado de cada uno antes de lanzar el siguiente.</p>
+    <div class="flow">
+      <span class="flow-step">1 · Principal + TTS + STT</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">2 · Código + Hub.py</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-step">3 · Nocturno + Arranque</span>
+    </div>
+  </div>
+
+  <div class="cards">
+    <!-- Prompt 1 -->
+    <div class="card">
+      <div class="ch">
+        <div class="num n1">1</div>
+        <div class="ci">
+          <h3>Principal · TTS · STT</h3>
+          <p>Verificar Ollama, reparar config.yaml, Piper con voz española, Whisper para audios de Telegram</p>
+        </div>
+        <button class="cbtn" onclick="cp(this,'t1')">Copiar</button>
+      </div>
+      <div class="tags">
+        <span class="tag ti">Diagnóstico</span>
+        <span class="tag ti">Shell commands</span>
+        <span class="tag ti">YAML config</span>
+        <span class="tag to">Salida: fix Principal + Piper instalado + STT activo</span>
+      </div>
+      <div class="cb"><textarea class="pt" id="t1" readonly></textarea></div>
+    </div>
+
+    <!-- Prompt 2 -->
+    <div class="card">
+      <div class="ch">
+        <div class="num n2">2</div>
+        <div class="ci">
+          <h3>Perfil Código · Hub.py</h3>
+          <p>Config y SOUL.md de Código, hub.py con router Flash/Pro/OI, session manager, logger JSONL</p>
+        </div>
+        <button class="cbtn" onclick="cp(this,'t2')">Copiar</button>
+      </div>
+      <div class="tags">
+        <span class="tag ti">Python · FastAPI</span>
+        <span class="tag ti">Pexpect · Freebuff</span>
+        <span class="tag ti">Systemd</span>
+        <span class="tag to">Salida: hub.py completo + config Código + SOUL.md</span>
+      </div>
+      <div class="cb"><textarea class="pt" id="t2" readonly></textarea></div>
+    </div>
+
+    <!-- Prompt 3 -->
+    <div class="card">
+      <div class="ch">
+        <div class="num n3">3</div>
+        <div class="ci">
+          <h3>Nocturno · Arranque del sistema</h3>
+          <p>SOUL.md y script de síntesis del Nocturno, migración del gateway de Telegram, hermes_start.sh</p>
+        </div>
+        <button class="cbtn" onclick="cp(this,'t3')">Copiar</button>
+      </div>
+      <div class="tags">
+        <span class="tag ti">Bash scripts</span>
+        <span class="tag ti">Cron / Systemd timer</span>
+        <span class="tag ti">Migración Telegram</span>
+        <span class="tag to">Salida: SOUL.md Nocturno + scripts de arranque + gateway migrado</span>
+      </div>
+      <div class="cb"><textarea class="pt" id="t3" readonly></textarea></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const t1=`Eres un experto en sistemas Linux (WSL2/Ubuntu) y en frameworks de agentes de IA. Ayúdame a completar la configuración de mi sistema con comandos exactos y ejecutables en WSL.
+
+══════════════════════════════════════════════
+ENTORNO
+══════════════════════════════════════════════
+- Windows 11 + WSL2 (Ubuntu)
+- Hermes AI agent framework (CLI en Node.js)
+  Perfiles en: ~/.hermes/profiles/
+  Config global: ~/.hermes/config.yaml
+- Ollama en localhost:11434
+  Modelos disponibles: qwen3:14b, qwen3:8b, qwen14-estudio
+- API key de Groq configurada en el perfil Principal (variable env o config)
+- Freebuff corriendo en WSL (CLI de acceso a modelos cloud)
+- Gateway de Telegram activo sobre el perfil "default"
+
+══════════════════════════════════════════════
+CONFIG GLOBAL (~/.hermes/config.yaml) — EXTRACTO
+══════════════════════════════════════════════
+model:
+  default: qwen14-estudio
+  provider: custom
+  base_url: http://localhost:11434/v1
+  api_mode: chat_completions
+  context_length: 65536
+  ollama_num_ctx: 65536
+  name: qwen14-estudio
+
+tts:
+  provider: edge
+  piper:
+    voice: en_US-lessac-medium
+
+stt:
+  enabled: true
+  provider: local
+  local:
+    model: base
+
+══════════════════════════════════════════════
+ESTADO DEL PERFIL "principal"
+══════════════════════════════════════════════
+Config editada manualmente en ~/.hermes/profiles/principal/config.yaml:
+  model:
+    provider: custom
+    base_url: http://localhost:11434/v1
+    api_mode: chat_completions
+    context_length: 65536
+    ollama_num_ctx: 65536
+    name: qwen3:14b
+
+SOUL.md escrito con este rol:
+  - Hub central de los tres perfiles (Principal, Código, Nocturno)
+  - Responde siempre en español
+  - Comando /nota: indexa en memoria con fecha y etiquetas automáticas
+  - Sugiere (nunca fuerza) cambiar a Código cuando detecta tema técnico
+  - Genera diagramas Mermaid cuando Edu pide mapas de ideas
+  - Confirma antes de ejecutar scripts del PC de Edu
+  - TTS habilitado para responder con voz por Telegram
+
+PROBLEMA CRÍTICO: El config.yaml fue editado pero nunca se verificó.
+El último intento antes de editar daba error HTTP 413 de Groq (el perfil
+seguía usando Groq en vez de Ollama local). Puede que la API key de Groq
+todavía esté activa y sobreescriba el provider custom.
+
+══════════════════════════════════════════════
+TAREA 1 — Verificar y reparar el perfil Principal
+══════════════════════════════════════════════
+1. Comando para mostrar el config.yaml actual del Principal y validar formato
+
+2. Comando para verificar que Ollama tiene qwen3:14b:
+   ollama list
+
+3. Test mínimo: lanzar "principal chat", mandar "hola", verificar que:
+   a) No hay error de API key ni HTTP 413
+   b) El status bar muestra qwen3:14b (no llama-3.3-70b-versatile)
+   c) Responde en español sin intentar llamar a Groq
+
+4. Fixes según el error que aparezca:
+   CASO A — Sigue usando Groq (HTTP 413 / TPM limit):
+   → Cómo eliminar la credencial de Groq del perfil y forzar Ollama local
+   
+   CASO B — "Provider resolver returned an empty API key":
+   → Para Ollama local el provider custom no necesita API key real.
+     Cómo añadir un token dummy ("ollama" o "local") al config del perfil
+   
+   CASO C — El config del perfil no overridea el global:
+   → Cómo verificar qué valores está leyendo realmente Hermes y cómo forzarlo
+
+══════════════════════════════════════════════
+TAREA 2 — STT: Whisper de Groq para audios de Telegram
+══════════════════════════════════════════════
+El Principal necesita transcribir notas de voz (.ogg) que Edu manda por Telegram.
+
+Groq Whisper:
+  Endpoint: https://api.groq.com/openai/v1/audio/transcriptions
+  Modelos: whisper-large-v3-turbo (preferido), whisper-large-v3
+  API key: GROQ_API_KEY (ya configurada en el sistema para este perfil)
+
+Necesito:
+1. Bloque YAML exacto para añadir al config del perfil Principal que configure
+   Groq Whisper como proveedor STT (indicar si va en el perfil o en el global)
+
+2. Si la GROQ_API_KEY ya configurada en el perfil sirve para STT, confirmarlo.
+   Si hay que especificarla de otra forma en el bloque stt:, mostrarlo.
+
+3. Comando para probar la transcripción con un archivo .ogg de prueba:
+   Generar un .ogg con espeak o similar y transcribirlo con el endpoint de Groq
+   (o el comando que use internamente Hermes para STT)
+
+══════════════════════════════════════════════
+TAREA 3 — TTS: Piper con voz española
+══════════════════════════════════════════════
+Reemplazar Edge TTS por Piper TTS local.
+Restricción ética: solo voces de datos con licencias abiertas o grabaciones de
+voluntarios con consentimiento explícito. No voz clonada de personas reales.
+
+Objetivo de estilo: voz sintética española, estilo paramétrico tipo Loquendo
+(si existe modelo de comunidad que imite ese estilo, preférelo).
+Si no existe, usar el mejor modelo de español disponible en rhasspy/piper-voices.
+
+1. Comandos para instalar Piper en WSL2 Ubuntu
+   (pip install o binario desde GitHub releases de rhasspy/piper)
+
+2. Cómo descargar el modelo de voz español elegido:
+   - URL o comando wget/curl exacto
+   - Nombre del archivo .onnx y .json del modelo
+   - Dónde colocarlos (~/piper-voices/ u otro path estándar)
+
+3. Bloque YAML completo para la sección tts: del config del perfil Principal
+   con el provider piper y la voice correcta
+
+4. Comando de prueba:
+   echo "Hola, soy tu asistente personal" | piper --model [path] --output_file /tmp/test.wav
+   Y cómo reproducir el audio en WSL (aplay, ffplay, o copiar a Windows)
+
+5. Cómo habilitar auto_tts en el config del Principal para que responda
+   con voz automáticamente en Telegram
+
+══════════════════════════════════════════════
+FORMATO DE RESPUESTA
+══════════════════════════════════════════════
+- Comandos shell ejecutables en WSL Ubuntu, en orden, listos para pegar
+- Bloques YAML completos con indentación correcta, indicando el path del archivo
+- Si algo puede fallar: diagnóstico y fix incluidos
+- Verificación funcional al final de cada tarea
+- Sin pseudocódigo. Todo ejecutable directamente en una terminal WSL.`;
+
+const t2=`Eres un experto en Python, FastAPI, pexpect, y automatización de sistemas Linux.
+
+══════════════════════════════════════════════
+ENTORNO (verificado y funcionando)
+══════════════════════════════════════════════
+- WSL2 Ubuntu en Windows 11
+- Hermes AI agent framework, perfiles en ~/.hermes/profiles/
+- Ollama en localhost:11434, qwen3:14b activo y respondiendo
+- Perfil "principal" funcionando con qwen3:14b (hub central)
+- Freebuff: CLI interactiva instalada en WSL
+    Lanzar: freebuff
+    Espera input en cursor: "> " o "» "
+    Acepta texto libre, devuelve respuesta antes del siguiente cursor
+    Automatizable con pexpect
+- Docker disponible en WSL
+- Python 3.11, pip disponibles
+- Hub.py correrá en localhost:8000
+
+══════════════════════════════════════════════
+ARQUITECTURA DEL ROUTER
+══════════════════════════════════════════════
+decidir_ruta(texto) analiza con regex (re.IGNORECASE) y devuelve:
+
+  "oi" — Open Interpreter + qwen3:14b (local, terminal):
+    keywords: ejecuta, corre, bash, instala, terminal, archivo,
+              carpeta, directorio, script, lanza, abre
+
+  "pro" — DeepSeek V4 Pro vía Freebuff (5 sesiones/día):
+    condición: NOT oi AND hay_sesion_premium()
+    keywords: arquitectura, diseño, refactor, estructura, sistema,
+              módulo, patrones, escalab, abstract, principios, SOLID
+
+  "flash" — DeepSeek V4 Flash vía Freebuff (ilimitado):
+    condición: NOT oi AND es_código
+    keywords: código, función, bug, error, script, componente,
+              api, clase, método, implementa, corrige, optimiza
+
+  "local" — qwen3:14b Ollama (zero cost):
+    default cuando no encaja en ninguna anterior
+
+Prefijo para ruta "pro":
+  "Analiza con profundidad arquitectónica y best practices. Considera
+   escalabilidad, mantenibilidad y principios SOLID. Consulta: " + texto
+
+══════════════════════════════════════════════
+TAREA 1 — Config del perfil Código
+══════════════════════════════════════════════
+Dame el archivo completo: ~/.hermes/profiles/codigo/config.yaml
+
+Debe incluir:
+- model: mismo que Principal (provider custom, base_url http://localhost:11434/v1,
+  api_mode chat_completions, context_length 65536, ollama_num_ctx 65536,
+  name qwen3:14b, max_tokens 32768)
+- terminal backend: Docker, imagen nikolaik/python-nodejs:python3.11-nodejs20
+- tools activos: code_execution, terminal, web_search, web_extract, file_ops,
+  browser_automation, memory, skills, task_planning, clarify, delegate_task,
+  cross_platform_messaging, vision
+- Sin plataformas de mensajería configuradas (el gateway lo lleva el Principal)
+
+También: los comandos equivalentes "codigo config set ..." por si la edición
+directa del YAML no toma efecto.
+
+══════════════════════════════════════════════
+TAREA 2 — SOUL.md del perfil Código
+══════════════════════════════════════════════
+Genera el archivo completo: ~/.hermes/profiles/codigo/SOUL.md
+
+El Código es el especialista técnico, convocado por el Principal.
+
+Proyecto principal de Edu:
+  "El Búnker" — /mnt/c/Proyectos/el-bunker
+  Existe CONTRATO.md que define convenciones y límites del agente.
+
+El SOUL.md debe especificar:
+- Identidad: especialista técnico de Hermes para Edu, trabaja con El Búnker
+- Idioma: español siempre
+- Workflow obligatorio para código significativo:
+    1. Si el proyecto tiene CONTRATO.md, leerlo antes de generar código
+    2. Llamar a POST http://localhost:8000/prompt para decidir la ruta
+    3. Mostrar: "Resolviendo con: [local/flash/pro/oi]"
+    4. Razonar en voz alta antes de proponer la solución
+- Confirmación obligatoria antes de ejecutar cualquier comando en terminal
+- Nunca generar código sin una verificación o test asociada
+- Delegar de vuelta al Principal para temas no técnicos
+
+══════════════════════════════════════════════
+TAREA 3 — hub.py completo
+══════════════════════════════════════════════
+Genera el archivo Python completo y funcional: ~/.hermes/hub.py
+
+REQUISITOS ESTRICTOS (no omitir ninguno):
+
+1. FastAPI server en puerto 8000, CORS permitido para localhost
+   Modelo Pydantic: PromptRequest(texto: str, ruta: Optional[str] = None)
+
+2. def decidir_ruta(texto: str) -> str
+   Implementar con re.search según los patrones de la arquitectura arriba.
+   Si la request incluye "ruta", saltar el router y usar esa directamente.
+
+3. def ruta_local(texto: str) -> str
+   POST a http://localhost:11434/api/generate
+   Body: {"model": "qwen3:14b", "prompt": texto, "stream": False}
+   Return: data["response"]
+
+4. def ruta_freebuff(texto: str, modo: str = "flash") -> str
+   Si modo == "pro": prepend el prefijo de contexto al texto.
+   pexpect.spawn("freebuff", timeout=180, encoding="utf-8")
+   child.expect(r"[>»]\\s?", timeout=30)
+   child.sendline(texto_final)
+   child.expect(r"[>»]\\s?", timeout=180)
+   resultado = child.before.strip()
+   child.sendline("/exit") ; child.close()
+   Return: resultado
+   Si pexpect.TIMEOUT: fallback automático a ruta_local(texto)
+
+5. def ruta_open_interpreter(texto: str) -> str
+   import interpreter
+   interpreter.llm.model = "ollama/qwen3:14b"
+   interpreter.llm.api_base = "http://localhost:11434"
+   interpreter.auto_run = True
+   interpreter.llm.context_window = 8000
+   mensajes = interpreter.chat(texto, display=False, stream=False)
+   Return: último mensaje del asistente
+
+6. class SessionManager:
+   SESSIONS_FILE = os.path.expanduser("~/.hermes/sessions.json")
+   MAX_POR_DIA = 5
+   Métodos: hay_sesion() -> bool, usar_sesion() -> bool, get_status() -> dict
+   Persistencia: JSON {"fecha": "YYYY-MM-DD", "usadas": N}
+   Reset automático al cambiar la fecha.
+
+7. def loguear(prompt: str, ruta: str, respuesta: str):
+   LOG_FILE = os.path.expanduser("~/.hermes/conversaciones.jsonl")
+   Formato por línea (ChatML compatible con fine-tuning):
+   {
+     "timestamp": "ISO 8601",
+     "ruta": ruta,
+     "messages": [
+       {"role": "user", "content": prompt},
+       {"role": "assistant", "content": respuesta}
+     ]
+   }
+   Append, ensure_ascii=False.
+
+8. Endpoints:
+   POST /prompt
+     Respuesta: {"ruta": str, "resultado": str, "sesiones_restantes": int}
+   GET /sesiones
+     Respuesta: {"fecha": str, "usadas": int, "restantes": int}
+   GET /health
+     Verifica Ollama (GET localhost:11434) y que freebuff está en PATH
+     Respuesta: {"status": "ok|degraded", "ollama": bool, "freebuff": bool}
+
+9. Fallbacks:
+   - Freebuff timeout → ruta_local()
+   - Sesiones pro agotadas → "flash" automáticamente
+   - Ollama no disponible → HTTPException 503
+
+══════════════════════════════════════════════
+TAREA 4 — Instalación y arranque como servicio
+══════════════════════════════════════════════
+1. requirements.txt completo para hub.py
+
+2. Archivo de servicio systemd para WSL:
+   Path: ~/.config/systemd/user/hub.service
+   ExecStart: uvicorn hub:app --host 127.0.0.1 --port 8000
+   WorkingDirectory: ~/.hermes
+   Restart: on-failure
+   Comandos para habilitar e iniciar el servicio
+
+3. Tests con curl para cada endpoint
+
+══════════════════════════════════════════════
+FORMATO DE RESPUESTA
+══════════════════════════════════════════════
+- Código Python completo con todos los imports, sin fragmentos
+- hub.py debe ser copy-paste directo al archivo final
+- requirements.txt completo
+- Bloques YAML completos con path indicado
+- Comandos shell ejecutables en WSL Ubuntu
+- Verificación al final de cada tarea`;
+
+const t3=`Eres un experto en Python, Linux (WSL2), bash scripting y automatización de sistemas.
+
+══════════════════════════════════════════════
+ESTADO DEL SISTEMA (ya implementado y funcionando)
+══════════════════════════════════════════════
+- Perfil "principal": qwen3:14b Ollama, hub central, con TTS y STT
+- Perfil "codigo": qwen3:14b Ollama, con hub.py en localhost:8000
+  hub.py genera ~/.hermes/conversaciones.jsonl (formato ChatML/JSONL)
+- Perfil "nocturno": qwen3:8b Ollama, existe pero SOUL.md sin actualizar
+- Gateway de Telegram activo sobre perfil "default" (a migrar al Principal)
+
+Estructura de archivos:
+  ~/.hermes/
+    config.yaml
+    hub.py
+    sessions.json          (contador sesiones Pro, generado por hub.py)
+    conversaciones.jsonl   (log del día, generado por hub.py)
+    profiles/
+      principal/ codigo/ nocturno/ default/
+    sintesis/              (A CREAR — síntesis nocturnas markdown)
+    dataset/               (A CREAR — entradas premium fine-tuning)
+    logs/                  (A CREAR — logs de servicios)
+
+══════════════════════════════════════════════
+TAREA 1 — SOUL.md y script del Nocturno
+══════════════════════════════════════════════
+El Nocturno (qwen3:8b) no atiende al usuario en tiempo real.
+Se ejecuta automáticamente a las 3 AM para procesar el día.
+
+Proceso que debe ejecutar en orden:
+  1. Leer ~/.hermes/conversaciones.jsonl del día actual
+  2. Enviar los mensajes a qwen3:8b vía Ollama (localhost:11434/api/generate)
+     para identificar: errores recurrentes, temas del día, patrones de uso,
+     y entradas de alta calidad para fine-tuning
+  3. Generar síntesis en ~/.hermes/sintesis/YYYY-MM-DD.md:
+     - Resumen ejecutivo (3-5 líneas)
+     - Errores o dificultades detectadas
+     - Temas tratados hoy
+     - Métricas: sesiones Pro usadas, ruta más frecuente
+  4. Copiar entradas de rutas "pro" y "flash" a ~/.hermes/dataset/premium.jsonl
+  5. Backup de conversaciones.jsonl en ~/.hermes/sintesis/YYYY-MM-DD.jsonl
+  6. Log de todo lo hecho en ~/.hermes/logs/nocturno.log
+
+A) SOUL.md completo: ~/.hermes/profiles/nocturno/SOUL.md
+   Reflejar el rol de síntesis nocturna (no asistente interactivo).
+   Instrucciones de qué hacer al activarse, en qué orden, cómo reportar.
+
+B) Script Python completo: ~/.hermes/nocturno_run.py
+   - Usa requests a localhost:11434 directamente (sin CLI de Hermes)
+   - Lee el JSONL del día, extrae mensajes, manda al modelo para análisis
+   - Escribe todos los archivos de salida
+   - Log detallado en ~/.hermes/logs/nocturno.log
+   - Exit code 0 si OK, 1 si hubo error
+
+C) Automatización a las 3 AM:
+   Opción A — crontab: línea exacta para crontab -e
+   Opción B — systemd timer: archivos nocturno.timer y nocturno.service
+               en ~/.config/systemd/user/
+   Dame las dos opciones, recomendando la mejor para WSL2.
+
+══════════════════════════════════════════════
+TAREA 2 — Migración del gateway de Telegram
+══════════════════════════════════════════════
+El token del bot de Telegram puede estar solo en el config del "default".
+
+Dame en orden:
+1. Comando para ver el token de Telegram del perfil "default":
+   cat ~/.hermes/profiles/default/config.yaml | grep -A 10 telegram
+   (o la sección exacta donde Hermes guarda el token)
+
+2. Bloque YAML exacto para añadir ese token al perfil "principal"
+   sin repetir el wizard completo (edición directa de config.yaml).
+   Incluir placeholder del token con la estructura correcta.
+
+3. Secuencia de migración (comandos en orden):
+   a) Parar el gateway del default
+   b) Arrancar el gateway del Principal
+   c) Verificar desde Telegram que el bot responde desde el Principal
+      (que el SOUL.md del Principal esté activo: responde en español, dice quién es)
+   d) Hacer el Principal el gateway permanente, sin que el default interfiera
+
+══════════════════════════════════════════════
+TAREA 3 — Scripts de arranque del sistema
+══════════════════════════════════════════════
+
+A) ~/hermes_start.sh — arranca todo el sistema en orden:
+
+  PASO 1: Verificar si Ollama corre (curl -s localhost:11434)
+          Si no: ollama serve & + esperar 30s max
+
+  PASO 2: Verificar qwen3:14b disponible en ollama list
+
+  PASO 3: Verificar si hub.py corre (curl -s localhost:8000/health)
+          Si no: arrancar con uvicorn en background,
+          log a ~/.hermes/logs/hub.log, esperar respuesta OK (timeout 15s)
+
+  PASO 4: Verificar si gateway Principal está activo
+          Si no: principal gateway start &,
+          log a ~/.hermes/logs/gateway.log, esperar 5s y verificar proceso
+
+  PASO 5: Reporte de estado en terminal:
+  ┌─────────────────────────────────────┐
+  │ Hermes — estado del sistema         │
+  ├─────────────────────────────────────┤
+  │ Ollama      : OK / FAIL             │
+  │ qwen3:14b   : OK / no encontrado    │
+  │ Hub.py      : OK (puerto 8000)      │
+  │ Gateway     : OK / FAIL             │
+  │ Sesiones Pro: N/5 restantes hoy     │
+  └─────────────────────────────────────┘
+  Si algo falla: mostrar últimas 5 líneas del log relevante.
+
+B) ~/hermes_stop.sh — para todo limpiamente y confirma.
+
+══════════════════════════════════════════════
+FORMATO DE RESPUESTA
+══════════════════════════════════════════════
+- Scripts bash completos con shebang (#!/bin/bash) y comentarios
+- Python completo con manejo de errores y logging
+- Bloques YAML completos con paths indicados
+- Usar $HOME o os.path.expanduser — no paths hardcodeados
+- Cron/systemd: líneas exactas listas para copiar
+- Verificación funcional al final de cada tarea
+- Sin pseudocódigo. Todo ejecutable directamente en WSL Ubuntu.`;
+
+document.getElementById('t1').value=t1;
+document.getElementById('t2').value=t2;
+document.getElementById('t3').value=t3;
+
+function cp(btn,id){
+  navigator.clipboard.writeText(document.getElementById(id).value).then(()=>{
+    btn.textContent='Copiado ✓';
+    btn.classList.add('ok');
+    setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('ok')},2200);
+  });
+}
+</script>

@@ -1,0 +1,312 @@
+================================================================
+  EL BÚNKER — INVENTARIO COMPLETO DE FEATURES
+  Generado: 2026-06-08
+  Propósito: Base para entrevista de definición de VAULT y cierre de CONTRATO.md
+================================================================
+
+==========================================================
+✅ YA IMPLEMENTADO (≈102 features)
+==========================================================
+
+── 🔐 CORE / INFRAESTRUCTURA ──
+1. Auth OAuth2 Google (GIS) con whitelist de 3 usuarios
+2. Secuencia de boot con pantalla de carga y manejo de errores
+3. Persistencia serverless: Google Drive API v3 como BD (JSON)
+4. Service Worker para PWA instalable en Android
+5. Schema v5.0.0 con migración automática desde v1
+6. Heartbeat automático cada 20 min al Drive
+7. Pantalla de "Acceso no autorizado" para emails fuera de whitelist
+
+── 🎨 LAYOUT / SHELL VISUAL (Cyber-Vandal) ──
+8. Scanlines CRT + textura de ruido como overlays fijos
+9. Grid background + glows ambientales reactivos al vibe
+10. Status bar superior con reloj en tiempo real, estado DB, botón salir
+11. Bottom nav con 4 tabs: VAULT, TIMELINE, MUSIC LAB, CAPSULES
+12. Transiciones animadas entre páginas (Framer Motion)
+13. Sistema de toasts no bloqueantes con vibración háptica
+14. Propagación de trackVibe como --vibe-accent en :root
+15. Estética cyber-vandal / Winamp con fuente JetBrains Mono
+
+── 🏛️ VAULT (Bóveda de memoria) ──
+16. Carrusel de Eras horizontal con drag-to-scroll
+17. Contador de aventura (días desde fecha inicio con animación de dígitos)
+18. Heartbeat visual (corazón verde latiendo = vault seguro, rojo = en riesgo)
+19. Cápsulas del tiempo con countdown (bloqueadas/desbloqueadas)
+20. Sistema de bibliotecas Drive con estados (active/at_risk/lost)
+21. Monitoreo de capacidad de bibliotecas (porcentaje usado, alertas)
+22. Heartbeat manual de bibliotecas (admin confirma que entró a la cuenta)
+23. Filtrado de entradas/mensajes por usuario (myEntries, myMessages)
+24. Botón exportar backup JSON (solo admin)
+25. Demo data cuando no hay DB real
+26. EraCard con cover image, color accent, índice, descripción
+27. EraDetailPanel con stats (entradas, fotos, notas, hitos) + preview
+
+── 🎵 MUSIC LAB — Reproductor ──
+28. WinampPlayer visual con audio nativo <audio> (ADR-010)
+29. Play/pause, anterior, siguiente, seek bar interactiva táctil
+30. Loop triestado: off → lista → track (ADR-007)
+31. Shuffle toggle
+32. Control de volumen bidireccional (slider + botones físicos Android)
+33. Barra de progreso con hover y seek táctil
+34. Auto-play signal (dispara reproducción al cambiar track)
+35. WakeLock (pantalla no se apaga durante reproducción)
+36. MediaSession API: metadatos, controles lockscreen, botones auriculares
+37. Scroll animado del título si desborda
+38. Visualizador de audio con Web Audio API (AnalyserNode, 32 barras)
+39. trackVibe derivado del tag principal del track activo
+40. Indicador de sync status (cola guardándose/error)
+41. Botón "LANZAR DROP" desde el reproductor
+42. Skip atrás <3s → anterior; ≥3s → reiniciar (ADR-009)
+
+── 🎵 MUSIC LAB — Cola ──
+43. Cola unificada (_manual: true/false) (Q14)
+44. Tab COLA visible solo si tiene tracks
+45. "Reproducir a continuación" (inserta tras track activo) (C4-A)
+46. "Añadir a cola" (al final) (C4-B)
+47. Drag & drop para reordenar cola
+48. Historial de reproducción visible en cola (atenuado)
+49. Track activo destacado en cola (brillo + borde)
+50. Persistencia de cola en Drive (queue_[userId].json)
+51. Guardar cola como playlist (botón ◈)
+52. Vaciar cola con confirmación (botón ✕)
+53. Búsqueda y filtro por tag en cola
+54. queueContextName (nombre de playlist como contexto)
+55. Tracks manuales se diferencian visualmente (color propio de vibe)
+56. Botón para insertar track manual en playlist activa (Q4)
+
+── 🎵 MUSIC LAB — Tracks ──
+57. Lista de tracks con 3 modos de vista: ☰ lista / ⊞ grid / ❒ tarjeta
+58. Preferencia de vista persistente en localStorage por usuario
+59. TrackCard con thumbnail o iniciales del artista como fallback
+60. TrackCardGrid con soporte de thumbnail YouTube
+61. Formulario Añadir track (título, artista, nota, tag vibe obligatorio)
+62. Modo edición con banner púrpura "MODO EDICIÓN ACTIVO"
+63. Edición inline: seleccionar track → editar metadatos → guardar
+64. Modo edición persiste al guardar, solo sale con botón ✎
+65. Eliminar track con confirmación destructiva
+66. Filtro por vibe tags (pastillas horizontales scrollables)
+67. Búsqueda por texto con AND sobre filtro de tag (VB15)
+68. Carga progresiva (+50 tracks, "CARGAR MÁS")
+69. Menú contextual ⋮ (bottom sheet): play next, cola, playlist
+70. Tap en track = reproducir; tap en track activo = toggle play/pause
+71. Indicador visual de track activo (borde pulsante)
+
+── 🎵 MUSIC LAB — Playlists ──
+72. Crear playlist (nombre, tag vibe opcional)
+73. Eliminar playlist con confirmación
+74. Renombrar playlist inline
+75. Modal detalle de playlist con lista de tracks
+76. Añadir track a playlist desde menú ⋮
+77. Reproducir playlist completa (▶ PLAY)
+78. Drag & drop para reordenar playlists y tracks dentro
+79. Filtro por tag y búsqueda en playlists
+80. Eliminar track individual de playlist
+81. Indicador de tracks totales y duración
+
+── ⚡ MUSIC LAB — Drops ──
+82. DropComposeModal: mensaje + timestamp sobre track
+83. DropAlertModal intrusivo (overlay púrpura con animación)
+84. Vista DropsHistory (pendientes / guardados)
+85. Polling de nuevos drops cada 30s
+86. Marcar como visto / guardar en favoritos / eliminar
+87. Drop alerta se muestra al abrir la app si hay pendientes
+
+── 🏷️ MUSIC LAB — Tags ──
+88. TagManager: crear/editar/eliminar tags personalizados
+89. Tags guardados en Drive (music_lab.tags, schema 5.0.0, ADR-016)
+90. ColorPicker con paleta de 12 colores + input hex personalizado
+91. 4 tags de sistema: gaming, 420_chill, dnb, romantiqueo
+92. "all" es filtro UI, nunca tag real (VB2)
+93. Drag & drop para reordenar tags
+94. Indicador de tracks que usan cada tag
+95. Protección: no eliminar tag si hay tracks usándolo
+96. Filtro rápido desde TagManager
+
+── ⧖ CAPSULES — Smoke Session ──
+97. Temporizador circular con presets (15/30/45/60/90 min)
+98. Duración personalizada (CUSTOM)
+99. Anillo visual que se consume con el tiempo
+100. Auto fade de volumen en últimos 2 minutos hasta 0
+101. Restauración de volumen al terminar
+102. Pausa / Reset / Reactivar
+103. Indicador de volumen restante durante fade
+
+── 📱 PWA / ANDROID ──
+104. Instalable como PWA en Android
+105. Service Worker registrado
+106. overscroll-behavior: none (evita pull-to-refresh)
+107. user-select: none global
+108. Sincronización bidireccional volumen físico Android ↔ app (BUG-22)
+
+==========================================================
+🚨 BUGS ACTIVOS (BACKLOG)
+==========================================================
+Q1/Q8/Q9  Shuffle no respeta cola manual
+SH1       Shuffle aleatoriza todos, no solo restantes
+L1        Loop track: skip no hace seek al inicio
+Q2/Q3     Historial no persiste en localStorage
+Q10       Cola no sobrevive a cambios de contexto
+
+==========================================================
+📐 PLANIFICADO — FASE A (Pendiente)
+==========================================================
+
+── [S] SESIÓN ──
+S1        Tracks ≤25min siempre empiezan desde el principio
+S2        Posición guardada/restaurada para tracks >25min
+S4        Sin MP3 o sin red → estado neutral consciente
+S7        Dos botones individuales en cabecera de cola
+S8        Shuffle/loop en localStorage por usuario
+
+── [Q] COLA ──
+Q6        Límite 75 tracks, sugerir guardar como playlist
+Q10       Cola manual sobrevive a cambios de contexto
+Q12       Añadir playlist entera a cola
+Q14       Separación visual completa cola manual vs contexto
+Q15       Historial scroll arriba (5 tracks atenuados + revelar más)
+Q16/Q17   Soft delete en cola (track activo vs en espera)
+
+── [C] CONTEXTO DE REPRODUCCIÓN ──
+C2/C3     Reproducir playlists desde botón principal
+C5        Fin de cola → parar, barra 100%, fade a UI base
+EC-C2     Inyección dinámica de tracks en playlist activa
+EC-C3     Bottom sheet: reemplazar contexto o añadir
+
+── [P] PLAYBACK ──
+P1        Motor automático: local cacheado + R2 stream fallback
+P2        Fallback de red con reintento 3s + skip
+P3/P-M8   Gapless por defecto + precarga al 80%
+EC-P1     Red cae durante precarga → indicador visual
+EC-P2     Archivo local corrupto → fallback R2
+EC-P3     Token expira → refresh silencioso + Service Worker
+EC-P4     Track sin archivo → indicador + auto-skip
+EC-P5     Duplicado mismo archivo → seek en lugar de recargar
+
+── [SH] SHUFFLE ──
+SH1       Activar shuffle aleatoriza restantes, no todos
+SH2       Botón anterior respeta historial real en shuffle
+SH3       Desactivar shuffle → continuar orden lineal
+EC-S1     Shuffle activo + track añadido manual
+EC-S2     Track eliminado de playlist con shuffle activo
+EC-S3     Lista agotada + loop → nueva lista diferente
+EC-S4     Shuffle con 1 track → para al terminar
+EC-S5     Historial sin límite en localStorage
+
+── [L] LOOP ──
+L1        Loop track absoluto: anterior/siguiente → seek inicio
+L2        Loop lista: último track eliminado → nuevo último
+L3        Loop lista con 1 track = loop track
+L4        Loop off + lista agotada → parar
+
+── [A] ANDROID ──
+A1        OOM kill → restaurar sesión completa
+A2        Llamada entrante → pausa, no auto-reanudar
+A3        Auriculares desconectados → pausa inmediata
+A4        Pantalla bloqueada → reproducción continúa
+A5        Otra app de audio → pausa, no auto-reanudar
+A6        Modo No Molestar → sin efecto
+
+── [M] MEDIASESSION ──
+M1-M12    Controles completos MediaSession
+M10       Sincronización volumen físico bidireccional
+CAST1-6   Integración Chromecast básica
+
+── [UX] EXPERIENCIA DE USUARIO ──
+UX1       Double-tap ±10s seek en barra de progreso
+UX2       Feedback háptico en acciones clave
+UX5       Swipe horizontal = cambiar track, vertical = cola
+UX6       Visualizador a pantalla completa (tap en reproductor)
+UX8       Portrait lock forzado
+UX9       Botón buscador en cabecera de cada lista
+
+── [VIZ] VISUALIZADOR ──
+VIZ1      Lockscreen: frame estático del visualizador
+VIZ2      Presets de visualizador por vibe
+VIZ3      Activación por tap + modo screensaver
+VIZ4      Reactividad procedural (BPM) para Cast
+VIZ5      Visualizador en TV con colores del vibe
+
+── [T] TRANSICIONES ──
+T1-T10    Sistema completo de transiciones de vibe
+T8        Mismo tag → pulso de intensidad
+
+── [TR] GESTIÓN DE TRACKS ──
+EC-TR1    Soft delete con aviso multi-usuario
+EC-TR2    Soft delete con info de playlists afectadas
+EC-TR4    Subida duplicada → toast + confirmación
+EC-TR5    Thumbnail automático (iniciales artista + color)
+EC-TR6    Importar metadatos ID3 del MP3
+EC-TR7    Ordenación configurable (alfa, artista, vibe, popular, reciente)
+
+── [LI] GESTIÓN DE PLAYLISTS ──
+EC-LI1    Playlist vacía → estado visual diferenciado
+EC-LI2    Añadir track a playlist desde vista de tracks
+EC-LI3    Tracks eliminados → toast al abrir playlist
+EC-LI5    Sin límite de tracks por playlist
+EC-LI6    Reordenar tracks con shuffle activo
+
+── [SC] ESCUCHA COMPARTIDA ──
+SC1-14    Sistema completo de escucha compartida
+          Botón corazón con animación en header del reproductor
+          Sincronización de posición estricta
+          Presencia mutua siempre visible
+          Atribución visual en cola compartida
+
+── [STAT] ESTADÍSTICAS ──
+STAT-M9   Reproducciones por track/playlist/tag/vibe
+          Drops enviados/recibidos/guardados
+          Base para resumen anual "Lo escuchado este año"
+          Crédito compartido en sesiones (SC12: >50% escuchado)
+
+── SUBIDA MP3 ──
+          Upload directo a R2 con pre-signed URLs (M2)
+
+==========================================================
+📐 PLANIFICADO — FASE B
+==========================================================
+Crossfade configurable 0–8s (P3)
+Selección múltiple de tracks (Q13)
+Drops completo (DROP-M20 fix navegador, DROP-M21 snapshots)
+Live wallpaper lockscreen (VIZ-M12)
+Timeout salvapantallas configurable (VIZ-M14)
+Vibe fusionado playlist+track (VB20)
+Cast SDK completo + receiver app (CAST-M11-FULL)
+
+==========================================================
+📐 PLANIFICADO — FASE C
+==========================================================
+Soporte offline completo
+DLNA / Cast universal (CAST-M11-DLNA)
+FLAC + OPUS (AUDIO-M22)
+Fusión de playlists (EC-LI4)
+Animaciones avanzadas (VIZ-M15, SC-M19-ANIM, DRAG-GLOBAL-C)
+
+==========================================================
+🏛️ VAULT ACTUAL — Estado del código
+==========================================================
+SCHEMA ACTUAL (DB JSON):
+  eras[]           → { id, name, description, start_date, end_date, color, cover_image }
+  entries[]        → { id, era_id, type, content, tags, from, to, created_at }
+  adventures_start_date  → ISO string
+  heartbeat         → ISO string
+  libraries[]      → { id, email, type, label, shared_folder_id, capacity_gb, ... }
+
+UI ACTUAL:
+  • AdventureCounter (widget contador de días)
+  • HeartbeatWidget (widget estado del vault)
+  • EraCard carrusel horizontal con drag-to-scroll
+  • EraDetailPanel (stats + preview de entradas)
+  • TimeCapsule (cuenta atrás o contenido desbloqueado)
+  • Lista de bibliotecas con estados
+
+PENDIENTE DE IMPLEMENTAR EN VAULT:
+  • UI para CREAR entradas (notas, fotos, cartas, hitos)
+  • UI para VISUALIZAR entradas dentro de una Era
+  • Timeline real (pestaña TIMELINE es placeholder)
+  • Cápsulas del tiempo reales (ahora son demo data)
+  • Subida de archivos (fotos, vídeos) a bibliotecas Drive/R2
+  • Galería de fotos/vídeos
+  • Editor de cartas/notas
+  • Sistema de notificaciones entre usuarios para VAULT
+
+================================================================

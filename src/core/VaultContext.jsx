@@ -36,6 +36,11 @@ import GoogleDriveService, {
   checkLibraryCapacity,
   _calcLibraryStatus,
 } from "./GoogleDriveService";
+import { setUploadToken } from "./FileUploadService";
+import { setStatsToken } from "./StatsEngine";
+
+// ─── WORKER API URL ─────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
 // ─── CONTEXT SHAPE ───────────────────────────────────────────
 /**
@@ -112,6 +117,11 @@ export function VaultProvider({ children }) {
   const [masterVolume,  setMasterVolume]  = useState(80);
   const [bootError,     setBootError]     = useState(null);
   const [pendingDrop,   setPendingDrop]   = useState(null);
+  // JWT para Worker API (ADR-024) — persistido en localStorage
+  const [jwtToken,      setJwtToken]      = useState(() => {
+    try { return localStorage.getItem("bunker_jwt") || null; }
+    catch { return null; }
+  });
 
   // Cache de capacidad por biblioteca { [libraryId]: { used_gb, used_pct, near_full } }
   const [libraryCapacity, setLibraryCapacity] = useState({});
@@ -227,6 +237,44 @@ export function VaultProvider({ children }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── JWT helper: obtener token del Worker API ───────────────
+  const _fetchJwt = useCallback(async (email, googleToken) => {
+    if (!email || !googleToken) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, google_token: googleToken }),
+      });
+      if (!res.ok) {
+        console.warn("[Búnker] JWT login failed:", res.status);
+        return;
+      }
+      const { token } = await res.json();
+      if (token) {
+        setJwtToken(token);
+        localStorage.setItem("bunker_jwt", token);
+        setUploadToken(token);
+        setStatsToken(token);
+        console.info("[Búnker] JWT obtenido ✓");
+      }
+    } catch (e) {
+      console.warn("[Búnker] JWT fetch error:", e.message);
+    }
+  }, []);
+
+  // ── Restaurar JWT de localStorage al montar ───────────────
+  useEffect(() => {
+    const saved = (() => {
+      try { return localStorage.getItem("bunker_jwt") || null; }
+      catch { return null; }
+    })();
+    if (saved) {
+      setUploadToken(saved);
+      setStatsToken(saved);
+    }
+  }, []);
+
   // ── Step 2: Fetch user info + DB ──────────────────────────
   const _fetchUserAndDb = useCallback(async (token) => {
     setBootPhase(BOOT.INIT_DB);
@@ -258,6 +306,12 @@ export function VaultProvider({ children }) {
       };
       setUser(fullUser);
 
+      // Obtener JWT del Worker API (S55) usando el token de Google
+      const googleToken = token ?? window.gapi?.client?.getToken?.()?.access_token;
+      if (googleToken && fullUser.email) {
+        _fetchJwt(fullUser.email, googleToken);
+      }
+
       const data = await initDatabase();
       setDb(data);
       setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
@@ -281,6 +335,10 @@ export function VaultProvider({ children }) {
   const _onSignedOut = useCallback(() => {
     setUser(null);
     setDb(null);
+    setJwtToken(null);
+    localStorage.removeItem("bunker_jwt");
+    setUploadToken(null);
+    setStatsToken(null);
     setDbStatus("OFFLINE");
     setLastHeartbeat(null);
     setLibraryCapacity({});
@@ -538,6 +596,9 @@ export function VaultProvider({ children }) {
     db,
     dbStatus,
     lastHeartbeat,
+
+    // Worker API JWT
+    jwtToken,
 
     // Navegación
     activeTab,

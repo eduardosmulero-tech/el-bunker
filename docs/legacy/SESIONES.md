@@ -4,10 +4,22 @@
 
 ---
 
-## SESIÓN 27 — 22 Mayo 2026
+## SESIÓN 38 — 2026-05-29
+**Pliegos:** 101, 102, 103, 104b
+**Commits:**
+- `05b0d0a` PLIEGO-101: AudioVisualizer.jsx — helper withAlpha() para HSL. Fix canvas con accentColor HSL.
+- `3c20cfe` PLIEGO-102: WinampPlayer.jsx — helper withAlpha() local. Migración completa estilos inline hex→HSL. Bordes, estados activos y badge tag restaurados.
+- `[HASH]` PLIEGO-103: PlayerContext.jsx — añadir estado playbackContext y función persistente a Drive.
+- `[HASH]` PLIEGO-104b: MusicLab.jsx — setPlaybackContext y addNext al reproducir desde listas.
+**Bugs resueltos:** BUG-VISUALIZER-HSL, BUG-BUILD-097, BUG-NUEVO-20 (Add Next implementado).
+**Eliminados:** BUG-COLOR-TAG (se resolverá con features de personalización de tags)
+**Notas:** M3 (C1-C5) contexto de reproducción iniciado. M1 y M2 confirmados completos.
+
+## SESIÓN 29 (continuación de historial)
 **Pliegos:** 071
 **Commits:**
 - `[HASH]` PLIEGO-071: fix skip anterior invertido (currentTRef) + scroll título condicional (requestAnimationFrame + width:100%)
+==============================================================
 
 ---
 
@@ -114,3 +126,38 @@ Decisiones arquitecturales: ninguna
 - **Pliegos procesados:** PLIEGO-081, PLIEGO-082 (Completos), PLIEGO-083 (Parcial).
 - **Incidencias:** Agotamiento masivo de contexto debido a múltiples fallos de `pliego_apply.py` en la indentación de reemplazos pequeños.
 - **Decisión Arquitectónica:** Aprobación del ADR-015 para mitigar la fragilidad del parser obligando a reemplazar bloques lógicos completos.
+## S34 — 2026-05-28
+Pliegos: PLIEGO-088, PLIEGO-089, PLIEGO-090, PLIEGO-091
+Bugs resueltos: BUG-skipDir, BUG-deletePlaylist
+Confirmados: 076, 078, 080, 073, 072, 084, 085, 086
+Pendiente: BUG-SW-01, BUG-COLOR-TAG, PLIEGO-083
+Decisiones arquitecturales: ninguna
+- PLIEGO-083 aplicado manualmente. BUG-LAG04 cerrado.
+### Sesión 36 (2026-05-28)
+- **Pliegos aplicados:** PLIEGO-094, PLIEGO-095a, PLIEGO-095b, PLIEGO-095c, PLIEGO-096.
+- **Cambios clave:** 
+  - Refactorización de la infraestructura de Tags (Fase 1). 
+  - Creación de fuente de verdad en `tokens.js` con derivación automática de paletas (HSL).
+  - Migración de `PlayerContext` a la nueva estructura.
+  - Corrección de `REGLAS.md` para clarificar sintaxis de pliegos multi-bloque.
+  - *Nota:* Fallo en build al iniciar refactor de `MusicLab.jsx` (abortado, pendiente para S37).
+  ## S39 — 2026-05-29
+Pliegos: PLIEGO-105 a PLIEGO-122 (18 pliegos)
+M3 cerrado completo: playbackContext, historial Q2/Q15, reproducir a continuación Q11, drag&drop cola Q5 y playlists, deuda visual COLA/LISTS, toast duplicados Q7.
+Archivos tocados: TrackCard.jsx, PlayerContext.jsx, MusicLab.jsx, PlaylistManager.jsx
+
+## S42 — 2026-05-31
+Pliegos aplicados: P-139 a P-155 (con variantes). Sistema de tags Fase A iniciado.
+Completado: schema 5.0.0, TagManager.jsx, VIBE_TAGS dinámico, tag obligatorio en AddTrackForm, handlers Drive, botón ⚙ VibeTagBar, filtros tag en LISTS/COLA/PlaylistDetailModal.
+Bugs introducidos: SCROLL-01 (VibeTagBar no desplaza — causa raíz no localizada), TAG-01 (emptyForm ReferenceError en TagManager).
+Bugs resueltos: Q1/Q8/Q9 (P-134 ya estaba aplicado), export VIBE_TAGS (P-142).
+Archivos tocados: GoogleDriveService.js, MusicLab.jsx, TagManager.jsx, TrackCard.jsx, AddTrackForm.jsx, App.jsx, PlaylistManager.jsx.
+Nota: demasiadas iteraciones en fix scroll — localizar causa raíz con DevTools en S43 antes de generar más pliegos.
+
+### S43 — 2026-05-31
+- **Pliegos:** P-156 a P-165
+- **Archivos:** `TagManager.jsx`, `MusicLab.jsx`, `TrackCard.jsx`
+- **Hitos:** - Resolución de crash crítico en `TagManager.jsx` (TAG-01).
+  - Migración de `TagManager` a overlay global.
+  - Resolución del secuestro táctil del scroll horizontal en Android causado por listeners `whileTap` de `framer-motion` (SCROLL-01).
+  - Corrección de solapamiento del overlay con el header superior.
