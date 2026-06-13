@@ -148,8 +148,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
   const trackVibe = activeTrack?.tag ?? null;
 
-  const audioRef    = useRef(null);
-  const wakeLockRef = useRef(null);
+  const audioRef        = useRef(null);
+  const preloadAudioRef = useRef(null);  // Fase 1.1 — P-M8: segundo <audio> para precarga silenciosa
+  const wakeLockRef     = useRef(null);
 
   // ── Persistencia cola en Drive ────────────────────────────
   // S76: Fetch queue from Worker API (D1) instead of Drive
@@ -490,6 +491,84 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // P2.7: crossOrigin solo para R2 (workers.dev). Drive no devuelve CORS → crash.
   const audioCrossOrigin = audioSrc?.includes("workers.dev") ? "anonymous" : undefined;
 
+  // ── Fase 1.1 — P-M8: Precarga del siguiente track al 80% ──────
+  // Resuelve la URL del siguiente track sin efectos secundarios.
+  // No muta estado — es una proyección pura del estado actual.
+  const _resolveNextTrackUrl = useCallback(() => {
+    // Loop track → mismo track se repite, no tiene sentido preload
+    if (loopMode === "track") return null;
+
+    // Cola activa → el siguiente es el primer track distinto del activo
+    if (localQueue.length > 0) {
+      let next = localQueue[0];
+      if (next.id === activeTrack?.id && localQueue.length > 1) next = localQueue[1];
+      else if (next.id === activeTrack?.id) return null;
+      return getStreamUrl(next);
+    }
+
+    // Sin cola: buscar en la lista global (tracks)
+    const list = tracks;
+    if (!list.length || !activeTrack) return null;
+
+    const idx = list.findIndex((t) => t.id === activeTrack.id);
+    if (idx < 0) return null;
+
+    // Shuffle activo → orden impredecible, no preload
+    if (shuffle) return null;
+
+    // Loop off y estamos en el último track → no hay siguiente
+    if (loopMode === "off" && idx >= list.length - 1) return null;
+
+    const nextIdx = (idx + 1) % list.length;
+    return getStreamUrl(list[nextIdx]);
+  }, [activeTrack, localQueue, loopMode, shuffle, tracks]);
+
+  // Activar precarga cuando el track actual supera el 80% de duración.
+  // El segundo <audio> carga la URL en cache del navegador. Silencioso.
+  // Al saltar al siguiente track, el browser ya tiene el archivo → carga instantánea.
+  useEffect(() => {
+    const audio = audioRef.current;
+    const preload = preloadAudioRef.current;
+    if (!audio || !preload || !isPlaying) return;
+
+    let triggered = false;
+    const THRESHOLD = 0.8;
+
+    const onTimeUpdate = () => {
+      if (triggered) return;
+      const dur = audio.duration;
+      const ct  = audio.currentTime;
+      if (!dur || !ct || dur <= 0) return;
+
+      if (ct / dur >= THRESHOLD) {
+        triggered = true;
+        audio.removeEventListener("timeupdate", onTimeUpdate); // cleanup inmediato tras disparar
+        const nextUrl = _resolveNextTrackUrl();
+        if (nextUrl && preload.src !== nextUrl) {
+          // crossOrigin debe coincidir con el audio principal
+          const isR2 = nextUrl.includes("workers.dev");
+          if (isR2) preload.crossOrigin = "anonymous";
+          else preload.removeAttribute("crossOrigin");
+          preload.src = nextUrl;
+          preload.load();
+          console.info("[Búnker] Precarga activada al 80%:", nextUrl.slice(-40));
+        }
+      }
+    };
+
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    return () => audio.removeEventListener("timeupdate", onTimeUpdate);
+  }, [isPlaying, _resolveNextTrackUrl]);
+
+  // Limpiar precarga cuando cambia el track activo
+  useEffect(() => {
+    const preload = preloadAudioRef.current;
+    if (preload && preload.src) {
+      preload.removeAttribute("src");
+      preload.load();
+    }
+  }, [activeTrack?.id]);
+
   return (
     <PlayerContext.Provider value={{
       activeTrack, setActiveTrack,
@@ -541,6 +620,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           // S78: Restore saved position for long tracks
           if (activeTrack) restorePosition(activeTrack);
         }}
+      />
+      {/* Fase 1.1 — P-M8: Precarga silenciosa del siguiente track.
+          Sin volumen, sin controles. Solo para cache del navegador.
+          El src se asigna programáticamente al alcanzar 80% de duración. */}
+      <audio
+        ref={preloadAudioRef}
+        preload="none"
+        style={{ display: "none" }}
       />
       {children}
     </PlayerContext.Provider>
