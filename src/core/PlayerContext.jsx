@@ -239,6 +239,18 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         skipCount++;
         next = localQueue[skipCount];
       }
+      // Fase 1.2 — P3: Gapless. Si el preload ya tiene el siguiente track cargado,
+      // inyectar su src en el audio principal antes de actualizar estado.
+      if (next && preloadAudioRef.current && audioRef.current) {
+        const nextUrl = getStreamUrl(next);
+        if (preloadAudioRef.current.src === nextUrl) {
+          const isR2 = nextUrl.includes("workers.dev");
+          if (isR2) audioRef.current.crossOrigin = "anonymous";
+          else audioRef.current.removeAttribute("crossOrigin");
+          audioRef.current.src = nextUrl;
+          audioRef.current.play().catch(() => {});
+        }
+      }
       if (activeTrack) {
         trackSkip(activeTrack.id, "queue_advance");
         setPlayHistory((h) => [...h, activeTrack]);
@@ -480,9 +492,21 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     } else {
+      // Fase 1.2 — P3: Gapless. Si el preload ya tiene el siguiente track cargado,
+      // inyectar su src en el audio principal antes de skip().
+      // El navegador ya tiene el recurso en cache → arranque near-zero gap.
+      const preload = preloadAudioRef.current;
+      const nextUrl = _resolveNextTrackUrl();
+      if (preload && nextUrl && preload.src === nextUrl && audioRef.current) {
+        const isR2 = nextUrl.includes("workers.dev");
+        if (isR2) audioRef.current.crossOrigin = "anonymous";
+        else audioRef.current.removeAttribute("crossOrigin");
+        audioRef.current.src = nextUrl;
+        audioRef.current.play().catch(() => {});
+      }
       skip(1);
     }
-  }, [loopMode, skip]);
+  }, [loopMode, skip, _resolveNextTrackUrl]);
 
   // ── src del audio: reactivo al track activo ───────────────────
   const audioSrc = activeTrack
