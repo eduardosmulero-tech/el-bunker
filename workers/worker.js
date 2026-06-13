@@ -326,7 +326,7 @@ export default {
         return json({ ok: true, id: plId });
       }
 
-      // POST /api/playlists/:id/tracks (S55)
+      // POST /api/playlists/:id/tracks (S55) — añadir track
       if (path.startsWith("/api/playlists/") && path.endsWith("/tracks") && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const plId = path.split("/")[3];
@@ -341,6 +341,62 @@ export default {
         ).bind(plId, trackId, count).run();
         await env.DB.prepare("UPDATE playlists SET updated_at = datetime('now') WHERE id = ?1").bind(plId).run();
         return json({ ok: true, playlist_id: plId, track_id: trackId }, 201);
+      }
+
+      // PUT /api/playlists/:id/tracks (S84) — REORDER (sustituye todas las posiciones).
+      // Sister-bug fix del patrón DEL-PLAYLIST/DEL-DROP/RENAME-PLAYLIST: el frontend
+      // reordenaba tracks via patchDb (Drive) solo, mientras D1 mantenía el orden
+      // viejo. Ahora el Worker es source of truth y el cliente se sincroniza vía
+      // patchDb en success.
+      if (path.startsWith("/api/playlists/") && path.endsWith("/tracks") && request.method === "PUT") {
+        if (!userId) return err("Unauthorized", 401);
+        const plId = path.split("/")[3];
+        const body = await request.json();
+        const trackIds = body.track_ids;
+        if (!Array.isArray(trackIds)) return err("track_ids array required", 400);
+        const exists = await env.DB.prepare(
+          "SELECT id FROM playlists WHERE id = ?1"
+        ).bind(plId).first();
+        if (!exists) return err("Playlist not found", 404);
+        // Atómico: DELETE todas las posiciones + INSERT con nuevo orden en batch.
+        await env.DB.prepare(
+          "DELETE FROM playlist_tracks WHERE playlist_id = ?1"
+        ).bind(plId).run();
+        if (trackIds.length) {
+          const stmt = env.DB.prepare(
+            "INSERT OR IGNORE INTO playlist_tracks (playlist_id, track_id, position) VALUES (?1,?2,?3)"
+          );
+          await env.DB.batch(trackIds.map((tid, i) => stmt.bind(plId, tid, i)));
+        }
+        await env.DB.prepare(
+          "UPDATE playlists SET updated_at = datetime('now') WHERE id = ?1"
+        ).bind(plId).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
+        ).bind("playlist_reordered", userId, plId, JSON.stringify({ count: trackIds.length })).run();
+        return json({ ok: true, playlist_id: plId, count: trackIds.length });
+      }
+
+      // DELETE /api/playlists/:id/tracks/:trackId (S84) — REMOVE single track.
+      // Sister-bug fix del mismo patrón. Antes solo handleEditPlaylist → patchDb
+      // filtrando el track_id; D1 mantenía la fila. Mirror exacto de DEL-PLAYLIST.
+      if (path.startsWith("/api/playlists/") && path.includes("/tracks/") && request.method === "DELETE") {
+        if (!userId) return err("Unauthorized", 401);
+        const parts = path.split("/");
+        const plId = parts[3];
+        const trackId = parts[5];
+        if (!plId || !trackId) return err("playlist_id and track_id required", 400);
+        const { changes } = await env.DB.prepare(
+          "DELETE FROM playlist_tracks WHERE playlist_id = ?1 AND track_id = ?2"
+        ).bind(plId, trackId).run();
+        if (!changes) return err("Track not in playlist", 404);
+        await env.DB.prepare(
+          "UPDATE playlists SET updated_at = datetime('now') WHERE id = ?1"
+        ).bind(plId).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
+        ).bind("playlist_track_removed", userId, plId, JSON.stringify({ track_id: trackId })).run();
+        return json({ ok: true, playlist_id: plId, track_id: trackId });
       }
 
       // ═══ TAGS ════════════════════════════════════════════

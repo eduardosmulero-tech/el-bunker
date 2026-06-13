@@ -170,10 +170,6 @@ export default function MusicLab({
   // ── Handlers Playlist ────────────────────────────────────
   const handleAddToPlaylist = (track) => { setPendingTrack(track); setShowPlaylistModal(true); };
 
-  const handleEditPlaylist = (updatedPlaylists) => {
-    patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updatedPlaylists } })).catch(() => {});
-  };
-
   const handleDeletePlaylist = async (playlistId) => {
     if (!playlistId) return;
     try {
@@ -1308,20 +1304,61 @@ export default function MusicLab({
                   setShowPlaylistDetail(null);
                 }}
                 onAddToQueue={addToQueue}
-                onRemoveTrack={(plId, trackId) => {
-                  const updated = dbPlaylists.map((p) =>
-                    p.id === plId ? { ...p, track_ids: p.track_ids.filter((id) => id !== trackId) } : p
-                  );
-                  handleEditPlaylist(updated);
+                onRemoveTrack={async (plId, trackId) => {
+                  if (!plId || !trackId || !_jwtToken) return;
+                  try {
+                    // REMOVE-TRACK-FROM-PLAYLIST fix (S84): mirror exacto del
+                    // DEL-PLAYLIST (S82) y DEL-DROP (S83). Antes solo
+                    // handleEditPlaylist → patchDb (Drive) filtrando el
+                    // track_id — D1 mantenía la fila. Si D1 rechaza, no se
+                    // ejecuta patchDb — estado local intacto.
+                    const res = await fetch(`${API_BASE_ML}/api/playlists/${plId}/tracks/${trackId}`, {
+                      method: "DELETE",
+                      headers: { Authorization: `Bearer ${_jwtToken}` },
+                    });
+                    if (!res.ok) throw new Error(`removeTrackFromPlaylist: ${res.status}`);
+                    await patchDb((prev) => ({
+                      ...prev,
+                      music_lab: {
+                        ...prev.music_lab,
+                        playlists: (prev.music_lab?.playlists ?? []).map((p) =>
+                          p.id === plId ? { ...p, track_ids: (p.track_ids ?? []).filter((id) => id !== trackId) } : p
+                        ),
+                      },
+                    }));
+                  } catch (err) {
+                    console.warn("[Búnker] removeTrackFromPlaylist falló:", err);
+                    return; // sin patchDb si D1 rechaza — estado local intacto
+                  }
                 }}
                 onDeletePlaylist={(plId) => {
                   handleDeletePlaylist(plId);
                 }}
                 onReorderTracks={async (plId, newIds) => {
-                  const updated = dbPlaylists.map((pl) =>
-                    pl.id === plId ? { ...pl, track_ids: newIds } : pl
-                  );
-                  await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
+                  if (!plId || !_jwtToken) return;
+                  try {
+                    // REORDER-TRACKS fix (S84): mismo patrón. Antes solo
+                    // patchDb (Drive) — D1 mantenía el orden viejo. PUT
+                    // reemplaza todas las posiciones atómicamente.
+                    const res = await fetch(`${API_BASE_ML}/api/playlists/${plId}/tracks`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+                      body: JSON.stringify({ track_ids: newIds }),
+                    });
+                    if (!res.ok) throw new Error(`reorderPlaylistTracks: ${res.status}`);
+                    await patchDb((prev) => ({
+                      ...prev,
+                      music_lab: {
+                        ...prev.music_lab,
+                        playlists: (prev.music_lab?.playlists ?? []).map((pl) =>
+                          pl.id === plId ? { ...pl, track_ids: newIds } : pl
+                        ),
+                      },
+                    }));
+                  } catch (err) {
+                    console.warn("[Búnker] reorderPlaylistTracks falló:", err);
+                    return; // sin patchDb si D1 rechaza — estado local intacto
+                  }
                 }}
               />
             );
