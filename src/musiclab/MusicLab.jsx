@@ -4,12 +4,12 @@
 //  Componentes extraídos a archivos propios (PLIEGO-035).
 // ============================================================
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
-import { fetchPlaylists, createPlaylist, addTrackToPlaylist, updateData } from "../core/GoogleDriveService";
+import { fetchPlaylists, createPlaylist, addTrackToPlaylist } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
@@ -60,7 +60,7 @@ export default function MusicLab({
   onDeleteTrack,
   onAddDrop,
   onMarkDropSeen,
-  onMasterVolumeChange,
+  _onMasterVolumeChange,
   patchDb,
   onAddTag,
   onUpdateTag,
@@ -99,8 +99,7 @@ export default function MusicLab({
   const cycleViewMode = () => {
     const next = viewMode === "list" ? "grid" : viewMode === "grid" ? "card" : "list";
     setViewMode(next);
-    try { localStorage.setItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`, next); }
-    catch {}
+    try { localStorage.setItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`, next);    } catch { /* noop */ }
   };
   const VIEW_MODE_ICON = { list: "☰", grid: "⊞", card: "❒" };
   const [localDrops,        setLocalDrops]         = useState(userDrops);
@@ -119,7 +118,7 @@ export default function MusicLab({
     localQueue, setLocalQueue, addToQueue, addNext, removeFromQueue, playTrack,
     autoPlaySignal, setAutoPlaySignal,
     syncStatus,
-    playbackContext, setPlaybackContext,
+    _playbackContext, setPlaybackContext,
     playHistory,
     queueContextName, setQueueContextName,
     trackVibe, resolveVibeAccent,
@@ -136,13 +135,15 @@ export default function MusicLab({
   const [queueSearch,     setQueueSearch]     = useState("");
   const [showQueueSearch, setShowQueueSearch] = useState(false);
   const [confirmClearQueue, setConfirmClearQueue] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(50); }, [libraryFilter]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(50); }, [trackSearch]);
   useEffect(() => {
     if (!db) return;
     fetchPlaylists()
       .then(setLocalPlaylists)
-      .catch((err) => console.warn("[Búnker] fetchPlaylists falló:", err));
+      .catch(() => { /* noop */ });
   }, [db]);
   // ── Handlers Playlist ────────────────────────────────────
   const handleAddToPlaylist = (track) => { setPendingTrack(track); setShowPlaylistModal(true); };

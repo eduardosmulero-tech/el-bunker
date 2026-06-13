@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "../tokens";
+import { motion } from "framer-motion";
+import { ACID } from "../tokens";
 
-const GLASS_BG     = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.12)";
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
 const extractYouTubeId = (url) => {
@@ -180,7 +178,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
   );
 };
 
-export const TrackCard = ({ track, isActive, onClick, onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig, viewMode = "list" }) => {
+export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPlaylist, onAddToQueue, onAddNext, vibeConfig, viewMode = "list" }) => {
   // Si no hay vibeConfig (tag legacy o desconocido), usar neutro gris — nunca ACID
   const vibe = vibeConfig ?? null;
   const vibeColor = vibe?.color ?? "#555555";

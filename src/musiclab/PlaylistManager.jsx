@@ -4,8 +4,6 @@ import { ACID } from "../tokens";
 import { VibeTagBar } from "./TrackCard";
 
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
-const GLASS_BG  = "rgba(191,255,0,0.03)";
-
 export const PlaylistNameInput = ({ onConfirm }) => {
   const [name, setName] = useState("");
   return (
@@ -54,7 +52,7 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
 );
 
 // ── PlaylistDetailModal ────────────────────────────────────────────────────────
-export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
+export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,8 +73,6 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId, onClose, onPlay,
       const q = searchQuery.toLowerCase();
       return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
     });
-
-  const canDelete = true;
 
   const handlePlay = () => {
     if (!plTracks.length) return;

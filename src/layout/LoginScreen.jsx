@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const ACID    = "#bfff00";
@@ -43,7 +43,7 @@ const useGlitch = (text, interval = 80, glitchDuration = 600) => {
       setDisplay(
         text
           .split("")
-          .map((char, i) =>
+          .map((char, _i) =>
             char !== " " && Math.random() < 0.25
               ? GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]
               : char
@@ -83,7 +83,7 @@ const CRTFlicker = () => (
     transition={{
       duration: 0.15,
       repeat: Infinity,
-      repeatDelay: Math.random() * 4 + 2,
+      repeatDelay: 0,
       ease: "steps(1)",
     }}
   />

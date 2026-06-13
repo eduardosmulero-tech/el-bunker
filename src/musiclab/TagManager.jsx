@@ -6,11 +6,10 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "../tokens";
+import { ACID } from "../tokens";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 const GLASS_BG     = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.12)";
 
 const PALETTE = [
   "#00ffcc", "#aaff44", "#ff6b35", "#bf00ff",

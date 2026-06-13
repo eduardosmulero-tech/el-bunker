@@ -34,7 +34,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID }) => 
       audioCtxRef.current  = ctx;
       analyserRef.current  = analyser;
       sourceRef.current    = source;
-    } catch (e) {}
+    } catch { /* noop */ }
   }, [audioRef]);
 
   useEffect(() => {
