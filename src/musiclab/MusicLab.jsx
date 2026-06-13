@@ -117,6 +117,12 @@ export default function MusicLab({
   const [showCreatePlaylist, setShowCreatePlaylist] = useState(false);
   const [visibleCount,       setVisibleCount]       = useState(50);
   const [showTagManager,     setShowTagManager]     = useState(false);
+  // Fase 3.5 UX5: Escuchar swipe up del reproductor para abrir cola
+  useEffect(() => {
+    const handleSwipeUp = () => setActiveTab("queue");
+    window.addEventListener("bunker_swipe_up_queue", handleSwipeUp);
+    return () => window.removeEventListener("bunker_swipe_up_queue", handleSwipeUp);
+  }, []);
 
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
@@ -1180,6 +1186,11 @@ export default function MusicLab({
                 VIBE_TAGS={VIBE_TAGS}
                 onClose={() => setShowPlaylistDetail(null)}
                 onPlay={(t) => { playTrack(t); setShowPlaylistDetail(null); }}
+                onPlayFromTrack={(t) => {
+                  // Fase 5.2 C2/C3: Reproducción granular desde track específico
+                  playTrack(t);
+                  setShowPlaylistDetail(null);
+                }}
                 onAddToQueue={addToQueue}
                 onRemoveTrack={(plId, trackId) => {
                   const updated = dbPlaylists.map((p) =>

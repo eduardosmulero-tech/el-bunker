@@ -52,7 +52,7 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
 );
 
 // ── PlaylistDetailModal ────────────────────────────────────────────────────────
-export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose, onPlay, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
+export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose, onPlay, onPlayFromTrack, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,6 +62,8 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
 
   if (!playlist) return null;
 
+  // Fase 7.3 EC-LI3: Detectar tracks eliminados de la biblioteca
+  const missingIds = orderedIds.filter((id) => !tracks.some((t) => t.id === id));
   const plTracks = orderedIds
     .map((id) => tracks.find((t) => t.id === id))
     .filter(Boolean);
@@ -79,6 +81,26 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
     onPlay(plTracks[0]);
     plTracks.slice(1).forEach((t) => onAddToQueue(t));
     onClose();
+  };
+
+  // Fase 5.2 C2/C3: Reproducción granular — fallback a onPlay si onPlayFromTrack no disponible
+  const handlePlayFromTrack = (track, idx) => {
+    if (!track) return;
+    if (onPlayFromTrack) {
+      onPlayFromTrack(track);
+    } else {
+      onPlay?.(track);
+    }
+    // Añadir los tracks restantes a la cola
+    plTracks.slice(idx + 1).forEach((t) => onAddToQueue(t));
+    onClose();
+  };
+
+  // Fase 7.3 EC-LI3: Limpiar tracks eliminados de la playlist
+  const handleCleanMissing = () => {
+    const cleanIds = orderedIds.filter((id) => tracks.some((t) => t.id === id));
+    setOrderedIds(cleanIds);
+    onReorderTracks?.(playlist.id, cleanIds);
   };
 
   const handleTrackDragStart = (i) => { dragTrackIdx.current = i; };
@@ -114,6 +136,11 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
             </p>
             <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.15em" }}>
               {searchQuery.trim() ? `${visibleTracks.length}/${plTracks.length}` : plTracks.length} track{plTracks.length !== 1 ? "s" : ""}
+              {missingIds.length > 0 && (
+                <span style={{ color: "#ff6b35", marginLeft: 6 }}>
+                  · {missingIds.length} no disponible{missingIds.length !== 1 ? "s" : ""}
+                </span>
+              )}
             </p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -182,7 +209,11 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                 style={{ display: "flex", alignItems: "center", gap: 10,
                   padding: "9px 16px", borderBottom: `1px solid ${ACID}08`, cursor: "grab" }}>
                 <span style={{ color: ACID, opacity: 0.25, fontSize: 11, flexShrink: 0 }}>⠿</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
+                  onClick={() => handlePlayFromTrack(track, plTracks.indexOf(track))}
+                  title="Reproducir desde aquí"
+                >
                   <p style={{ color: ACID, fontSize: 11, letterSpacing: "0.1em",
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.title}</p>
                   <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.1em" }}>{track.artist}</p>
@@ -195,6 +226,31 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
             ))
           )}
         </div>
+
+        {/* Fase 7.3 EC-LI3: Banner de tracks no disponibles */}
+        {missingIds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ padding: "8px 16px", borderTop: `1px solid #ff6b3522`,
+              background: "rgba(255,107,53,0.06)", display: "flex", alignItems: "center", gap: 8,
+              fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.1em" }}
+          >
+            <span style={{ color: "#ff6b35" }}>⚠</span>
+            <span style={{ color: "#ff6b3588", flex: 1 }}>
+              {missingIds.length} track{missingIds.length !== 1 ? "s" : ""} no disponible{missingIds.length !== 1 ? "s" : ""}
+            </span>
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              onClick={handleCleanMissing}
+              style={{ color: "#ff6b35", background: "rgba(255,107,53,0.12)",
+                border: "1px solid rgba(255,107,53,0.3)", borderRadius: 2,
+                fontSize: 9, padding: "3px 8px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}
+            >
+              LIMPIAR
+            </motion.button>
+          </motion.div>
+        )}
 
         {/* Footer — borrar playlist */}
         <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15` }}>

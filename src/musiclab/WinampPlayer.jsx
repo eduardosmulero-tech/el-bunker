@@ -152,27 +152,42 @@ const skipDir = useCallback((dir) => {
   }, [duration, vibrate]);
 
   // S78 UX5: Swipe handlers
-  const onSwipeStart = useCallback((e) => {
-    swipeStartRef.current = e.touches?.[0]?.clientX || e.clientX;
-  }, []);
-  const onSwipeEnd = useCallback((e) => {
-    const startX = swipeStartRef.current;
-    if (startX == null) return;
-    const endX = e.changedTouches?.[0]?.clientX || e.clientX;
-    const diff = endX - startX;
-    if (Math.abs(diff) > 60) {
-      vibrate?.([15]);
-      if (diff > 0) skipDir(-1);
-      else skipDir(1);
-    }
-    swipeStartRef.current = null;
-    setSwipeOffset(0);
-  }, [skipDir, vibrate]);
   const onSwipeMove = useCallback((e) => {
     const startX = swipeStartRef.current;
     if (startX == null) return;
     setSwipeOffset((e.touches?.[0]?.clientX || e.clientX) - startX);
   }, []);
+
+  // Fase 3.5 UX5: Swipe vertical para abrir la cola
+  const swipeStartYRef = useRef(null);
+  const onSwipeStartFull = useCallback((e) => {
+    swipeStartRef.current = e.touches?.[0]?.clientX || e.clientX;
+    swipeStartYRef.current = e.touches?.[0]?.clientY || e.clientY;
+  }, []);
+  const onSwipeEndFull = useCallback((e) => {
+    const startX = swipeStartRef.current;
+    const startY = swipeStartYRef.current;
+    if (startX == null || startY == null) return;
+    const endX = e.changedTouches?.[0]?.clientX || e.clientX;
+    const endY = e.changedTouches?.[0]?.clientY || e.clientY;
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+    // Priorizar vertical si es más pronunciado que horizontal
+    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 50) {
+      if (diffY < 0) {
+        // Swipe hacia arriba → abrir cola
+        vibrate?.([15]);
+        window.dispatchEvent(new CustomEvent("bunker_swipe_up_queue"));
+      }
+    } else if (Math.abs(diffX) > 60) {
+      vibrate?.([15]);
+      if (diffX > 0) skipDir(-1);
+      else skipDir(1);
+    }
+    swipeStartRef.current = null;
+    swipeStartYRef.current = null;
+    setSwipeOffset(0);
+  }, [skipDir, vibrate]);
 
   const seekTo = (pct) => {
     if (!audioRef.current || !duration) return;
@@ -293,9 +308,9 @@ return () => cancelAnimationFrame(raf);
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0, x: swipeOffset * 0.3 }}
       transition={{ duration: 0.45 }}
-      onTouchStart={onSwipeStart}
+      onTouchStart={onSwipeStartFull}
       onTouchMove={onSwipeMove}
-      onTouchEnd={onSwipeEnd}
+      onTouchEnd={onSwipeEndFull}
       onClick={handleDoubleTapSeek}
     >
       {/* <audio> vive en PlayerProvider (ADR-004 Enmienda S21) */}
