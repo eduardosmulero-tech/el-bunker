@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. UN bug activo.
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S62 — Worker: CRUD entries D1 (GET/POST/PATCH/DELETE /api/entries)
-**Última sesión:** S61 — Wiring JWT frontend: threading jwtToken por Vault/MusicLab
-**Rama activa:** `master` (13 commits, +2,400 líneas, 17 archivos)
+**Próximo pliego:** S63 — Worker: CRUD eras + files (GET/POST/PATCH/DELETE /api/eras)
+**Última sesión:** S62 — Worker CRUD entries: 5 endpoints con tags+files, validación 404
+**Rama activa:** `master` (13 commits, +2,415 líneas, 17 archivos)
 
 ---
 

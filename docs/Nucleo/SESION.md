@@ -5,6 +5,26 @@
 
 ---
 
+## S62 — Worker: CRUD entries D1 mejorado (Junio 2026)
+
+**Objetivo:** Mejorar el CRUD de entries en el Worker API con tags+files en GET,
+endpoint de detalle GET /api/entries/:id, y validación de existencia en PATCH/DELETE.
+
+### Cambios realizados
+- GET /api/entries: batch JOIN con entry_tags+tags y files → tags[] + files[] en respuesta
+- GET /api/entries/:id: nuevo endpoint de detalle con tags+files, 404 si no existe
+- POST: acepta file_ids para vincular archivos (guard entry_id IS NULL)
+- PATCH: validación de existencia (404), file_ids con guard
+- DELETE: validación de existencia (404)
+
+### Archivos modificados (1)
+workers/worker.js
+
+### Resultado
+CRUD entries completo con 5 endpoints. Code review aprobado.
+
+---
+
 ## S61 — Wiring JWT frontend: threading jwtToken (Junio 2026)
 
 **Objetivo:** Propagar `jwtToken` desde VaultContext a todos los componentes que
