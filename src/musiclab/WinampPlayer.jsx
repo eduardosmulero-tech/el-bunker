@@ -77,52 +77,6 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   const lastTapRef = useRef(0);
   const DOUBLE_TAP_MS = 300;
 
-  // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, l=like, q=add to queue.
-  // Ignora cuando el foco está en un input/textarea/contenteditable, o si hay
-  // modificadores (cmd/ctrl/alt) para no interceptar atajos del navegador.
-  useEffect(() => {
-    const onKey = (e) => {
-      const tag = e.target?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      switch (e.key) {
-        case " ":
-          e.preventDefault();
-          togglePlay();
-          break;
-        case "ArrowRight":
-          e.preventDefault();
-          skipDir(1);
-          break;
-        case "ArrowLeft":
-          e.preventDefault();
-          skipDir(-1);
-          break;
-        case "l":
-        case "L": {
-          e.preventDefault();
-          const next = !liked;
-          setLiked(next);
-          setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS");
-          break;
-        }
-        case "q":
-        case "Q":
-          if (track) {
-            e.preventDefault();
-            addToQueue?.(track);
-          }
-          break;
-        default:
-          return;
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-    // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [track, togglePlay, skipDir, addToQueue, liked]);
-
   const mountedRef   = useRef(false);
   const currentTRef  = useRef(0);
   // ADR-Refs: refs NO se leen durante el render. Valores inicializados a 0;
@@ -186,6 +140,54 @@ const skipDir = useCallback((dir) => {
     if (playing) { audioRef.current.pause(); setPlaying(false); }
     else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
   };
+
+  // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, l=like, q=add to queue.
+  // Declarado DESPUÉS de togglePlay/skipDir para que eslint no-use-before-define no
+  // se queje (orden topológico de refs en useEffect deps). Ignora cuando el foco
+  // está en un input/textarea/contenteditable, o si hay modificadores (cmd/ctrl/alt)
+  // para no interceptar atajos del navegador.
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skipDir(1);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skipDir(-1);
+          break;
+        case "l":
+        case "L": {
+          e.preventDefault();
+          const next = !liked;
+          setLiked(next);
+          setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS");
+          break;
+        }
+        case "q":
+        case "Q":
+          if (track) {
+            e.preventDefault();
+            addToQueue?.(track);
+          }
+          break;
+        default:
+          return;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track, togglePlay, skipDir, addToQueue, liked]);
 
 
   // S78 UX1: Double-tap seek (±10s)
