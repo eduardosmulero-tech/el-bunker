@@ -193,7 +193,9 @@ export default function MusicLab({
       }));
     } catch (err) {
       console.warn("[Búnker] deletePlaylist falló:", err);
-      return; // sin toast — el estado local queda intacto si D1 rechaza
+      setToast("NO SE PUDO ELIMINAR");
+      setTimeout(() => setToast(null), 2500);
+      return; // el estado local queda intacto si D1 rechaza
     }
     setToast("PLAYLIST ELIMINADA");
     setTimeout(() => setToast(null), 2500);
@@ -444,6 +446,8 @@ export default function MusicLab({
       }));
     } catch (err) {
       console.warn("[Búnker] renamePlaylist falló:", err);
+      setToast("NO SE PUDO RENOMBRAR");
+      setTimeout(() => setToast(null), 2500);
       return; // sin patchDb si D1 rechaza — nombre local preservado para retry
     }
     setToast("PLAYLIST RENOMBRADA");
@@ -1273,11 +1277,12 @@ export default function MusicLab({
                         ...prev.music_lab,
                         drops: (prev.music_lab?.drops ?? []).filter((d) => d.id !== dropId),
                       },
-                    }));
-                  } catch (err) {
-                    console.warn("[Búnker] deleteDrop falló:", err);
-                    return; // sin patchDb si D1 rechaza — estado local intacto
-                  }
+                    }));                    } catch (err) {
+                      console.warn("[Búnker] deleteDrop falló:", err);
+                      setToast("NO SE PUDO ELIMINAR");
+                      setTimeout(() => setToast(null), 2500);
+                      return; // sin patchDb si D1 rechaza — estado local intacto
+                    }
                 }}
               />
             </motion.div>
