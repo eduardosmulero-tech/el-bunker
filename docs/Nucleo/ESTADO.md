@@ -14,6 +14,13 @@
 
 ### P2/resto
 - **W3:** Tags de MusicLab solo se guardan en Drive JSON, no sincronizan con D1
+- **G1:** Botones de densidad (compact/normal/expanded) en VaultGallery no cambian el layout — placeholder visual, reaccionan al click pero sin efecto
+- **G2:** Botón "+ ERA" no abre formulario de creación de era — placeholder sin acción real
+- **G3:** VAULT no sigue el color del resto de la app (trackVibe / --vibe-accent). Siempre usa ACID fijo (#bfff00)
+- **G4:** CAPSULES tampoco sigue el color de la app. Timeline, Smoke, Capsules y RECAP usan colores fijos sin reaccionar al track activo
+- **G5:** Timeline carga listas planas enormes (tracks enteros) sin paginación ni modos de vista alternativos (timeline/grid/compact)
+- **G6:** Barra de volumen en SmokeSession es solo display — no permite modificar el volumen master. Debería ser un slider interactivo
+- **G7:** El reproductor (WinampPlayer) se queda anclado en MusicLab. No hay mini-player persistente que acompañe al usuario al navegar a VAULT o CAPSULES
 
 ---
 
