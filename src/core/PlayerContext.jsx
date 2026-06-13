@@ -347,7 +347,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!track) return "added";
     const isDup = localQueue.some((t) => t.id === track.id);
     if (isDup && !force) return "duplicate";
-    setLocalQueue((q) => enforceQueueLimit([...q, { ...track, _manual: true }]));
+    setLocalQueue((q) => {
+      const next = enforceQueueLimit([...q, { ...track, _manual: true }]);
+      // Fase 3.1 — Q6: Aviso al alcanzar el límite de cola
+      if (next.length >= MAX_QUEUE_SIZE && q.length < MAX_QUEUE_SIZE) {
+        console.warn("[Búnker] ⚠ Cola llena (75 tracks). Considera guardar como playlist.");
+      }
+      return next;
+    });
     return "added";
   }, [localQueue, enforceQueueLimit]);
 
@@ -469,11 +476,17 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   useEffect(() => {
     if (!("mediaSession" in navigator)) return;
     if (!activeTrack) { navigator.mediaSession.metadata = null; return; }
+    // Fase 2.1 — M2, M6, M7, M9: Artwork + color de vibe en notificación lockscreen
+    const vibeAccent = resolveVibeAccent(activeTrack.tag);
     navigator.mediaSession.metadata = new MediaMetadata({
       title: activeTrack.title || "Sin título",
       artist: activeTrack.artist || "El Búnker",
       album: activeTrack.era_id ? `Era ${activeTrack.era_id}` : "Music Lab",
-      artwork: activeTrack.thumbnail ? [{ src: activeTrack.thumbnail, sizes: "512x512", type: "image/jpeg" }] : [],
+      artwork: activeTrack.thumbnail
+        ? [{ src: activeTrack.thumbnail, sizes: "512x512", type: "image/jpeg" }]
+        : vibeAccent
+          ? [{ src: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="${vibeAccent}"/></svg>`)}`, sizes: "512x512", type: "image/svg+xml" }]
+          : [],
     });
     navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play(); setIsPlaying(true); });
     navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
@@ -483,15 +496,44 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id]);
 
+  // ── Fase 4.1 — VB5: Vibe se activa a los 2s de reproducción ─────
+  // Mantener el vibe anterior durante 2s tras cambio de track, luego transicionar.
+  const [activeVibe, setActiveVibe] = useState(null);  // vibe visible en UI
+  const _vibeTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (_vibeTimerRef.current) {
+      clearTimeout(_vibeTimerRef.current);
+      _vibeTimerRef.current = null;
+    }
+    if (trackVibe) {
+      // Si mismo vibe, mantener sin cambio
+      if (trackVibe === activeVibe) return;
+      // Aplicar el nuevo vibe tras 2s de delay
+      _vibeTimerRef.current = setTimeout(() => {
+        setActiveVibe(trackVibe);
+        _vibeTimerRef.current = null;
+      }, 2000);
+    } else {
+      setActiveVibe(null);
+    }
+    return () => {
+      if (_vibeTimerRef.current) {
+        clearTimeout(_vibeTimerRef.current);
+        _vibeTimerRef.current = null;
+      }
+    };
+  }, [trackVibe]);
+
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
   useEffect(() => {
-    if (trackVibe) {
-      const accent = resolveVibeAccent(trackVibe);
+    if (activeVibe) {
+      const accent = resolveVibeAccent(activeVibe);
       if (accent) document.body.style.setProperty("--vibe-accent", accent);
     } else {
       document.body.style.removeProperty("--vibe-accent");
     }
-  }, [trackVibe, resolveVibeAccent]);
+  }, [activeVibe, resolveVibeAccent]);
 
   // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
@@ -801,7 +843,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       queueContextName, setQueueContextName,
       // S78: Position restore
       restorePosition,
-      vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern); } catch { /* noop */ } }, []),
+      // Fase 3.6 — UX2: Feedback háptico en acciones táctiles
+      vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern || [10]); } catch { /* noop */ } }, []),
+      // Fase 4.1 — VB5: vibe con delay de 2s (activo en UI)
+      activeVibe,
       // Fase 1.5 — EC-P2: estado de red
       networkStatus,
       // Shared listening (S82)
