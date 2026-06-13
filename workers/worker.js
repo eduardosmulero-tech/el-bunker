@@ -460,6 +460,120 @@ export default {
         return json({ ok: true, id: entryId });
       }
 
+      // ═══ ERAS (S63 — VAULT CRUD) ════════════════════════
+      // GET /api/eras — listado con conteo de entradas
+      if (path === "/api/eras" && request.method === "GET") {
+        const { results } = await env.DB.prepare(
+          "SELECT * FROM eras ORDER BY sort_order, created_at"
+        ).all();
+        // Enriquecer con conteo de entradas no eliminadas
+        if (results.length) {
+          const eraIds = results.map(e => e.id);
+          const placeholders = eraIds.map(() => "?").join(",");
+          const { results: counts } = await env.DB.prepare(
+            `SELECT era_id, COUNT(*) as entry_count FROM entries WHERE is_deleted = 0 AND era_id IN (${placeholders}) GROUP BY era_id`
+          ).bind(...eraIds).all();
+          const countMap = {};
+          for (const row of counts) countMap[row.era_id] = row.entry_count;
+          for (const era of results) era.entry_count = countMap[era.id] || 0;
+        }
+        return json(results);
+      }
+
+      // GET /api/eras/:id — detalle de una era (NUEVO S63)
+      if (path.startsWith("/api/eras/") && request.method === "GET") {
+        const eraId = path.split("/")[3];
+        if (!eraId) return err("era id required", 400);
+        const era = await env.DB.prepare(
+          "SELECT * FROM eras WHERE id = ?1"
+        ).bind(eraId).first();
+        if (!era) return err("Era not found", 404);
+        const { count } = await env.DB.prepare(
+          "SELECT COUNT(*) as count FROM entries WHERE era_id = ?1 AND is_deleted = 0"
+        ).bind(eraId).first();
+        era.entry_count = count || 0;
+        return json(era);
+      }
+
+      if (path === "/api/eras" && request.method === "POST") {
+        if (!userId) return err("Unauthorized", 401);
+        const body = await request.json();
+        if (!body.name) return err("name required", 400);
+        const id = crypto.randomUUID();
+        // Usar INSERT...SELECT para sort_order atómico (S63 fix: race condition)
+        await env.DB.prepare(
+          `INSERT INTO eras (id, name, description, start_date, end_date, color, cover_image, sort_order)
+           SELECT ?1,?2,?3,?4,?5,?6,?7, COALESCE(MAX(sort_order), -1) + 1 FROM eras`
+        ).bind(id, body.name, body.description||"", body.start_date||null, body.end_date||null,
+               body.color||"#bfff00", body.cover_image||null).run();
+        // Si el cliente envió sort_order explícito, actualizarlo
+        if (body.sort_order != null) {
+          await env.DB.prepare("UPDATE eras SET sort_order = ?1 WHERE id = ?2").bind(body.sort_order, id).run();
+        }
+        // Leer el sort_order real asignado
+        const created = await env.DB.prepare("SELECT sort_order FROM eras WHERE id = ?1").bind(id).first();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'era',?3,?4)"
+        ).bind("era_created", userId, id, JSON.stringify({ name: body.name })).run();
+        return json({ id, ...body, sort_order: created?.sort_order ?? 0 }, 201);
+      }
+
+      // PATCH /api/eras/:id (S63)
+      if (path.startsWith("/api/eras/") && request.method === "PATCH") {
+        if (!userId) return err("Unauthorized", 401);
+        const ERA_FIELDS = new Set(["name","description","start_date","end_date","color","cover_image","sort_order"]);
+        const eraId = path.split("/")[3];
+        const exists = await env.DB.prepare("SELECT id FROM eras WHERE id = ?1").bind(eraId).first();
+        if (!exists) return err("Era not found", 404);
+        const body = await request.json();
+        const sets = []; const binds = [];
+        for (const [k, v] of Object.entries(body)) {
+          if (!ERA_FIELDS.has(k)) continue;
+          sets.push(`${k} = ?${sets.length + 1}`);
+          binds.push(v);
+        }
+        if (!sets.length) return err("No fields to update", 400);
+        binds.push(eraId);
+        sets.push(`updated_at = datetime('now')`);
+        await env.DB.prepare(`UPDATE eras SET ${sets.join(", ")} WHERE id = ?${binds.length}`).bind(...binds).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'era',?3,?4)"
+        ).bind("era_updated", userId, eraId, JSON.stringify(body)).run();
+        return json({ id: eraId, ...body });
+      }
+
+      // DELETE /api/eras/:id (S63)
+      if (path.startsWith("/api/eras/") && request.method === "DELETE") {
+        if (!userId) return err("Unauthorized", 401);
+        const eraId = path.split("/")[3];
+        const exists = await env.DB.prepare("SELECT id FROM eras WHERE id = ?1").bind(eraId).first();
+        if (!exists) return err("Era not found", 404);
+        // Desvincular entries: set era_id = NULL
+        await env.DB.prepare("UPDATE entries SET era_id = NULL WHERE era_id = ?1").bind(eraId).run();
+        await env.DB.prepare("DELETE FROM eras WHERE id = ?1").bind(eraId).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'era',?3)"
+        ).bind("era_deleted", userId, eraId).run();
+        return json({ ok: true, id: eraId });
+      }
+
+      // ═══ FILES (S63 — listado R2) ════════════════════════
+      if (path === "/api/files" && request.method === "GET") {
+        const entry = url.searchParams.get("entry_id");
+        const prefix = url.searchParams.get("prefix");
+        const track = url.searchParams.get("track_id");
+        let q = "SELECT * FROM files WHERE 1=1";
+        const binds = [];
+        if (entry) { q += " AND entry_id = ?1"; binds.push(entry); }
+        if (prefix) { q += ` AND prefix = ?${binds.length + 1}`; binds.push(prefix); }
+        if (track) { q += ` AND track_id = ?${binds.length + 1}`; binds.push(track); }
+        q += " ORDER BY created_at DESC LIMIT 200";
+        const { results } = binds.length
+          ? await env.DB.prepare(q).bind(...binds).all()
+          : await env.DB.prepare(q).all();
+        return json(results);
+      }
+
       // ═══ QUEUE ════════════════════════════════════════════
       if (path.startsWith("/api/queue/") && request.method === "GET") {
         const queueUser = path.split("/")[3];
