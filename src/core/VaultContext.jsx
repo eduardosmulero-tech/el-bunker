@@ -272,72 +272,73 @@ export function VaultProvider({ children }) {
     }
   }, []);
 
-  // ── S64: Worker API data fetchers ──────────────────────────
-  const _fetchWorkerEntries = useCallback(async (token) => {
-    const res = await fetch(`${API_BASE}/api/entries`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error(`entries: ${res.status}`);
-    return res.json();
-  }, []);
-
-  const _fetchWorkerEras = useCallback(async (token) => {
-    const res = await fetch(`${API_BASE}/api/eras`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error(`eras: ${res.status}`);
-    return res.json();
-  }, []);
-
-  const _fetchWorkerTracks = useCallback(async (token) => {
-    const res = await fetch(`${API_BASE}/api/tracks`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error(`tracks: ${res.status}`);
-    return res.json();
-  }, []);
+  // ── S64: Worker API como fuente PRIMARIA ───────────────────
 
   /**
-   * _refreshWorkerData(token)
-   * Fetch entries, eras y tracks desde Worker API y mergearlos en db.
-   * Worker data reemplaza las secciones correspondientes en el state db.
-   * Si falla, usa los datos de Drive JSON como fallback silencioso.
-   * S64 — migración progresiva Drive→D1.
+   * _buildDbFromWorker(token)
+   * Construye el objeto db completo desde Worker API (D1).
+   * Fetch en paralelo de entries, eras, tracks, tags, playlists, drops.
+   * Retorna null si falla (el caller usa Drive JSON como fallback).
    */
-  const _refreshWorkerData = useCallback(async (token) => {
-    if (!token) return;
+  const _buildDbFromWorker = useCallback(async (token) => {
+    if (!token) return null;
+    const headers = { Authorization: `Bearer ${token}` };
     try {
-      const [entries, eras, tracks] = await Promise.all([
-        _fetchWorkerEntries(token),
-        _fetchWorkerEras(token),
-        _fetchWorkerTracks(token),
+      const [entries, eras, tracks, tags, playlists, drops] = await Promise.all([
+        fetch(`${API_BASE}/api/entries`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`entries ${r.status}`)),
+        fetch(`${API_BASE}/api/eras`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`eras ${r.status}`)),
+        fetch(`${API_BASE}/api/tracks`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`tracks ${r.status}`)),
+        fetch(`${API_BASE}/api/tags`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`tags ${r.status}`)),
+        fetch(`${API_BASE}/api/playlists`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`playlists ${r.status}`)),
+        fetch(`${API_BASE}/api/drops`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`drops ${r.status}`)),
       ]);
-      // Parsear content de entries: D1 lo guarda como JSON string, consumidores esperan objeto
       const safeParse = (v) => {
         if (typeof v !== "string") return v;
         try { return JSON.parse(v); } catch { return v; }
       };
-      const parsedEntries = entries.map((e) => ({ ...e, content: safeParse(e.content) }));
-      setDb((prev) => ({
-        ...prev,
-        entries: entries.length ? parsedEntries : (prev?.entries ?? []),
-        eras: eras.length ? eras : (prev?.eras ?? []),
+      const parsedEntries = (entries || []).map((e) => ({ ...e, content: safeParse(e.content) }));
+      console.info("[Búnker] Worker DB built:", { entries: entries.length, eras: eras.length, tracks: tracks.length, tags: tags.length, playlists: playlists.length, drops: drops.length });
+      return {
+        entries: parsedEntries,
+        eras: eras || [],
         music_lab: {
-          ...prev?.music_lab,
-          tracks: tracks.length ? tracks : (prev?.music_lab?.tracks ?? []),
+          tracks: tracks || [],
+          tags: tags || [],
+          playlists: playlists || [],
+          drops: drops || [],
         },
-      }));
-      setDbStatus("ONLINE");
-      console.info("[Búnker] Worker data loaded:", {
-        entries: entries.length,
-        eras: eras.length,
-        tracks: tracks.length,
-      });
+        libraries: [],
+        schema_version: "5.0.0",
+        heartbeat: new Date().toISOString(),
+        adventures_start_date: new Date().toISOString(),
+      };
     } catch (e) {
-      console.warn("[Búnker] Worker data fetch failed, using Drive fallback:", e.message);
-      // No bloquear — Drive JSON ya está cargado
+      console.warn("[Búnker] Worker DB build failed:", e);
+      return null;
     }
-  }, [_fetchWorkerEntries, _fetchWorkerEras, _fetchWorkerTracks]);
+  }, []);
+
+  /**
+   * _loadDriveComplement(db)
+   * Carga desde Drive JSON SOLO los campos que Worker no tiene:
+   * libraries, heartbeat, adventures_start_date.
+   * Modifica el objeto db in-place. No lanza — si falla, usa defaults.
+   */
+  const _loadDriveComplement = useCallback(async (db) => {
+    try {
+      const driveData = await fetchData();
+      if (driveData) {
+        db.libraries = driveData.libraries ?? [];
+        db.heartbeat = driveData.heartbeat ?? db.heartbeat;
+        db.adventures_start_date = driveData.adventures_start_date ?? db.adventures_start_date;
+        db.schema_version = driveData.schema_version ?? db.schema_version;
+        console.info("[Búnker] Drive complement loaded:", { libraries: db.libraries.length });
+      }
+    } catch (e) {
+      console.warn("[Búnker] Drive complement failed, using defaults:", e.message);
+    }
+    return db;
+  }, []);
 
   // ── Restaurar JWT de localStorage al montar ───────────────
   useEffect(() => {
@@ -351,7 +352,7 @@ export function VaultProvider({ children }) {
     }
   }, []);
 
-  // ── Step 2: Fetch user info + DB ──────────────────────────
+  // ── Step 2: Fetch user info + DB (S64: Worker primero, Drive fallback) ─
   const _fetchUserAndDb = useCallback(async (token) => {
     setBootPhase(BOOT.INIT_DB);
     setDbStatus("SYNCING");
@@ -360,46 +361,51 @@ export function VaultProvider({ children }) {
       const profile = await _fetchGoogleProfile(token);
 
       // ── Control de acceso ───────────────────────────────────
-      // Solo los tres emails autorizados pueden continuar.
       if (!isAuthorizedEmail(profile.email)) {
         console.warn(`[Búnker] Acceso denegado para: ${profile.email}`);
-        // Cerramos la sesión inmediatamente para no dejar token activo
         await signOut();
         setBootPhase(BOOT.UNAUTHORIZED);
-        setBootError(
-          `El email ${profile.email} no tiene acceso al Búnker.`
-        );
+        setBootError(`El email ${profile.email} no tiene acceso al Búnker.`);
         return;
       }
 
-      // Enriquecemos el perfil con el rol interno
       const bunkerProfile = resolveUser(profile.email);
       const fullUser = {
         ...profile,
         role: bunkerProfile.role,
         id:   bunkerProfile.id,
-        name: bunkerProfile.name, // usamos el nombre del Búnker, no el de Google
+        name: bunkerProfile.name,
       };
       setUser(fullUser);
 
-      // Obtener JWT del Worker API (S55) usando el token de Google
+      // Obtener JWT del Worker API
       const googleToken = token ?? window.gapi?.client?.getToken?.()?.access_token;
-      let jwt = jwtToken; // usar el ya restaurado de localStorage si existe
+      let jwt = jwtToken;
       if (googleToken && fullUser.email) {
         jwt = await _fetchJwt(fullUser.email, googleToken) || jwt;
       }
 
-      const data = await initDatabase();
+      // S64: Worker API como fuente PRIMARIA
+      let data = null;
+      if (jwt) {
+        data = await _buildDbFromWorker(jwt);
+      }
+
+      if (data) {
+        // Worker OK — cargar complemento de Drive (libraries, heartbeat)
+        await _loadDriveComplement(data);
+        console.info("[Búnker] DB cargada desde Worker API (D1) + Drive complement ✓");
+      } else {
+        // Worker falló — usar Drive JSON como fallback completo
+        console.info("[Búnker] Worker no disponible, usando Drive JSON como fallback...");
+        data = await initDatabase();
+        console.info("[Búnker] DB cargada desde Drive JSON (fallback) ✓");
+      }
+
       setDb(data);
       setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
       setDbStatus("ONLINE");
       setBootPhase(BOOT.READY);
-
-      // S64: Cargar datos del Worker API (entries, eras, tracks) y mergear en db
-      if (jwt) {
-        _refreshWorkerData(jwt);
-      }
-
       _scheduleHeartbeat();
     } catch (err) {
       console.error("[Búnker] DB init failed:", err);
@@ -527,20 +533,34 @@ export function VaultProvider({ children }) {
     if (!isAuthenticated()) return;
     setDbStatus("SYNCING");
     try {
-      const fresh = await fetchData();
-      setDb(fresh);
-      setLastHeartbeat(fresh.heartbeat ?? new Date().toISOString());
-      // S64: también refrescar datos del Worker API
+      // S64: Worker primero, Drive fallback
+      let data = null;
       if (jwtToken) {
-        _refreshWorkerData(jwtToken);
-      } else {
-        setDbStatus("ONLINE");
+        data = await _buildDbFromWorker(jwtToken);
       }
+      if (data) {
+        await _loadDriveComplement(data);
+      } else {
+        // Fallback a Drive JSON
+        data = await fetchData();
+        if (jwtToken) {
+          // Intentar mergear Worker data sobre Drive (backward compat)
+          try {
+            const wData = await _buildDbFromWorker(jwtToken);
+            if (wData) {
+              data = { ...data, entries: wData.entries, eras: wData.eras, music_lab: { ...data.music_lab, tracks: wData.music_lab?.tracks, tags: wData.music_lab?.tags, playlists: wData.music_lab?.playlists, drops: wData.music_lab?.drops } };
+            }
+          } catch { /* keep Drive data */ }
+        }
+      }
+      setDb(data);
+      setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
+      setDbStatus("ONLINE");
     } catch (err) {
       console.error("[Búnker] refreshDb failed:", err);
       setDbStatus("ERROR");
     }
-  }, [jwtToken, _refreshWorkerData]);
+  }, [jwtToken, _buildDbFromWorker, _loadDriveComplement]);
 
   /**
    * patchDb(updater)
