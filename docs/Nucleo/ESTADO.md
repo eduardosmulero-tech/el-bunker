@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 > Actualizar antes de cerrar sesión.
 
-**Próximo pliego:** ROADMAP Fases 8-15 — pendiente priorización
-**Última sesión:** S80 — Bugfixes TDZ + ref-during-render (commit `b6c90f8`, pusheado a origin/master)
-**Rama activa:** `master` · `origin/master` (1 commit ahead of pre-S80)
+**Próximo pliego:** Fase 8.2 — Schema D1 `media_type` + render diferenciado en `VaultGallery.jsx`
+**Última sesión:** S81 — Fase 8.1 Categoría 1 MULTIMEDIA · selector agrupado en `AddEntryForm.jsx` (pendiente commit)
+**Rama activa:** `master`
 
 ---
 
@@ -23,7 +23,7 @@
 ---
 
 ## Docs stale
-Actualizados en S80: SESION.md, ESTADO.md. Próxima actualización tras Fase 8+.
+Actualizados en S81: SESION.md, ESTADO.md. `docs/Arquitectura/INDEX.md` podría marcarse stale si 8.2 toca `VaultGallery.jsx`.
 
 ---
 
@@ -44,10 +44,10 @@ ninguno
 | Módulo | % | Estado |
 |---|---|---|
 | Core/Infra | 92% | Worker 22 endpoints, D1, JWT, FileUpload, StatsEngine, AnalyserNode ✅ |
-| VAULT CRUD | 95% | Entradas/eras en D1, edit/delete, foto upload a R2 ✅ |
-| VAULT Galería | 90% | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL completos ✅ |
+| VAULT CRUD | 96% | Entradas/eras en D1, edit/delete, foto upload a R2 ✅ · **+selector MULTIMEDIA 5 sub-tipos (8.1)** ✅ |
+| VAULT Galería | 90% | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL completos ✅ · render multimedia (8.2) 🟡 |
 | CAPSULES | 90% | Timeline filtros, Smoke historial/rachas, TimeCapsules content picker, RECAP Wrapped ✅ |
 | MUSIC LAB | 92% | Cola Q6/Q12/Q15-Q17, posición S1/S2, UX táctil, MediaSession M1-M12 ✅ |
 | Persistencia | 80% | Entries/eras/tracks/playlists/drops/tags → Worker API; Drive solo libraries/heartbeat 🟡 |
 
-**Pendiente:** Roadmap Fases 8-15 (XL, requiere priorización). S80 resolvió los blockers TDZ.
+**Pendiente:** Roadmap Fases 8.2–15. S80 resolvió blockers TDZ; S81 abrió Fase 8 (selector). Próxima sub-fase: 8.2 schema `media_type` en D1 + render en galería.

@@ -1,20 +1,41 @@
 // ============================================================
 //  EL BÚNKER — AddEntryForm.jsx
 //  Formulario polimórfico: note, photo, milestone, letter
-//  Con subida real de fotos a R2 vía FileUploadService
-//  S59 · Fase 2 — VAULT núcleo
+//  + Fase 8.1 — Categoría 1 MULTIMEDIA (5 sub-tipos)
+//  Con subida real de archivos a R2 vía FileUploadService
+//  S59 · Fase 2 — VAULT núcleo · S81 · Fase 8.1
 // ============================================================
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
 
+// Fase 8.1 — Categoría 1: MULTIMEDIA (taxonomía docs/spec/taxonomia_vault.md)
+// 1.1 Fotos, 1.2 Vídeos, 1.3 Audio, 1.4 GIFs/Memes, 1.5 Capturas de pantalla
 const ENTRY_TYPES = [
-  { id: "note",      icon: "✎", label: "NOTA" },
-  { id: "photo",     icon: "📷", label: "FOTO" },
-  { id: "milestone", icon: "◆", label: "HITO" },
-  { id: "letter",    icon: "♥", label: "CARTA" },
+  // ── Categoría 1: MULTIMEDIA ────────────────────────────────
+  { id: "photo",      category: "1", icon: "📷", label: "FOTOS",    accept: "image/*",             capture: "environment" },
+  { id: "video",      category: "1", icon: "🎬", label: "VÍDEOS",   accept: "video/*",             capture: "environment" },
+  { id: "audio",      category: "1", icon: "🎙", label: "AUDIO",    accept: "audio/*",             capture: null },
+  { id: "gif",        category: "1", icon: "🎞", label: "GIF/MEME", accept: "image/gif,image/webp", capture: null },
+  { id: "screenshot", category: "1", icon: "📱", label: "CAPTURAS", accept: "image/*",             capture: null },
+  // ── Otros tipos existentes ────────────────────────────────
+  { id: "note",       category: "x", icon: "✎", label: "NOTA" },
+  { id: "milestone",  category: "x", icon: "◆", label: "HITO" },
+  { id: "letter",     category: "x", icon: "♥", label: "CARTA" },
 ];
+
+// Conjunto rápido de tipos multimedia (sirve para rama de upload + preview)
+const MULTIMEDIA_TYPES = new Set(ENTRY_TYPES.filter((t) => t.category === "1").map((t) => t.id));
+
+// Subcarpeta R2 por tipo de entrada multimedia
+const UPLOAD_FOLDER_BY_TYPE = {
+  photo:      "vault/photos",
+  video:      "vault/videos",
+  audio:      "vault/audio",
+  gif:        "vault/gifs",
+  screenshot: "vault/screenshots",
+};
 
 export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel }) {
   const isEditing = !!entry;
@@ -35,6 +56,8 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+  // Fase 8.1 — Meta del tipo actual (evita 4× O(n) lookups en el render)
+  const currentMeta = ENTRY_TYPES.find((t) => t.id === type);
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -58,14 +81,17 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
         to_user: toUser,
         tags,
       };
-      // Si es foto y hay archivo nuevo, subir a R2
-      if (type === "photo" && photoFile) {
+      // Si es tipo multimedia y hay archivo nuevo, subir a R2
+      if (MULTIMEDIA_TYPES.has(type) && photoFile) {
+        const folder = UPLOAD_FOLDER_BY_TYPE[type] ?? "vault/misc";
         try {
-          const { r2_key } = await uploadFile(photoFile, "vault/photos");
-          entryData.content = { text: entryData.content.text, images: [{ r2_key, filename: photoFile.name }] };
+          const { r2_key } = await uploadFile(photoFile, folder);
+          // 8.1 — fase mínima: guardamos todo en `images` (futuras iteraciones
+          // discriminarán video/audio/gif con su propio shape en `content`).
+          entryData.content = { text: entryData.content.text, images: [{ r2_key, filename: photoFile.name, media_type: type }] };
         } catch {
           console.warn("[AddEntryForm] Upload a R2 falló, guardando preview local");
-          entryData.content = { text: entryData.content.text, images: [{ dataUrl: photoPreview, filename: photoFile.name }] };
+          entryData.content = { text: entryData.content.text, images: [{ dataUrl: photoPreview, filename: photoFile.name, media_type: type }] };
         }
       }
       if (isEditing) {
@@ -94,26 +120,53 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           </span>
         </div>
       )}
-      {/* Tipo */}
-      <div className="flex gap-2">
-        {ENTRY_TYPES.map(t => (
-          <button key={t.id} onClick={() => setType(t.id)}
-            className={`text-sm px-3 py-2 ${type === t.id ? "" : "opacity-30"}`}
-            style={{ color: type === t.id ? ACID : `${ACID}88`, borderBottom: type === t.id ? `1px solid ${ACID}` : "none", fontFamily: FONT_MONO }}>
-            {t.icon} {t.label}
-          </button>
-        ))}
+      {/* Tipo — Fase 8.1: agrupado por categoría. Categoría 1 (MULTIMEDIA) primero. */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] tracking-[0.3em] uppercase opacity-40 px-1" style={{ color: ACID, fontFamily: FONT_MONO }}>
+            1 · MULTIMEDIA
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {ENTRY_TYPES.filter(t => t.category === "1").map(t => (
+              <button key={t.id} onClick={() => setType(t.id)}
+                className={`text-xs px-3 py-2 ${type === t.id ? "" : "opacity-30"}`}
+                style={{ color: type === t.id ? ACID : `${ACID}88`, borderBottom: type === t.id ? `1px solid ${ACID}` : "none", fontFamily: FONT_MONO }}>
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] tracking-[0.3em] uppercase opacity-30 px-1" style={{ color: ACID, fontFamily: FONT_MONO }}>
+            OTROS
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {ENTRY_TYPES.filter(t => t.category === "x").map(t => (
+              <button key={t.id} onClick={() => setType(t.id)}
+                className={`text-xs px-3 py-2 ${type === t.id ? "" : "opacity-30"}`}
+                style={{ color: type === t.id ? ACID : `${ACID}88`, borderBottom: type === t.id ? `1px solid ${ACID}` : "none", fontFamily: FONT_MONO }}>
+                {t.icon} {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Campos */}
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO"
         className="bg-transparent text-sm p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
 
-      {type === "photo" ? (
+      {MULTIMEDIA_TYPES.has(type) ? (
         <>
-          {/* File input oculto */}
-          <input ref={fileInputRef} type="file" accept="image/*" capture="environment"
-            onChange={handlePhotoSelect} className="hidden" />
+          {/* File input oculto — accept/capture dinámicos según sub-tipo (8.1) */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={currentMeta?.accept ?? "*/*"}
+            capture={currentMeta?.capture}
+            onChange={handlePhotoSelect}
+            className="hidden"
+          />
           {/* Botón de selección */}
           <div
             onClick={() => fileInputRef.current?.click()}
@@ -123,9 +176,11 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
               <img src={photoPreview} alt="preview" className="max-h-40 object-contain rounded-sm" />
             ) : (
               <>
-                <span className="text-3xl mb-2 opacity-40" style={{ color: ACID }}>📷</span>
+                <span className="text-3xl mb-2 opacity-40" style={{ color: ACID }}>
+                  {currentMeta?.icon ?? "📷"}
+                </span>
                 <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
-                  TAP PARA SELECCIONAR FOTO
+                  TAP PARA SELECCIONAR {currentMeta?.label ?? "ARCHIVO"}
                 </p>
               </>
             )}
@@ -176,7 +231,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       <div className="flex gap-2">
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting}
           className="text-xs tracking-[0.2em] uppercase p-2 flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
-          {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : type === "photo" ? "SUBIR FOTO" : "GUARDAR"}
+          {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : MULTIMEDIA_TYPES.has(type) ? `SUBIR ${currentMeta?.label ?? "ARCHIVO"}` : "GUARDAR"}
         </motion.button>
         {onCancel && (
           <motion.button whileTap={{ scale: 0.95 }} onClick={onCancel}
