@@ -94,6 +94,32 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   // fallback a getVibeConfig canónico solo si no se pasa prop
   const vibeConf = vibeConfProp ?? getVibeConfig(trackVibe ?? "gaming");
 
+  // Funciones de control — declaradas ANTES de los useEffects que las consumen
+  // para mantener el orden topológico de refs en deps (no-use-before-define).
+  const skipDir = useCallback((dir) => {
+    if (dir === -1) {
+      if (currentTRef.current < 3) {
+        // < 3s: ir al track anterior (ADR-009)
+        skip(dir, tracks);
+      } else {
+        // >= 3s: reiniciar track actual (ADR-009)
+        if (audioRef.current) { audioRef.current.currentTime = 0; }
+        currentTRef.current = 0;
+        setCurrentT(0);
+        setProgress(0);
+      }
+      return;
+    }
+    skip(dir, tracks);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skip, tracks]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (playing) { audioRef.current.pause(); setPlaying(false); }
+    else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
+  };
+
   useEffect(() => {
     // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
     if (!mountedRef.current) { mountedRef.current = true; return; }
@@ -117,35 +143,10 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlaySignal]);
 
-const skipDir = useCallback((dir) => {
-  if (dir === -1) {
-    if (currentTRef.current < 3) {
-      // < 3s: ir al track anterior (ADR-009)
-      skip(dir, tracks);
-    } else {
-      // >= 3s: reiniciar track actual (ADR-009)
-      if (audioRef.current) { audioRef.current.currentTime = 0; }
-      currentTRef.current = 0;
-      setCurrentT(0);
-      setProgress(0);
-    }
-    return;
-  }
-  skip(dir, tracks);
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [skip, tracks]);
-
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (playing) { audioRef.current.pause(); setPlaying(false); }
-    else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
-  };
-
   // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, l=like, q=add to queue.
-  // Declarado DESPUÉS de togglePlay/skipDir para que eslint no-use-before-define no
-  // se queje (orden topológico de refs en useEffect deps). Ignora cuando el foco
-  // está en un input/textarea/contenteditable, o si hay modificadores (cmd/ctrl/alt)
-  // para no interceptar atajos del navegador.
+  // Agrupado con el resto de useEffects (skipDir/togglePlay ya declaradas arriba).
+  // Ignora cuando el foco está en un input/textarea/contenteditable, o si hay
+  // modificadores (cmd/ctrl/alt) para no interceptar atajos del navegador.
   useEffect(() => {
     const onKey = (e) => {
       const tag = e.target?.tagName;
