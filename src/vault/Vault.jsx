@@ -741,7 +741,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
                   style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
                 />
                 {/* Phase 2.2: ColorPicker unificado con el de tags — paleta 12 colores + custom hex + preview */}
-                <ColorPicker value={newEraColor} onChange={setNewEraColor} />
+                <ColorPicker value={newEraColor} onChange={setNewEraColor} accentColor={accent} />
                 <div className="flex items-center justify-end">
                   <motion.button
                     whileTap={{ scale: 0.95 }}

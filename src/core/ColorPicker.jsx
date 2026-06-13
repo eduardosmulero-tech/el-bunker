@@ -22,7 +22,7 @@ const PALETTE = [
   "#7fff00", "#ff4500", "#1effbc", "#c77dff",
 ];
 
-export const ColorPicker = ({ value, onChange }) => {
+export const ColorPicker = ({ value, onChange, accentColor = ACID }) => {
   const [custom, setCustom] = useState(value ?? "#00ffcc");
 
   const handleCustom = (hex) => {
@@ -61,8 +61,8 @@ export const ColorPicker = ({ value, onChange }) => {
           placeholder="#000000"
           maxLength={7}
           style={{
-            flex: 1, background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-            color: ACID, fontSize: 11, padding: "5px 10px", fontFamily: FONT_MONO,
+            flex: 1, background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
+            color: accentColor, fontSize: 11, padding: "5px 10px", fontFamily: FONT_MONO,
             letterSpacing: "0.15em", outline: "none",
           }}
         />
