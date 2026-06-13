@@ -5,6 +5,26 @@
 
 ---
 
+## S66 — WALL masonry responsive + long-press preview + zoom modal (Junio 2026)
+
+**Objetivo:** Implementar galería WALL con masonry CSS columns responsive, 3 densidades reales,
+long-press preview flotante, y zoom modal con Framer Motion spring.
+
+### Cambios
+- DENSITY_CONFIG: 3 densidades (compact 4col / normal 3col / expanded 2col) con CSS columnCount
+- WallItem: long-press 500ms vía useRef, onPointerCancel, ring visual, hover overlay con título + era dot
+- LongPressPreview: tarjeta flotante con imagen, era badge, fecha, metadata (AnimatePresence)
+- ZoomModal: spring animation, body scroll lock, glow shadow era-color, metadata bar, botón ✕
+- Fixes code review: useEffect dep [!!entry], ?? vs || en posición, onPointerCancel, _onOpenEntry
+
+### Archivos modificados (1)
+src/vault/VaultGallery.jsx
+
+### Resultado
+ESLint: 0. Build: OK. Code review: aprobado.
+
+---
+
 ## S62 — Verificación: CRUD entries en Worker (Junio 2026)
 
 **Objetivo:** Verificar si los 5 endpoints /api/entries existen en worker.js.

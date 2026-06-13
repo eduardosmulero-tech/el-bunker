@@ -10,13 +10,13 @@
 | Métrica | Valor |
 |---|---|
 | **Sesiones totales planificadas** | 38 |
-| **Sesiones completadas (master)** | 13 (S50-S62) |
-| **Sesiones pendientes** | 16 (S63-S78) |
+| **Sesiones completadas (master)** | 14 (S50-S66) |
+| **Sesiones pendientes** | 12 (S67-S78) |
 | **Sesiones diferidas (Fase C)** | 9 (S79-S87) |
-| **Progreso** | `████████░░░░░░░░░░░░░░░░░░░░` 26% |
+| **Progreso** | `███████████░░░░░░░░░░░░░░░░░` 38% |
 | **Rama activa** | `master` (desplegada en Vercel) |
 | **Hito actual** | Fase 2 — VAULT núcleo |
-| **Próxima sesión** | **S62** — Worker: CRUD entries D1 (verificar endpoints existentes) |
+| **Próxima sesión** | **S67** — Galería CINEMA full-bleed swipe |
 
 ---
 
@@ -131,7 +131,7 @@ git push origin master   # → Vercel redeploy automático
 | **S63** | **Worker: CRUD eras + files** — Eras D1, listado R2 files | `workers/worker.js` | ADR-019, ADR-022 | S62 | 🤖 | ~1h | 🔴 |
 | **S64** | **VaultContext → Worker API** — fetchDb desde Worker, no GoogleDriveService | `src/core/VaultContext.jsx`, `GoogleDriveService.js` | ADR-024 | S61, S63 | 🤖 | ~1.5h | 🔴 |
 | **S65** | **VAULT editar + eliminar entradas** — Edit form, soft delete, ver detalle | `src/vault/Vault.jsx`, `AddEntryForm.jsx` | Taxonomía, EC-TR | S64 | 🤖 | ~1h | 🔴 |
-| **S66** | **Galería WALL — zoom densidad** — compact/normal/expanded funcional, long-press preview | `src/vault/VaultGallery.jsx` | ADR-021 WALL | S65 | 🤖 | ~1h | 🔴 |
+| **S66** | **Galería WALL — zoom densidad** — compact/normal/expanded funcional, long-press preview | `src/vault/VaultGallery.jsx` | ADR-021 WALL | S65 | 🤖 | ~1h | ✅ |
 | **S67** | **Galería CINEMA — full-bleed swipe** — Transiciones con Framer Motion, subtítulos emocionales | `src/vault/VaultGallery.jsx` | ADR-021 CINEMA | S66 | 🤖 | ~1h | 🔴 |
 | **S68** | **Galería MAP + DIALOGUE** — MAP con Leaflet/placeholders, DIALOGUE alternado funcional | `src/vault/VaultGallery.jsx` | ADR-021 MAP, DIALOGUE | S67 | 🤖 | ~1.5h | 🔴 |
 
