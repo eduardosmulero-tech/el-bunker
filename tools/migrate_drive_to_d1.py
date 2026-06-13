@@ -129,6 +129,7 @@ def migrate_from_json(filepath, jwt):
     tracks = db.get("music_lab", {}).get("tracks", [])
     o, f, s = migrate_entity("Track", "/api/tracks", [
         {
+            "id": t.get("id"),
             "title": t.get("title", "Sin título"),
             "artist": t.get("artist", ""),
             "tag_id": t.get("tag") or t.get("vibe"),
