@@ -337,7 +337,7 @@ export default {
         // S66: aceptar id del cliente para mantener consistencia Drive JSON ↔ D1
         const id = body.id || crypto.randomUUID();
         await env.DB.prepare(
-          "INSERT INTO tags (id, namespace, label, icon, color, created_by) VALUES (?1,?2,?3,?4,?5,?6)"
+          "INSERT OR IGNORE INTO tags (id, namespace, label, icon, color, created_by) VALUES (?1,?2,?3,?4,?5,?6)"
         ).bind(id, body.namespace||"music", body.label, body.icon||"◈", body.color||"#ffffff", userId).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'tag',?3,?4)"
