@@ -1,7 +1,7 @@
 # INDEX.md — arquitectura el_bunker
 > Fuente primaria de staleness. Leer en cada arranque.
 > Actualizar al cerrar cada pliego que toque archivos listados en stale_si_pliego_toca.
-> Última actualización: S64 — VaultContext → Worker API (reescritura completa de los 7 docs).
+> Última actualización: S66 — Auditoría completa + ROADMAP v4.
 
 ---
 
@@ -21,8 +21,8 @@
 
 ## IMPACTO DE STALENESS
 
-Ninguno — todos los docs resincronizados en S64 tras reescritura completa.
-Cubren el estado real del sistema: persistencia híbrida Drive+Worker, 22 endpoints, StatsEngine wired, CAPSULES con datos reales.
+Ninguno — todos los docs resincronizados en S64.
+S66 no tocó código, solo documentación de planificación.
 
 ---
 

@@ -1,6 +1,6 @@
-# EL BÚNKER — Roadmap de Desarrollo v3
-> **Generado:** S59 — Junio 2026 · Post-auditoría
-> **Actualizado:** S60-S78 planificadas con división de trabajo
+# EL BÚNKER — Roadmap de Desarrollo v4
+> **Generado:** S66 — Junio 2026 · Post-auditoría completa (specs ↔ código ↔ D1)
+> **Actualizado:** S66 — WALL gallery completado. Drive JSON parcialmente migrado.
 > **Formato:** Sesiones Codebuff de ~45-60 min cada una
 
 ---
@@ -9,84 +9,25 @@
 
 | Métrica | Valor |
 |---|---|
-| **Sesiones totales planificadas** | 38 |
-| **Sesiones completadas (master)** | 16 (S50-S66, S63-S64) |
-| **Sesiones pendientes** | 9 (S65-S78) |
-| **Sesiones diferidas (Fase C)** | 9 (S79-S87) |
-| **Progreso** | `███████████░░░░░░░░░░░░░░░░░` 38% |
+| **Total features implementadas** | ~110 (de ~180 especificadas) |
+| **Sesiones completadas** | S50-S66 (17 sesiones) |
+| **Sesiones pendientes priorizadas** | 13 (S67-S79) |
+| **Sesiones diferidas (Fase C)** | 8 (S80-S87) |
+| **Progreso general** | `████████████░░░░░░░░░░░` ~61% |
 | **Rama activa** | `master` (desplegada en Vercel) |
-| **Hito actual** | Fase 2 — VAULT núcleo |
-| **Próxima sesión** | **S67** — Galería CINEMA full-bleed swipe |
+| **Hito actual** | Fase 2 — VAULT núcleo (80% completo) |
+| **Próxima sesión** | **S67** — Galería CINEMA full-bleed swipe + Ken Burns |
 
 ---
 
 ## 🧭 Mapa de Fases
 
-```mermaid
-flowchart LR
-    subgraph "✅ COMPLETADO"
-        F0[Fase 0<br/>Estabilización<br/>S50-S53]
-        F1[Fase 1<br/>Infraestructura<br/>S54-S59]
-    end
-    
-    subgraph "🟡 EN PROGRESO"
-        F2[Fase 2<br/>VAULT núcleo<br/>S60-S68]
-    end
-    
-    subgraph "🔴 PENDIENTE"
-        F3[Fase 3<br/>CAPSULES<br/>S69-S71]
-        F4[Fase 4<br/>RECAP<br/>S72-S73]
-        F5[Fase 5<br/>MusicLab<br/>S74-S78]
-        F6[Fase 6<br/>Pulido<br/>S79-S87]
-    end
-
-    F0 --> F1
-    F1 --> F2
-    F2 --> F3
-    F2 --> F5
-    F2 --> F4
-    F3 --> F4
-    F5 --> F6
 ```
-
----
-
-## 👷 División del Trabajo
-
-| Rol | Capacidad | Sesiones | Esfuerzo |
-|---|---|---|---|
-| **🤖 Buffy (Codebuff)** | Edita código React, Worker API, schemas D1. Todo local. | 19 (S60-S78) | ~19h |
-| **👤 Tú (Usuario)** | `git push`, `wrangler deploy`, merge a master. Solo terminal. | 6 bloques de comandos | ~10 min |
-| **❌ Ninguno** | Requiere API keys externas (mapas), diseño UX nuevo, o datos reales. | Diferido a Fase C | — |
-
-### Lo que Buffy hace en cada sesión
-1. Lee el prompt de arranque (SESION.md + ESTADO.md + BACKLOG.md + INDEX.md)
-2. Implementa los cambios según el pliego/spec
-3. Corre lint (`npx eslint`) y code review
-4. Deja commit listo en `master`
-
-### Lo que tú haces al completar un bloque
-
-| Bloque | Sesiones | Comandos |
-|---|---|---|
-| **B1** | S62-S64 (CRUD Worker) | `npx wrangler deploy` |
-| **B2** ⚠️ | S64 (migración D1) | Backup JSON primero → `git push` + `npx wrangler deploy` |
-| **B3** | S68 (VAULT completo) | `git push` + `npx wrangler deploy` |
-| **B4** | S73 (RECAP completo) | `git push` |
-| **B5** | S78 (MusicLab completo) | `git push` |
-| **B6** 🏁 | **FINAL** | `git checkout master && git merge && git push origin master` |
-
-```bash
-# Tu workflow completo:
-# Después de cada bloque B1-B5:
-cd /mnt/c/Proyectos/el-bunker
-git push
-npx wrangler deploy   # solo si el bloque toca workers/
-
-# Al final (B6):
-git checkout master
-git merge roadmap-completo
-git push origin master   # → Vercel redeploy automático
+✅ COMPLETADO            🟡 EN PROGRESO           🔴 PENDIENTE              ⚪ DIFERIDO (Fase C)
+Fase 0: S50-S53         Fase 2: S60-S66          Fase 2: S67-S71          Fase 6: S80-S87
+Fase 1: S54-S59                                  Fase 3: S72-S75
+Auditoría D1                                   Fase 4: S76
+                                                 Fase 5: S77-S79
 ```
 
 ---
@@ -100,194 +41,169 @@ git push origin master   # → Vercel redeploy automático
 | S52 | Fix loop — seek inicio L1 | `PlayerContext.jsx` | L1, L2, L3, L4 | ✅ |
 | S53 | Cola manual Q14 + sobrevive Q10 | `PlayerContext.jsx` | Q14, Q10, Q4 | ✅ |
 
-**Hito:** `[████████]` Reproductor sin bugs conocidos.
+---
+
+## ✅ FASE 1 — INFRAESTRUCTURA [COMPLETADO]
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| S54 | D1 schema + Workers init + health | `workers/`, `schema.sql` | ADR-024, ADR-019 | ✅ |
+| S55 | Workers: tracks + playlists CRUD | `workers/` | ADR-024 | ✅ |
+| S56 | Workers: entries + tags + JWT | `workers/` | ADR-024 | ✅ |
+| S57 | FileUploadService + StatsEngine | `src/core/` | ADR-022, ADR-014 | ✅ |
+| S58 | Auditoría 12 bugs + fix imports | 12 archivos | — | ✅ |
+| S59 | AddEntryForm + VaultGallery + Capsules | `src/vault/`, `src/capsules/` | Taxonomía, ADR-021 | ✅ |
 
 ---
 
-## ✅ FASE 1 — INFRAESTRUCTURA CLOUDFLARE [COMPLETADO]
+## ✅ FASE 2 — VAULT NÚCLEO [80% COMPLETADO]
 
-| # | Objetivo | Archivos | Specs | Estado | Quién |
-|---|---|---|---|---|---|
-| S54 | D1 schema + Workers init + health | `workers/`, `schema.sql` | ADR-024, ADR-019 | ✅ | Ambos |
-| S55 | Workers: tracks + playlists CRUD | `workers/` | ADR-024 | ✅ | Ambos |
-| S56 | Workers: entries + tags + JWT | `workers/` | ADR-024 | ✅ | Ambos |
-| S57 | FileUploadService + StatsEngine | `src/core/` | ADR-022, ADR-014 | ✅ | Ambos |
-| S58 | Auditoría 12 bugs + fix imports | 12 archivos | — | ✅ | 🤖 |
-| S59 | AddEntryForm real + VaultGallery + photo upload + Capsules sub-tab swipeable | `src/vault/`, `src/capsules/` | Taxonomía, ADR-021 | ✅ | 🤖 |
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| **S60** | **Fix imports** — MusicLab→tokens | 8 archivos MusicLab | — | ✅ |
+| **S61** | **Wiring JWT frontend** | `App.jsx`, `VaultContext.jsx` | ADR-024 | ✅ |
+| **S62** | **Worker: CRUD entries** (5 endpoints) | `workers/worker.js` | ADR-019 | ✅ |
+| **S63** | **Worker: CRUD eras** (5 endpoints) | `workers/worker.js` | ADR-019 | ✅ |
+| **S64** | **VaultContext→Worker API** | `VaultContext.jsx` | ADR-024 | ✅ |
+| **S65** | **VAULT edit/delete entries** | `VaultContext.jsx`, `Vault.jsx`, `AddEntryForm.jsx` | Taxonomía | ✅ |
+| S65a | 5 bugs: Q2/Q3/Q10/SH1/L1 | `PlayerContext.jsx`, `SmokeSession.jsx` | Q2, Q3, Q10, SH1, L1 | ✅ |
+| S65b | 7 bugs G: colores/paginación/miniplayer | 6 archivos | G1-G7 | ✅ |
+| **S66** | **WALL gallery** (masonry + densidades + zoom) | `VaultGallery.jsx` | ADR-021 WALL | ✅ |
+| S66 | W3: tags MusicLab sincronizan D1 | `App.jsx`, `worker.js` | ADR-016 | ✅ |
 
-**Hito:** `[████████]` D1 + Workers + R2 operativos. VAULT con formulario real.
+### 🔴 PENDIENTE (Fase 2)
 
----
-
-## 🟡 FASE 2 — VAULT NÚCLEO [EN PROGRESO] · 🤖 Solo Buffy
-
-> El VAULT pasa de visual a usable. Entradas, fotos, galería WALL.
-
-| # | Objetivo | Archivos | Specs | Depende de | 🚧 Quién | ⏱ Est. | Estado |
-|---|---|---|---|---|---|---|---|
-| **S60** | **Fix imports rotos** — MusicLab importa ACID desde `../layout/Layout` → `../tokens`; SmokeSession no existe en `src/capsules/` | `src/musiclab/MusicLab.jsx`, `AddTrackForm.jsx`, `PlaylistManager.jsx`, `src/capsules/Capsules.jsx` | — | — | 🤖 | ~30min | ✅ |
-| **S61** | **Wiring JWT frontend** — `setUploadToken`, `setStatsToken`, fetch con jwtToken de VaultContext | `src/layout/App.jsx`, `src/core/VaultContext.jsx`, `FileUploadService.js`, `StatsEngine.js` | ADR-024 | S60 | 🤖 | ~1h | ✅ |
-| **S62** | **Worker: CRUD entries D1** — GET/POST/PATCH/DELETE /api/entries | `workers/worker.js` | ADR-019 | — | 🤖 | ~1h | ✅ |
-| **S63** | **Worker: CRUD eras + files** — Eras D1, listado R2 files | `workers/worker.js` | ADR-019, ADR-022 | S62 | 🤖 | ~1h | ✅ |
-| **S64** | **VaultContext → Worker API** — fetchDb desde Worker, no GoogleDriveService | `src/core/VaultContext.jsx`, `GoogleDriveService.js` | ADR-024 | S61, S63 | 🤖 | ~1.5h | ✅ |
-| **S65** | **VAULT editar + eliminar entradas** — Edit form, soft delete, ver detalle | `src/vault/Vault.jsx`, `AddEntryForm.jsx` | Taxonomía, EC-TR | S64 | 🤖 | ~1h | 🔴 |
-| **S66** | **Galería WALL — zoom densidad** — compact/normal/expanded funcional, long-press preview | `src/vault/VaultGallery.jsx` | ADR-021 WALL | S65 | 🤖 | ~1h | ✅ |
-| **S67** | **Galería CINEMA — full-bleed swipe** — Transiciones con Framer Motion, subtítulos emocionales | `src/vault/VaultGallery.jsx` | ADR-021 CINEMA | S66 | 🤖 | ~1h | 🔴 |
-| **S68** | **Galería MAP + DIALOGUE** — MAP con Leaflet/placeholders, DIALOGUE alternado funcional | `src/vault/VaultGallery.jsx` | ADR-021 MAP, DIALOGUE | S67 | 🤖 | ~1.5h | 🔴 |
-
-**Hito parcial:** `[░░░░░░░░]` VAULT con D1: crear, subir fotos, editar, galería WALL y CINEMA.
-
-<details>
-<summary><b>⚠️ Riesgos Fase 2</b></summary>
-
-| Riesgo | Probabilidad | Impacto | Mitigación |
-|---|---|---|---|
-| S64 rompe compatibilidad con Drive JSON | Media | Alto | Backup del JSON antes de migrar. Rollback trivial (git revert) |
-| Workers CRUD no coinciden con schema D1 actual | Media | Medio | Revisar `schema.sql` antes de implementar |
-| S61 sin JWT de VaultContext → FileUploadService no funciona | Alta | Alto | Verificar que `jwtToken` existe en el context antes de cablear |
-
-</details>
+| # | Objetivo | Archivos | Specs | ⏱ Est. |
+|---|---|---|---|---|
+| **S67** | **Galería CINEMA** — full-bleed swipe, Ken Burns, subtítulos emocionales, crossfade entre fotos | `VaultGallery.jsx` | ADR-021 CINEMA | ~1.5h |
+| **S68** | **Galería DIALOGUE** — emparejamiento temporal <5min, hilo conector visual, asimetría poética | `VaultGallery.jsx` | ADR-021 DIALOGUE, ADR-027 | ~1.5h |
+| **S69** | **Galería MAP** — pines en mapa (Leaflet/static), líneas de viaje, clusters | `VaultGallery.jsx` | ADR-021 MAP | ~1.5h |
+| **S70** | **Capa ambiental** — paleta reactiva por Era + AnalyserNode pulso acústico + música ambiente Era en CINEMA | `VaultGallery.jsx`, tokens | ADR-021 ambiental | ~1h |
+| **S71** | **Galería EXHIBITION + REEL** — canvas 2D salas por vibe, secuencias auto-generadas (diferible) | `VaultGallery.jsx` | ADR-021 EXHIBITION, REEL | ~2h |
 
 ---
 
-## 🔴 FASE 3 — CAPSULES NÚCLEO · 🤖 Solo Buffy
+## 🔴 FASE 3 — CAPSULES PREMIUM
 
-> Datos reales en Timeline, SmokeSession completa, Time Capsules funcional.
-
-| # | Objetivo | Archivos | Specs | Depende de | 🚧 Quién | ⏱ Est. | Estado |
-|---|---|---|---|---|---|---|---|
-| **S69** | **SmokeSession migrada** — mover a `src/capsules/`, nombrar sesiones, vibe-aware, notificación push, evento Timeline | `src/smoke/SmokeSession.jsx` → `src/capsules/` | SS-1, SS-4, SS-7, SS-8 | S61 (JWT) | 🤖 | ~1h | 🔴 |
-| **S70** | **Timeline con datos reales** — Filtros por Era/módulo/tipo/usuario, banner "Un día como hoy" | `src/capsules/Timeline.jsx` | ADR-020 Timeline | S61 (events API) | 🤖 | ~1h | 🔴 |
-| **S71** | **Time Capsules completas** — Selector de contenido (entries + playlists), snapshot playlist, sellar con confirmación, animación apertura | `src/capsules/TimeCapsules.jsx` | TC-1 a TC-5, TC-7, TC-8 | S65 (CRUD entries) | 🤖 | ~1.5h | 🔴 |
-
-**Hito parcial:** `[░░░░░░░░]` CAPSULES con datos reales, Smoke con notificaciones, cápsulas funcionales.
+| # | Objetivo | Archivos | Specs | ⏱ Est. |
+|---|---|---|---|---|
+| **S72** | **Timeline** — filtros Era/módulo/tipo/usuario, banner "Un día como hoy", más tipos de eventos | `Timeline.jsx`, `worker.js` | ADR-020 Timeline | ~1h |
+| **S73** | **SmokeSession** — nombrar sesiones, historial, rachas, push notification, vibe-aware color | `SmokeSession.jsx`, `Capsules.jsx` | SS-1, SS-4, SS-7, SS-8 | ~1.5h |
+| **S74** | **Time Capsules** — selector contenido entries+playlists, snapshot playlist al sellar, animación apertura | `TimeCapsules.jsx`, `worker.js` | TC-1 a TC-9 | ~1.5h |
+| **S75** | **RECAP Wrapped** — 6 secciones narrativas: portada, música, memoria, conexión, hitos, cierre | `Recaps.jsx` | ADR-026 | ~1.5h |
 
 ---
 
-## 🔴 FASE 4 — RECAP · 🤖 Solo Buffy
+## 🔴 FASE 4 — MIGRACIÓN DRIVE→D1 (COMPLETAR)
 
-| # | Objetivo | Archivos | Specs | Depende de | 🚧 Quién | ⏱ Est. | Estado |
-|---|---|---|---|---|---|---|---|
-| **S72** | **RECAP semanal + mensual** — Card compacta con stats reales desde Worker, guardable como entrada VAULT | `src/capsules/Recaps.jsx` | ADR-026 | S61 (events API) | 🤖 | ~1h | 🔴 |
-| **S73** | **RECAP anual** — 6 secciones tipo Spotify Wrapped: portada, música, memoria, conexión, hitos, cierre | `src/capsules/Recaps.jsx` | ADR-026 | S72 | 🤖 | ~1.5h | 🔴 |
-
-**Hito parcial:** `[░░░░░░░░]` RECAP semanal/mensual/anual funcional.
+| # | Objetivo | Archivos | Specs | ⏱ Est. |
+|---|---|---|---|---|
+| **S76** | **Migrar playlists/drops/tags a D1** — eliminar dependencia Drive JSON, VaultContext 100% Worker | `VaultContext.jsx`, `App.jsx`, `worker.js` | ADR-024, TD-1 | ~1.5h |
 
 ---
 
-## 🔴 FASE 5 — MUSICLAB COMPLETO · 🤖 Solo Buffy
+## 🔴 FASE 5 — MUSIC LAB REMANENTE
 
-> Features restantes de la spec del reproductor v2. Cola, sesión, UX, Android, MediaSession.
-
-| # | Objetivo | Archivos | Specs | Depende de | 🚧 Quién | ⏱ Est. | Estado |
-|---|---|---|---|---|---|---|---|
-| **S74** | **Cola: Q6 límite 75 + Q12 añadir playlist** | `src/core/PlayerContext.jsx` | Q6, Q12 | — | 🤖 | ~1h | 🔴 |
-| **S75** | **Cola: Q15 historial scroll + Q16/Q17 soft delete** | `src/core/PlayerContext.jsx` | Q15, Q16, Q17 | — | 🤖 | ~1h | 🔴 |
-| **S76** | **Sesión: S1/S2 posición + S8 localStorage** | `src/core/PlayerContext.jsx` | S1, S2, S8 | — | 🤖 | ~1h | 🔴 |
-| **S77** | **UX: doble tap seek + háptico + swipe** | `src/musiclab/WinampPlayer.jsx` | UX1, UX2, UX5 | — | 🤖 | ~1h | 🔴 |
-| **S78** | **MediaSession M1-M12 completo** — Notificación lockscreen, controles, seek, Cast básico | `src/core/PlayerContext.jsx`, `WinampPlayer.jsx` | M1-M12, CAST1-6 | — | 🤖 | ~1.5h | 🔴 |
-
-**Hito parcial:** `[░░░░░░░░]` Reproductor completo según spec v2. Cola, sesión, UX, MediaSession.
+| # | Objetivo | Archivos | Specs | ⏱ Est. |
+|---|---|---|---|---|
+| **S77** | **Cola** — Q6 límite 75, Q12 añadir playlist entera, Q15 historial scroll, Q16/17 soft delete | `PlayerContext.jsx`, `MusicLab.jsx` | Q6, Q12, Q15, Q16, Q17 | ~1.5h |
+| **S78** | **Sesión + UX** — S1/S2 posición guardada, S8 persistencia localStorage, UX1 doble tap seek, UX2 háptico, UX5 swipe | `PlayerContext.jsx`, `WinampPlayer.jsx` | S1, S2, S8, UX1, UX2, UX5 | ~1.5h |
+| **S79** | **MediaSession completo** — M1-M12 lockscreen metadata Era, Cast básico, volumen físico sync | `PlayerContext.jsx`, `WinampPlayer.jsx` | M1-M12, CAST1-6 | ~1.5h |
 
 ---
 
-## 🔴 FASE 6 — PULIDO Y DIFERIDO [FASE C]
+## ⚪ FASE 6 — DIFERIDO (Fase C)
 
-> Requiere diseño UX nuevo, APIs externas, o data real. **No priorizado.**
-
-| # | Objetivo | Archivos | Specs | 🚧 Quién | ⏱ Est. | Bloqueante |
-|---|---|---|---|---|---|---|
-| S79 | Escucha Compartida SC1-SC14 — corazón + sincronización vía Worker WebSocket | `src/core/PlayerContext.jsx` | SC | ❌ Nadie (WebSocket) | ~3h | Servidor WS real |
-| S80 | Galería EXHIBITION — canvas 2D por vibes (Figma/Miro-like) | `src/vault/VaultGallery.jsx` | ADR-021 EXHIBITION | 🤖 | ~2h | Diseño layout |
-| S81 | Galería REEL — auto-generados + pinning manual | `src/vault/VaultGallery.jsx` | ADR-021 REEL | 🤖 | ~2h | — |
-| S82 | Integraciones — Drop→Entrada + link entrada→track | Varios | DA-6, DA-7 | 👤 Diseño | ~1h | Decisión UX tuya |
-| S83 | Cápsulas colaborativas — snapshot playlist + ambos editan | `TimeCapsules.jsx` | DA-8, TC-9 | 🤖 | ~1.5h | — |
-| S84 | Sonido ambiente CINEMA/EXHIBITION — playlist Era automática | `VaultGallery.jsx` | ADR-021 | 🤖 | ~1h | — |
-| S85 | Modo offline — Service Worker cache-first para fotos + tracks | `public/sw.js` | — | 🤖 | ~1.5h | — |
-| S86 | Soporte HEIC/RAW — conversión al subir | `FileUploadService.js` | — | 🤖 | ~1h | — |
-| S87 | Pulido general — edge cases, rendimiento, animaciones transiciones | Varios | Varios | 🤖 | ~2h | — |
+| # | Objetivo | Bloqueante |
+|---|---|---|
+| S80 | Escucha Compartida SC1-SC14 (WebSocket) | ❌ Servidor WS real |
+| S81 | Galería EXHIBITION canvas 2D (Figma/Miro-like) | Diseño layout |
+| S82 | Galería REEL auto-generados + pinning | — |
+| S83 | Integraciones: Drop→Entrada, entrada→track, Era playlist | Decisión UX |
+| S84 | Cápsulas colaborativas — snapshot playlist, ambos editan | — |
+| S85 | Modo offline — Service Worker cache-first | — |
+| S86 | Soporte HEIC/RAW — conversión al subir | — |
+| S87 | Pulido general — edge cases, rendimiento, transiciones | — |
 
 ---
 
 ## 📊 Resumen de Esfuerzo
 
-| Fase | Nombre | Sesiones | Horas | Quién | Estado |
-|---|---|---|---|---|---|
-| 0 | Estabilización | S50-S53 (4) | 4h | 🤖 | ✅ Completo |
-| 1 | Infraestructura Cloudflare | S54-S59 (6) | 6h | 🤖 + 👤 | ✅ Completo |
-| **2** | **VAULT núcleo** | **S60-S68 (9)** | **~10h** | **🤖** | **🟡 En curso** |
-| **3** | **CAPSULES núcleo** | **S69-S71 (3)** | **~3.5h** | **🤖** | **🔴 Pendiente** |
-| **4** | **RECAP** | **S72-S73 (2)** | **~2.5h** | **🤖** | **🔴 Pendiente** |
-| **5** | **MusicLab completo** | **S74-S78 (5)** | **~5.5h** | **🤖** | **🔴 Pendiente** |
-| 6 | Pulido y diferido | S79-S87 (9) | ~15h | 🤖 + ❌ | 🔴 No priorizado |
+| Fase | Nombre | Sesiones | Estado |
+|---|---|---|---|
+| 0 | Estabilización | S50-S53 (4) | ✅ Completo |
+| 1 | Infraestructura | S54-S59 (6) | ✅ Completo |
+| 2 | VAULT núcleo | S60-S71 (12) | 🟡 80% (faltan S67-S71) |
+| 3 | CAPSULES premium | S72-S75 (4) | 🔴 Pendiente |
+| 4 | Migración Drive→D1 | S76 (1) | 🔴 Pendiente |
+| 5 | MusicLab remanente | S77-S79 (3) | 🔴 Pendiente |
+| 6 | Diferido (Fase C) | S80-S87 (8) | ⚪ No priorizado |
 
-| **Total priorizado** | **Fases 2-5** | **19 sesiones** | **~21.5h** | **🤖 Solo** | |
-| **Total completo** | **Fases 0-6** | **38 sesiones** | **~47h** | **🤖 + 👤** | |
+| **Pendiente priorizado** | **S67-S79** | **13 sesiones** | **~18h** |
+| **Total proyecto** | **S50-S87** | **38 sesiones** | **~47h** |
 
 ---
 
 ## 🎯 Hitos del Proyecto
 
-| Hito | Sesiones | Criterio de verificación | 🚧 Quién |
-|---|---|---|---|
-| ✅ **MVP funcional** | S50-S59 | App estable, VAULT con entrada real, galería básica, CAPSULES con 4 sub-tabs | 🤖 + 👤 |
-| 🎯 **VAULT premium** | S60-S68 | Entradas en D1, galería WALL y CINEMA, subida de fotos real, MAP/DIALOGUE funcional | 🤖 |
-| 🎯 **CAPSULES real** | S69-S71 | Timeline con eventos reales, Smoke con notificaciones, cápsulas con contenido | 🤖 |
-| 🎯 **RECAP operativo** | S72-S73 | Resúmenes semanal/mensual/anual con datos reales, guardables en VAULT | 🤖 |
-| 🎯 **Reproductor v2 spec** | S74-S78 | Cola completa, UX táctil, MediaSession, Cast básico | 🤖 |
-| ✨ **Premium completo** | S79-S87 | 6 modos galería, escucha compartida, offline, integraciones | 🤖 + 👤 |
+| Hito | Sesiones | Estado |
+|---|---|---|
+| ✅ **MVP funcional** | S50-S59 | D1+Workers operativos, VAULT con formulario real, CAPSULES con 4 sub-tabs |
+| ✅ **VAULT CRUD** | S60-S66 | Entradas/eras en D1, WALL gallery, editar/eliminar, tags sincronizados, fotos a R2 |
+| 🎯 **VAULT premium** | S67-S71 | Galería CINEMA/DIALOGUE/MAP, capa ambiental, capa acústica |
+| 🎯 **CAPSULES premium** | S72-S75 | Timeline con filtros, Smoke completa, Time Capsules contenido real, RECAP Wrapped |
+| 🎯 **Sin Drive JSON** | S76 | D1 fuente única de verdad, eliminación GoogleDriveService |
+| 🎯 **Reproductor v2 spec** | S77-S79 | Cola completa, sesión/posición, UX táctil, MediaSession M1-M12 |
+| ✨ **Premium completo** | S80-S87 | 6 modos galería, escucha compartida, offline, integraciones |
 
 ---
 
-## 🔗 Dependencias Completas
+## 🔗 Dependencias
 
-```mermaid
-flowchart TD
-    S60[Fix imports] --> S61[JWT Wiring]
-    S61 --> S64[VaultContext→D1]
-    S64 --> S65[VAULT edit/delete]
-    S65 --> S66[WALL gallery]
-    S66 --> S67[CINEMA gallery]
-    S67 --> S68[MAP + DIALOGUE]
-    
-    S61 --> S69[SmokeSession]
-    S61 --> S70[Timeline real]
-    S65 --> S71[Time Capsules]
-    S61 --> S72[RECAP semanal]
-    S72 --> S73[RECAP anual]
-    
-    S74[Cola Q6/Q12] --> S75[Cola Q15/Q16/Q17]
-    S77[UX swipe] --> S78[MediaSession]
-    
-    S78 --> S79[Escucha Compartida]
-    S68 --> S80[EXHIBITION]
-    S68 --> S81[REEL]
-    S71 --> S83[Cápsulas colaborativas]
+```
+S67 (CINEMA) ──> S70 (capa ambiental)
+S68 (DIALOGUE) ──> S70 (capa ambiental)
+S69 (MAP) ── independiente ──
+S70 (Ambiental) ── independiente ──
+S71 (EXHIBITION+REEL) ──> S81+S82 (diferido)
+
+S72 (Timeline filters) ── independiente ──
+S73 (SmokeSession) ── independiente ──
+S74 (TimeCapsules content) ── necesita entries+playlists en D1 (ya están) ──
+S75 (RECAP Wrapped) ── necesita events en D1 (ya están) ──
+
+S76 (Migración Drive→D1) ── BLOQUEADO POR: S72-S75 (tocarán código de persistencia) ──
+
+S77 (Cola) ── independiente ──
+S78 (Sesión+UX) ── independiente ──
+S79 (MediaSession) ── independiente ──
 ```
 
 ---
 
-## 📝 Protocolo de Sesión
+## 📊 Estado por Módulo (post-S66)
 
-1. **Abrir sesión:** Leer `docs/Nucleo/SESION.md` → `docs/Nucleo/ESTADO.md` → `BACKLOG.md` → `INDEX.md`
-2. **Verificar:** CONTRATO.md no contradice el pliego. Si contradice, parar y reportar.
-3. **Trabajar:** Implementar la sesión del roadmap. Commits atómicos por sesión.
-4. **Validar:** `npx eslint src/...` — 0 errores nuevos.
-5. **Cerrar:** Actualizar `SESION.md` y `ESTADO.md`. Marcar sesión como ✅ en el tracker.
+| Módulo | Submódulo | % Completo | Estado |
+|---|---|---|---|
+| **Core/Infra** | Worker API (22 endpoints), D1 (16 tablas), JWT, FileUpload, StatsEngine | 90% | ✅ |
+| **VAULT** | CRUD entradas/eras, AddEntryForm, foto upload | 95% | ✅ |
+| **VAULT Galería** | WALL (completo), CINEMA/DIALOGUE/MAP/EXHIBITION/REEL (básico) | 45% | 🟡 |
+| **VAULT Taxonomía** | 4 tipos implementados de ~70 (note/photo/milestone/letter) | 6% | 🟡 |
+| **CAPSULES** | 4 sub-tabs con datos Worker real, Timeline paginado | 65% | 🟡 |
+| **MUSIC LAB** | Reproductor, cola, playlists, drops, tags, filtros, 3 vistas | 85% | ✅ |
+| **Capa Visual** | Cyber-vandal, scanlines, trackVibe→accent, Framer Motion | 90% | ✅ |
+| **Persistencia** | Híbrido Drive+D1 (entries/eras/tracks→D1, resto→Drive) | 65% | 🟡 |
 
 ---
 
-## 📐 Convenciones de este Documento
+## 📐 Convenciones
 
 | Símbolo | Significado |
 |---|---|
-| `#` | Número de sesión |
-| ⚡ | Alto impacto visible para el usuario |
-| 🔧 | Infraestructura, sin cambio visible inmediato |
-| ✅ | Completado |
-| 🟡 | En progreso |
+| ✅ | Completado y verificado en código |
+| 🟡 | En progreso / parcialmente implementado |
 | 🔴 | No iniciado |
-| 🤖 | Lo hace Buffy (Codebuff) |
-| 👤 | Lo hace el usuario (tú) |
-| ❌ | No puede hacerlo nadie aún (bloqueante externo) |
-| Hito | Punto de verificación con criterio definido |
+| ⚪ | Diferido (Fase C) |
+| P0 | Bloquea funcionalidad o causa pérdida de datos |
+| P1 | Visible para el usuario, impacta experiencia core |
+| P2 | Mejora — no bloquea funcionalidad |
