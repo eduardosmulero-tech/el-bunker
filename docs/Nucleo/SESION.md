@@ -5,6 +5,25 @@
 
 ---
 
+## S65 — Limpieza ESLint: 78→0 problemas en src/ (Junio 2026)
+
+**Objetivo:** Eliminar toda la deuda técnica de ESLint acumulada en 18 archivos.
+
+### Fases
+- Fase 1 (S63-S64): 78→52 — 7 archivos core: PlayerContext, VaultContext, GoogleDrive, WinampPlayer, Vault, SmokeSession
+- Fase 2 (S65): 52→30 — 6 archivos MusicLab: LoginScreen, AudioVisualizer, MusicLab, PlaylistManager, TagManager, TrackCard
+- Fase 3 (S65): 30→0 — 5 archivos restantes: supresiones movidas al cuerpo de efectos, file-level ampliado
+
+### Archivos modificados (13)
+GoogleDriveService.js, PlayerContext.jsx, VaultContext.jsx, WinampPlayer.jsx,
+Vault.jsx, SmokeSession.jsx, LoginScreen.jsx, AudioVisualizer.jsx, MusicLab.jsx,
+PlaylistManager.jsx, TagManager.jsx, TrackCard.jsx
+
+### Resultado
+0 errores, 0 warnings en npx eslint src/. Proyecto completamente limpio.
+
+---
+
 ## S64 — VaultContext → Worker API: entries, eras, tracks (Junio 2026)
 
 **Objetivo:** Migrar la carga de datos de Drive JSON a Worker API para entries, eras y tracks.
