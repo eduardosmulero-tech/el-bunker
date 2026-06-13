@@ -31,5 +31,9 @@
         "rollup-plugin-visualizer": "^7.0.1",
         "tailwindcss": "^3.4.19",
         "vite": "^8.0.12"
-    }
+    },
+    "browserslist": [
+        "Chrome >= 90",
+        "not dead"
+    ]
 }
