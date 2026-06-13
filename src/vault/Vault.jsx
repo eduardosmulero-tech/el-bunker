@@ -11,6 +11,14 @@ import AddEntryForm from "./AddEntryForm";
 import VaultGallery from "./VaultGallery";
 import { entryCreated } from "../core/StatsEngine";
 
+// ─── CONSTANTS ───────────────────────────────────────────────
+const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
+const DEMO_ERAS = [
+  { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
+  { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
+  { id: "demo-3", _index: 2, name: "RENACIMIENTO",  description: "Construyendo algo nuevo desde las cenizas.",          start_date: new Date(Date.now() - 80*86400000).toISOString(),   color: "#ff6b35", cover_image: null },
+];
+
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const ACID        = "#bfff00";
 const PURPLE      = "#bf00ff";
@@ -528,18 +536,13 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   const startX     = useRef(0);
   const scrollLeft = useRef(0);
 
-  // Enrich eras with index
-  const activeEra = eras_arr.find((e) => e.id === activeEraId) ?? eras_arr[0] ?? null;
-
-  // eslint-disable-next-line no-unused-vars
-  const _activeEra = activeEra;
-
-  // Auto-select first era
+  // Auto-select first era on mount only
   useEffect(() => {
     if (eras_arr.length > 0 && !activeEraId) {
       setActiveEraId(eras_arr[0].id);
     }
-  }, [eras_arr.length, activeEraId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  }, [eras_arr.length]);
 
   // ── Drag-to-scroll on desktop ─────────────────────────────
   const onMouseDown = (e) => {
@@ -561,11 +564,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   };
 
   // ── Demo data if DB is null ───────────────────────────────
-  const displayEras = eras_arr.length > 0 ? eras_arr : [
-    { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
-    { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
-    { id: "demo-3", _index: 2, name: "RENACIMIENTO",  description: "Construyendo algo nuevo desde las cenizas.",          start_date: new Date(Date.now() - 80*86400000).toISOString(),   color: "#ff6b35", cover_image: null },
-  ];
+  const displayEras = eras_arr.length > 0 ? eras_arr : DEMO_ERAS;
 
   const activeDisplayEra = displayEras.find((e) => e.id === activeEraId) ?? displayEras[0];
 
@@ -582,7 +581,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
         transition={{ duration: 0.5 }}
         className="grid grid-cols-2 gap-3"
       >
-        <AdventureCounter startDate={db?.adventures_start_date ?? new Date(Date.now() - 500*86400000).toISOString()} />
+        <AdventureCounter startDate={db?.adventures_start_date ?? DEFAULT_ADVENTURE_DATE} />
         <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
       </motion.div>
 

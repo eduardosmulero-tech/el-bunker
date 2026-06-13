@@ -18,7 +18,6 @@ const BG      = "#050505";
 const FONT    = "'JetBrains Mono', 'Courier New', monospace";
 
 const GLASS_BG     = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.1)";
 
 // ─── TIMER PRESETS ───────────────────────────────────────────
 const PRESETS = [

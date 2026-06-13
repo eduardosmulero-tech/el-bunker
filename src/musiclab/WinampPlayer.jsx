@@ -1,8 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { Pause, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { getStreamUrl } from "../core/GoogleDriveService";
-import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
+import { ACID, BG, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";
@@ -44,11 +43,11 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
 );
 
 // ─── WINAMP PLAYER ───────────────────────────────────────────
-export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS, vibeConf: vibeConfProp }) => {
+export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, vibeConf: vibeConfProp }) => {
   const {
-    activeTrack: track, setActiveTrack,
+    activeTrack: track,
     isPlaying: playing, setIsPlaying: setPlaying,
-    localQueue: queue,
+    localQueue: _queue,
     loopMode, toggleLoopMode, shuffle, setShuffle,
     autoPlaySignal, syncStatus,
     audioRef,
@@ -159,6 +158,7 @@ const skipDir = useCallback((dir) => {
     };
   }, []);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (masterVolume == null) return;
     setVolume(masterVolume);
@@ -215,7 +215,7 @@ return () => cancelAnimationFrame(raf);
     });
     return () => {
       ["play", "pause", "previoustrack", "nexttrack", "seekto"].forEach((action) => {
-        try { navigator.mediaSession.setActionHandler(action, null); } catch (_) {}
+        try { navigator.mediaSession.setActionHandler(action, null); } catch { /* noop */ }
       });
     };
   }, [track?.id, playing, skip, skipDir]);

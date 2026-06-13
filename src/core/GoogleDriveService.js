@@ -393,7 +393,7 @@ const _withTokenRetry = async (fn) => {
       console.info("[Búnker] Token rechazado (HTTP " + status + ") — renovando…");
       try {
         await requestAccessToken(false);
-      } catch (_silentErr) {
+      } catch {
         console.warn("[Búnker] Silent refresh fallido — forzando popup de login…");
         await requestAccessToken(true);
       }

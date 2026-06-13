@@ -4,6 +4,11 @@
 //  v3.0.0 — Multi-usuario · Bibliotecas · Alertas de capacidad
 // ============================================================
 
+/* eslint-disable react-hooks/immutability */
+// ^ Funciones useCallback definidas después del useEffect que las
+//   consume (boot en mount). El orden es intencional para legibilidad.
+//   No refactorizar sin tests.
+
 import {
   createContext,
   useContext,
@@ -346,7 +351,7 @@ export function VaultProvider({ children }) {
   }, []);
 
   // ── Step 2: Fetch user info + DB ──────────────────────────
-  // eslint-disable-next-line react-hooks/exhaustive-deps — stable refs, fire-and-forget _refreshWorkerData
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const _fetchUserAndDb = useCallback(async (token) => {
     setBootPhase(BOOT.INIT_DB);
     setDbStatus("SYNCING");

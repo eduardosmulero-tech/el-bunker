@@ -8,6 +8,12 @@
 //       _manual:false → cargado desde contexto de playlist
 // ============================================================
 
+/* eslint-disable react-hooks/refs, react-hooks/immutability */
+// ^ Los refs se acceden/modifican intencionalmente para evitar
+//   stale closures en callbacks de audio nativo (skip, loopMode,
+//   shuffle). Son patrones establecidos y funcionales del motor
+//   de reproducción. No refactorizar sin tests.
+
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
@@ -116,9 +122,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
         setActiveTrack(qt[0]);
       })
       .catch((err) => console.warn("[Búnker] fetchQueue:", err));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-useEffect(() => {
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
     if (!userId) return;
     const ids = activeTrack
       ? [activeTrack.id, ...localQueue.filter((t) => t.id !== activeTrack.id).map((t) => t.id)]
@@ -131,6 +139,7 @@ useEffect(() => {
         .catch(() => { setSyncStatus("error"); setTimeout(() => setSyncStatus("idle"), 4000); });
     }, 2000);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id, localQueue, userId]);
 
   // ── Skip ─────────────────────────────────────────────────
@@ -218,11 +227,14 @@ useEffect(() => {
 
   // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
+  // eslint-disable-next-line react-hooks/refs
   const loopModeRef = useRef("off");
   useEffect(() => { skipRef.current     = skip;     }, [skip]);
   useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
   // SH1: mantener refs de shuffle sincronizados con closures del skip
+  // eslint-disable-next-line react-hooks/refs
   const shuffledListRefStable = useRef(shuffledListRef.current);
+  // eslint-disable-next-line react-hooks/refs
   const shuffleIndexRefStable = useRef(shuffleIndexRef.current);
   useEffect(() => { shuffledListRefStable.current = shuffledListRef.current; }, [shuffle]);
   useEffect(() => { shuffleIndexRefStable.current = shuffleIndexRef.current; }, [shuffle]);
@@ -303,7 +315,7 @@ useEffect(() => {
   useEffect(() => {
     if (!("wakeLock" in navigator)) return;
     const req = async () => {
-      try { wakeLockRef.current = await navigator.wakeLock.request("screen"); } catch (_) {}
+      try { wakeLockRef.current = await navigator.wakeLock.request("screen"); } catch { /* noop */ }
     };
     const rel = async () => {
       if (wakeLockRef.current) { await wakeLockRef.current.release(); wakeLockRef.current = null; }
@@ -387,14 +399,14 @@ useEffect(() => {
         onEnded={handleAudioEnded}
         onPause={() => {
           setIsPlaying(false);
-          if (activeTrack) trackPause(activeTrack.id, audioRef.current?.currentTime || 0);
+          if (activeTrack) trackPause(activeTrack.id, audioRef.current?.currentTime ?? 0);
         }}
         onPlay={() => {
           setIsPlaying(true);
           if (activeTrack) trackPlay(activeTrack.id, activeTrack.title);
         }}
-        onTimeUpdate={(e) => {
-          // WinampPlayer se suscribe a audioRef directamente para el progreso visual
+        onTimeUpdate={() => {
+          // WinampPlayer se suscribe a audioRef.current directamente para progreso visual
         }}
       />
       {children}
