@@ -508,12 +508,75 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
   }, [loopMode, skip, _resolveNextTrackUrl]);
 
-  // ── src del audio: reactivo al track activo ───────────────────
-  const audioSrc = activeTrack
-    ? getStreamUrl(activeTrack)
-    : null;
-  // P2.7: crossOrigin solo para R2 (workers.dev). Drive no devuelve CORS → crash.
-  const audioCrossOrigin = audioSrc?.includes("workers.dev") ? "anonymous" : undefined;
+  // ── Fase 1.3 — P1: Resolución de audio con verificación de caché local ──
+  // Antes de hacer stream desde R2, verifica si el track ya está en Cache API.
+  // Si existe en caché → blob URL (reproducción instantánea, sin red).
+  // Si no existe → URL de red (el SW lo cacheará para la siguiente vez).
+  const [resolvedAudioSrc, setResolvedAudioSrc] = useState(null);
+  const _blobUrlRef = useRef(null);  // para cleanup de blob URLs
+
+  useEffect(() => {
+    if (!activeTrack) {
+      setResolvedAudioSrc(null);
+      if (_blobUrlRef.current) {
+        URL.revokeObjectURL(_blobUrlRef.current);
+        _blobUrlRef.current = null;
+      }
+      return;
+    }
+
+    const url = getStreamUrl(activeTrack);
+    if (!url) {
+      setResolvedAudioSrc(null);
+      return;
+    }
+
+    // Set network URL immediately as baseline — el audio arranca sin delay.
+    // Si el track ya está en caché, se actualiza a blob URL tras la verificación async.
+    setResolvedAudioSrc(url);
+
+    // Si Cache API no está disponible (non-secure context), no hay nada más que hacer.
+    if (typeof caches === "undefined") return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const cached = await caches.match(url);
+        if (!cancelled && cached && cached.ok) {
+          const blob = await cached.blob();
+          if (!cancelled && blob.size > 0) {
+            const blobUrl = URL.createObjectURL(blob);
+            if (_blobUrlRef.current) URL.revokeObjectURL(_blobUrlRef.current);
+            _blobUrlRef.current = blobUrl;
+            setResolvedAudioSrc(blobUrl);
+            console.info("[Búnker] ♻ Audio desde caché local:", url.slice(-40));
+            return;
+          }
+        }
+      } catch {
+        // Cache API falló — el audio ya está cargando desde la URL de red (baseline).
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTrack?.id]);
+
+  // Cleanup blob URLs al desmontar el provider
+  useEffect(() => {
+    return () => {
+      if (_blobUrlRef.current) {
+        URL.revokeObjectURL(_blobUrlRef.current);
+      }
+    };
+  }, []);
+
+  // P2.7: crossOrigin solo para R2 (workers.dev). Blob URLs son same-origin → no necesitan CORS.
+  const audioCrossOrigin = resolvedAudioSrc
+    ? (resolvedAudioSrc.startsWith("blob:") ? undefined : resolvedAudioSrc.includes("workers.dev") ? "anonymous" : undefined)
+    : undefined;
 
   // ── Fase 1.1 — P-M8: Precarga del siguiente track al 80% ──────
   // Resuelve la URL del siguiente track sin efectos secundarios.
@@ -625,7 +688,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       <audio
         ref={audioRef}
         crossOrigin={audioCrossOrigin}
-        src={audioSrc ?? undefined}
+        src={resolvedAudioSrc ?? undefined}
         loop={false}
         style={{ display: "none" }}
         onEnded={handleAudioEnded}

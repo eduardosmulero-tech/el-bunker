@@ -95,6 +95,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // ── 3.5. R2 Audio (búnker R2 proxy /music/*) → Cache-First (Fase 1.3 — P1)
+  //       Audio MP3 servido desde caché local si ya fue reproducido antes.
+  //       Sin caché → network + cache para siguiente reproducción.
+  if (url.hostname === "el-bunker-r2-proxy.thebunker-admin.workers.dev" && url.pathname.startsWith("/music/")) {
+    event.respondWith(cacheFirst(request));
+    return;
+  }
+
   // ── 4. Same-origin assets (JS, CSS, images) → Cache-First
   if (url.origin === self.location.origin) {
     event.respondWith(cacheFirst(request));
