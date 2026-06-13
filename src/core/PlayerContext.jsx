@@ -275,8 +275,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     const base = idx < 0 ? 0 : idx;
 
     // loopMode "off" → parar al llegar al último track (BUG-09)
+    // Fase 5.4 — C5: Fin de cola → parada consciente con fade del vibe
     if (dir === 1 && loopModeRef.current === "off" && !shuffle && base >= list.length - 1) {
       setIsPlaying(false);
+      document.body.style.removeProperty("--vibe-accent");
+      setActiveVibe(null);
       return;
     }
 
@@ -471,6 +474,20 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     document.addEventListener("visibilitychange", onVis);
     return () => { rel(); document.removeEventListener("visibilitychange", onVis); };
   }, [isPlaying]);
+
+  // ── Fase 4.5 — VB19: Restaurar vibe al volver de background ──
+  const _activeVibeRef = useRef(activeVibe);
+  useEffect(() => { _activeVibeRef.current = activeVibe; }, [activeVibe]);
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "visible" && _activeVibeRef.current) {
+        const accent = resolveVibeAccent(_activeVibeRef.current);
+        if (accent) document.body.style.setProperty("--vibe-accent", accent);
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [resolveVibeAccent]);
 
   // ── MediaSession API (S80-S81, Android M1-M12) ────────────
   useEffect(() => {
@@ -822,6 +839,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // ── Fase 2.8 — A1: Persistir estado para OOM kill recovery ──
   // Guarda activeTrack, localQueue, currentTime en localStorage cada 5s.
   // Al restaurar, reconstruye estado. Reproducción pausada.
+  const _recoveryRef = useRef(false);
   useEffect(() => {
     if (!userId || !activeTrack) return;
     const SAVE_KEY = `el_bunker_recovery_${userId}`;
@@ -840,6 +858,41 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }, 5000);
     return () => clearInterval(interval);
   }, [userId, activeTrack?.id, localQueue, loopMode, shuffle]);
+
+  // Restaurar estado tras OOM kill (solo en mount)
+  useEffect(() => {
+    if (!userId || !tracks.length || _recoveryRef.current) return;
+    _recoveryRef.current = true;
+    const SAVE_KEY = `el_bunker_recovery_${userId}`;
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      // Solo restaurar si se guardó en los últimos 30 min (sesión reciente)
+      if (Date.now() - state.savedAt > 30 * 60 * 1000) return;
+      if (state.activeTrackId) {
+        const restoredTrack = tracks.find((t) => t.id === state.activeTrackId);
+        if (restoredTrack) {
+          setActiveTrack(restoredTrack);
+          const restoredQueue = state.queueIds
+            .map((id) => tracks.find((t) => t.id === id))
+            .filter(Boolean)
+            .map((t) => ({ ...t, _manual: true }));
+          if (restoredQueue.length) setLocalQueue(restoredQueue);
+          setLoopMode(state.loopMode ?? "off");
+          setShuffle(state.shuffle ?? false);
+          // Restaurar posición tras breve delay (esperar a que audioRef esté listo)
+          setTimeout(() => {
+            if (audioRef.current && state.position > 0) {
+              audioRef.current.currentTime = state.position;
+            }
+          }, 300);
+          console.info("[Búnker] ♻ Sesión restaurada tras OOM kill");
+        }
+      }
+    } catch { /* noop */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, tracks.length]);
 
   return (
     <PlayerContext.Provider value={{
