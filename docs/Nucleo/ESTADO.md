@@ -2,8 +2,8 @@
 > Fuente de verdad de sesión. MAX 60 líneas. UN bug activo.
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S66 — Bug W3: sincronizar tags MusicLab con D1
-**Última sesión:** S65b — 7 bugs G corregidos (G1-G7)
+**Próximo pliego:** ninguno pendiente
+**Última sesión:** S66 — W3 resuelto (tags→D1)
 **Rama activa:** `master`
 
 ---
@@ -13,7 +13,7 @@
 ### P1 — ninguno activo
 
 ### P2/resto
-- **W3:** Tags de MusicLab solo se guardan en Drive JSON, no sincronizan con D1
+*ninguno*
 
 ---
 
