@@ -175,7 +175,19 @@ export default function MusicLab({
   };
 
   const handleDeletePlaylist = async (playlistId) => {
+    if (!playlistId) return;
     try {
+      // P0 fix (DEL-PLAYLIST regression): route through Worker API (D1) so
+      // refreshDb no restaure la playlist. Antes solo se llamaba patchDb
+      // (Drive) — D1 seguía teniendo la fila, así que el próximo refreshDb
+      // sobreescribía el estado local con datos stale.
+      // PLIEGO: ver docs/legacy/PLIEGOS_HISTORIAL.md (S83).
+      const res = await fetch(`${API_BASE_ML}/api/playlists/${playlistId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${_jwtToken}` },
+      });
+      if (!res.ok) throw new Error(`deletePlaylist: ${res.status}`);
+      // Sincronizar estado local para que coincida con D1.
       await patchDb((prev) => ({
         ...prev,
         music_lab: {
@@ -185,6 +197,7 @@ export default function MusicLab({
       }));
     } catch (err) {
       console.warn("[Búnker] deletePlaylist falló:", err);
+      return; // sin toast — el estado local queda intacto si D1 rechaza
     }
     setToast("PLAYLIST ELIMINADA");
     setTimeout(() => setToast(null), 2500);
