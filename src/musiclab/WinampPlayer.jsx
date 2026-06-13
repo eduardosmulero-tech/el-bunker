@@ -67,14 +67,12 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
 
   const mountedRef   = useRef(false);
   const currentTRef  = useRef(0);
-  const [progress, setProgress] = useState(() => {
-    const a = audioRef?.current;
-    if (a?.duration && a?.currentTime != null) return (a.currentTime / a.duration) * 100;
-    return 0;
-  });
+  // ADR-Refs: refs NO se leen durante el render. Valores inicializados a 0;
+  // el useEffect de abajo sincroniza desde el ref vía evento 'timeupdate' en mount.
+  const [progress, setProgress] = useState(0);
   const [volume,   setVolume]   = useState(masterVolume ?? 80);
-  const [duration, setDuration] = useState(() => audioRef?.current?.duration || 0);
-  const [currentT, setCurrentT] = useState(() => audioRef?.current?.currentTime || 0);
+  const [duration, setDuration] = useState(0);
+  const [currentT, setCurrentT] = useState(0);
   const [showDrop,     setShowDrop]     = useState(false);
   const [shouldScroll, setShouldScroll] = useState(false);
   const titleRef = useRef(null);

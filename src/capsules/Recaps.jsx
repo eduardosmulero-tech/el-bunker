@@ -57,7 +57,7 @@ export default function Recaps({ events = [], accentColor = ACID }) {
     const trackPlays = {};
     filtered.filter(e => e.event_type === "track_play").forEach(e => {
       let p = {};
-      try { p = typeof e.payload === "string" ? JSON.parse(e.payload) : (e.payload || {}); } catch {}
+      try { p = typeof e.payload === "string" ? JSON.parse(e.payload) : (e.payload || {}); } catch { /* payload malformado — ignorar */ }
       const id = p.track_id || "?";
       trackPlays[id] = (trackPlays[id] || 0) + 1;
     });

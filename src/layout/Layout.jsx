@@ -220,13 +220,11 @@ const AmbientGlows = ({ accentColor = ACID }) => (
 // ─── MINI PLAYER (G7: persistente entre pestañas) ───────────
 const MiniPlayer = ({ accentColor = ACID }) => {
   const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
-  const [progress, setProgress] = useState(() => {
-    const a = audioRef.current;
-    if (a?.duration && a?.currentTime != null) return (a.currentTime / a.duration) * 100;
-    return 0;
-  });
-  const [currentT, setCurrentT] = useState(() => audioRef.current?.currentTime || 0);
-  const [duration, setDuration] = useState(() => audioRef.current?.duration || 0);
+  // ADR-Refs: refs NO se leen durante el render. Valores inicializados a 0;
+  // el useEffect de abajo sincroniza desde el ref vía evento 'timeupdate' en mount.
+  const [progress, setProgress] = useState(0);
+  const [currentT, setCurrentT] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   useEffect(() => {
     const audio = audioRef.current;

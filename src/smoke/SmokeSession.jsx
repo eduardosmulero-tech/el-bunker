@@ -194,12 +194,6 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     return resolveVibeAccent?.(trackVibe) || null;
   }, [trackVibe, resolveVibeAccent]);
 
-  // Use vibe accent as preset color override when music is playing
-  const effectiveActiveColor = useMemo(() => {
-    if (vibeAccent && isRunning) return vibeAccent;
-    return activeColor;
-  }, [vibeAccent, isRunning, activeColor]);
-
   // S73: Streak — días consecutivos con sesiones completadas
   const streak = useMemo(() => {
     if (!history.length) return 0;
@@ -305,6 +299,14 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     : selectedPreset?.color ?? ACID;
 
   const progress = totalSeconds > 0 ? (totalSeconds - remaining) / totalSeconds : 0;
+
+  // ADR-TDZ: effectiveActiveColor declarado DESPUÉS de activeColor para evitar
+  // ReferenceError al evaluar el array de dependencias del useMemo.
+  // Usa el accent del vibe activo (música sonando) como override cuando hay sesión corriendo.
+  const effectiveActiveColor = useMemo(() => {
+    if (vibeAccent && isRunning) return vibeAccent;
+    return activeColor;
+  }, [vibeAccent, isRunning, activeColor]);
 
   // ── Timer tick ────────────────────────────────────────────
   useEffect(() => {

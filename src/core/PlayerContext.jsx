@@ -589,6 +589,40 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
   }, [activeVibe, resolveVibeAccent]);
 
+  // ── Fase 1.1 — P-M8: Precarga del siguiente track al 80% ──────
+  // Resuelve la URL del siguiente track sin efectos secundarios.
+  // No muta estado — es una proyección pura del estado actual.
+  // ADR-TDZ: declarado ANTES de handleAudioEnded para evitar ReferenceError
+  // al evaluar el dependency array del useCallback.
+  const _resolveNextTrackUrl = useCallback(() => {
+    // Loop track → mismo track se repite, no tiene sentido preload
+    if (loopMode === "track") return null;
+
+    // Cola activa → el siguiente es el primer track distinto del activo
+    if (localQueue.length > 0) {
+      let next = localQueue[0];
+      if (next.id === activeTrack?.id && localQueue.length > 1) next = localQueue[1];
+      else if (next.id === activeTrack?.id) return null;
+      return getStreamUrl(next);
+    }
+
+    // Sin cola: buscar en la lista global (tracks)
+    const list = tracks;
+    if (!list.length || !activeTrack) return null;
+
+    const idx = list.findIndex((t) => t.id === activeTrack.id);
+    if (idx < 0) return null;
+
+    // Shuffle activo → orden impredecible, no preload
+    if (shuffle) return null;
+
+    // Loop off y estamos en el último track → no hay siguiente
+    if (loopMode === "off" && idx >= list.length - 1) return null;
+
+    const nextIdx = (idx + 1) % list.length;
+    return getStreamUrl(list[nextIdx]);
+  }, [activeTrack, localQueue, loopMode, shuffle, tracks]);
+
   // ── onEnded centralizado ──────────────────────────────────────────────
   const handleAudioEnded = useCallback(() => {
     if (loopMode === "track" && audioRef.current) {
@@ -794,38 +828,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const audioCrossOrigin = resolvedAudioSrc
     ? (resolvedAudioSrc.startsWith("blob:") ? undefined : resolvedAudioSrc.includes("workers.dev") ? "anonymous" : undefined)
     : undefined;
-
-  // ── Fase 1.1 — P-M8: Precarga del siguiente track al 80% ──────
-  // Resuelve la URL del siguiente track sin efectos secundarios.
-  // No muta estado — es una proyección pura del estado actual.
-  const _resolveNextTrackUrl = useCallback(() => {
-    // Loop track → mismo track se repite, no tiene sentido preload
-    if (loopMode === "track") return null;
-
-    // Cola activa → el siguiente es el primer track distinto del activo
-    if (localQueue.length > 0) {
-      let next = localQueue[0];
-      if (next.id === activeTrack?.id && localQueue.length > 1) next = localQueue[1];
-      else if (next.id === activeTrack?.id) return null;
-      return getStreamUrl(next);
-    }
-
-    // Sin cola: buscar en la lista global (tracks)
-    const list = tracks;
-    if (!list.length || !activeTrack) return null;
-
-    const idx = list.findIndex((t) => t.id === activeTrack.id);
-    if (idx < 0) return null;
-
-    // Shuffle activo → orden impredecible, no preload
-    if (shuffle) return null;
-
-    // Loop off y estamos en el último track → no hay siguiente
-    if (loopMode === "off" && idx >= list.length - 1) return null;
-
-    const nextIdx = (idx + 1) % list.length;
-    return getStreamUrl(list[nextIdx]);
-  }, [activeTrack, localQueue, loopMode, shuffle, tracks]);
 
   // Activar precarga cuando el track actual supera el 80% de duración.
   // El segundo <audio> carga la URL en cache del navegador. Silencioso.
