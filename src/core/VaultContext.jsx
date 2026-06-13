@@ -296,7 +296,13 @@ export function VaultProvider({ children }) {
         if (typeof v !== "string") return v;
         try { return JSON.parse(v); } catch { return v; }
       };
-      const parsedEntries = (entries || []).map((e) => ({ ...e, content: safeParse(e.content) }));
+      const parsedEntries = (entries || []).map((e) => ({
+        ...e,
+        content: safeParse(e.content),
+        // S64 audit: mapear from_user→from, to_user→to para compatibilidad frontend
+        from: e.from_user || e.from,
+        to: e.to_user || e.to,
+      }));
       console.info("[Búnker] Worker DB built:", { entries: entries.length, eras: eras.length, tracks: tracks.length, tags: tags.length, playlists: playlists.length, drops: drops.length });
       return {
         entries: parsedEntries,
@@ -305,7 +311,8 @@ export function VaultProvider({ children }) {
           tracks: tracks || [],
           tags: tags || [],
           playlists: playlists || [],
-          drops: drops || [],
+          // S64 audit: mapear from_user→from, to_user→to en drops
+          drops: (drops || []).map(d => ({ ...d, from: d.from_user || d.from, to: d.to_user || d.to })),
         },
         libraries: [],
         schema_version: "5.0.0",

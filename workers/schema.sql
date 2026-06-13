@@ -83,6 +83,7 @@ CREATE TABLE tracks (
   note        TEXT DEFAULT '',
   duration    INTEGER,                     -- seconds
   thumbnail   TEXT,                        -- R2 key for thumbnail
+  drive_file_id TEXT,                      -- legacy Google Drive file ID (fallback stream)
   color       TEXT,                        -- user-set custom color (≠ tag color)
   play_count  INTEGER DEFAULT 0,
   last_played TEXT,

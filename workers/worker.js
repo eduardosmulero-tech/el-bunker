@@ -122,10 +122,26 @@ export default {
         const { results } = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
         // Mapear: tag_id → tag (string ID, compatible con frontend track.tag)
         //         tag_color → color (compatible con Drive JSON track.color)
+        // S64 audit: incluir track_tags multi-tag como tags[]
+        const trackIds = results.map(r => r.id);
+        let tagsByTrack = {};
+        if (trackIds.length) {
+          const placeholders = trackIds.map(() => "?").join(",");
+          const { results: allTags } = await env.DB.prepare(
+            `SELECT tt.track_id, t.id, t.label, t.icon, t.color
+             FROM track_tags tt JOIN tags t ON t.id = tt.tag_id
+             WHERE tt.track_id IN (${placeholders})`
+          ).bind(...trackIds).all();
+          for (const row of allTags) {
+            if (!tagsByTrack[row.track_id]) tagsByTrack[row.track_id] = [];
+            tagsByTrack[row.track_id].push({ id: row.id, label: row.label, icon: row.icon, color: row.color });
+          }
+        }
         const mapped = results.map((r) => ({
           ...r,
           tag: r.tag_id,
           color: r.color || r.tag_color || '#bfff00',
+          tags: tagsByTrack[r.id] || [],
           tag_label: undefined, tag_icon: undefined, tag_color: undefined,
         }));
         return json(mapped);
@@ -134,24 +150,33 @@ export default {
       if (path === "/api/tracks" && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
-        const id = crypto.randomUUID();
+        // S64 audit: aceptar id y timestamps del cliente para migración
+        const id = body.id || crypto.randomUUID();
+        const now = body.created_at || new Date().toISOString();
+        const addedBy = body.added_by || userId;
         await env.DB.prepare(
-          `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, added_by)
-           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)`
+          `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, drive_file_id, color, play_count, last_played, added_by, created_at, updated_at)
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)`
         ).bind(id, body.era_id||null, body.title, body.artist||"", body.tag_id||null,
                body.r2_key||null, body.format||"mp3", body.note||"", body.duration||null,
-               body.thumbnail||null, userId).run();
+               body.thumbnail||null, body.drive_file_id||null, body.color||null,
+               body.play_count||0, body.last_played||null, addedBy, now, now).run();
+        // Vincular multi-tags (track_tags junction)
+        if (Array.isArray(body.tags) && body.tags.length) {
+          const stmt = env.DB.prepare("INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES (?1,?2)");
+          await env.DB.batch(body.tags.map(tid => stmt.bind(id, tid)));
+        }
         // Emitir evento (ADR-019)
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'track',?3,?4)"
         ).bind("track_created", userId, id, JSON.stringify({ title: body.title })).run();
-        return json({ id, ...body, added_by: userId }, 201);
+        return json({ id, ...body, added_by: addedBy }, 201);
       }
 
       // PATCH /api/tracks/:id (S55)
       if (path.startsWith("/api/tracks/") && request.method === "PATCH") {
         if (!userId) return err("Unauthorized", 401);
-        const TRACK_FIELDS = new Set(["era_id","title","artist","tag_id","r2_key","format","note","duration","thumbnail","color"]);
+        const TRACK_FIELDS = new Set(["era_id","title","artist","tag_id","r2_key","format","note","duration","thumbnail","drive_file_id","color","play_count","last_played"]);
         const trackId = path.split("/")[3];
         const body = await request.json();
         const sets = []; const binds = [];
@@ -186,18 +211,24 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT * FROM drops ORDER BY created_at DESC LIMIT 200"
         ).all();
-        return json(results);
+        // S64 audit: mapear from_user→from, to_user→to para compatibilidad frontend
+        const mapped = results.map(r => ({ ...r, from: r.from_user, to: r.to_user }));
+        return json(mapped);
       }
 
       if (path === "/api/drops" && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
-        const id = crypto.randomUUID();
+        // S64 audit: aceptar id, timestamps, from_user, favorited del cliente
+        const id = body.id || crypto.randomUUID();
+        const now = body.created_at || new Date().toISOString();
+        const fromUser = body.from_user || userId;
         await env.DB.prepare(
-          `INSERT INTO drops (id, era_id, track_id, from_user, to_user, drop_date, memory, mood)
-           VALUES (?1,?2,?3,?4,?5,?6,?7,?8)`
-        ).bind(id, body.era_id||null, body.track_id||null, userId, body.to_user||userId,
-               body.drop_date||null, body.memory||"", body.mood||"").run();
+          `INSERT INTO drops (id, era_id, track_id, from_user, to_user, drop_date, memory, mood, favorited, favorited_by, created_at)
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)`
+        ).bind(id, body.era_id||null, body.track_id||null, fromUser, body.to_user||userId,
+               body.drop_date||null, body.memory||"", body.mood||"",
+               body.favorited ? 1 : 0, body.favorited_by||null, now).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'drop',?3,?4)"
         ).bind("drop_sent", userId, id, JSON.stringify({ to_user: body.to_user||userId, track_id: body.track_id })).run();
@@ -209,16 +240,35 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT * FROM playlists ORDER BY created_at DESC"
         ).all();
+        // S64 audit: incluir track_ids via playlist_tracks JOIN
+        if (results.length) {
+          const plIds = results.map(p => p.id);
+          const placeholders = plIds.map(() => "?").join(",");
+          const { results: allTracks } = await env.DB.prepare(
+            `SELECT playlist_id, track_id FROM playlist_tracks
+             WHERE playlist_id IN (${placeholders}) ORDER BY playlist_id, position`
+          ).bind(...plIds).all();
+          const tracksByPl = {};
+          for (const row of allTracks) {
+            if (!tracksByPl[row.playlist_id]) tracksByPl[row.playlist_id] = [];
+            tracksByPl[row.playlist_id].push(row.track_id);
+          }
+          for (const pl of results) {
+            pl.track_ids = tracksByPl[pl.id] || [];
+          }
+        }
         return json(results);
       }
 
       if (path === "/api/playlists" && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
-        const id = crypto.randomUUID();
+        // S64 audit: aceptar id y timestamps del cliente
+        const id = body.id || crypto.randomUUID();
+        const now = body.created_at || new Date().toISOString();
         await env.DB.prepare(
-          "INSERT INTO playlists (id, name, description, created_by) VALUES (?1,?2,?3,?4)"
-        ).bind(id, body.name, body.description||"", userId).run();
+          "INSERT INTO playlists (id, name, description, created_by, created_at, updated_at) VALUES (?1,?2,?3,?4,?5,?5)"
+        ).bind(id, body.name, body.description||"", body.created_by || userId, now).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
         ).bind("playlist_created", userId, id, JSON.stringify({ name: body.name })).run();
@@ -361,7 +411,10 @@ export default {
             if (!filesByEntry[row.entry_id]) filesByEntry[row.entry_id] = [];
             filesByEntry[row.entry_id].push({ id: row.id, r2_key: row.r2_key, prefix: row.prefix, filename: row.filename, mime_type: row.mime_type, size_bytes: row.size_bytes });
           }
+          // S64 audit: mapear from_user→from, to_user→to para compatibilidad frontend
           for (const entry of results) {
+            entry.from = entry.from_user;
+            entry.to = entry.to_user;
             entry.tags = tagsByEntry[entry.id] || [];
             entry.files = filesByEntry[entry.id] || [];
           }
@@ -384,6 +437,9 @@ export default {
            WHERE et.entry_id = ?1`
         ).bind(entryId).all();
         entry.tags = tags;
+        // S64 audit: mapear from_user→from, to_user→to
+        entry.from = entry.from_user;
+        entry.to = entry.to_user;
         // Files
         const { results: files } = await env.DB.prepare(
           "SELECT id, r2_key, prefix, filename, mime_type, size_bytes FROM files WHERE entry_id = ?1"
@@ -395,12 +451,15 @@ export default {
       if (path === "/api/entries" && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
-        const id = crypto.randomUUID();
+        // S64 audit: aceptar id y timestamps del cliente; respetar from_user si viene
+        const id = body.id || crypto.randomUUID();
+        const now = body.created_at || new Date().toISOString();
+        const fromUser = body.from_user || userId;
         await env.DB.prepare(
-          `INSERT INTO entries (id, era_id, type, title, content, from_user, to_user)
-           VALUES (?1,?2,?3,?4,?5,?6,?7)`
+          `INSERT INTO entries (id, era_id, type, title, content, from_user, to_user, created_at, updated_at)
+           VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?8)`
         ).bind(id, body.era_id||null, body.type||"note", body.title||"",
-               JSON.stringify(body.content||{}), userId, body.to_user||"both").run();
+               JSON.stringify(body.content||{}), fromUser, body.to_user||"both", now).run();
         // Vincular tags si vienen (ADR-023)
         if (Array.isArray(body.tags) && body.tags.length) {
           const stmt = env.DB.prepare("INSERT OR IGNORE INTO entry_tags (entry_id, tag_id) VALUES (?1,?2)");
@@ -511,13 +570,15 @@ export default {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
         if (!body.name) return err("name required", 400);
-        const id = crypto.randomUUID();
+        // S64 audit: aceptar id y timestamps del cliente
+        const id = body.id || crypto.randomUUID();
+        const now = body.created_at || new Date().toISOString();
         // Usar INSERT...SELECT para sort_order atómico (S63 fix: race condition)
         await env.DB.prepare(
-          `INSERT INTO eras (id, name, description, start_date, end_date, color, cover_image, sort_order)
-           SELECT ?1,?2,?3,?4,?5,?6,?7, COALESCE(MAX(sort_order), -1) + 1 FROM eras`
+          `INSERT INTO eras (id, name, description, start_date, end_date, color, cover_image, sort_order, created_at, updated_at)
+           SELECT ?1,?2,?3,?4,?5,?6,?7, COALESCE(MAX(sort_order), -1) + 1, ?8, ?8 FROM eras`
         ).bind(id, body.name, body.description||"", body.start_date||null, body.end_date||null,
-               body.color||"#bfff00", body.cover_image||null).run();
+               body.color||"#bfff00", body.cover_image||null, now).run();
         // Si el cliente envió sort_order explícito, actualizarlo
         if (body.sort_order != null) {
           await env.DB.prepare("UPDATE eras SET sort_order = ?1 WHERE id = ?2").bind(body.sort_order, id).run();

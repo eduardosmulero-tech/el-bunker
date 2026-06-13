@@ -103,26 +103,8 @@ def migrate_from_json(filepath, jwt):
     # ── 2. Eras ──────────────────────────────────────────────
     print("\n📁 2. ERAS")
     eras = db.get("eras", [])
-    for era in eras:
-        print(f"  [{eras.index(era)+1}/{len(eras)}] Era {era.get('id')}... ", end="", flush=True)
-        try:
-            resp = api_post("/api/entries", {
-                "type": "milestone",
-                "title": era.get("name"),
-                "content": {"text": era.get("description", ""), "images": []},
-                "era_id": None,
-                "to_user": "both",
-                "tags": [],
-            }, jwt)
-            if resp.status_code in (200, 201):
-                print("✅ (como entrada-hito)")
-                totals["ok"] += 1
-            else:
-                print(f"⏭️  {resp.status_code}")
-                totals["skip"] += 1
-        except Exception as e:
-            print(f"💥 {e}")
-            totals["fail"] += 1
+    o, f, s = migrate_entity("Era", "/api/eras", eras, jwt)
+    totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
 
     # ── 3. Tags ──────────────────────────────────────────────
     print("\n📁 3. TAGS (MusicLab)")
@@ -134,7 +116,10 @@ def migrate_from_json(filepath, jwt):
     print("\n📁 4. ENTRIES (VAULT)")
     entries = db.get("entries", [])
     o, f, s = migrate_entity("Entry", "/api/entries", [
-        {k: v for k, v in e.items() if k != "is_deleted"}
+        {**{k: v for k, v in e.items() if k not in ("is_deleted", "from", "to", "tags")},
+         "from_user": e.get("from", "admin"),
+         "to_user": e.get("to", "both"),
+         "tags": [x if isinstance(x, str) else x.get("id") for x in (e.get("tags") or []) if x]}
         for e in entries if not e.get("is_deleted")
     ], jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
@@ -153,6 +138,13 @@ def migrate_from_json(filepath, jwt):
             "thumbnail": t.get("thumbnail"),
             "duration": t.get("duration"),
             "era_id": t.get("era_id"),
+            "drive_file_id": t.get("drive_file_id"),
+            "color": t.get("color"),
+            "play_count": t.get("play_count", 0),
+            "last_played": t.get("last_played"),
+            "added_by": t.get("added_by"),
+            "created_at": t.get("created_at") or t.get("added_at"),
+            "tags": [x if isinstance(x, str) else x.get("id") for x in (t.get("tags") or []) if x],
         }
         for t in tracks
     ], jwt)
@@ -165,10 +157,14 @@ def migrate_from_json(filepath, jwt):
         {
             "track_id": d.get("track_id"),
             "era_id": d.get("era_id"),
+            "from_user": d.get("from") or "admin",
             "to_user": d.get("to") or "both",
             "memory": d.get("memory", ""),
             "mood": d.get("mood", ""),
             "drop_date": d.get("date") or d.get("created_at"),
+            "favorited": d.get("favorited", False),
+            "favorited_by": d.get("favorited_by"),
+            "created_at": d.get("created_at"),
         }
         for d in drops
     ], jwt)
@@ -178,10 +174,37 @@ def migrate_from_json(filepath, jwt):
     print("\n📁 7. PLAYLISTS")
     playlists = db.get("music_lab", {}).get("playlists", [])
     o, f, s = migrate_entity("Playlist", "/api/playlists", [
-        {"name": p.get("name", "Sin nombre"), "description": ""}
+        {
+            "id": p.get("id"),
+            "name": p.get("name", "Sin nombre"),
+            "description": p.get("description", ""),
+            "created_by": p.get("created_by", "admin"),
+            "created_at": p.get("created_at"),
+        }
         for p in playlists
     ], jwt)
     totals["ok"] += o; totals["fail"] += f; totals["skip"] += s
+
+    # ── 7b. Playlist tracks ──────────────────────────────────
+    print("\n📁 7b. PLAYLIST TRACKS")
+    for p in playlists:
+        track_ids = p.get("track_ids", [])
+        if not track_ids:
+            continue
+        pl_id = p.get("id")
+        if not pl_id:
+            continue
+        print(f"  Playlist {p.get('name', pl_id)}: {len(track_ids)} tracks... ", end="", flush=True)
+        try:
+            for tid in track_ids:
+                resp = api_post(f"/api/playlists/{pl_id}/tracks", {"track_id": tid}, jwt)
+                if resp.status_code not in (200, 201):
+                    print(f"⚠️ track {tid}: {resp.status_code}")
+            print("✅")
+            totals["ok"] += 1
+        except Exception as e:
+            print(f"💥 {e}")
+            totals["fail"] += 1
 
     # ── Resumen ──────────────────────────────────────────────
     print(f"\n{'='*60}")
