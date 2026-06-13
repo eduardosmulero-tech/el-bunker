@@ -171,6 +171,13 @@ const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }
           {track.title} — {track.artist}
         </p>
       )}
+      {/* Fase 7.7 DROP-M21: Mostrar metadatos del snapshot si el track fue eliminado */}
+      {!track && (drop.title_snapshot || drop.artist_snapshot) && (
+        <p className="text-xs font-bold truncate opacity-60" style={{ color: PURPLE }}>
+          {drop.title_snapshot || "Sin título"}{drop.artist_snapshot ? ` — ${drop.artist_snapshot}` : ""}
+          <span className="ml-1 opacity-40 text-[9px]">(track eliminado)</span>
+        </p>
+      )}
       {drop.memory && (
         <p className="text-xs mt-0.5 opacity-60 italic leading-relaxed" style={{ color: PURPLE }}>
           "{drop.memory}"
@@ -179,11 +186,15 @@ const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }
       <p className="text-xs mt-1 opacity-25 tracking-wider" style={{ color: PURPLE }}>
         {new Date(drop.created_at).toLocaleDateString("es", { day: "2-digit", month: "short" })}
         {" · "}{drop.from ?? "DROP"}
+        {drop.minute_mark != null && ` · ⏱ ${Math.floor(drop.minute_mark/60)}:${String(drop.minute_mark%60).padStart(2,"0")}`}
       </p>
     </div>
     <div className="flex flex-col gap-1 flex-shrink-0">
       {onSave && !isSaved && (
-        <motion.button whileTap={{ scale: 0.9 }} onClick={() => onSave(drop.id)} title="Guardar drop"
+        <motion.button
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onSave(drop.id, track ? { title: track.title, artist: track.artist, minute_mark: drop.minute_mark } : null)}
+          title="Guardar drop"
           className="w-6 h-6 flex items-center justify-center rounded-sm text-xs"
           style={{ color: PURPLE, border: `1px solid ${PURPLE}44`, background: `${PURPLE}08` }}>★</motion.button>
       )}
@@ -218,7 +229,8 @@ export const DropsHistory = ({ drops, tracks, userId, onPlay, onMarkSeen, onSave
           {[...pending].reverse().map((drop) => (
             <DropCard key={drop.id} drop={drop} track={tracks.find((t) => t.id === drop.track_id)}
               onPlay={onPlay} onMarkSeen={onMarkSeen}
-              onSave={onSaveDropSeen} onDelete={onDeleteDrop} isSaved={false} />
+              onSave={onSaveDropSeen} onDelete={onDeleteDrop} isSaved={false}
+              track={tracks.find((t) => t.id === drop.track_id)} />
           ))}
         </div>
       )}
@@ -228,7 +240,8 @@ export const DropsHistory = ({ drops, tracks, userId, onPlay, onMarkSeen, onSave
           {[...saved].reverse().map((drop) => (
             <DropCard key={drop.id} drop={drop} track={tracks.find((t) => t.id === drop.track_id)}
               onPlay={onPlay} onMarkSeen={onMarkSeen}
-              onDelete={onDeleteDrop} isSaved={true} />
+              onDelete={onDeleteDrop} isSaved={true}
+              track={tracks.find((t) => t.id === drop.track_id)} />
           ))}
         </div>
       )}

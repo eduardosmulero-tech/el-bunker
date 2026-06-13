@@ -989,10 +989,45 @@ export default function MusicLab({
                 )}
               </AnimatePresence>
               {filteredPlaylists.length === 0 ? (
-                <p className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
-                  style={{ color: ACID, fontFamily: FONT_MONO }}>
-                  — sin playlists —
-                </p>
+                /* Fase 7.1 EC-LI1: Estado visual para playlist vacía que invita a crear */
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col items-center justify-center gap-4 py-10 px-4 rounded-sm"
+                  style={{
+                    border: `1px dashed ${ACID}22`,
+                    background: `${ACID}03`,
+                    fontFamily: FONT_MONO,
+                  }}
+                >
+                  <motion.div
+                    animate={{ opacity: [0.3, 0.7, 0.3] }}
+                    transition={{ duration: 2.5, repeat: Infinity }}
+                    className="text-2xl"
+                    style={{ color: `${ACID}44` }}
+                  >
+                    ◈
+                  </motion.div>
+                  <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: ACID, opacity: 0.3 }}>
+                    Sin playlists aún
+                  </p>
+                  <p className="text-xs opacity-15 text-center leading-relaxed" style={{ color: ACID }}>
+                    Crea tu primera playlist y añade canciones.<br />
+                    Cada lista puede tener su propio vibe y orden.
+                  </p>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowCreatePlaylist(true)}
+                    className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm"
+                    style={{
+                      color: ACID,
+                      border: `1px solid ${ACID}44`,
+                      background: `${ACID}0d`,
+                    }}
+                  >
+                    + Crear playlist
+                  </motion.button>
+                </motion.div>
               ) : (
                 <div className="flex flex-col gap-2">
                   {filteredPlaylists.map((pl, i) => {
@@ -1113,10 +1148,10 @@ export default function MusicLab({
                 onPlay={(track) => playTrack(track)}
                 onMarkSeen={(dropId) => {
                   onMarkDropSeen?.(dropId);
-                }}
-                onSaveDropSeen={(dropId) => {
-                  onMarkDropSeen?.(dropId);
-                }}
+                }}                  onSaveDropSeen={(dropId, trackMeta) => {
+                    // Fase 7.7 DROP-M21: Snapshot de metadatos al marcar favorito
+                    onMarkDropSeen?.(dropId, trackMeta);
+                  }}
                 onDeleteDrop={async (dropId) => {
                   await patchDb((prev) => ({
                     ...prev,

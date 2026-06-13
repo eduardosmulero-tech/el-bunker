@@ -426,6 +426,15 @@ export default function App() {
         .register("/sw.js")
         .then((reg) => console.info("[Búnker] SW registered:", reg.scope))
         .catch((err) => console.warn("[Búnker] SW registration failed:", err));
+
+      // Fase 2.4 M8: Escuchar mensajes del SW para navegación de tabs
+      const handleSWMessage = (event) => {
+        if (event.data?.type === "BUNKER_NAVIGATE" && event.data?.tab) {
+          window.dispatchEvent(new CustomEvent("bunker_navigate", { detail: { tab: event.data.tab } }));
+        }
+      };
+      navigator.serviceWorker.addEventListener("message", handleSWMessage);
+      return () => navigator.serviceWorker.removeEventListener("message", handleSWMessage);
     }
   }, []);
 

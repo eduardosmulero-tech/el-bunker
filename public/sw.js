@@ -181,8 +181,6 @@ async function staleWhileRevalidate(request) {
  * Minimal response for uncached resources when offline.
  */
 function offlineFallback(request) {
-  const url = new URL(request.url);
-
   // For image requests, return a transparent 1x1 pixel SVG
   if (request.destination === "image") {
     return new Response(
@@ -275,13 +273,23 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url ?? "/";
+  const data = event.notification.data ?? {};
+  // Fase 2.4 M8: Abrir en Music Lab si la notificación es de música
+  let targetUrl = data.url ?? "/";
+  if (data.tab === "music") {
+    targetUrl = `/?tab=music`;
+  } else if (data.url && !data.url.includes("?tab=") && data.tab) {
+    targetUrl = `${data.url}?tab=${data.tab}`;
+  }
   event.waitUntil(
     self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clients) => {
-        const existing = clients.find((c) => c.url === targetUrl);
-        if (existing) return existing.focus();
+        const existing = clients.find((c) => c.url.includes(targetUrl) || c.url === targetUrl);
+        if (existing) {
+          existing.postMessage({ type: "BUNKER_NAVIGATE", tab: data.tab ?? "vault" });
+          return existing.focus();
+        }
         return self.clients.openWindow(targetUrl);
       })
   );
