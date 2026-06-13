@@ -121,6 +121,34 @@ export const getVibeConfig = (tagId) =>
 export const getVibeAccent = (tagId) =>
   getVibeConfig(tagId).palette.accent;
 
+// ─── Fase 4.3 — VB10: Contraste algorítmico WCAG ──────────
+// Calcula ratio de contraste entre dos colores hex.
+// Ajusta luminosidad del texto si ratio < 4.5:1 (AA normal).
+export const ensureContrast = (textHex, bgHex = "#050505") => {
+  const hexToRgb = (h) => ({
+    r: parseInt(h.slice(1, 3), 16),
+    g: parseInt(h.slice(3, 5), 16),
+    b: parseInt(h.slice(5, 7), 16),
+  });
+  const luminance = ({ r, g, b }) => {
+    const nl = (c) => { const s = c / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; };
+    return 0.2126 * nl(r) + 0.7152 * nl(g) + 0.0722 * nl(b);
+  };
+  const ratio = (l1, l2) => {
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+  };
+  const textLum = luminance(hexToRgb(textHex));
+  const bgLum = luminance(hexToRgb(bgHex));
+  const cr = ratio(textLum, bgLum);
+  if (cr >= 4.5) return textHex;
+  // Ajustar: si el fondo es oscuro, aclarar texto; si claro, oscurecer
+  const adjust = (ch) => bgLum < 0.5 ? Math.min(255, ch + 40) : Math.max(0, ch - 40);
+  const rgb = hexToRgb(textHex);
+  return `#${adjust(rgb.r).toString(16).padStart(2, "0")}${adjust(rgb.g).toString(16).padStart(2, "0")}${adjust(rgb.b).toString(16).padStart(2, "0")}`;
+};
+
 // ─── UTIL: hash string → color HSL consistente ──────────────
 // Usado para tags huérfanos (en tracks pero no en DB de tags).
 // Mismo input → mismo output siempre. Saturación al 55% para legibilidad.

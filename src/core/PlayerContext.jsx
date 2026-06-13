@@ -819,6 +819,28 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
   }, [activeTrack?.id]);
 
+  // ── Fase 2.8 — A1: Persistir estado para OOM kill recovery ──
+  // Guarda activeTrack, localQueue, currentTime en localStorage cada 5s.
+  // Al restaurar, reconstruye estado. Reproducción pausada.
+  useEffect(() => {
+    if (!userId || !activeTrack) return;
+    const SAVE_KEY = `el_bunker_recovery_${userId}`;
+    const interval = setInterval(() => {
+      try {
+        const state = {
+          activeTrackId: activeTrack?.id ?? null,
+          queueIds: localQueue.map((t) => t.id),
+          position: audioRef.current?.currentTime ?? 0,
+          loopMode,
+          shuffle,
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+      } catch { /* noop */ }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [userId, activeTrack?.id, localQueue, loopMode, shuffle]);
+
   return (
     <PlayerContext.Provider value={{
       activeTrack, setActiveTrack,
