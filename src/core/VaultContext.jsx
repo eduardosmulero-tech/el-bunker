@@ -449,16 +449,18 @@ export function VaultProvider({ children }) {
       const token = accessToken ?? window.gapi?.client?.getToken?.()?.access_token;
       if (!token) throw new Error("No hay token disponible");
 
+      // Usar oauth2 userinfo (solo necesita scopes userinfo.email + userinfo.profile)
+      // En vez de drive/v3/about que requiere el scope drive (restringido en apps no verificadas)
       const res = await fetch(
-        "https://www.googleapis.com/drive/v3/about?fields=user",
+        "https://www.googleapis.com/oauth2/v3/userinfo",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (!res.ok) throw new Error(`Drive about failed: ${res.status}`);
+      if (!res.ok) throw new Error(`Userinfo failed: ${res.status}`);
       const json = await res.json();
       return {
-        name:   json.user?.displayName ?? "Usuario",
-        email:  json.user?.emailAddress ?? "",
-        avatar: json.user?.photoLink    ?? null,
+        name:   json.name ?? "Usuario",
+        email:  json.email ?? "",
+        avatar: json.picture ?? null,
       };
     } catch (err) {
       throw new Error("[Búnker] No se pudo obtener el perfil: " + (err?.message ?? err), { cause: err });
