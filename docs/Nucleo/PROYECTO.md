@@ -1,6 +1,6 @@
 # PROYECTO.md — el_bunker
 > Qué es el sistema, stack y configuración. Descriptivo — puede estar stale máximo una sesión.
-> Última actualización: S49 — Refundación del producto (Junio 2026).
+> Última actualización: S63 — Worker CRUD eras + files (Junio 2026).
 
 ---
 
@@ -30,15 +30,15 @@ PWA instalada en Android de Edu y David. Testing activo con feedback humano real
 | Web Audio API | — | visualizador, reactividad acústica |
 | Service Worker | — | PWA |
 | Google OAuth2 | — | solo auth (ADR-025). Whitelist 3 usuarios |
-| Google Drive API | v3 | transición — deprecado como BD (ADR-024) |
+| Google Drive API | v3 | deprecado — en proceso de eliminación (ADR-024) |
 
-### Stack futuro (post-migración D1)
+### Stack desplegado (post-S54)
 
-| Tecnología | Rol |
-|---|---|
-| Cloudflare D1 | Base de datos SQL (SQLite-compatible, serverless) |
-| Cloudflare R2 | Almacenamiento de archivos (MP3, fotos, vídeos, docs) |
-| Cloudflare Workers | API thin REST layer entre SPA y D1/R2 |
+| Tecnología | Rol | Estado |
+|---|---|---|
+| Cloudflare D1 | Base de datos SQL (SQLite-compatible) | ✅ Desplegado — 16 tablas |
+| Cloudflare R2 | Almacenamiento de archivos (MP3, fotos, vídeos, docs) | ✅ Desplegado |
+| Cloudflare Workers | API REST (22 endpoints) + JWT auth | ✅ Desplegado |
 
 ---
 
@@ -47,19 +47,22 @@ PWA instalada en Android de Edu y David. Testing activo con feedback humano real
 ```
 src/
   core/
-    GoogleDriveService.js    — Auth OAuth2 + API Drive (transición)
+    GoogleDriveService.js    — Auth OAuth2 + API Drive (deprecado, transición)
     VaultContext.jsx         — Estado global de BD y autenticación
     PlayerContext.jsx        — Estado global de reproducción (ADR-004)
+    FileUploadService.js     — Subida unificada a R2 (ADR-022)
+    StatsEngine.js           — Emisor/agregador de eventos (ADR-019)
   layout/
     App.jsx                  — Root: routing de tabs, providers
     Layout.jsx               — Shell visual: header, nav, grid, glows
     LoginScreen.jsx          — Pantalla de login
   vault/
     Vault.jsx                — Motor VAULT: Eras, widgets, entradas
-    VaultGallery.jsx         — [FUTURO] Galería 6 modos (ADR-021)
+    AddEntryForm.jsx         — Formulario polimórfico para entradas
+    VaultGallery.jsx         — Galería 6 modos (ADR-021)
   musiclab/
     MusicLab.jsx             — Orquestación principal Music Lab
-    WinampPlayer.jsx         — Reproductor visual
+    WinampPlayer.jsx         — Reproductor visual (único <audio>)
     AudioVisualizer.jsx      — Visualizador de audio
     TrackCard.jsx            — Card de track + VibeTagBar
     TagManager.jsx           — Gestor de tags/vibes
@@ -68,16 +71,24 @@ src/
     DropsManager.jsx         — Sistema de drops
     useMusicActions.js       — Custom hook: acciones de MusicLab
   capsules/
-    Capsules.jsx             — [FUTURO] Tab CAPSULES con 4 sub-tabs
-    Timeline.jsx             — [FUTURO] Feed cronológico unificado
+    Capsules.jsx             — Tab CAPSULES con 4 sub-tabs
+    Timeline.jsx             — Feed cronológico unificado
     SmokeSession.jsx         — Temporizador con fade-out
-    TimeCapsules.jsx         — [FUTURO] Cápsulas del tiempo
-    Recaps.jsx               — [FUTURO] Resúmenes semanales/mensuales/anuales
-  services/
-    FileUploadService.js     — [FUTURO] Subida unificada a R2 (ADR-022)
-    StatsEngine.js           — [FUTURO] Emisor/agregador de eventos (ADR-019)
+    TimeCapsules.jsx         — Cápsulas del tiempo
+    Recaps.jsx               — Resúmenes semanales/mensuales/anuales
   tokens.js                  — Design tokens, colores, paletas de vibe
   main.jsx                   — Entry point Vite
+
+workers/
+  worker.js                  — Worker CF: 22 endpoints REST + JWT auth
+  schema.sql                 — Schema D1: 16 tablas normalizadas
+
+tools/
+  pliego_apply.py            — Script para aplicar pliegos SEARCH/REPLACE
+  recreate_schema.sh         — Script DROP+CREATE atómico para D1
+  deploy_d1_migration.sh     — Deploy de migraciones D1
+  migrate_drive_to_d1.py     — Migración unidireccional Drive JSON → D1
+  cargar_contexto.py         — Carga de contexto de proyecto
 ```
 
 ---
@@ -129,13 +140,31 @@ Whitelist hardcoded en `CONFIG.USERS` de `GoogleDriveService.js`. 3 usuarios má
 | `fetchQueue(userId)` | Lee `queue_[userId].json` |
 | `saveQueue(userId, queue)` | Escribe `queue_[userId].json` |
 
-### API SURFACE — Workers (futuro)
+### API SURFACE — Workers (22 endpoints)
 
-| Endpoint | Descripción |
-|---|---|
-| `GET /api/events` | Query a tabla `events` para Timeline/RECAP/stats |
-| `POST /api/events` | Emitir evento (playback, entry_create, drop, etc.) |
-| `GET /api/entries?era_id=X` | Entradas de una Era |
-| `POST /api/entries` | Crear entrada del VAULT |
-| `GET /api/tracks` | Listar tracks |
-| `POST /api/upload/sign` | Generar pre-signed URL para R2 |
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/api/health` | GET | Health check (DB + auth) |
+| `/api/auth/login` | POST | Login OAuth2 → JWT |
+| `/api/tracks` | GET/POST | Listar/crear tracks |
+| `/api/tracks/:id` | PATCH/DELETE | Editar/soft-delete track |
+| `/api/playlists` | GET/POST | Listar/crear playlists |
+| `/api/playlists/:id` | PATCH/DELETE | Editar/eliminar playlist |
+| `/api/playlists/:id/tracks` | POST | Añadir track a playlist |
+| `/api/tags` | GET/POST | Listar/crear tags |
+| `/api/tags/:id` | PATCH/DELETE | Editar/eliminar tag |
+| `/api/drops` | GET/POST | Listar/enviar drops |
+| `/api/entries` | GET/POST | Listar/crear entradas VAULT (con tags+files) |
+| `/api/entries/:id` | GET/PATCH/DELETE | Detalle/editar/soft-delete entrada |
+| `/api/eras` | GET/POST | Listar/crear eras (con entry_count) |
+| `/api/eras/:id` | GET/PATCH/DELETE | Detalle/editar/hard-delete era |
+| `/api/files` | GET | Listar archivos con filtros |
+| `/api/queue/:user` | GET/PUT | Leer/guardar cola de usuario |
+| `/api/events` | GET/POST | Query/emitir eventos (append-only) |
+| `/api/time_capsules` | GET/POST | Listar/crear cápsulas de tiempo |
+| `/api/time_capsules/:id` | PATCH | Desbloquear cápsula |
+| `/api/upload` | POST | Generar pre-signed key para R2 |
+| `/api/upload/:key` | PUT | Subir binario directo a R2 |
+
+Auth: JWT (HMAC-SHA256) vía header `Authorization: Bearer <token>`. 24h expiry.
+URL base: `https://el-bunker-api.thebunker-admin.workers.dev`

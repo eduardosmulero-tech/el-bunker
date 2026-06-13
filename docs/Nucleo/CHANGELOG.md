@@ -47,10 +47,21 @@
 
 ### ⚠️ PENDIENTE (próxima actualización)
 
-- Conexión del frontend a la Worker API (JWT token wiring)
-- Migración de datos de Google Drive → D1
-- Time Capsules con token real (ahora usan token null)
-- Sincronización de tags MusicLab con D1
+- Migración completa de datos de Google Drive → D1 (parcial en S59)
+- VaultContext → Worker API (fetchDb real, S64)
+- Sin tests automatizados (TD-5)
+
+### ✅ COMPLETADO (desde v2.0.0)
+
+- ✅ **S59:** JWT wiring frontend — VaultContext obtiene JWT real del Worker API
+- ✅ **S60:** Fix imports — 8 MusicLab files migrados de Layout a tokens
+- ✅ **S61:** jwtToken threading — propagado a Vault → VaultGallery + MusicLab
+- ✅ **S62:** Worker CRUD entries — 5 endpoints con tags+files, validación 404
+- ✅ **S63:** Worker CRUD eras — 5 endpoints + files GET con filtros
+- ✅ **S58:** Capsules conectadas a Worker API (events, time_capsules reales, no más placeholders)
+- ✅ **S58:** StatsEngine wired — trackPlay/Pause/Skip, dropSent, entryCreated
+- ✅ **S58:** FileUploadService — subida real de fotos a R2 en AddEntryForm
+- ✅ **S58:** Time Capsules con endpoint real en Worker + PATCH unlock
 
 ---
 
