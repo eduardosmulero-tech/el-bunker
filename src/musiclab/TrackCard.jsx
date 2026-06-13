@@ -128,10 +128,13 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
           {ytId ? (
             <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
               style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
+          ) : track.thumbnail ? (
+            <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
           ) : (
+            /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
             <div style={{ width: "100%", height: "100%", display: "flex",
               alignItems: "center", justifyContent: "center",
-              fontSize: 28, color: `${vibeColor}44`, fontFamily: FONT_MONO_LOCAL }}>
+              background: `${vibeColor}18`, fontSize: 28, color: `${vibeColor}44`, fontFamily: FONT_MONO_LOCAL }}>
               {(track.artist ?? "?").slice(0, 2).toUpperCase()}
             </div>
           )}
@@ -262,10 +265,17 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             {ytId ? (
               <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
                 style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
+            ) : track.thumbnail ? (
+              <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
             ) : (
-              <span style={{ color: isActive ? vibeColor : `${vibeColor}44`, fontSize: 20 }}>
-                {isActive ? "◉" : "◎"}
-              </span>
+              /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
+              <div style={{ width: "100%", height: "100%", display: "flex",
+                alignItems: "center", justifyContent: "center",
+                background: `${vibeColor}22`, color: vibeColor, opacity: 0.6 }}>
+                <span style={{ fontSize: 16, fontWeight: "bold", textTransform: "uppercase" }}>
+                  {(track.artist ?? "?").slice(0, 2)}
+                </span>
+              </div>
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 3 }}>
@@ -338,10 +348,14 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
           {ytId ? (
             <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
               className="w-full h-full object-cover opacity-70" />
+          ) : track.thumbnail ? (
+            <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
           ) : (
-            <span style={{ color: isActive ? vibeColor : `${vibeColor}55` }}>
-              {isActive ? "◉" : "◎"}
-            </span>
+            /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
+            <div className="w-full h-full flex items-center justify-center"
+              style={{ background: `${vibeColor}22`, color: `${vibeColor}88`, fontSize: 12, fontWeight: "bold" }}>
+              {(track.artist ?? "?").slice(0, 2).toUpperCase()}
+            </div>
           )}
         </div>
         <div className="flex-1 min-w-0">

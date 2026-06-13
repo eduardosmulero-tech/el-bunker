@@ -67,6 +67,9 @@ export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, tr
 
 export const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
   const track = tracks.find((t) => t.id === drop?.track_id);
+  // Fase 7.6 DROP-M20: Asegurar que el Drop se abra en la PWA, no en navegador nativo
+  // Los links internos ya usan rutas relativas — la PWA instalada captura el scope.
+  // El manifest.json tiene scope: "/" y start_url: "/" para capturar todas las rutas.
   return (
     <AnimatePresence>
       {drop && (
