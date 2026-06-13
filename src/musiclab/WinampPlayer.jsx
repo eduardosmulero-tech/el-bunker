@@ -325,6 +325,20 @@ return () => cancelAnimationFrame(raf);
   useEffect(() => {
     if (!("mediaSession" in navigator) || !track) return;
     const eraTag = track.era_name || track.era_id || "";
+    // Phase 2.1.a11y: artwork de mayor resolución. Para YouTube usamos hqdefault
+    // (480x360) y sddefault (640x480) en lugar de default (120x90). El browser
+    // pickea el primero que pueda renderizar — mejor calidad en lock screen.
+    // FIX TDZ (review 4ade25b): declarado ANTES de MediaMetadata para evitar
+    // ReferenceError al ejecutar el useEffect.
+    const ytId = track.url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
+    const artwork = ytId
+      ? [
+          { src: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, sizes: "480x360", type: "image/jpeg" },
+          { src: `https://img.youtube.com/vi/${ytId}/sddefault.jpg`, sizes: "640x480", type: "image/jpeg" },
+        ]
+      : track.thumbnail
+        ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
+        : [];
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title ?? "Sin título",
       artist: track.artist ?? "El Búnker",
@@ -348,18 +362,6 @@ return () => cancelAnimationFrame(raf);
         });
       } catch { /* noop */ }
     }
-    // Phase 2.1.a11y: artwork de mayor resolución. Para YouTube usamos hqdefault
-    // (480x360) y sddefault (640x480) en lugar de default (120x90). El browser
-    // pickea el primero que pueda renderizar — mejor calidad en lock screen.
-    const ytId = track.url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
-    const artwork = ytId
-      ? [
-          { src: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, sizes: "480x360", type: "image/jpeg" },
-          { src: `https://img.youtube.com/vi/${ytId}/sddefault.jpg`, sizes: "640x480", type: "image/jpeg" },
-        ]
-      : track.thumbnail
-        ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
-        : [];
   // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef es estable (ref); setPlaying/skipDir son estables (useState/useCallback wrapper) y solo se invocan en handlers de mediaSession; track se desglosa en track?.id/era_id/etc. en deps
   }, [track?.id, track?.era_name, track?.era_id, track?.thumbnail, playing, duration, currentT]);
 
