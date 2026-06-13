@@ -22,11 +22,12 @@ function withAlpha(color, alpha) {
 
 
 // ─── WINAMP BUTTON ───────────────────────────────────────────
-const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size = "md" }) => (
+const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size = "md", "aria-label": ariaLabel }) => (
   <motion.button
     whileTap={{ scale: 0.85 }}
     onClick={onClick}
     title={title}
+    aria-label={ariaLabel ?? title}
     className={`rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
       size === "sm" ? "w-7 h-7" : "w-10 h-10"
     }`}
@@ -75,6 +76,52 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   // S78 UX1: Double-tap detection
   const lastTapRef = useRef(0);
   const DOUBLE_TAP_MS = 300;
+
+  // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, l=like, q=add to queue.
+  // Ignora cuando el foco está en un input/textarea/contenteditable, o si hay
+  // modificadores (cmd/ctrl/alt) para no interceptar atajos del navegador.
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = e.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || e.target?.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case " ":
+          e.preventDefault();
+          togglePlay();
+          break;
+        case "ArrowRight":
+          e.preventDefault();
+          skipDir(1);
+          break;
+        case "ArrowLeft":
+          e.preventDefault();
+          skipDir(-1);
+          break;
+        case "l":
+        case "L": {
+          e.preventDefault();
+          const next = !liked;
+          setLiked(next);
+          setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS");
+          break;
+        }
+        case "q":
+        case "Q":
+          if (track) {
+            e.preventDefault();
+            addToQueue?.(track);
+          }
+          break;
+        default:
+          return;
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [track, togglePlay, skipDir, addToQueue, liked]);
 
   const mountedRef   = useRef(false);
   const currentTRef  = useRef(0);
@@ -278,9 +325,6 @@ return () => cancelAnimationFrame(raf);
   useEffect(() => {
     if (!("mediaSession" in navigator) || !track) return;
     const eraTag = track.era_name || track.era_id || "";
-    const artwork = track.thumbnail
-      ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
-      : [];
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title ?? "Sin título",
       artist: track.artist ?? "El Búnker",
@@ -304,6 +348,18 @@ return () => cancelAnimationFrame(raf);
         });
       } catch { /* noop */ }
     }
+    // Phase 2.1.a11y: artwork de mayor resolución. Para YouTube usamos hqdefault
+    // (480x360) y sddefault (640x480) en lugar de default (120x90). El browser
+    // pickea el primero que pueda renderizar — mejor calidad en lock screen.
+    const ytId = track.url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
+    const artwork = ytId
+      ? [
+          { src: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, sizes: "480x360", type: "image/jpeg" },
+          { src: `https://img.youtube.com/vi/${ytId}/sddefault.jpg`, sizes: "640x480", type: "image/jpeg" },
+        ]
+      : track.thumbnail
+        ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
+        : [];
   // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef es estable (ref); setPlaying/skipDir son estables (useState/useCallback wrapper) y solo se invocan en handlers de mediaSession; track se desglosa en track?.id/era_id/etc. en deps
   }, [track?.id, track?.era_name, track?.era_id, track?.thumbnail, playing, duration, currentT]);
 
@@ -428,8 +484,9 @@ return () => cancelAnimationFrame(raf);
             color={accentColor}
             onClick={toggleLoopMode}
             title={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
+            aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
           />
-          <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" />
+          <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
           <WinampBtn
             label={liked ? "♥" : "♡"}
             active={liked}
@@ -439,23 +496,26 @@ return () => cancelAnimationFrame(raf);
               setLikeToast(liked ? "QUITADO DE FAVORITOS" : "AÑADIDO A FAVORITOS");
             }}
             title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
+            aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
           />
         </div>
         <div className="flex items-center gap-2.5">
-          <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" size="sm" />
+          <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" size="sm" />
           <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
             style={{ background: withAlpha(accentColor, 0.13), border: `2px solid ${withAlpha(accentColor, 0.4)}`, color: accentColor,
-              boxShadow: playing ? `0 0 16px ${withAlpha(accentColor, 0.33)}` : "none", textShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }}>
+              boxShadow: playing ? `0 0 16px ${withAlpha(accentColor, 0.33)}` : "none", textShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }}
+            aria-label={playing ? "Pausar" : "Reproducir"}>
             {playing ? <Pause size={18} color={accentColor} strokeWidth={2.5} /> : <Play size={18} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
           </motion.button>
-          <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
+          <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" size="sm" />
           {track && (
             <WinampBtn
               label="⊕"
               color={accentColor}
               onClick={() => addToQueue?.(track)}
               title="Añadir a cola"
+              aria-label="Añadir a cola"
               size="sm"
             />
           )}
