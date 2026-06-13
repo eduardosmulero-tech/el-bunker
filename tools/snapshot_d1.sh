@@ -6,7 +6,9 @@
 #
 # Por que: D1 es la fuente de verdad (post-S54). Antes de cualquier
 # migracion desde JSON, haz un snapshot para tener rollback.
-# (S64 — anadido tras 3 perdidas de datos al migrar)
+# (S64 — anadido tras 3 perdidas de datos al migrar;
+#  S64a — abort non-zero si TODAS las queries fallan, para cerrar el
+#  chain de auto-snapshot pre-NUKE en NUKE_schema.sh)
 
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -81,7 +83,7 @@ for t, c in snapshot["counts"].items():
     print(f"     {t:<20} {flag}")
 
 # S64 (review fix #1): abort non-zero si TODAS las queries fallaron.
-# Si salimos con 0, el chain de recreate_schema.sh auto-snapshot
+# Si salimos con 0, el chain de NUKE_schema.sh auto-snapshot
 # procede con el NUKE aunque el snapshot esté vacío.
 if failed == len(tables):
     print()

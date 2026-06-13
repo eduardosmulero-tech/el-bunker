@@ -112,7 +112,7 @@ workers/
 
 tools/
   pliego_apply.py            — Script para aplicar pliegos SEARCH/REPLACE
-  recreate_schema.sh         — Script DROP+CREATE atómico para D1
+  NUKE_schema.sh            — Script DROP+CREATE atómico para D1 (gate "NUKE", auto-snapshot pre-DROP)
   deploy_d1_migration.sh     — Deploy de migraciones D1
   migrate_drive_to_d1.py     — Migración unidireccional Drive JSON → D1
   cargar_contexto.py         — Carga de contexto de proyecto
@@ -145,7 +145,7 @@ Whitelist hardcoded en `CONFIG.USERS` de `GoogleDriveService.js`. 3 usuarios má
 
 ## D1 MIGRATION FLOW
 
-**Desde S54, D1 es la fuente de verdad.** El JSON (`tools/the_vault_database.json`) es un artefacto legacy de la migración inicial. Re-correr `tools/deploy_d1_migration.sh` o `tools/recreate_schema.sh` sin precaución puede DESTRUIR datos reales.
+**REGLA DURA (S64a): `tools/deploy_d1_migration.sh` NO debe ejecutarse nunca más como "deploy" rutinario.** D1 es la fuente de verdad post-S54; ese script es solo para setup inicial. Re-ejecutarlo o re-correr `tools/migrate_drive_to_d1.py` desde el JSON stale (`tools/the_vault_database.json` lleva sin actualizarse desde el 31 de mayo) sobre-escribe datos reales con datos de testing y BORRA entries/drops/eras/files (el export JSON no captura esas entidades).
 
 ### Flujo correcto (cualquier migración)
 
@@ -171,7 +171,8 @@ Whitelist hardcoded en `CONFIG.USERS` de `GoogleDriveService.js`. 3 usuarios má
 | Script | Gate | Override |
 |---|---|---|
 | `tools/migrate_drive_to_d1.py` | Aborta si D1 > JSON en alguna tabla | `--force` (registra intención explícita) |
-| `tools/recreate_schema.sh` | Requiere escribir literal `NUKE` por stdin | (ninguno — sin "NUKE", aborta) |
+| `tools/NUKE_schema.sh` | Requiere escribir literal `NUKE` por stdin + auto-snapshot pre-DROP | (ninguno — sin "NUKE" o sin snapshot, aborta) |
+| `tools/deploy_d1_migration.sh` | Banner de deprecation: aborta salvo `DEPLOY_OK=1` | `DEPLOY_OK=1` (recovery explícito, requiere leer doc) |
 
 ### Snapshots
 
@@ -184,12 +185,14 @@ Whitelist hardcoded en `CONFIG.USERS` de `GoogleDriveService.js`. 3 usuarios má
 
 - ❌ `bash tools/deploy_d1_migration.sh` sin haber hecho snapshot antes
 - ❌ `python3 tools/migrate_drive_to_d1.py` sin snapshot
-- ❌ `bash tools/recreate_schema.sh` sin escribir "NUKE" y sin snapshot
+- ❌ `bash tools/NUKE_schema.sh` sin escribir "NUKE" y sin snapshot
+- ❌ `bash tools/deploy_d1_migration.sh` (deprecado — aborta con banner)
 
 ### Historia
 
 - **S54:** se introduce `recreate_schema.sh` y `deploy_d1_migration.sh` para la migración inicial Drive→D1.
 - **S64:** se documenta este flujo tras 3 pérdidas de datos. Se añaden safety gates (gate "D1 > JSON" en `migrate_drive_to_d1.py`, gate "NUKE" en `recreate_schema.sh`) y herramienta de snapshot.
+- **S64a:** rename `recreate_schema.sh` → `NUKE_schema.sh` (mismo gate, nuevo nombre auto-documentado). `deploy_d1_migration.sh` recibe banner de deprecation — está prohibido re-ejecutarlo sin `DEPLOY_OK=1`.
 
 ---
 

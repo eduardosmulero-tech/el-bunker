@@ -117,7 +117,7 @@ SEARCH/REPLACE 3 — actualizar mapa del sistema documental
   docs/legacy/                Historial. Nunca leer en arranque.
   tools/pliego_apply.py       Script para aplicar pliegos. Workflow principal.
   tools/README_tools.md       Documentacion del script.
-  tools/recreate_schema.sh    Script DROP+CREATE atomico para D1.
+  tools/NUKE_schema.sh        Script DROP+CREATE atomico para D1 (gate "NUKE" + auto-snapshot).
   workers/schema.sql          Schema D1: 16 tablas normalizadas.
   workers/worker.js           Worker CF: 11 endpoints REST.
   wrangler.toml               Config Cloudflare: D1 + R2 bindings.

@@ -5,6 +5,24 @@
 #  Uso: bash tools/deploy_d1_migration.sh
 #  Requiere: wrangler autenticado (npx wrangler login)
 # ============================================================
+#  DEPRECADO (S64a) — NO EJECUTAR como "deploy" rutinario.
+#  D1 es la fuente de verdad post-S54. Este script está pensado
+#  solo para setup inicial. Re-ejecutarlo sobre-escribe D1 con
+#  datos stale de tools/the_vault_database.json (31 mayo, sin
+#  entries/drops/eras/files). Ver docs/Nucleo/PROYECTO.md →
+#  D1 MIGRATION FLOW para el flujo correcto.
+#  Para override explícito (recovery con backup): export DEPLOY_OK=1
+#  antes de ejecutar.
+# ============================================================
+if [ "${DEPLOY_OK:-}" != "1" ]; then
+  echo ""
+  echo "  DEPRECADO (S64a): tools/deploy_d1_migration.sh está prohibido como deploy rutinario."
+  echo "     D1 es la fuente de verdad. Ver docs/Nucleo/PROYECTO.md → D1 MIGRATION FLOW."
+  echo "     Para forzar (recovery con backup): export DEPLOY_OK=1 && bash tools/deploy_d1_migration.sh"
+  echo ""
+  exit 1
+fi
+
 set -e
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
