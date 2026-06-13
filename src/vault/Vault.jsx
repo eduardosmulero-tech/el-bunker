@@ -6,6 +6,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useVault } from "../core/VaultContext";
+import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
 import VaultGallery from "./VaultGallery";
@@ -513,14 +514,53 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
  *   onAddEra         — () => void
  *   onOpenEra        — (era) => void
  */
+const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+
 export default function Vault({ db = null, jwtToken = null, onAddEra = () => {}, onOpenEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [showAddEra, setShowAddEra] = useState(false);
+  const [newEraName, setNewEraName] = useState("");
+  const [newEraColor, setNewEraColor] = useState(ACID);
+  const [addingEra, setAddingEra] = useState(false);
   const { user, patchDb, updateEntry, deleteEntry } = useVault();
+  // G3: usar trackVibe accent en lugar de ACID fijo
+  const { trackVibe, resolveVibeAccent } = usePlayer();
+  const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
   const entries = db?.entries ?? [];
   const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
   const [exporting, setExporting] = useState(false);
+
+  // G2: crear era vía Worker API
+  const handleAddEra = async () => {
+    if (!newEraName.trim() || !jwtToken) return;
+    setAddingEra(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/eras`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+        body: JSON.stringify({ name: newEraName.trim(), color: newEraColor }),
+      });
+      if (!res.ok) throw new Error(`create era: ${res.status}`);
+      const created = await res.json();
+      // Optimistic: añadir al state local
+      setNewEraName("");
+      setShowAddEra(false);
+      // Actualizar estado local (G2)
+      patchDb((prev) => ({
+        ...prev,
+        eras: [...(prev.eras || []), created]
+      }));
+      // Disparamos onAddEra para que el parent refresque si quiere
+      onAddEra(created);
+    } catch (e) {
+      console.warn("[Vault] addEra failed:", e);
+      alert("Error al crear la era. Reintenta.");
+    } finally {
+      setAddingEra(false);
+    }
+  };
 
   const handleAddEntry = async (entryData) => {
     const newEntry = {
@@ -649,33 +689,83 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
         {/* Header */}
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <span style={{ color: ACID }}>◈</span>
+            <span style={{ color: accent }}>◈</span>
             <h2
               className="text-xs tracking-[0.35em] uppercase font-bold"
-              style={{ color: ACID }}
+              style={{ color: accent }}
             >
               ERAS
             </h2>
             <span
               className="text-xs opacity-40 ml-1 tabular-nums"
-              style={{ color: ACID }}
+              style={{ color: accent }}
             >
               [{String(displayEras.length).padStart(2, "0")}]
             </span>
           </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={onAddEra}
+            onClick={() => setShowAddEra(p => !p)}
             className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
             style={{
-              color: ACID,
-              border: `1px solid ${ACID}44`,
-              background: `${ACID}08`,
+              color: showAddEra ? `${accent}44` : accent,
+              border: `1px solid ${showAddEra ? `${accent}22` : `${accent}44`}`,
+              background: showAddEra ? `${accent}04` : `${accent}08`,
             }}
           >
-            + ERA
+            {showAddEra ? "CANCELAR" : "+ ERA"}
           </motion.button>
         </div>
+
+        {/* G2: Formulario inline para crear era */}
+        <AnimatePresence>
+          {showAddEra && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex flex-col gap-2 p-3 mb-3 rounded-sm"
+                style={{ background: `${accent}06`, border: `1px solid ${accent}22` }}>
+                <input
+                  value={newEraName}
+                  onChange={e => setNewEraName(e.target.value)}
+                  placeholder="NOMBRE DE LA ERA"
+                  className="bg-transparent text-sm p-2 outline-none"
+                  style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={newEraColor}
+                    onChange={e => setNewEraColor(e.target.value)}
+                    className="w-8 h-8 cursor-pointer rounded-sm"
+                    style={{ border: `1px solid ${accent}44`, background: "transparent" }}
+                  />
+                  <span className="text-xs opacity-40" style={{ color: accent, fontFamily: FONT_MONO }}>
+                    COLOR
+                  </span>
+                  <div className="flex-1" />
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleAddEra}
+                    disabled={addingEra || !newEraName.trim()}
+                    className="text-xs tracking-widest uppercase px-3 py-1.5 rounded-sm"
+                    style={{
+                      color: accent,
+                      border: `1px solid ${accent}44`,
+                      fontFamily: FONT_MONO,
+                      opacity: (addingEra || !newEraName.trim()) ? 0.4 : 1,
+                    }}
+                  >
+                    {addingEra ? "CREANDO..." : "CREAR ERA"}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Horizontal Slider */}
         <div
@@ -730,8 +820,8 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               onClick={() => setShowAddEntry(prev => !prev)}
               className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm"
               style={{
-                color: showAddEntry ? `${ACID}44` : ACID,
-                border: `1px solid ${showAddEntry ? `${ACID}22` : `${ACID}44`}`,
+                color: showAddEntry ? `${accent}44` : accent,
+                border: `1px solid ${showAddEntry ? `${accent}22` : `${accent}44`}`,
               }}
             >
               {showAddEntry ? "CANCELAR" : "+ ENTRADA"}
@@ -792,7 +882,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
      transition={{ duration: 0.5, delay: 0.5 }}
      className="flex items-center justify-between pt-2 pb-4 px-1"
    >
-     <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: ACID }}>
+     <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: accent }}>
        THE_VAULT v1.0
      </span>
      <div className="flex items-center gap-3">
@@ -803,9 +893,9 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
            disabled={exporting || !db}
            className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm"
            style={{
-             color: ACID,
-             border: `1px solid ${ACID}33`,
-             background: `${ACID}08`,
+             color: accent,
+             border: `1px solid ${accent}33`,
+             background: `${accent}08`,
              fontFamily: FONT_MONO,
              opacity: (exporting || !db) ? 0.4 : 1,
            }}
@@ -817,7 +907,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
          animate={{ opacity: [0.15, 0.4, 0.15] }}
          transition={{ duration: 3, repeat: Infinity }}
          className="text-xs tracking-widest uppercase"
-         style={{ color: ACID }}
+         style={{ color: accent }}
        >
          ◈ ENCRYPTED
        </motion.span>

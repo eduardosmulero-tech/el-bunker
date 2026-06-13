@@ -517,7 +517,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
         </motion.button>
       </div>
 
-      {/* ── Volume Fade Bar ─────────────────────────────────── */}
+      {/* ── Volume Fade Bar (G6: slider interactivo) ──────── */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between text-xs" style={{ color: ACID, opacity: 0.4 }}>
           <span className="tracking-widest uppercase">VOLUMEN MASTER</span>
@@ -528,6 +528,24 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
         <VolumeFadeBar
           volume={isFading ? fadedVolume : masterVolume}
           isFading={isFading}
+        />
+        {/* G6: Slider de volumen interactivo */}
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={isFading ? fadedVolume : masterVolume}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            if (!isFading && onVolumeChange) onVolumeChange(v);
+          }}
+          className="w-full h-1.5 appearance-none cursor-pointer rounded-full"
+          style={{
+            background: `linear-gradient(90deg, ${isFading ? RED : ACID} ${isFading ? fadedVolume : masterVolume}%, ${ACID}15 ${isFading ? fadedVolume : masterVolume}%)`,
+            accentColor: isFading ? RED : ACID,
+            opacity: isFading ? 0.5 : 1,
+          }}
+          disabled={isFading}
         />
         {isFading && (
           <p className="text-xs tracking-widest uppercase text-center opacity-50" style={{ color: RED }}>

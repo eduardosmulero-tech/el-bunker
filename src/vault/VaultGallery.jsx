@@ -55,8 +55,8 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
         ))}
       </div>
 
-      {/* Masonry grid con imágenes reales */}
-      <div className="columns-2 gap-2" style={{ columnWidth: DENSITY[density] }}>
+      {/* Masonry grid con imágenes reales — columnWidth controla densidad */}
+      <div style={{ columnWidth: DENSITY[density], columnGap: "0.5rem" }}>
         {photoEntries.map((entry, i) => {
           const era = eras.find(e => e.id === entry.era_id);
           const imgUrl = getImageUrl(entry);

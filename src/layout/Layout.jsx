@@ -217,6 +217,85 @@ const AmbientGlows = ({ accentColor = ACID }) => (
   </div>
 );
 
+// ─── MINI PLAYER (G7: persistente entre pestañas) ───────────
+const MiniPlayer = ({ accentColor = ACID }) => {
+  const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !activeTrack) return;
+    const onTime = () => {
+      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100);
+    };
+    audio.addEventListener("timeupdate", onTime);
+    return () => audio.removeEventListener("timeupdate", onTime);
+  }, [audioRef, activeTrack]);
+
+  if (!activeTrack) return null;
+
+  // G7: solo controla el audio, no el estado (PlayerContext lo gestiona)
+  const toggle = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) { audioRef.current.pause(); }
+    else { audioRef.current.play().catch(() => {}); }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed bottom-16 left-0 right-0 z-25 mx-2"
+      style={{ fontFamily: "'JetBrains Mono', monospace" }}
+    >
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-sm cursor-pointer"
+        style={{
+          background: `linear-gradient(90deg, rgba(5,5,5,0.95) 0%, rgba(10,10,10,0.95) 100%)`,
+          border: `1px solid ${accentColor}33`,
+          boxShadow: `0 0 16px ${accentColor}11`,
+        }}
+        onClick={toggle}
+      >
+        {/* Play/Pause */}
+        <motion.span
+          whileTap={{ scale: 0.85 }}
+          className="text-sm flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm"
+          style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}33`, color: accentColor }}
+        >
+          {isPlaying ? "⏸" : "▶"}
+        </motion.span>
+
+        {/* Track info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold truncate" style={{ color: accentColor }}>
+            {activeTrack.title || "Sin título"}
+          </p>
+          <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>
+            {activeTrack.artist || "—"}
+          </p>
+        </div>
+
+        {/* Skip */}
+        <motion.span
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => { e.stopPropagation(); skip(1); }}
+          className="text-sm flex-shrink-0 w-7 h-7 flex items-center justify-center opacity-50"
+          style={{ color: accentColor }}
+        >
+          ▶▶
+        </motion.span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="h-0.5" style={{ background: `${accentColor}22` }}>
+        <div className="h-full transition-all duration-300"
+          style={{ width: `${progress}%`, background: accentColor, boxShadow: `0 0 4px ${accentColor}` }} />
+      </div>
+    </motion.div>
+  );
+};
+
 // ─── MAIN LAYOUT ─────────────────────────────────────────────
 /**
  * Layout
@@ -270,6 +349,9 @@ export default function Layout({
       >
         {children}
       </main>
+
+      {/* ── Layer 3.5: Mini Player (G7) ── */}
+      {activeTab !== "music" && <MiniPlayer accentColor={accentColor} />}
 
       {/* ── Layer 4: Bottom Nav ── */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />

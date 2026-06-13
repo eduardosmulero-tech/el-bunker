@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, FONT_MONO } from "../tokens";
+import { usePlayer } from "../core/PlayerContext";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
@@ -27,6 +28,9 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
   const [capsules, setCapsules] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  // G4: usar trackVibe accent en lugar de ACID fijo
+  const { trackVibe, resolveVibeAccent } = usePlayer();
+  const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   // Fetch real events y time_capsules desde Worker API cuando hay JWT
   useEffect(() => {
@@ -89,8 +93,8 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
               whileTap={{ scale: 0.95 }}
               className="text-xs tracking-[0.2em] uppercase px-4 py-3 whitespace-nowrap transition-all flex-shrink-0"
               style={{
-                color: active ? ACID : `${ACID}53`,
-                borderBottom: active ? `2px solid ${ACID}` : "2px solid transparent",
+                color: active ? accent : `${accent}53`,
+                borderBottom: active ? `2px solid ${accent}` : "2px solid transparent",
                 fontFamily: FONT_MONO,
                 minHeight: 44,
               }}
@@ -133,7 +137,7 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.25 }}
         >
-          {subTab === "timeline" && <Timeline events={events} />}
+          {subTab === "timeline" &&          <Timeline events={events} accentColor={accent} />}
           {subTab === "smoke" && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 px-1">
@@ -146,9 +150,9 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
             </div>
           )}
           {subTab === "timecapsules" && (
-            <TimeCapsules token={jwtToken} capsules={capsules} />
+            <TimeCapsules token={jwtToken} capsules={capsules} accentColor={accent} />
           )}
-          {subTab === "recap" && <Recaps events={events} />}
+          {subTab === "recap" && <Recaps events={events} accentColor={accent} />}
         </motion.div>
       </AnimatePresence>
     </div>
