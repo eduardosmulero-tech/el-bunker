@@ -1024,9 +1024,9 @@ export default function MusicLab({
                 onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span style={{ color: ACID }}>◈</span>
-                  <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>LISTS</span>
-                  <span className="text-xs opacity-30 tabular-nums" style={{ color: ACID }}>
+                  <span style={{ color: accentColor }}>◈</span>
+                  <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accentColor }}>LISTS</span>
+                  <span className="text-xs opacity-30 tabular-nums" style={{ color: accentColor }}>
                     [{String(filteredPlaylists.length).padStart(2, "0")}]
                   </span>
                 </div>
@@ -1034,15 +1034,15 @@ export default function MusicLab({
                   <motion.button whileTap={{ scale: 0.9 }} title="Buscar lista"
                     onClick={() => { setShowListSearch((p) => !p); setListSearch(""); }}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: ACID, border: `1px solid ${showListSearch ? ACID + "66" : ACID + "33"}`,
-                      background: showListSearch ? `${ACID}15` : `${ACID}06` }}>
+                    style={{ color: accentColor, border: `1px solid ${showListSearch ? accentColor + "66" : accentColor + "33"}`,
+                      background: showListSearch ? `${accentColor}15` : `${accentColor}06` }}>
                     ⌕
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
                     onClick={() => setShowCreatePlaylist((p) => !p)}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: ACID, border: `1px solid ${showCreatePlaylist ? ACID + "66" : ACID + "33"}`,
-                      background: showCreatePlaylist ? `${ACID}15` : `${ACID}06` }}>
+                    style={{ color: accentColor, border: `1px solid ${showCreatePlaylist ? accentColor + "66" : accentColor + "33"}`,
+                      background: showCreatePlaylist ? `${accentColor}15` : `${accentColor}06` }}>
                     {showCreatePlaylist ? "✕" : "+"}
                   </motion.button>
                 </div>
@@ -1055,8 +1055,8 @@ export default function MusicLab({
                       value={listSearch}
                       onChange={(e) => setListSearch(e.target.value)}
                       placeholder="BUSCAR LISTA..."
-                      style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                        color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                      style={{ width: "100%", background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
+                        color: accentColor, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
                         letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
                     />
                   </motion.div>
@@ -1066,7 +1066,7 @@ export default function MusicLab({
                 {showCreatePlaylist && (
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 8 }}
-                    style={{ background: "rgba(191,255,0,0.03)", border: `1px solid ${ACID}22`, borderRadius: 2 }}>
+                    style={{ background: "rgba(191,255,0,0.03)", border: `1px solid ${accentColor}22`, borderRadius: 2 }}>
                     <PlaylistNameInput onConfirm={handleCreatePlaylist} />
                   </motion.div>
                 )}
@@ -1078,8 +1078,8 @@ export default function MusicLab({
                   animate={{ opacity: 1, y: 0 }}
                   className="flex flex-col items-center justify-center gap-4 py-10 px-4 rounded-sm"
                   style={{
-                    border: `1px dashed ${ACID}22`,
-                    background: `${ACID}03`,
+                    border: `1px dashed ${accentColor}22`,
+                    background: `${accentColor}03`,
                     fontFamily: FONT_MONO,
                   }}
                 >
@@ -1087,14 +1087,14 @@ export default function MusicLab({
                     animate={{ opacity: [0.3, 0.7, 0.3] }}
                     transition={{ duration: 2.5, repeat: Infinity }}
                     className="text-2xl"
-                    style={{ color: `${ACID}44` }}
+                    style={{ color: `${accentColor}44` }}
                   >
                     ◈
                   </motion.div>
-                  <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: ACID, opacity: 0.3 }}>
+                  <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: accentColor, opacity: 0.3 }}>
                     Sin playlists aún
                   </p>
-                  <p className="text-xs opacity-15 text-center leading-relaxed" style={{ color: ACID }}>
+                  <p className="text-xs opacity-15 text-center leading-relaxed" style={{ color: accentColor }}>
                     Crea tu primera playlist y añade canciones.<br />
                     Cada lista puede tener su propio vibe y orden.
                   </p>
@@ -1103,9 +1103,9 @@ export default function MusicLab({
                     onClick={() => setShowCreatePlaylist(true)}
                     className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm"
                     style={{
-                      color: ACID,
-                      border: `1px solid ${ACID}44`,
-                      background: `${ACID}0d`,
+                      color: accentColor,
+                      border: `1px solid ${accentColor}44`,
+                      background: `${accentColor}0d`,
                     }}
                   >
                     + Crear playlist
@@ -1128,16 +1128,16 @@ export default function MusicLab({
                         onDragOver={handlePlDragOver}
                         onDrop={() => handlePlDrop(i)}
                         className="flex flex-col rounded-sm"
-                        style={{ background: GLASS_BG, border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? ACID) + "33"}`, fontFamily: FONT_MONO, opacity: isEmpty ? 0.6 : 1, cursor: "grab" }}>
+                        style={{ background: GLASS_BG, border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? accentColor) + "33"}`, fontFamily: FONT_MONO, opacity: isEmpty ? 0.6 : 1, cursor: "grab" }}>
                         <div className="flex items-center gap-3 p-3"
                           onClick={() => !isRenaming && !isConfirmDel && setShowPlaylistDetail(pl.id)}
                           style={{ cursor: isRenaming || isConfirmDel ? "default" : "pointer" }}>
-                          <span style={{ color: ACID, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                            style={{ background: `${plVibe?.color ?? ACID}12`, border: `1px solid ${plVibe?.color ?? ACID}33` }}>
+                            style={{ background: `${plVibe?.color ?? accentColor}12`, border: `1px solid ${plVibe?.color ?? accentColor}33` }}>
                             {plTracks[0]?.thumbnail
                               ? <img src={plTracks[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: plVibe?.color ?? ACID, fontSize: 12 }}>{isEmpty ? "◌" : "◈"}</span>}
+                              : <span style={{ color: plVibe?.color ?? accentColor, fontSize: 12 }}>{isEmpty ? "◌" : "◈"}</span>}
                           </div>
                           <div className="flex-1 min-w-0">
                             {isRenaming ? (
@@ -1145,12 +1145,12 @@ export default function MusicLab({
                                 onChange={(e) => setRenameVal(e.target.value)}
                                 onKeyDown={(e) => { if (e.key === "Enter") handleRenamePlaylist(pl.id); if (e.key === "Escape") setRenamingPlId(null); }}
                                 onClick={(e) => e.stopPropagation()}
-                                style={{ width: "100%", background: "transparent", border: `1px solid ${ACID}44`, borderRadius: 2,
-                                  color: ACID, fontSize: 11, padding: "2px 6px", fontFamily: FONT_MONO, outline: "none" }} />
+                                style={{ width: "100%", background: "transparent", border: `1px solid ${accentColor}44`, borderRadius: 2,
+                                  color: accentColor, fontSize: 11, padding: "2px 6px", fontFamily: FONT_MONO, outline: "none" }} />
                             ) : (
-                              <span className="text-xs font-bold truncate block" style={{ color: plVibe?.color ?? ACID }}>{pl.name}</span>
+                              <span className="text-xs font-bold truncate block" style={{ color: plVibe?.color ?? accentColor }}>{pl.name}</span>
                             )}
-                            <span className="text-xs opacity-30 truncate block" style={{ color: ACID }}>
+                            <span className="text-xs opacity-30 truncate block" style={{ color: accentColor }}>
                               {pl.track_ids.length} tracks{durStr ? ` · ${durStr}` : ""}
                             </span>
                           </div>
@@ -1162,7 +1162,7 @@ export default function MusicLab({
                           )}
                           {isRenaming ? (
                             <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleRenamePlaylist(pl.id); }}
-                              style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`, borderRadius: 2, fontSize: 10, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                              style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 10, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                               OK
                             </motion.button>
                           ) : (
@@ -1170,13 +1170,13 @@ export default function MusicLab({
                               {!isEmpty && (
                                 <motion.button whileTap={{ scale: 0.88 }}
                                   onClick={(e) => { e.stopPropagation(); if (!plTracks.length) return; setPlaybackContext(plTracks, pl.name); setActiveTrack(plTracks[0]); setAutoPlaySignal((n) => n + 1); }}
-                                  style={{ color: ACID, background: `${ACID}15`, border: `1px solid ${ACID}33`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                  style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                   ▶
                                 </motion.button>
                               )}
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setRenamingPlId(pl.id); setRenameVal(pl.name); setConfirmDeletePlId(null); }}
-                                style={{ color: ACID, background: `${ACID}0a`, border: `1px solid ${ACID}22`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                 ✎
                               </motion.button>
                               <motion.button whileTap={{ scale: 0.9 }}
@@ -1196,8 +1196,8 @@ export default function MusicLab({
                               CONFIRMAR BORRAR
                             </motion.button>
                             <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmDeletePlId(null)}
-                              style={{ padding: "5px 12px", background: "transparent", border: `1px solid ${ACID}22`,
-                                color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                              style={{ padding: "5px 12px", background: "transparent", border: `1px solid ${accentColor}22`,
+                                color: `${accentColor}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
                               CANCELAR
                             </motion.button>
                           </div>
