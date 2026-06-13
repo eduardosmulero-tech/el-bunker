@@ -156,6 +156,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // Fase 1.5 — EC-P2: detección de desconexión de red
   const [networkStatus, setNetworkStatus] = useState(() => navigator.onLine ? "online" : "offline");
   const _wasPlayingBeforeOffline = useRef(false);
+  // Fase 1.7 — EC-P5: clave de archivo del track anterior para detectar duplicados
+  const _prevFileKeyRef = useRef(null);
 
   // ── Persistencia cola en Drive ────────────────────────────
   // S76: Fetch queue from Worker API (D1) instead of Drive
@@ -629,9 +631,26 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
     const url = getStreamUrl(activeTrack);
     if (!url) {
+      // Fase 1.6 — EC-P4: Track sin archivo (sin r2_key ni drive_file_id)
+      console.warn("[Búnker] ⚠ Track sin archivo — saltando:", activeTrack.title);
       setResolvedAudioSrc(null);
+      // setTimeout evita encadenamiento rápido si varios tracks seguidos no tienen archivo
+      setTimeout(() => skipRef.current?.(1), 50);
       return;
     }
+
+    // Fase 1.7 — EC-P5: Si es el mismo archivo que el track anterior, hacer seek a 0
+    // en lugar de recargar. Compara r2_key o drive_file_id.
+    const fileKey = activeTrack.r2_key || activeTrack.drive_file_id || null;
+    if (fileKey && fileKey === _prevFileKeyRef.current && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+      setIsPlaying(true);
+      _prevFileKeyRef.current = fileKey;
+      console.info("[Búnker] ⏮ Mismo archivo — seek a 0:", activeTrack.title);
+      return;
+    }
+    _prevFileKeyRef.current = fileKey;
 
     // Set network URL immediately as baseline — el audio arranca sin delay.
     // Si el track ya está en caché, se actualiza a blob URL tras la verificación async.
