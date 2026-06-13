@@ -5,6 +5,23 @@
 
 ---
 
+## S64 — Verificación: VaultContext → Worker API como fuente primaria (Junio 2026)
+
+**Objetivo:** Verificar que VaultContext ya usa Worker API como fuente primaria de datos.
+
+### Resultado
+✅ `_buildDbFromWorker(token)`: fetch paralelo de 6 endpoints Worker (entries/eras/tracks/tags/playlists/drops)
+✅ `_loadDriveComplement(db)`: carga Drive JSON solo para libraries, heartbeat, adventures_start_date
+✅ `_fetchUserAndDb()`: Worker primero → si falla, `initDatabase()` como fallback completo
+✅ `refreshDb()`: Worker primero → Drive fallback con merge attempt
+
+Implementado desde conversación anterior (commit 03f0162). 0 cambios de código.
+
+### Archivos modificados
+Ninguno (solo docs)
+
+---
+
 ## S63 — Verificación: CRUD eras en Worker (Junio 2026)
 
 **Objetivo:** Verificar si los 5 endpoints /api/eras existen en worker.js.
