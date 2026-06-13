@@ -1236,13 +1236,27 @@ export default function MusicLab({
                     onMarkDropSeen?.(dropId, trackMeta);
                   }}
                 onDeleteDrop={async (dropId) => {
-                  await patchDb((prev) => ({
-                    ...prev,
-                    music_lab: {
-                      ...prev.music_lab,
-                      drops: (prev.music_lab?.drops ?? []).filter((d) => d.id !== dropId),
-                    },
-                  })).catch(() => {});
+                  if (!dropId || !_jwtToken) return;
+                  try {
+                    // DEL-DROP regression fix (S83): route through Worker API (D1)
+                    // so refreshDb no restaure el drop. Antes solo patchDb (Drive).
+                    // Mirror exacto del patrón de handleDeletePlaylist (S82).
+                    const res = await fetch(`${API_BASE_ML}/api/drops/${dropId}`, {
+                      method: "DELETE",
+                      headers: { Authorization: `Bearer ${_jwtToken}` },
+                    });
+                    if (!res.ok) throw new Error(`deleteDrop: ${res.status}`);
+                    await patchDb((prev) => ({
+                      ...prev,
+                      music_lab: {
+                        ...prev.music_lab,
+                        drops: (prev.music_lab?.drops ?? []).filter((d) => d.id !== dropId),
+                      },
+                    }));
+                  } catch (err) {
+                    console.warn("[Búnker] deleteDrop falló:", err);
+                    return; // sin patchDb si D1 rechaza — estado local intacto
+                  }
                 }}
               />
             </motion.div>

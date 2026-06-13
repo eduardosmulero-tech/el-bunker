@@ -237,6 +237,24 @@ export default {
         return json({ id, ...body, from_user: userId }, 201);
       }
 
+      // DELETE /api/drops/:id — DEL-DROP regression fix (S83)
+      // Mirror de DELETE /api/playlists/:id. Valida existencia (404) y emite
+      // evento drop_deleted para audit trail. Cualquier user autenticado puede
+      // borrar (sender o recipient) — restricción de ownership es scope futuro.
+      if (path.startsWith("/api/drops/") && request.method === "DELETE") {
+        if (!userId) return err("Unauthorized", 401);
+        const dropId = path.split("/")[3];
+        const exists = await env.DB.prepare(
+          "SELECT id FROM drops WHERE id = ?1"
+        ).bind(dropId).first();
+        if (!exists) return err("Drop not found", 404);
+        await env.DB.prepare("DELETE FROM drops WHERE id = ?1").bind(dropId).run();
+        await env.DB.prepare(
+          "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'drop',?3)"
+        ).bind("drop_deleted", userId, dropId).run();
+        return json({ ok: true, id: dropId });
+      }
+
       // ═══ PLAYLISTS ════════════════════════════════════════
       if (path === "/api/playlists" && request.method === "GET") {
         const { results } = await env.DB.prepare(
