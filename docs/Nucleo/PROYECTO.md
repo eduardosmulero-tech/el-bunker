@@ -1,6 +1,6 @@
 # PROYECTO.md — el_bunker
 > Qué es el sistema, stack y configuración. Descriptivo — puede estar stale máximo una sesión.
-> Última actualización: S63 — Worker CRUD eras + files (Junio 2026).
+> Última actualización: S64 — Target browser policy + CSS4 audit (Junio 2026).
 
 ---
 
@@ -39,6 +39,33 @@ PWA instalada en Android de Edu y David. Testing activo con feedback humano real
 | Cloudflare D1 | Base de datos SQL (SQLite-compatible) | ✅ Desplegado — 16 tablas |
 | Cloudflare R2 | Almacenamiento de archivos (MP3, fotos, vídeos, docs) | ✅ Desplegado |
 | Cloudflare Workers | API REST (22 endpoints) + JWT auth | ✅ Desplegado |
+
+---
+
+## TARGET BROWSERS
+
+Política de navegadores soportados. Congela el alcance del proyecto y previene que futuros devs añadan features (CSS4, ES2020+, APIs) que asuman soporte más amplio del real.
+
+| Browser | Soporte | Notas |
+|---|---|---|
+| Chrome Android 90+ (Apr 2021) | ✅ Target principal | Único browser oficialmente soportado en producción |
+| Samsung Internet 14+ | ✅ Soportado | Chromium-based (v14 ships Chromium 87, ~3 versiones por detrás de Chrome 90) |
+| Edge Android 90+ | ✅ Soportado | Chromium-based |
+| Chrome desktop (dev) | ✅ Dev only | Para testing y desarrollo — la app no está optimizada para desktop |
+| Firefox Android | ⚠️ No testeado | Probablemente funciona, pero no es target |
+| iOS Safari (cualquier versión) | ❌ Fuera de target | Decisión de producto: Edu y David usan Android |
+| IE / Edge legacy | ❌ Fuera de target | Sin Service Worker, la app no carga |
+| Chrome <90 / pre-2021 | ❌ Fuera de target | No se prioriza retro-compatibilidad (floor del `browserslist`) |
+
+**Razón técnica:** `public/manifest.json` declara `display: "standalone"` + `orientation: "portrait-primary"`. La app requiere Service Worker (registrado en `src/layout/App.jsx`), requisito excluyente de IE y Edge legacy. El target es Android PWA exclusivo.
+
+**Configuración:** `package.json` declara `browserslist: ["Chrome >= 90", "not dead"]` (commit `fc1cddc`). Esto alinea autoprefixer / Tailwind / Babel con el target real y evita que añadan polyfills para navegadores fuera de scope.
+
+**Implicación para CSS / JS:** Se pueden usar features CSS4 (`:has()`, `@container`, `clamp()`, `gap` en flex, `inset`, `env()`, etc.) y ES2020+ sin polyfill para iOS Safari legacy o IE. El `autoprefixer` no emitirá prefixes para Safari <16, Firefox <103, etc. — son navegadores fuera de target.
+
+**Reportes de bugs fuera de target:** Si un usuario reporta problemas en iOS Safari, IE, Edge legacy o Chrome <90, la respuesta por defecto es "fuera de target" — no es un bug a arreglar. Edu y David son los únicos usuarios y usan Android Chrome. Si en el futuro se quiere extender el target (p. ej. dar soporte a iOS Safari o a un Samsung más viejo), abrir un ADR explícito — no es decisión de un commit individual.
+
+**Historia:** Esta política se formalizó en S64 (Junio 2026) tras el CSS4 audit (commits `3ef1d10`, `fc1cddc`) que confirmó que el codebase ya era compatible con el target y que el `browserslist` implícito de autoprefixer estaba sobre-incluyendo navegadores innecesariamente.
 
 ---
 
