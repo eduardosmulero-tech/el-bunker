@@ -9,6 +9,7 @@ import { useVault } from "../core/VaultContext";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
 import VaultGallery from "./VaultGallery";
+import { entryCreated } from "../core/StatsEngine";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const ACID        = "#bfff00";
@@ -481,7 +482,7 @@ const EraDetailPanel = ({ era, entries = [] }) => {
  *   onAddEra         — () => void
  *   onOpenEra        — (era) => void
  */
-export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () => {} }) {
+export default function Vault({ db = null, jwtToken = null, onAddEra = () => {}, onOpenEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const { user, patchDb } = useVault();
@@ -501,6 +502,8 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
       ...prev,
       entries: [...(prev.entries ?? []), newEntry],
     }));
+    // Emitir evento de entrada creada
+    entryCreated(newEntry.id, newEntry.type, newEntry.title);
     setShowAddEntry(false);
   };
 
@@ -696,6 +699,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
             <VaultGallery
               entries={entries.filter(e => e.era_id === activeDisplayEra.id)}
               eras={displayEras}
+              jwtToken={jwtToken}
             />
           </div>
         </motion.section>

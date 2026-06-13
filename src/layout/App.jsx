@@ -139,10 +139,11 @@ const ErrorScreen = ({ message, onRetry }) => (
 
 /** Wrapper para la pestaña VAULT */
 const VaultPage = () => {
-  const { db } = useVault();
+  const { db, jwtToken } = useVault();
   return (
     <Vault
       db={db}
+      jwtToken={jwtToken}
       onAddEra={async () => {
         // Could open a modal; placeholder for now
         console.log("[App] onAddEra triggered");
@@ -156,7 +157,7 @@ const VaultPage = () => {
 
 /** Wrapper para la pestaña MUSIC LAB */
 const MusicPage = () => {
-  const { db, user, setMasterVolume, patchDb } = useVault();
+  const { db, user, setMasterVolume, patchDb, jwtToken } = useVault();
   const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
 
   const handleAddTag = async (tagData) => {
@@ -201,6 +202,7 @@ const MusicPage = () => {
     <MusicLab
       db={db}
       userId={user?.id ?? null}
+      jwtToken={jwtToken}
       onAddTrack={onAddTrack}
       onAddDrop={onAddDrop}
       onDeleteTrack={onDeleteTrack}
@@ -219,16 +221,13 @@ const MusicPage = () => {
 
 /** Wrapper para CAPSULES con SmokeSession flotante */
 const CapsulesPage = () => {
-  const { db, user, masterVolume, setMasterVolume } = useVault();
+  const { db, user, masterVolume, setMasterVolume, jwtToken } = useVault();
   const { activeTrack } = usePlayer();
-  // events y time_capsules viven en D1 (Worker API).
-  // Por ahora pasamos arrays vacíos — la integración con Worker se hace en S58+.
-  // TODO(S58): fetch desde GET /api/events y GET /api/time_capsules usando JWT.
   return (
     <Capsules
       db={db}
       userId={user?.id ?? null}
-      events={[]}
+      jwtToken={jwtToken}
       activeTrack={activeTrack}
       masterVolume={masterVolume}
       onVolumeChange={setMasterVolume}

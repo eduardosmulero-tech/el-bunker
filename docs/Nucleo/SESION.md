@@ -5,6 +5,52 @@
 
 ---
 
+## S60 — Fix imports rotos: MusicLab → tokens (Junio 2026)
+
+**Objetivo:** Corregir 8 archivos de MusicLab que importaban `ACID`/`PURPLE`/`BG` desde
+`../layout/Layout` en vez de `../tokens` (fuente canónica). Unificar doble import en WinampPlayer.
+
+### Archivos modificados (8)
+AddTrackForm.jsx, AudioVisualizer.jsx, DropsManager.jsx, MusicLab.jsx,
+PlaylistManager.jsx, TagManager.jsx, TrackCard.jsx, WinampPlayer.jsx
+
+### Resultado
+0 errores nuevos en ESLint. Code review aprobado.
+
+---
+
+## S59 — Wiring real: JWT frontend + StatsEngine + placeholders eliminados (Junio 2026)
+
+**Objetivo:** Conectar el código real eliminando los placeholders identificados en la auditoría.
+
+### Cambios realizados
+
+**Parte A — JWT Wiring**
+- VaultContext: tras login con Google, llama a POST /api/auth/login con el token de Google
+  para obtener JWT del Worker API. Persiste en localStorage como `bunker_jwt`.
+- Propaga JVT a FileUploadService.setUploadToken() y StatsEngine.setStatsToken()
+- Capsules: fetch real de events y time_capsules desde Worker API usando JWT
+- TimeCapsules recibe token real (no null)
+
+**Parte B — Placeholders eliminados**
+- VaultGallery: renderiza imágenes reales (r2_key, dataUrl) en vez de 📷 emoji
+  en los 6 modos (WALL, CINEMA, DIALOGUE, EXHIBITION, REEL)
+- AddTrackForm: eliminado banner "UPLOAD DESHABILITADO"
+- StatsEngine: wired — trackPlay/trackPause/trackSkip desde PlayerContext,
+  dropSent desde useMusicActions, entryCreated desde Vault
+
+**Parte C — Script migración**
+- tools/migrate_drive_to_d1.py: migración unidireccional Drive JSON → D1
+
+### Archivos modificados (8)
+VaultContext.jsx, App.jsx, Capsules.jsx, VaultGallery.jsx, AddTrackForm.jsx,
+PlayerContext.jsx, useMusicActions.js, Vault.jsx
+
+### Archivos creados (1)
+tools/migrate_drive_to_d1.py
+
+---
+
 ## S58 — Auditoría y refactor: 12 bugs corregidos (Junio 2026)
 
 **Objetivo:** Auditar todo lo generado en Fases 2-6, encontrar bugs, limpiar y pulir.
@@ -21,38 +67,10 @@
 | Medio | Worker sin CRUD time_capsules | worker.js |
 | Medio | ESLint no reconocía prefijo _ | eslint.config.js |
 
-### Rama
-`roadmap-completo` — 11 commits (+3 en master Fase 0), +2,388 líneas, 17 archivos (9 nuevos)
-
-### Pendiente
-- Wiring JWT frontend → TimeCapsules
-- Migración Drive → D1
-- Desplegar Worker actualizado
-
 ---
 
 ## S55-S57 — Roadmap completado: Fases 1-6 (Junio 2026)
 
-**Objetivo:** Implementar todo el scaffolding del roadmap.
-
-### Entregables
-- **Fase 1:** JWT HMAC-SHA256 real, 18 endpoints REST, CRUD completo
-- **Fase 2-6:** VAULT (AddEntryForm + VaultGallery 6 modos), CAPSULES (4 sub-tabs),
-  RECAP (stats semanal/mensual/anual), MusicLab (MediaSession + vibrate)
-- FileUploadService + StatsEngine frontend
-- Layout 3 tabs definitivo (ADR-017)
-
 ---
 
 ## S54 — Fase 1: D1 Schema + Workers Init + Wrangler (Junio 2026)
-
-**Objetivo:** Infraestructura Cloudflare desplegada.
-- Schema D1: 16 tablas, seed data (4 tags + 3 usuarios)
-- Worker: 18 endpoints REST
-- R2 bucket: el-bunker-music
-- URL: https://el-bunker-api.thebunker-admin.workers.dev
-
-### Bugs Fase 0 (S50-S53)
-Q2/Q3 (historial localStorage), SH1 (shuffle pre-generado), L1 (loop track absoluto),
-Q10/Q14 (cola manual sobrevive + separación visual)
-

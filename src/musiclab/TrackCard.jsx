@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "../layout/Layout";
+import { ACID, PURPLE } from "../tokens";
 
 const GLASS_BG     = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";

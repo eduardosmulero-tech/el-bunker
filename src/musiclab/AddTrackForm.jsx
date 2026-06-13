@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ACID } from "../layout/Layout";
+import { ACID } from "../tokens";
 
 const GLASS_BG     = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";
@@ -44,18 +44,6 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
       <p className="text-xs tracking-[0.3em] uppercase font-bold mb-4" style={{ color: ACID }}>
         {initialData ? "✎ EDITAR TRACK" : "◈ AÑADIR TRACK"}
       </p>
-
-      {!initialData && (
-        <div
-          className="mb-4 px-3 py-2 rounded-sm text-xs leading-relaxed"
-          style={{
-            background: "rgba(255,200,0,0.06)", border: "1px solid rgba(255,200,0,0.3)",
-            color: "#ffcc00", fontFamily: FONT_MONO, letterSpacing: "0.05em",
-          }}
-        >
-          ⚠ UPLOAD DESHABILITADO — Las subidas estarán disponibles en M2 (Cloudflare R2).
-        </div>
-      )}
 
       <div className="flex flex-col gap-3">
         <div>

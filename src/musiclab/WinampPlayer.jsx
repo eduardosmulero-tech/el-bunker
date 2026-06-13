@@ -1,9 +1,8 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { Pause, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, BG } from "../layout/Layout";
 import { getStreamUrl } from "../core/GoogleDriveService";
-import { getVibeConfig } from "../tokens";
+import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";

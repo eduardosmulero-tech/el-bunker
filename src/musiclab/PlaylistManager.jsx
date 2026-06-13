@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID } from "../layout/Layout";
+import { ACID } from "../tokens";
 import { VibeTagBar } from "./TrackCard";
 
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";

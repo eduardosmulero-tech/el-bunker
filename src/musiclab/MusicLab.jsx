@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "../layout/Layout";
+import { ACID, PURPLE } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
 import { fetchPlaylists, createPlaylist, addTrackToPlaylist, updateData } from "../core/GoogleDriveService";
 import { AudioVisualizer } from "./AudioVisualizer";
@@ -54,6 +54,7 @@ const uuid = () =>
 export default function MusicLab({
   db = null,
   userId = null,
+  jwtToken: _jwtToken = null,
   onAddTrack,
   onEditTrack,
   onDeleteTrack,
