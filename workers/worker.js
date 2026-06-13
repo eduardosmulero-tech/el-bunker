@@ -273,7 +273,8 @@ export default {
       if (path === "/api/tags" && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
-        const id = crypto.randomUUID();
+        // S66: aceptar id del cliente para mantener consistencia Drive JSON ↔ D1
+        const id = body.id || crypto.randomUUID();
         await env.DB.prepare(
           "INSERT INTO tags (id, namespace, label, icon, color, created_by) VALUES (?1,?2,?3,?4,?5,?6)"
         ).bind(id, body.namespace||"music", body.label, body.icon||"◈", body.color||"#ffffff", userId).run();

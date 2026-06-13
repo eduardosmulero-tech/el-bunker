@@ -19,6 +19,7 @@ import Capsules                          from "../capsules/Capsules";
 const ACID   = "#bfff00";
 const BG     = "#050505";
 const FONT   = "'JetBrains Mono', 'Courier New', monospace";
+const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
 // ─── GLOBAL LOADING SCREEN ───────────────────────────────────
 /**
@@ -160,6 +161,7 @@ const MusicPage = () => {
   const { db, user, setMasterVolume, patchDb, jwtToken } = useVault();
   const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
 
+  // S66 (W3): tags sincronizados con Worker API (D1) + Drive JSON
   const handleAddTag = async (tagData) => {
     const newTag = {
       ...tagData,
@@ -167,6 +169,7 @@ const MusicPage = () => {
       created_by: user?.id ?? "user",
       created_at: new Date().toISOString(),
     };
+    // Drive JSON (backward compat)
     await patchDb((prev) => ({
       ...prev,
       music_lab: {
@@ -174,9 +177,22 @@ const MusicPage = () => {
         tags: [...(prev.music_lab?.tags ?? []), newTag],
       },
     }));
+    // Worker API → D1
+    if (jwtToken) {
+      try {
+        await fetch(`${API_BASE}/api/tags`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+          body: JSON.stringify({ label: tagData.label, icon: tagData.icon, color: tagData.color, namespace: tagData.namespace || "music", id: newTag.id }),
+        });
+      } catch (e) {
+        console.warn("[App] tag D1 sync (create) failed:", e);
+      }
+    }
   };
 
   const handleUpdateTag = async (tagId, updates) => {
+    // Drive JSON (backward compat)
     await patchDb((prev) => ({
       ...prev,
       music_lab: {
@@ -186,9 +202,22 @@ const MusicPage = () => {
         ),
       },
     }));
+    // Worker API → D1
+    if (jwtToken) {
+      try {
+        await fetch(`${API_BASE}/api/tags/${tagId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+          body: JSON.stringify(updates),
+        });
+      } catch (e) {
+        console.warn("[App] tag D1 sync (update) failed:", e);
+      }
+    }
   };
 
   const handleDeleteTag = async (tagId) => {
+    // Drive JSON (backward compat)
     await patchDb((prev) => ({
       ...prev,
       music_lab: {
@@ -196,6 +225,17 @@ const MusicPage = () => {
         tags: (prev.music_lab?.tags ?? []).filter((t) => t.id !== tagId),
       },
     }));
+    // Worker API → D1
+    if (jwtToken) {
+      try {
+        await fetch(`${API_BASE}/api/tags/${tagId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${jwtToken}` },
+        });
+      } catch (e) {
+        console.warn("[App] tag D1 sync (delete) failed:", e);
+      }
+    }
   };
 
   return (
