@@ -33,6 +33,7 @@ import json
 import sys
 import time
 import os
+import subprocess
 
 API_BASE = os.environ.get("WORKER_API_URL", "https://el-bunker-api.thebunker-admin.workers.dev")
 
@@ -83,7 +84,103 @@ def migrate_entity(entity_type, path, items, jwt, id_field="id", batch_size=50):
     return ok, fail, skip
 
 
-def migrate_from_json(filepath, jwt):
+# ── Pre-migration safety gate (S64) ──────────────────────────────
+# Previene re-migraciones destructivas desde JSONs stale.
+# Si D1 tiene más filas que el JSON en alguna tabla, aborta
+# (a menos que se pase --force). Ver PROYECTO.md → D1 MIGRATION FLOW.
+def get_d1_count(table, db_name="el-bunker-db"):
+    """Cuenta filas de una tabla en D1 vía wrangler. None si falla."""
+    try:
+        result = subprocess.run(
+            ["npx", "wrangler", "d1", "execute", db_name, "--remote", "--json",
+             f"--command=SELECT COUNT(*) AS n FROM {table}"],
+            capture_output=True, text=True, check=True, timeout=30,
+        )
+        data = json.loads(result.stdout)
+        if data and data[0].get("results"):
+            return data[0]["results"][0].get("n", 0)
+    except (subprocess.CalledProcessError, KeyError, IndexError,
+            json.JSONDecodeError, FileNotFoundError) as e:
+        print(f"    [WARN] D1 query failed for {table}: {e}", file=sys.stderr)
+    return None
+
+
+def compare_counts_with_d1(db, force=False):
+    """Safety check: aborta si D1 tiene más filas que el JSON en alguna tabla.
+
+    La migración es destructiva: si el JSON está stale, sobre-escribe
+    datos reales de D1. Esta comparación es el único gate que detecta
+    ese caso antes de empezar.
+    """
+    json_counts = {
+        "eras":      len(db.get("eras", []) or []),
+        "tags":      len(db.get("music_lab", {}).get("tags", []) or []),
+        "entries":   len([e for e in (db.get("entries", []) or []) if not e.get("is_deleted")]),
+        "tracks":    len(db.get("music_lab", {}).get("tracks", []) or []),
+        "drops":     len(db.get("music_lab", {}).get("drops", []) or []),
+        "playlists": len(db.get("music_lab", {}).get("playlists", []) or []),
+    }
+
+    print(f"\n{'='*60}")
+    print(f"  PRE-MIGRATION SAFETY CHECK (S64)")
+    print(f"  D1 (estado actual) vs JSON (origen):")
+    print(f"{'='*60}\n")
+    print(f"  {'Tabla':<12} {'D1':>8} {'JSON':>8} {'Diff':>8}  Acci\u00f3n")
+    print(f"  {'-'*12} {'-'*8} {'-'*8} {'-'*8}  {'-'*32}")
+
+    abort = False
+    none_count = 0
+    for table in sorted(json_counts):
+        d1 = get_d1_count(table)
+        j = json_counts[table]
+        if d1 is None:
+            print(f"  {table:<12} {'?':>8} {j:>8} {'?':>8}  \u26a0\ufe0f  D1 query fall\u00f3 (saltando)")
+            none_count += 1
+            continue
+        diff = d1 - j
+        if diff > 0:
+            print(f"  {table:<12} {d1:>8} {j:>8} {diff:>+8}  \U0001f6d1 D1 tiene M\u00c1S (p\u00e9rdida de datos)")
+            abort = True
+        elif diff < 0:
+            print(f"  {table:<12} {d1:>8} {j:>8} {diff:>+8}  \u26a0\ufe0f  JSON tiene m\u00e1s (se insertar\u00e1n)")
+        else:
+            print(f"  {table:<12} {d1:>8} {j:>8} {diff:>+8}  \u2713  Igual")
+
+    print()
+
+    # Safety: si TODAS las queries a D1 fallaron, no tenemos datos para
+    # comparar. Casi siempre = wrangler no est\u00e1 autenticado.
+    # Si permitimos continuar, el gate podr\u00eda ser burlado.
+    if none_count == len(json_counts):
+        if not force:
+            print("\U0001f6d1 ABORTANDO: TODAS las queries a D1 fallaron.")
+            print("   No podemos comparar. Casi siempre = wrangler no autenticado.")
+            print("   Soluci\u00f3n: npx wrangler login")
+            print("   Override: re-correr con --force (PELIGROSO \u2014 sin verificaci\u00f3n)")
+            sys.exit(1)
+        else:
+            print("\u26a0\ufe0f  --force activo: continuando sin verificaci\u00f3n (D1 queries todas fallaron).")
+
+    if abort:
+        if not force:
+            print("\U0001f6d1 ABORTANDO: D1 tiene m\u00e1s filas que el JSON en al menos una tabla.")
+            print("   Esto BORRAR\u00cdA datos reales.")
+            print("")
+            print("   PASOS RECOMENDADOS:")
+            print("   1) bash tools/snapshot_d1.sh                    # guardar estado actual")
+            print("   2) Investigar por qu\u00e9 el JSON est\u00e1 stale")
+            print("   3) Usar un JSON m\u00e1s reciente, O")
+            print("   4) Re-correr con --force (PELIGROSO — confirma intenci\u00f3n)")
+            sys.exit(1)
+        else:
+            print("\u26a0\ufe0f  --force activo: continuando aunque D1 > JSON.")
+            print("   Esta es tu confirmaci\u00f3n expl\u00edcita de que quieres sobre-escribir.")
+    else:
+        print("\u2705 Safety check OK. D1 no tiene m\u00e1s filas que el JSON en ninguna tabla.")
+    print()
+
+
+def migrate_from_json(filepath, jwt, force=False):
     """Migra todas las entidades desde un archivo JSON."""
     print(f"\n{'='*60}")
     print(f"  MIGRACIÓN DRIVE > D1")
@@ -93,6 +190,9 @@ def migrate_from_json(filepath, jwt):
 
     with open(filepath, "r", encoding="utf-8") as f:
         db = json.load(f)
+
+    # S64: pre-migration safety gate. Aborta si D1 > JSON (a menos que --force).
+    compare_counts_with_d1(db, force=force)
 
     totals = {"ok": 0, "fail": 0, "skip": 0}
 
@@ -248,6 +348,8 @@ if __name__ == "__main__":
     parser.add_argument("--file", help="Archivo JSON local con los datos exportados")
     parser.add_argument("--drive", action="store_true", help="Leer desde Google Drive directamente")
     parser.add_argument("--jwt", help="JWT del Worker API (o usar env WORKER_JWT)")
+    parser.add_argument("--force", action="store_true",
+                        help="Override safety check (D1 > JSON). PELIGROSO — confirma intenci\u00f3n de sobre-escribir.")
     parser.add_argument("--login", nargs=2, metavar=("EMAIL", "TOKEN"),
                         help="Obtener JWT: --login email google_token")
 
@@ -268,7 +370,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.file:
-        migrate_from_json(args.file, jwt)
+        migrate_from_json(args.file, jwt, force=args.force)
     elif args.drive:
         print("[FAIL] Modo --drive no implementado. Exporta el JSON desde la app (botón '↓ BACKUP JSON')")
         print("   y usa --file <archivo.json>")

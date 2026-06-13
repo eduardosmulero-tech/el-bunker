@@ -143,6 +143,56 @@ Whitelist hardcoded en `CONFIG.USERS` de `GoogleDriveService.js`. 3 usuarios má
 
 ---
 
+## D1 MIGRATION FLOW
+
+**Desde S54, D1 es la fuente de verdad.** El JSON (`tools/the_vault_database.json`) es un artefacto legacy de la migración inicial. Re-correr `tools/deploy_d1_migration.sh` o `tools/recreate_schema.sh` sin precaución puede DESTRUIR datos reales.
+
+### Flujo correcto (cualquier migración)
+
+```
+1. SNAPSHOT del estado actual de D1
+   bash tools/snapshot_d1.sh
+   → crea tools/snapshots/d1_YYYYMMDD_HHMMSS.json
+
+2. INSPECCIONAR el snapshot (opcional pero recomendado)
+   jq '.counts' tools/snapshots/d1_<timestamp>.json
+
+3. MIGRAR con safety gate (solo si el JSON origen es más nuevo que el snapshot)
+   python3 tools/migrate_drive_to_d1.py --file <json> --jwt <jwt>
+   → El script compara D1 vs JSON. Si D1 tiene MÁS filas, ABORTA.
+   → Para forzar (ej. recovery explícito): añadir --force
+
+4. RESTAURAR desde snapshot (solo si algo va mal)
+   # tools/restore_d1.sh — pendiente (Sprint 8.3+)
+```
+
+### Safety gates (S64+)
+
+| Script | Gate | Override |
+|---|---|---|
+| `tools/migrate_drive_to_d1.py` | Aborta si D1 > JSON en alguna tabla | `--force` (registra intención explícita) |
+| `tools/recreate_schema.sh` | Requiere escribir literal `NUKE` por stdin | (ninguno — sin "NUKE", aborta) |
+
+### Snapshots
+
+- **Ubicación:** `tools/snapshots/`
+- **Formato:** JSON con `_meta` (timestamp, db, tool), `counts` (resumen) y `data` (filas completas por tabla)
+- **Retención:** mantener los últimos 5 snapshots. Borrar los más antiguos manualmente.
+- **Restore:** pendiente — `tools/restore_d1.sh` en Sprint 8.3+
+
+### Anti-patrones prohibidos
+
+- ❌ `bash tools/deploy_d1_migration.sh` sin haber hecho snapshot antes
+- ❌ `python3 tools/migrate_drive_to_d1.py` sin snapshot
+- ❌ `bash tools/recreate_schema.sh` sin escribir "NUKE" y sin snapshot
+
+### Historia
+
+- **S54:** se introduce `recreate_schema.sh` y `deploy_d1_migration.sh` para la migración inicial Drive→D1.
+- **S64:** se documenta este flujo tras 3 pérdidas de datos. Se añaden safety gates (gate "D1 > JSON" en `migrate_drive_to_d1.py`, gate "NUKE" en `recreate_schema.sh`) y herramienta de snapshot.
+
+---
+
 ## GIT Y DEPLOY
 
 - Rama: **master** (nunca main)
