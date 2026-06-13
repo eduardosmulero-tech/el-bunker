@@ -1,7 +1,7 @@
 # INDEX.md — arquitectura el_bunker
 > Fuente primaria de staleness. Leer en cada arranque.
 > Actualizar al cerrar cada pliego que toque archivos listados en stale_si_pliego_toca.
-> Última actualización: S63 — Worker 22 endpoints (entries, eras, files CRUD).
+> Última actualización: S64 — VaultContext → Worker API (reescritura completa de los 7 docs).
 
 ---
 
@@ -9,20 +9,20 @@
 
 | Doc | sincronizado_con | stale_si_pliego_toca | Estado |
 |---|---|---|---|
-| architecture.md | S49 | PlayerContext.jsx, VaultContext.jsx, App.jsx | ⚠️ STALE — S50-S63: PlayerContext, MusicLab, Workers 22 endpoints. |
-| data-flow.md | S49 | PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx | ⚠️ STALE — Workers API activa (22 endpoints), Drive→D1 migración parcial. |
-| event-lifecycle.md | S49 | PlayerContext.jsx, WinampPlayer.jsx | ⚠️ STALE — S50-S63: StatsEngine wired, eventos emitidos desde PlayerContext/Vault/MusicLab. |
-| ownership-map.md | S49 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx | ⚠️ STALE — S60-S61: MusicLab imports→tokens, jwtToken threading. |
-| rendering-flow.md | S49 | App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx | ⚠️ STALE — S61: jwtToken threading en VaultPage/MusicPage. |
-| state-map.md | S49 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx | ⚠️ STALE — S59-S61: JWT wiring en VaultContext, Capsules fetch real. |
-| technical-debt.md | S49 | cualquier refactor estructural | ✅ OK |
+| architecture.md | S64 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
+| data-flow.md | S64 | PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js | ✅ OK |
+| event-lifecycle.md | S64 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx | ✅ OK |
+| ownership-map.md | S64 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
+| rendering-flow.md | S64 | App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
+| state-map.md | S64 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
+| technical-debt.md | S64 | cualquier refactor estructural | ✅ OK |
 
 ---
 
 ## IMPACTO DE STALENESS
 
-Todos los docs de arquitectura necesitan reescritura completa tras S49.
-No bloquean pliegos hasta que se toquen los archivos que describen.
+Ninguno — todos los docs resincronizados en S64 tras reescritura completa.
+Cubren el estado real del sistema: persistencia híbrida Drive+Worker, 22 endpoints, StatsEngine wired, CAPSULES con datos reales.
 
 ---
 
