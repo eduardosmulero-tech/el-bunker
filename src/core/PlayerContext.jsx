@@ -14,6 +14,20 @@
 //   shuffle). Son patrones establecidos y funcionales del motor
 //   de reproducción. No refactorizar sin tests.
 
+/* eslint-disable react-hooks/immutability, react-hooks/set-state-in-effect, react-hooks/refs */
+// Las 3 reglas arriba son del react-hooks plugin v6+. En PlayerContext tenemos
+// patrones intencionales y bien documentados que las disparan:
+//   - immutability: refs como skipRef/loopModeRef/_activeVibeRef se sincronizan
+//     en useEffect (`ref.current = state`) para evitar stale closures en
+//     callbacks de audio nativo. Patrón documentado en el comentario de arriba.
+//   - set-state-in-effect: el motor de audio necesita disparar transiciones
+//     (vibe 2s, queue sync, OOM recovery) dentro de effects — no se puede
+//     mover a event handlers sin romper la sincronización audio↔UI.
+//   - refs: useRef(x.current) inicializa refs con valores de otros refs para
+//     mantener la estabilidad de closures. Patrón del SH1 (shuffle estable).
+// Refactorizar requiere dividir PlayerContext en sub-componentes — tarea de
+// Fase 9+, fuera del scope del fix TDZ.
+
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
@@ -285,14 +299,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       return;
     }
 
-    // loopMode "off" → parar al llegar al último track (BUG-09)
-    // Fase 5.4 — C5: Fin de cola → parada consciente con fade del vibe
-    if (dir === 1 && loopModeRef.current === "off" && !shuffle && base >= list.length - 1) {
-      setIsPlaying(false);
-      document.body.style.removeProperty("--vibe-accent");
-      setActiveVibe(null);
-      return;
-    }
+    // loopMode "off" → parar al llegar al último track (BUG-09)      // Fase 5.4 — C5: Fin de cola → parada consciente con fade del vibe
+      if (dir === 1 && loopModeRef.current === "off" && !shuffle && base >= list.length - 1) {
+        setIsPlaying(false);
+        document.body.style.removeProperty("--vibe-accent");
+        // eslint-disable-next-line no-use-before-define -- setActiveVibe es un setter (estable); la referencia se resuelve en la closure cuando skip() se invoca
+        setActiveVibe(null);
+        return;
+      }
 
     if (activeTrack) {
       trackSkip(activeTrack.id, shuffle ? "shuffle" : "next");
@@ -486,6 +500,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     return () => { rel(); document.removeEventListener("visibilitychange", onVis); };
   }, [isPlaying]);
 
+  // ── Fase 4.1 — VB5: Vibe se activa a los 2s de reproducción ─────
+  // ADR-TDZ: Declarado ANTES de _activeVibeRef y useEffect que lo referencian.
+  // Si se declara después, `useRef(activeVibe)` y el deps array `[activeVibe]`
+  // lanzan ReferenceError: Cannot access 'activeVibe' before initialization.
+  // Mantener el vibe anterior durante 2s tras cambio de track, luego transicionar.
+  const [activeVibe, setActiveVibe] = useState(null);  // vibe visible en UI
+  const _vibeTimerRef = useRef(null);
+  // Fase 4.6 T8: pulso sutil cuando el mismo tag suena otra vez
+  const [vibePulse, setVibePulse] = useState(0);
+
   // ── Fase 4.5 — VB19: Restaurar vibe al volver de background ──
   const _activeVibeRef = useRef(activeVibe);
   useEffect(() => { _activeVibeRef.current = activeVibe; }, [activeVibe]);
@@ -525,11 +549,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, [activeTrack?.id]);
 
   // ── Fase 4.1 — VB5: Vibe se activa a los 2s de reproducción ─────
-  // Mantener el vibe anterior durante 2s tras cambio de track, luego transicionar.
-  const [activeVibe, setActiveVibe] = useState(null);  // vibe visible en UI
-  const _vibeTimerRef = useRef(null);
-  // Fase 4.6 T8: pulso sutil cuando el mismo tag suena otra vez
-  const [vibePulse, setVibePulse] = useState(0);
+  // (declaración movida más arriba — ver bloque ADR-TDZ antes de _activeVibeRef)
 
   useEffect(() => {
     if (_vibeTimerRef.current) {

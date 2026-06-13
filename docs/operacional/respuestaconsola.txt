@@ -1,0 +1,41 @@
+[Búnker] SW registered: https://el-bunker-beige.vercel.app/
+index-x9m_LRe1.js:2 [Búnker] Google Services inicializados ✓
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+client:138 Cross-Origin-Opener-Policy policy would block the window.closed call.
+_.ng.C @ client:138
+cb=gapi.loaded_0?le=scs,fedcm_migration_mod:436 Cross-Origin-Opener-Policy policy would block the window.opener call.
+_.g.Bla @ cb=gapi.loaded_0?le=scs,fedcm_migration_mod:436
+cb=gapi.loaded_0?le=scs,fedcm_migration_mod:436 Cross-Origin-Opener-Policy policy would block the window.opener call.
+_.g.Bla @ cb=gapi.loaded_0?le=scs,fedcm_migration_mod:436
+index-x9m_LRe1.js:2 [Búnker] Token OAuth2 obtenido ✓
+index-x9m_LRe1.js:2 [Búnker] Buscando DB en carpeta compartida: 1wHc-UeuZ-JsD7k-6Q53j7gNtCqfXb1MV
+index-x9m_LRe1.js:10 [Búnker] JWT obtenido ✓
+index-x9m_LRe1.js:10 [Búnker] Worker DB built: Object
+index-x9m_LRe1.js:10 [Búnker] Drive complement loaded: Object
+index-x9m_LRe1.js:10 [Búnker] DB cargada desde Worker API (D1) + Drive complement ✓
+index-x9m_LRe1.js:10 Uncaught ReferenceError: Cannot access 'q' before initialization
+    at Ge (index-x9m_LRe1.js:10:30349)
+    at ko (vendor-react-2HmFm5DM.js:8:47537)
+    at bc (vendor-react-2HmFm5DM.js:8:69959)
+    at Lc (vendor-react-2HmFm5DM.js:8:80214)
+    at Nu (vendor-react-2HmFm5DM.js:8:115507)
+    at Au (vendor-react-2HmFm5DM.js:8:114590)
+    at ku (vendor-react-2HmFm5DM.js:8:114429)
+    at _u (vendor-react-2HmFm5DM.js:8:111298)
+    at ld (vendor-react-2HmFm5DM.js:8:122794)
+    at MessagePort.ae (vendor-react-2HmFm5DM.js:1:1642)
+index-x9m_LRe1.js:10 [Búnker] 💚 Heartbeat registrado: 2026-06-13T19:47:11.775Z
+sw.js:298 [Búnker SW] Script loaded ✓
