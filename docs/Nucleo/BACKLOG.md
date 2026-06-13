@@ -7,23 +7,9 @@
 
 ## PRIORIDAD ALTA — desbloquean features
 
-### Q2/Q3 — Historial se pierde al recargar
-**Archivo:** `src/core/PlayerContext.jsx`
-**Causa raíz:** localStorage no implementado para historial
-**Spec:** Q2/Q3 — historial en localStorage por usuario, sobrevive reinicios
-
-### SH1 — Shuffle aleatoriza todos, no solo los restantes
-**Archivo:** `src/core/PlayerContext.jsx`
-**Causa raíz:** Shuffle no respeta posición actual en la lista
-
-### L1 — Loop track: skip hace seek al inicio en lugar de salir
-**Archivo:** `src/core/PlayerContext.jsx`
-**Causa raíz:** El handler de skip no distingue si está en modo loop track
-
-### Q10 — Cola no sobrevive a cambios de contexto
-**Archivo:** `src/core/PlayerContext.jsx`
-**Causa raíz:** Cola manual se destruye al cambiar de playlist/contexto
-**Bloqueada por:** Q14
+### W3 — Tags MusicLab no sincronizan con D1
+**Archivo:** `src/musiclab/TagManager.jsx`, `workers/worker.js`
+**Causa raíz:** Tags solo se guardan en Drive JSON, no en tabla `tags` de D1
 
 ---
 
@@ -43,4 +29,9 @@
 |----|-----|---------|-------|
 | CTX-1 | AnimatePresence anidado en TrackCard — menú ⋮ no abría en tracks nuevos | TrackCard.jsx | 2026-06-01 |
 | PLIEGO-224 | Unificar Modo Edición | MusicLab.jsx | 2026-06-04 |
+| Q2 | skip(1) cola manual itera saltando duplicados activeTrack | PlayerContext.jsx | 2026-06-13 |
+| Q3 | shuffle filtra playHistory al regenerar orden | PlayerContext.jsx | 2026-06-13 |
+| Q10 | playTrack añade al historial al cambiar de track | PlayerContext.jsx | 2026-06-13 |
+| SH1 | SmokeSession persiste endTime en localStorage | SmokeSession.jsx | 2026-06-13 |
+| L1 | addLibrary refresca libraryCapacity automáticamente | VaultContext.jsx | 2026-06-13 |
 | PLIEGO-227 | Modo Edición persistente | MusicLab.jsx | 2026-06-04 |

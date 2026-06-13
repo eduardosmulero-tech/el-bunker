@@ -3,7 +3,7 @@
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** S66 — Bug W3: sincronizar tags MusicLab con D1
-**Última sesión:** S65 — Limpieza ESLint: 78→0 problemas en src/
+**Última sesión:** S65a — 5 bugs corregidos (Q2/Q3/Q10/SH1/L1)
 **Rama activa:** `master`
 
 ---
@@ -14,11 +14,6 @@
 
 ### P2/resto
 - **W3:** Tags de MusicLab solo se guardan en Drive JSON, no sincronizan con D1
-- **Q2:** Cola no avanza al hacer skip con cola manual
-- **Q3:** Shuffle no respeta historial de reproducción
-- **SH1:** SmokeSession no persiste timer entre cambios de pestaña
-- **L1:** libraryCapacity no se actualiza tras añadir/quitar bibliotecas
-- **Q10:** Botón anterior no funciona correctamente tras activar shuffle
 
 ---
 
