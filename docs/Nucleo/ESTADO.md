@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. UN bug activo.
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S61 — Wiring JWT frontend (`setUploadToken`, `setStatsToken`, fetch con jwtToken)
-**Última sesión:** S60 — Fix imports rotos: 8 archivos MusicLab (Layout → tokens)
-**Rama activa:** `roadmap-completo` (12 commits, +2,395 líneas, 17 archivos)
+**Próximo pliego:** S62 — Worker: CRUD entries D1 (GET/POST/PATCH/DELETE /api/entries)
+**Última sesión:** S61 — Wiring JWT frontend: threading jwtToken por Vault/MusicLab
+**Rama activa:** `master` (13 commits, +2,400 líneas, 17 archivos)
 
 ---
 

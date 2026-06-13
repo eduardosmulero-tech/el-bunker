@@ -5,6 +5,21 @@
 
 ---
 
+## S61 — Wiring JWT frontend: threading jwtToken (Junio 2026)
+
+**Objetivo:** Propagar `jwtToken` desde VaultContext a todos los componentes que
+necesitarán hacer fetch directo a la Worker API en fases futuras (entries, tracks, etc.).
+Los tokens globales (`setUploadToken`/`setStatsToken`) ya estaban cableados desde S59.
+
+### Archivos modificados (4)
+App.jsx (VaultPage + MusicPage), Vault.jsx, VaultGallery.jsx, MusicLab.jsx
+
+### Resultado
+`jwtToken` disponible en Vault → VaultGallery y MusicLab para futuras llamadas API.
+0 errores nuevos en ESLint. Code review aprobado.
+
+---
+
 ## S60 — Fix imports rotos: MusicLab → tokens (Junio 2026)
 
 **Objetivo:** Corregir 8 archivos de MusicLab que importaban `ACID`/`PURPLE`/`BG` desde
