@@ -28,13 +28,13 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
     onClick={onClick}
     title={title}
     className={`rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
-      size === "sm" ? "w-7 h-7" : "w-8 h-8"
+      size === "sm" ? "w-7 h-7" : "w-10 h-10"
     }`}
     style={{
-      background: active ? withAlpha(color, 0.13) : "transparent",
-      border: `1px solid ${active ? withAlpha(color, 0.4) : withAlpha(color, 0.13)}`,
-      color: active ? color : withAlpha(color, 0.4),
-      boxShadow: active ? `0 0 8px ${withAlpha(color, 0.27)}` : "none",
+      background: active ? withAlpha(color, 0.2) : "transparent",
+      border: `1px solid ${active ? withAlpha(color, 0.65) : withAlpha(color, 0.18)}`,
+      color: active ? color : withAlpha(color, 0.5),
+      boxShadow: active ? `0 0 10px ${withAlpha(color, 0.4)}` : "none",
     }}
 
   >
@@ -47,7 +47,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   const {
     activeTrack: track,
     isPlaying: playing, setIsPlaying: setPlaying,
-    localQueue: _queue,
+    localQueue: _queue, addToQueue,
     loopMode, toggleLoopMode, shuffle, setShuffle,
     autoPlaySignal, syncStatus,
     audioRef,
@@ -56,6 +56,17 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     trackVibe,
     vibrate, softDeletedIds, undoRemoveFromQueue,
   } = usePlayer();
+  // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
+  // Se resetea al cambiar de track para que el corazón no quede "pegado".
+  const [liked, setLiked] = useState(false);
+  const [likeToast, setLikeToast] = useState(null);
+  // Phase 2.1: lifecycle del toast — useEffect evita race condition entre
+  // clicks rápidos (cada uno disparaba un setTimeout independiente).
+  useEffect(() => {
+    if (!likeToast) return;
+    const t = setTimeout(() => setLikeToast(null), 1500);
+    return () => clearTimeout(t);
+  }, [likeToast]);
 
   // S78 UX5: Swipe gesture state
   const swipeStartRef = useRef(null);
@@ -89,6 +100,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     setProgress(0);
     setCurrentT(0);
     setDuration(0);
+    // Phase 2.1: resetear "like" al cambiar de track (no persistido aún)
+    setLiked(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track?.id]);
 
@@ -298,7 +311,7 @@ return () => cancelAnimationFrame(raf);
     <motion.div
       className="relative rounded-sm overflow-hidden"
       style={{
-        background: `linear-gradient(145deg, rgba(10,10,10,0.98) 0%, rgba(20,20,20,0.98) 100%)`,
+        background: `linear-gradient(145deg, #0a0a0a 0%, #141414 100%)`,
         border: `1px solid ${withAlpha(accentColor, 0.2)}`,
         boxShadow: `0 0 30px ${withAlpha(accentColor, 0.07)}, inset 0 0 40px rgba(0,0,0,0.6)`,
         fontFamily: FONT_MONO,
@@ -405,9 +418,10 @@ return () => cancelAnimationFrame(raf);
         </div>  
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-between px-3 pb-3">
-        <div className="flex gap-2">
+      {/* Controls — Phase 2.1: bg opaco, botones más grandes, ♥ (like) y ⊕ (add to queue) */}
+      <div className="flex items-center justify-between px-3 pb-3"
+        style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
+        <div className="flex gap-2 min-w-0">
           <WinampBtn
             label={loopMode === "track" ? "⟳¹" : "⟳"}
             active={loopMode !== "off"}
@@ -416,8 +430,18 @@ return () => cancelAnimationFrame(raf);
             title={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
           />
           <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" />
+          <WinampBtn
+            label={liked ? "♥" : "♡"}
+            active={liked}
+            color={liked ? "#ff2d55" : accentColor}
+            onClick={() => {
+              setLiked((p) => !p);
+              setLikeToast(liked ? "QUITADO DE FAVORITOS" : "AÑADIDO A FAVORITOS");
+            }}
+            title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
+          />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" size="sm" />
           <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
@@ -426,12 +450,21 @@ return () => cancelAnimationFrame(raf);
             {playing ? <Pause size={18} color={accentColor} strokeWidth={2.5} /> : <Play size={18} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" size="sm" />
+          {track && (
+            <WinampBtn
+              label="⊕"
+              color={accentColor}
+              onClick={() => addToQueue?.(track)}
+              title="Añadir a cola"
+              size="sm"
+            />
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>
           <input type="range" min={0} max={100} value={volume}
             onChange={(e) => changeVolume(Number(e.target.value))}
-            className="w-14 h-1 appearance-none cursor-pointer rounded-full"
+            className="w-12 h-1 appearance-none cursor-pointer rounded-full"
             style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}22 ${volume}%)`, accentColor }} />
         </div>
       </div>
@@ -445,6 +478,24 @@ return () => cancelAnimationFrame(raf);
           ⚡ LANZAR DROP
         </motion.button>
       )}
+
+      {/* Phase 2.1: Toast efímero al tocar ♡/♥ — confirma que el tap registró */}
+      <AnimatePresence>
+        {likeToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 text-[10px] tracking-[0.2em] uppercase font-bold"
+            style={{
+              background: "rgba(0,0,0,0.92)", border: `1px solid #ff2d5588`,
+              color: "#ff2d55", fontFamily: FONT_MONO, borderRadius: 2,
+              boxShadow: "0 0 12px rgba(255,45,85,0.3)", zIndex: 10,
+              pointerEvents: "none", whiteSpace: "nowrap",
+            }}>
+            {likeToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showDrop && (
