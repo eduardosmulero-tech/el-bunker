@@ -5,6 +5,34 @@
 
 ---
 
+## S82 — Compat Sprint (data loss prevention) [audit S64] (13 Junio 2026)
+
+**Objetivo:** Investigar y cerrar el patrón de 3 pérdidas de datos al migrar. El usuario reportó: foto borrada, playlist real desaparecida (6 de testing en su lugar), "eliminar playlist no guarda".
+
+### Resultado
+- **Causa raíz identificada:** `tools/the_vault_database.json` (stale desde 31 mayo) sobre-escribía D1 en cada re-migración. El export JSON nunca capturó entries/drops/eras/files (siempre 0 en ambos JSONs). Los datos perdidos del usuario nunca estuvieron en JSON, ahora tampoco en D1 → **irrecuperables**.
+- **D1 verificado live:** tracks=558, playlists=6, entries=0, drops=0, eras=0, files=0, tags=4. (tags D1 > JSON stale → safety gate habría abortado correctamente.)
+- **4 safety gates shipped** (`ff7e503`):
+  1. `migrate_drive_to_d1.py`: gate D1 > JSON + `--force` override + all-None abort (wrangler no autenticado)
+  2. `snapshot_d1.sh` (nuevo): exporta D1 a `tools/snapshots/d1_YYYYMMDD_HHMMSS.json` para rollback
+  3. `NUKE_schema.sh` (rename de `recreate_schema.sh`): gate "NUKE" + auto-snapshot pre-DROP
+  4. `PROYECTO.md`: sección `## D1 MIGRATION FLOW` con flujo correcto, safety gates, anti-patrones
+- **Rename + deprecation** (`2838eb2`): `recreate_schema.sh` → `NUKE_schema.sh`. `deploy_d1_migration.sh` recibe banner de deprecation + hard-abort salvo `DEPLOY_OK=1`. CLAUDE.md y PROYECTO.md actualizados.
+- **Export fix** (`b91d477`): `/api/files` añadido al Promise.all de `_buildDbFromWorker` en VaultContext.jsx. `files: files || []` en el return object, `files: wData.files` en el fallback merge. File metadata de R2 ahora llega al runtime db.
+
+### Bugs visuales P1 reportados (Phase 2 — próximo pliego)
+- **MINI-PLAYER:** opaco, transparencias dejan ver contenido de abajo. Botonera no funciona, faltan botones. (baseline BACKLOG G7)
+- **ERA-COLOR:** selector de color de nueva era no coincide con el de tags. Estética "menú 2000s".
+- **PLAYLISTS-TAB:** al lado de la de tracks, parece de otra app.
+- **DEL-PLAYLIST (regresión):** "eliminar playlist no guarda" — el safety gate evita reintroducción masiva, causa raíz sin diagnosticar.
+
+### Archivos modificados (5 código + 4 docs)
+`tools/migrate_drive_to_d1.py`, `tools/snapshot_d1.sh` (nuevo), `tools/NUKE_schema.sh` (rename de `recreate_schema.sh`), `tools/deploy_d1_migration.sh`, `tools/COMANDOS_MIGRACION.txt`, `docs/Nucleo/PROYECTO.md`, `docs/Nucleo/ESTADO.md`, `docs/Nucleo/SESION.md`, `CLAUDE.md`, `src/core/VaultContext.jsx`
+
+(3 commits: `ff7e503`, `2838eb2`, `b91d477`)
+
+---
+
 ## S81 — Fase 8.1 · Categoría 1 MULTIMEDIA (selector) (13 Junio 2026)
 
 **Objetivo:** Arrancar Fase 8 (ROADMAP) implementando la primera sub-fase: añadir las 5 opciones de la Categoría 1 al selector de tipo de `AddEntryForm.jsx`, según `docs/spec/taxonomia_vault.md`.
@@ -66,8 +94,8 @@
 
 ---
 
-## Próxima sesión: Fase 8.2 — Schema D1 `media_type` + render diferenciado en `VaultGallery.jsx`
+## Próxima sesión: Phase 2 — visuales P1 (mini player opaco + botonera, era color selector, tab playlists) + DEL-PLAYLIST regression investigation
 
-Fase 8.1 (selector) quedó cerrada. Quedan 13 sub-fases en Fase 8 y las Fases 9-15 (XL).
-Recomendación: abordar 8.2 inmediatamente (es prerequisito de las siguientes: validación por tipo, UI de preview, búsqueda por categoría).
+Compat Sprint S64/S82 cerrado. Quedan 3 issues P1 visuales + 1 P2 + 1 regresión sin diagnosticar + roadmap 8.2-15.
+Recomendación: arrancar Phase 2 con el mini player (impacto visual más alto) en PLIEGOs separados.
 
