@@ -151,6 +151,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const audioRef        = useRef(null);
   const preloadAudioRef = useRef(null);  // Fase 1.1 — P-M8: segundo <audio> para precarga silenciosa
   const wakeLockRef     = useRef(null);
+  // Fase 1.4 — P2: estado de reintentos por error de red
+  const _retryRef = useRef({ trackId: null, attempt: 0, timer: null });
 
   // ── Persistencia cola en Drive ────────────────────────────
   // S76: Fetch queue from Worker API (D1) instead of Drive
@@ -474,7 +476,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));
     navigator.mediaSession.setActionHandler("seekto", (d) => { if (audioRef.current && d.seekTime != null) audioRef.current.currentTime = d.seekTime; });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTrack]);
+  }, [activeTrack?.id]);
 
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
   useEffect(() => {
@@ -508,7 +510,70 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
   }, [loopMode, skip, _resolveNextTrackUrl]);
 
-  // ── Fase 1.3 — P1: Resolución de audio con verificación de caché local ──
+  // ── Fase 1.4 — P2: Reintento con backoff exponencial ante errores de red ──
+  // 3 reintentos: inmediato, 1s, 2s. Tras agotarlos → skip(1) automático.
+  // No reintenta errores de formato (MEDIA_ERR_SRC_NOT_SUPPORTED).
+  const handleAudioError = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !activeTrack) return;
+
+    // Inicializar o detectar cambio de track (primera ejecución o skip durante retry)
+    if (_retryRef.current.trackId !== activeTrack.id) {
+      _retryRef.current.trackId = activeTrack.id;
+      _retryRef.current.attempt = 0;
+    }
+
+    const error = audio.error;
+    const MAX_RETRIES = 3;
+
+    // MEDIA_ERR_SRC_NOT_SUPPORTED (código 4) → formato no soportado, no reintentar
+    if (error?.code === 4) {
+      console.warn("[Búnker] Formato no soportado — saltando:", activeTrack.title);
+      _retryRef.current.attempt = 0;
+      skipRef.current?.(1);
+      return;
+    }
+
+    _retryRef.current.attempt++;
+
+    if (_retryRef.current.attempt > MAX_RETRIES) {
+      console.warn(`[Búnker] ❌ Fallo de red tras ${MAX_RETRIES} reintentos — saltando:`, activeTrack.title);
+      _retryRef.current.attempt = 0;
+      skipRef.current?.(1);
+      return;
+    }
+
+    // Backoff: intento 1 → inmediato, intento 2 → 1s, intento 3 → 2s
+    const delay = _retryRef.current.attempt === 1 ? 0 : _retryRef.current.attempt === 2 ? 1000 : 2000;
+    const trackTitle = activeTrack.title;
+
+    console.info(`[Búnker] 🔄 Reintento ${_retryRef.current.attempt}/${MAX_RETRIES} en ${delay}ms:`, trackTitle);
+
+    _retryRef.current.timer = setTimeout(() => {
+      if (!audioRef.current || _retryRef.current.trackId !== activeTrack?.id) return;
+      audioRef.current.load();
+    }, delay);
+  }, [activeTrack?.id]);
+
+  // Resetear contador de reintentos cuando el audio carga exitosamente
+  const handleAudioCanPlay = useCallback(() => {
+    if (_retryRef.current.timer) {
+      clearTimeout(_retryRef.current.timer);
+      _retryRef.current.timer = null;
+    }
+    _retryRef.current.attempt = 0;
+    _retryRef.current.trackId = activeTrack?.id ?? null;
+  }, [activeTrack?.id]);
+
+  // Cancelar reintentos pendientes al cambiar de track
+  useEffect(() => {
+    if (_retryRef.current.timer) {
+      clearTimeout(_retryRef.current.timer);
+      _retryRef.current.timer = null;
+    }
+    _retryRef.current.attempt = 0;
+    _retryRef.current.trackId = activeTrack?.id ?? null;
+  }, [activeTrack?.id]);
   // Antes de hacer stream desde R2, verifica si el track ya está en Cache API.
   // Si existe en caché → blob URL (reproducción instantánea, sin red).
   // Si no existe → URL de red (el SW lo cacheará para la siguiente vez).
@@ -692,6 +757,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         loop={false}
         style={{ display: "none" }}
         onEnded={handleAudioEnded}
+        onError={handleAudioError}
+        onCanPlay={handleAudioCanPlay}
         onPause={() => {
           setIsPlaying(false);
           if (activeTrack) trackPause(activeTrack.id, audioRef.current?.currentTime ?? 0);
