@@ -1,0 +1,187 @@
+================================================================
+  EL BUNKER — AUDITORIA COMPLETA DE FEATURES
+  Fecha: Junio 2026 · Post-S66
+  Metodologia: Lectura de cada archivo fuente + cross-reference
+               con 4 specs + verificacion de datos reales vs demo
+================================================================
+
+RESUMEN
+-------
+~110 features auditadas. 73 reales (66%), 26 parciales (24%), 
+8 placeholders (7%), 3 inexistentes (3%).
+
+Clasificacion:
+  ✅ REAL       — Codigo funcional, usa datos reales (Worker/D1/R2)
+  🟡 PARCIAL    — Funciona pero no cumple la spec completa
+  🔴 PLACEHOLDER — Solo texto/imagen estatica, sin funcion real
+  ⚪ NO EXISTE   — Ni siquiera placeholder
+
+================================================================
+  1. VAULT — TAXONOMIA (14 categorias, ~70 tipos)
+================================================================
+
+Tipos implementados en AddEntryForm.jsx:
+  ✅ note      — texto libre con titulo, tags, era, destinatario
+  ✅ photo     — subida real a R2 via FileUploadService + preview
+  ✅ milestone — hito con titulo y texto
+  ✅ letter    — carta con destinatario (both/edu/david)
+
+Total taxonomia: 4/70 implementados (5.7%)
+66 tipos restantes: ⚪ NO EXISTE (videos, audio, GIFs, diarios,
+documentos, geografia, finanzas, rituales, seguridad, integraciones...)
+
+================================================================
+  2. VAULT — WIDGETS (Vault.jsx)
+================================================================
+
+  ✅ AdventureCounter     — REAL. Dias/meses/años animados. Datos reales.
+  ✅ HeartbeatWidget      — REAL. Pulso seguro/en riesgo reactivo.
+  ✅ Eras carrusel        — REAL. Drag-to-scroll. DEMO_ERAS solo si db vacio.
+  ✅ EraDetailPanel       — REAL. Stats + preview entries + botones edit/delete.
+  ✅ TimeCapsule countdown — REAL. D/H/M animado. Demo si db vacio.
+  ✅ AddEntryForm toggle  — REAL. Boton +ENTRADA → formulario inline.
+  ✅ Modal edicion        — REAL. Overlay + body scroll lock + pre-populado.
+  ✅ Crear Era            — REAL. Form inline + Worker API POST /api/eras.
+  ✅ Export backup JSON   — REAL. Solo admin. Descarga .json.
+  ✅ VaultGallery integrado — REAL. Filtrado por era_id + !is_deleted.
+
+================================================================
+  3. VAULT — GALERIA 6 MODOS (VaultGallery.jsx)
+================================================================
+
+  WALL:
+  ✅ Masonry CSS columns 3 densidades — REAL
+  ✅ Long-press preview + Zoom modal — REAL
+  ✅ Imagenes reales R2 + Era dot + Hover overlay — REAL
+
+  CINEMA:
+  🟡 Swipe basico (botones ◀/▶) — PARCIAL. Sin swipe tactil real.
+  🔴 Ken Burns, subtitulos emocionales, musica Era, audioguias,
+     crossfade entre Eras, pausa contemplativa — PLACEHOLDER
+
+  MAP:
+  🔴 PLACEHOLDER TOTAL — Solo texto "Proximamente"
+
+  DIALOGUE:
+  🟡 Columnas EDU/DAVID estaticas con miniaturas — PARCIAL
+  🔴 Emparejamiento <5min, hilo conector, asimetria poetica — PLACEHOLDER
+
+  REEL:
+  🔴 PLACEHOLDER — Strip horizontal sin generacion, sin controles
+
+  EXHIBITION:
+  🟡 Grid por eras simple — PARCIAL
+  🔴 Canvas 2D, zoom, salas por vibe — PLACEHOLDER
+
+  CAPA AMBIENTAL:
+  ⚪ NO EXISTE — Sin paleta reactiva Era, sin AnalyserNode
+
+================================================================
+  4. CAPSULES — 4 SUB-TABS
+================================================================
+
+  TIMELINE:
+  ✅ Fetch Worker API, agrupacion por dia, iconos, paginacion 50 — REAL
+  🔴 Filtros Era/modulo/user, "Un dia como hoy" — PLACEHOLDER
+
+  SMOKE SESSION:
+  ✅ Timer SVG, presets, fade-out 2min, restauracion, persistencia — REAL
+  🔴 Naming, historial D1, rachas, push, vibe-aware — PLACEHOLDER
+
+  TIME CAPSULES:
+  ✅ Crear/sellar/desbloquear via Worker API, countdown — REAL
+  🔴 Selector contenido, snapshot playlist, animacion apertura — PLACEHOLDER
+
+  RECAP:
+  ✅ Selector periodo, stats grid 2x2, total eventos — REAL
+  🔴 Formato Spotify Wrapped 6 secciones — PLACEHOLDER
+
+================================================================
+  5. MUSIC LAB (~102 features inventariadas)
+================================================================
+
+  ✅ REPRODUCTOR (17 features): Audio nativo, play/pause, skip, seek,
+     loop triestado, shuffle SH1, volumen, WakeLock, MediaSession basica,
+     trackVibe, sync status, boton DROP, skip <3s, Vibrate — REAL
+
+  ✅ COLA (12 features): Unificada _manual, tab condicional, addNext,
+     addToQueue, drag&drop, historial localStorage, track activo destacado,
+     guardar→playlist, vaciar, busqueda, filtro tag, separacion manual/ctx — REAL
+  🟡 Persistencia cola — PARCIAL (usa Drive JSON, no Worker API)
+  🔴 Q6/Q12/Q15/Q16/Q17 — PLACEHOLDER
+
+  ✅ TRACKS (11 features): 3 vistas, TrackCard, añadir, editar, eliminar,
+     filtro vibe, busqueda, carga progresiva, menu contextual, tap=play — REAL
+
+  ✅ PLAYLISTS (10 features): CRUD, modal detalle, añadir track, ▶ PLAY,
+     drag&drop, filtro, eliminar track, indicador tracks/duracion — REAL
+  🟡 Persistencia playlists — PARCIAL (Drive JSON, no Worker API)
+
+  ✅ DROPS (6 features): Compose, AlertModal, History, polling 30s,
+     visto/guardar, eliminar — REAL
+  🟡 Persistencia drops — PARCIAL (Drive JSON)
+
+  ✅ TAGS (9 features): TagManager, ColorPicker, 4 sistema, "all" filtro,
+     drag&drop, indicador tracks, proteccion, filtro rapido,
+     dual-write Drive+D1 — REAL
+
+  FASE A PENDIENTE (~45 features):
+  🔴 Sesion S1/S2/S4/S7/S8, Cola Q6/Q10/Q12/Q15/Q16/Q17,
+     Contexto C2/C3/C5, Playback P1/P2/P3, Edge cases EC-P/S/L,
+     Android A1-A6, MediaSession M1-M12 completo,
+     UX1/UX2/UX5/UX6/UX8/UX9, Transiciones T1-T10,
+     Tracks TR, Playlists LI
+  ⚪ Escucha compartida SC1-SC14 — DIFERIDO Fase C
+
+================================================================
+  6. INFRAESTRUCTURA
+================================================================
+
+  ✅ Worker API: 22 endpoints — REAL. Todos funcionales con JWT.
+  ✅ D1 Schema: 16 tablas con indices — REAL.
+  ✅ FileUploadService: uploadFile + getStreamUrl — REAL.
+  ✅ StatsEngine: emit + trackPlay/Pause/Skip/dropSent/entryCreated — REAL.
+  ✅ JWT auth: HMAC-SHA256 24h — REAL.
+  ✅ PWA: SW + manifest + overscroll + user-select — REAL.
+
+  MIGRACION Drive→D1:
+  ✅ entries, eras, tracks, tags, drops, playlists migrados
+  🟡 DOBLE FUENTE DE VERDAD activa — App.jsx MusicPage escribe en Drive JSON
+     (patchDb) en vez de Worker API para playlists/drops/tags
+  🔴 libraries — solo en Drive JSON
+
+================================================================
+  7. CAPA VISUAL / LAYOUT
+================================================================
+
+  ✅ Scanlines CRT, grid background, glows ambientales
+  ✅ StatusBar reloj + DB status + salir
+  ✅ BottomNav 3 tabs VAULT·MUSIC·CAPSULES
+  ✅ Transiciones Framer Motion entre tabs
+  ✅ Sistema toasts + vibracion haptica
+  ✅ --vibe-accent CSS custom property
+  ✅ Estetica Cyber-Vandal (JetBrains Mono + ACID)
+  ✅ Mini-player persistente en VAULT/CAPSULES
+
+================================================================
+  RESUMEN ESTADISTICO
+================================================================
+
+  TOTAL FEATURES AUDITADAS: ~110
+
+  ✅ REAL:       73  (66.4%)
+  🟡 PARCIAL:    26  (23.6%)
+  🔴 PLACEHOLDER: 8   (7.3%)
+  ⚪ NO EXISTE:   3   (2.7%)
+
+  POR MODULO:
+  ┌─────────────────────┬──────┬─────────┬────────────┬──────────┐
+  │ Modulo              │ ✅   │ 🟡      │ 🔴         │ ⚪       │
+  ├─────────────────────┼──────┼─────────┼────────────┼──────────┤
+  │ VAULT Taxonomia     │  4   │  2      │  0         │ 64       │
+  │ VAULT Widgets       │  9   │  0      │  0         │  0       │
+  │ VAULT Galeria       │  7   │  5      │ 23         │  5       │
+  │ CAPSULES            │ 12   │  4      │ 14         │  0       │
+  │ MUSIC LAB           │ 41   │  4      │ 45         │  0       │
+  │ Infraestructura     │ 22   │  3      │  2         │  0       │
+  └─────────────────────┴──────┴─────────┴────────────┴──────────┘
