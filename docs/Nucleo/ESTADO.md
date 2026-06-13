@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. UN bug activo.
 > Actualizar antes de cerrar sesión. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S64 — VaultContext → Worker API (migración de fetchDb)
-**Última sesión:** S63 — Worker CRUD eras: 5 endpoints + files GET
-**Rama activa:** `master` (14 commits, +2,440 líneas, 17 archivos)
+**Próximo pliego:** S65 — VAULT: editar + eliminar entradas (Worker API writes)
+**Última sesión:** S64 — VaultContext → Worker API: carga híbrida Drive+Worker
+**Rama activa:** `master` (15 commits, +2,480 líneas, 17 archivos)
 
 ---
 

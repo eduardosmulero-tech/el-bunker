@@ -5,6 +5,27 @@
 
 ---
 
+## S64 — VaultContext → Worker API: entries, eras, tracks (Junio 2026)
+
+**Objetivo:** Migrar la carga de datos de Drive JSON a Worker API para entries, eras y tracks.
+Drive JSON sigue como fuente para libraries, playlists, drops y tags.
+
+### Cambios realizados
+- _fetchWorkerEntries / _fetchWorkerEras / _fetchWorkerTracks: fetch directo a Worker API
+- _refreshWorkerData(token): mergea datos del Worker en db state. safeParse de content (JSON string→objeto). Fallback silencioso a Drive si Worker falla.
+- _fetchJwt ahora retorna el token (antes void) para encadenar con _refreshWorkerData
+- _fetchUserAndDb: carga Drive JSON, luego fire-and-forget _refreshWorkerData para carga progresiva
+- refreshDb: ahora también refresca Worker data tras Drive refresh
+
+### Archivos modificados (1)
+src/core/VaultContext.jsx
+
+### Resultado
+Carga híbrida: Drive (libraries/playlists/drops/tags) + Worker (entries/eras/tracks).
+Consumidores sin cambios — db shape compatible. Code review aprobado.
+
+---
+
 ## S63 — Worker: CRUD eras (5 endpoints) + files GET (Junio 2026)
 
 **Objetivo:** Crear endpoints CRUD para eras y listado de archivos R2 en la Worker API.
