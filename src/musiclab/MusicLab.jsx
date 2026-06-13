@@ -141,6 +141,22 @@ export default function MusicLab({
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
   const [trackSearch,   setTrackSearch]   = useState("");
+  // Fase 6.4 EC-TR7: Ordenación configurable — persiste en localStorage
+  const [trackSort, setTrackSort] = useState(() => {
+    try { return localStorage.getItem(`bunker_tracksort_${db?.currentUser?.id ?? "default"}`) ?? "alpha"; }
+    catch { return "alpha"; }
+  });
+  const SORT_OPTIONS = [
+    { id: "alpha", label: "A-Z", icon: "⇅" },
+    { id: "artist", label: "ARTISTA", icon: "◎" },
+    { id: "vibe", label: "VIBE", icon: "◉" },
+    { id: "plays", label: "PLAYS", icon: "▶" },
+    { id: "recent", label: "RECIENTE", icon: "⧖" },
+  ];
+  const handleSortChange = (sortId) => {
+    setTrackSort(sortId);
+    try { localStorage.setItem(`bunker_tracksort_${db?.currentUser?.id ?? "default"}`, sortId); } catch { /* noop */ }
+  };
   const [showTrackSearch, setShowTrackSearch] = useState(false);
   const [listSearch,    setListSearch]    = useState("");
   const [showListSearch,  setShowListSearch]  = useState(false);
@@ -247,13 +263,42 @@ export default function MusicLab({
   };
 
   // ── Handlers Tracks ──────────────────────────────────────
-  const filteredTracks = useMemo(() => rawTracks
-    .filter((t) => libraryFilter === "all" || (t.tag ?? t.vibe) === libraryFilter)
-    .filter((t) => {
-      if (!trackSearch.trim()) return true;
-      const q = trackSearch.toLowerCase();
-      return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
-    }), [rawTracks, libraryFilter, trackSearch]);
+  const filteredTracks = useMemo(() => {
+    let result = rawTracks
+      .filter((t) => libraryFilter === "all" || (t.tag ?? t.vibe) === libraryFilter)
+      .filter((t) => {
+        if (!trackSearch.trim()) return true;
+        const q = trackSearch.toLowerCase();
+        return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
+      });
+    // Fase 6.4 EC-TR7: Ordenación configurable
+    switch (trackSort) {
+      case "alpha":
+        result = [...result].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
+        break;
+      case "artist":
+        result = [...result].sort((a, b) => (a.artist ?? "").localeCompare(b.artist ?? ""));
+        break;
+      case "vibe":
+        result = [...result].sort((a, b) => {
+          const va = a.tag ?? a.vibe ?? "";
+          const vb = b.tag ?? b.vibe ?? "";
+          return va.localeCompare(vb) || (a.title ?? "").localeCompare(b.title ?? "");
+        });
+        break;
+      case "plays":
+        result = [...result].sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0));
+        break;
+      case "recent":
+        result = [...result].sort((a, b) => {
+          const da = new Date(a.last_played ?? a.added_at ?? 0).getTime();
+          const db = new Date(b.last_played ?? b.added_at ?? 0).getTime();
+          return db - da;
+        });
+        break;
+    }
+    return result;
+  }, [rawTracks, libraryFilter, trackSearch, trackSort]);
 
   const [listTagFilter, setListTagFilter] = useState("all");
   const filteredPlaylists = useMemo(() => dbPlaylists.filter((pl) => {
@@ -758,6 +803,25 @@ export default function MusicLab({
                   </span>
                 </div>
                 <div className="flex gap-1">
+                  {/* Fase 6.4 EC-TR7: Selector de ordenación */}
+                  {SORT_OPTIONS.map((opt) => (
+                    <motion.button
+                      key={opt.id}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => handleSortChange(opt.id)}
+                      title={`Ordenar: ${opt.label}`}
+                      className="text-xs px-1.5 py-1 rounded-sm transition-all flex-shrink-0"
+                      style={{
+                        color: trackSort === opt.id ? accentColor : `${accentColor}44`,
+                        border: `1px solid ${trackSort === opt.id ? accentColor + "66" : accentColor + "22"}`,
+                        background: trackSort === opt.id ? `${accentColor}0d` : "transparent",
+                        fontFamily: FONT_MONO,
+                      }}
+                    >
+                      {opt.icon}
+                    </motion.button>
+                  ))}
+                  <span style={{ width: 1, background: `${accentColor}15`, margin: "2px 2px" }} />
                   <motion.button whileTap={{ scale: 0.9 }} title={`Vista: ${viewMode}`}
                     onClick={cycleViewMode}
                     className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
