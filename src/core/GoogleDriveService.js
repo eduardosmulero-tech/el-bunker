@@ -1285,53 +1285,8 @@ export const clearQueue = async (userId) => {
   return saveQueue(userId, []);
 };
 
-const GoogleDriveService = {
-  // Init
-  initGoogleServices,
-  // Auth
-  requestAccessToken,
-  signOut,
-  isAuthenticated,
-  onAuthChange,
-  // Control de acceso por usuario
-  resolveUser,
-  isAuthorizedEmail,
-  // Core CRUD
-  initDatabase,
-  fetchData,
-  updateData,
-  // Heartbeat cuenta principal
-  triggerHeartbeat,
-  // Bibliotecas — gestión
-  addLibrary,
-  updateLibrary,
-  removeLibrary,
-  markLibraryHeartbeat,
-  _calcLibraryStatus,
-  // Bibliotecas — lectura Drive
-  listLibraryContents,
-  calculateLibraryUsage,
-  checkLibraryCapacity,
-  // Helpers
-  addEra,
-  updateEra,
-  addEntry,
-  addTrack,
-  addDrop,
-  // Queue por usuario (ADR-002 Opción B)
-  fetchQueue,
-  saveQueue,
-  clearQueue,
-  // Playlists
-  fetchPlaylists,
-  createPlaylist,
-  addTrackToPlaylist,
-  deletePlaylist,
-  // Tags (VB11/VB17) — schema 5.0.0
-  addTag,
-  updateTag,
-  deleteTag,
-};
+// El objeto GoogleDriveService se define al final del archivo
+// para evitar TDZ con las funciones declaradas después (fetchPlaylists, etc.)
 
 /**
  * addTag(tagData)
@@ -1543,5 +1498,53 @@ export const getStreamUrl = (track) => {
   return `https://www.googleapis.com/drive/v3/files/${track.drive_file_id}?alt=media&access_token=${token}`;
 };
 
-// ─── DEFAULT EXPORT ───────────────────────────────────────────────────────────
+// ─── DEFAULT EXPORT OBJECT (al final para evitar TDZ) ─────────────────────────
+const GoogleDriveService = {
+  // Init
+  initGoogleServices,
+  // Auth
+  requestAccessToken,
+  signOut,
+  isAuthenticated,
+  onAuthChange,
+  // Control de acceso por usuario
+  resolveUser,
+  isAuthorizedEmail,
+  // Core CRUD
+  initDatabase,
+  fetchData,
+  updateData,
+  // Heartbeat cuenta principal
+  triggerHeartbeat,
+  // Bibliotecas — gestión
+  addLibrary,
+  updateLibrary,
+  removeLibrary,
+  markLibraryHeartbeat,
+  _calcLibraryStatus,
+  // Bibliotecas — lectura Drive
+  listLibraryContents,
+  calculateLibraryUsage,
+  checkLibraryCapacity,
+  // Helpers
+  addEra,
+  updateEra,
+  addEntry,
+  addTrack,
+  addDrop,
+  // Queue por usuario (ADR-002 Opción B)
+  fetchQueue,
+  saveQueue,
+  clearQueue,
+  // Playlists
+  fetchPlaylists,
+  createPlaylist,
+  addTrackToPlaylist,
+  deletePlaylist,
+  // Tags (VB11/VB17) — schema 5.0.0
+  addTag,
+  updateTag,
+  deleteTag,
+};
+
 export default GoogleDriveService;

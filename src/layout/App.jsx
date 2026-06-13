@@ -14,6 +14,7 @@ import LoginScreen                       from "./LoginScreen";
 import Vault                             from "../vault/Vault";
 import { DropAlertModal }               from "../musiclab/DropsManager";
 import { ACID } from "../tokens";
+import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 
 // Code splitting: lazy-load los dos módulos más pesados
 const MusicLab = lazy(() => import("../musiclab/MusicLab"));
@@ -255,23 +256,25 @@ const MusicPage = () => {
   };
 
   return (
-    <Suspense fallback={<PageLoader />}>
-      <MusicLab
-        db={db}
-        userId={user?.id ?? null}
-        jwtToken={jwtToken}
-        onAddTrack={onAddTrack}
-        onAddDrop={onAddDrop}
-        onDeleteTrack={onDeleteTrack}
-        onEditTrack={onEditTrack}
-        onMasterVolumeChange={setMasterVolume}
-        onMarkDropSeen={onMarkDropSeen}
-        patchDb={patchDb}
-        onAddTag={handleAddTag}
-        onUpdateTag={handleUpdateTag}
-        onDeleteTag={handleDeleteTag}
-      />
-    </Suspense>
+    <ChunkErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <MusicLab
+          db={db}
+          userId={user?.id ?? null}
+          jwtToken={jwtToken}
+          onAddTrack={onAddTrack}
+          onAddDrop={onAddDrop}
+          onDeleteTrack={onDeleteTrack}
+          onEditTrack={onEditTrack}
+          onMasterVolumeChange={setMasterVolume}
+          onMarkDropSeen={onMarkDropSeen}
+          patchDb={patchDb}
+          onAddTag={handleAddTag}
+          onUpdateTag={handleUpdateTag}
+          onDeleteTag={handleDeleteTag}
+        />
+      </Suspense>
+    </ChunkErrorBoundary>
   );
 };
 
@@ -282,16 +285,18 @@ const CapsulesPage = () => {
   const { db, user, masterVolume, setMasterVolume, jwtToken } = useVault();
   const { activeTrack } = usePlayer();
   return (
-    <Suspense fallback={<PageLoader />}>
-      <Capsules
-        db={db}
-        userId={user?.id ?? null}
-        jwtToken={jwtToken}
-        activeTrack={activeTrack}
-        masterVolume={masterVolume}
-        onVolumeChange={setMasterVolume}
-      />
-    </Suspense>
+    <ChunkErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Capsules
+          db={db}
+          userId={user?.id ?? null}
+          jwtToken={jwtToken}
+          activeTrack={activeTrack}
+          masterVolume={masterVolume}
+          onVolumeChange={setMasterVolume}
+        />
+      </Suspense>
+    </ChunkErrorBoundary>
   );
 };
 

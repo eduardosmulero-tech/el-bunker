@@ -11,9 +11,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID } from "../tokens";
+import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 
 // Code splitting: VaultGallery (el componente más pesado, incluye leaflet) se carga lazy
 const VaultGallery = lazy(() => import("./VaultGallery"));
+
+// ─── DESIGN TOKENS ───────────────────────────────────────────
+// ⚠️  Definir antes de DEMO_ERAS — se usa en el array (TDZ)
+const PURPLE      = "#bf00ff";
+const GLASS_BG    = "rgba(191,255,0,0.03)";
+const GLASS_BORDER = "rgba(191,255,0,0.12)";
+const FONT_MONO   = "'JetBrains Mono', 'Courier New', monospace";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
@@ -22,12 +30,6 @@ const DEMO_ERAS = [
   { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
   { id: "demo-3", _index: 2, name: "RENACIMIENTO",  description: "Construyendo algo nuevo desde las cenizas.",          start_date: new Date(Date.now() - 80*86400000).toISOString(),   color: "#ff6b35", cover_image: null },
 ];
-
-// ─── DESIGN TOKENS ───────────────────────────────────────────
-const PURPLE      = "#bf00ff";
-const GLASS_BG    = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.12)";
-const FONT_MONO   = "'JetBrains Mono', 'Courier New', monospace";
 
 // ─── HELPERS ─────────────────────────────────────────────────
 
@@ -868,7 +870,8 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
           </AnimatePresence>
           {/* Galería de la Era activa — lazy loaded */}
           <div className="mt-4">
-            <Suspense fallback={
+            <ChunkErrorBoundary>
+              <Suspense fallback={
               <div className="flex items-center justify-center py-8" style={{ fontFamily: FONT_MONO }}>
                 <motion.span animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
                   className="text-xs tracking-[0.3em] uppercase" style={{ color: accent }}>
@@ -879,9 +882,9 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               <VaultGallery
                 entries={entries.filter(e => e.era_id === activeDisplayEra.id && !e.is_deleted)}
                 eras={displayEras}
-                jwtToken={jwtToken}
-              />
-            </Suspense>
+                jwtToken={jwtToken}                />
+              </Suspense>
+            </ChunkErrorBoundary>
           </div>
         </motion.section>
       )}
