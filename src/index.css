@@ -21,8 +21,11 @@ body.vibe-pulse {
 /* Solo bloquea en dispositivos táctiles en landscape (móviles/tablets que pueden rotar).
    Escritorios tienen (hover: hover) y (pointer: fine) → no se ven afectados.
    Tablets grandes sin touch también escapan vía max-width: 1024px.
-   Fix: el desktop ya no queda atrapado en la pantalla negra. */
-@media (orientation: landscape) and ((hover: none) or (max-width: 1024px)) {
+   Fix: el desktop ya no queda atrapado en la pantalla negra.
+   Sintaxis comma-separated (CSS3) para compatibilidad con Safari <16.4 y Firefox <103
+   que no soportan la palabra clave `or` de CSS Media Queries Level 4. */
+@media (orientation: landscape) and (hover: none),
+       (orientation: landscape) and (max-width: 1024px) {
   body::before {
     content: "◈ GIRA EL DISPOSITIVO ◈";
     position: fixed;
