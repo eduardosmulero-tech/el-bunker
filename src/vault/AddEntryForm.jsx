@@ -17,7 +17,7 @@ const ENTRY_TYPES = [
   { id: "photo",      category: "1", icon: "📷", label: "FOTOS",    accept: "image/*",             capture: "environment" },
   { id: "video",      category: "1", icon: "🎬", label: "VÍDEOS",   accept: "video/*",             capture: "environment" },
   { id: "audio",      category: "1", icon: "🎙", label: "AUDIO",    accept: "audio/*",             capture: null },
-  { id: "gif",        category: "1", icon: "🎞", label: "GIF/MEME", accept: "image/gif,image/webp", capture: null },
+  { id: "gif",        category: "1", icon: "🎞", label: "GIFs/MEMES", accept: "image/gif,image/webp", capture: null },
   { id: "screenshot", category: "1", icon: "📱", label: "CAPTURAS", accept: "image/*",             capture: null },
   // ── Otros tipos existentes ────────────────────────────────
   { id: "note",       category: "x", icon: "✎", label: "NOTA" },
@@ -36,6 +36,38 @@ const UPLOAD_FOLDER_BY_TYPE = {
   gif:        "vault/gifs",
   screenshot: "vault/screenshots",
 };
+
+// Sub-componente: grupo de botones de tipo (DRY para selector agrupado 8.1)
+// `headerOpacity` distingue el grupo primario (MULTIMEDIA) del secundario (OTROS).
+function TypeGroup({ category, headerLabel, headerOpacity, currentType, onSelect }) {
+  const types = ENTRY_TYPES.filter((t) => t.category === category);
+  return (
+    <div className="flex flex-col gap-1">
+      <span
+        className="text-[10px] tracking-[0.3em] uppercase px-1"
+        style={{ color: ACID, fontFamily: FONT_MONO, opacity: headerOpacity }}
+      >
+        {headerLabel}
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {types.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => onSelect(t.id)}
+            className={`text-xs px-3 py-2 ${currentType === t.id ? "" : "opacity-30"}`}
+            style={{
+              color: currentType === t.id ? ACID : `${ACID}88`,
+              borderBottom: currentType === t.id ? `1px solid ${ACID}` : "none",
+              fontFamily: FONT_MONO,
+            }}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel }) {
   const isEditing = !!entry;
@@ -122,34 +154,20 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       )}
       {/* Tipo — Fase 8.1: agrupado por categoría. Categoría 1 (MULTIMEDIA) primero. */}
       <div className="flex flex-col gap-2">
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.3em] uppercase opacity-40 px-1" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            1 · MULTIMEDIA
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {ENTRY_TYPES.filter(t => t.category === "1").map(t => (
-              <button key={t.id} onClick={() => setType(t.id)}
-                className={`text-xs px-3 py-2 ${type === t.id ? "" : "opacity-30"}`}
-                style={{ color: type === t.id ? ACID : `${ACID}88`, borderBottom: type === t.id ? `1px solid ${ACID}` : "none", fontFamily: FONT_MONO }}>
-                {t.icon} {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.3em] uppercase opacity-30 px-1" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            OTROS
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {ENTRY_TYPES.filter(t => t.category === "x").map(t => (
-              <button key={t.id} onClick={() => setType(t.id)}
-                className={`text-xs px-3 py-2 ${type === t.id ? "" : "opacity-30"}`}
-                style={{ color: type === t.id ? ACID : `${ACID}88`, borderBottom: type === t.id ? `1px solid ${ACID}` : "none", fontFamily: FONT_MONO }}>
-                {t.icon} {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TypeGroup
+          category="1"
+          headerLabel="1 · MULTIMEDIA"
+          headerOpacity={0.4}
+          currentType={type}
+          onSelect={setType}
+        />
+        <TypeGroup
+          category="x"
+          headerLabel="OTROS"
+          headerOpacity={0.3}
+          currentType={type}
+          onSelect={setType}
+        />
       </div>
 
       {/* Campos */}
