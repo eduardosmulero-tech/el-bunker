@@ -23,7 +23,9 @@ body.vibe-pulse {
    Tablets grandes sin touch también escapan vía max-width: 1024px.
    Fix: el desktop ya no queda atrapado en la pantalla negra.
    Sintaxis comma-separated (CSS3) para compatibilidad con Safari <16.4 y Firefox <103
-   que no soportan la palabra clave `or` de CSS Media Queries Level 4. */
+   que no soportan la palabra clave `or` de CSS Media Queries Level 4. La forma CSS3
+   comma-separated funciona en todos los navegadores con Media Queries (Chrome 1+,
+   Firefox 3.5+, Safari 4+) — Level 4 se añadió en Chrome 104 / Firefox 103 / Safari 16.4. */
 @media (orientation: landscape) and (hover: none),
        (orientation: landscape) and (max-width: 1024px) {
   body::before {
