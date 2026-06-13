@@ -122,16 +122,18 @@ export default {
         const { results } = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
         // Mapear: tag_id → tag (string ID, compatible con frontend track.tag)
         //         tag_color → color (compatible con Drive JSON track.color)
-        // S64 audit: incluir track_tags multi-tag como tags[]
+        // S64 audit: incluir track_tags multi-tag como tags[] (batched para evitar SQL variable limit)
         const trackIds = results.map(r => r.id);
         let tagsByTrack = {};
-        if (trackIds.length) {
-          const placeholders = trackIds.map(() => "?").join(",");
+        const BATCH = 100;
+        for (let i = 0; i < trackIds.length; i += BATCH) {
+          const batch = trackIds.slice(i, i + BATCH);
+          const placeholders = batch.map(() => "?").join(",");
           const { results: allTags } = await env.DB.prepare(
             `SELECT tt.track_id, t.id, t.label, t.icon, t.color
              FROM track_tags tt JOIN tags t ON t.id = tt.tag_id
              WHERE tt.track_id IN (${placeholders})`
-          ).bind(...trackIds).all();
+          ).bind(...batch).all();
           for (const row of allTags) {
             if (!tagsByTrack[row.track_id]) tagsByTrack[row.track_id] = [];
             tagsByTrack[row.track_id].push({ id: row.id, label: row.label, icon: row.icon, color: row.color });
@@ -240,18 +242,22 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT * FROM playlists ORDER BY created_at DESC"
         ).all();
-        // S64 audit: incluir track_ids via playlist_tracks JOIN
+        // S64 audit: incluir track_ids via playlist_tracks JOIN (batched)
         if (results.length) {
           const plIds = results.map(p => p.id);
-          const placeholders = plIds.map(() => "?").join(",");
-          const { results: allTracks } = await env.DB.prepare(
-            `SELECT playlist_id, track_id FROM playlist_tracks
-             WHERE playlist_id IN (${placeholders}) ORDER BY playlist_id, position`
-          ).bind(...plIds).all();
+          const BATCH = 100;
           const tracksByPl = {};
-          for (const row of allTracks) {
-            if (!tracksByPl[row.playlist_id]) tracksByPl[row.playlist_id] = [];
-            tracksByPl[row.playlist_id].push(row.track_id);
+          for (let i = 0; i < plIds.length; i += BATCH) {
+            const batch = plIds.slice(i, i + BATCH);
+            const placeholders = batch.map(() => "?").join(",");
+            const { results: allTracks } = await env.DB.prepare(
+              `SELECT playlist_id, track_id FROM playlist_tracks
+               WHERE playlist_id IN (${placeholders}) ORDER BY playlist_id, position`
+            ).bind(...batch).all();
+            for (const row of allTracks) {
+              if (!tracksByPl[row.playlist_id]) tracksByPl[row.playlist_id] = [];
+              tracksByPl[row.playlist_id].push(row.track_id);
+            }
           }
           for (const pl of results) {
             pl.track_ids = tracksByPl[pl.id] || [];
@@ -386,30 +392,34 @@ export default {
         const { results } = binds.length
           ? await env.DB.prepare(q).bind(...binds).all()
           : await env.DB.prepare(q).all();
-        // S62: enriquecer con tags y archivos (batch queries)
+        // S62: enriquecer con tags y archivos (batched para evitar SQL variable limit)
         if (results.length) {
           const entryIds = results.map(e => e.id);
-          const placeholders = entryIds.map(() => "?").join(",");
-          // Tags via junction
-          const { results: allTags } = await env.DB.prepare(
-            `SELECT et.entry_id, t.id, t.label, t.icon, t.color, t.namespace
-             FROM entry_tags et JOIN tags t ON t.id = et.tag_id
-             WHERE et.entry_id IN (${placeholders})`
-          ).bind(...entryIds).all();
+          const BATCH = 100;
           const tagsByEntry = {};
-          for (const row of allTags) {
-            if (!tagsByEntry[row.entry_id]) tagsByEntry[row.entry_id] = [];
-            tagsByEntry[row.entry_id].push({ id: row.id, label: row.label, icon: row.icon, color: row.color, namespace: row.namespace });
-          }
-          // Files
-          const { results: allFiles } = await env.DB.prepare(
-            `SELECT id, entry_id, r2_key, prefix, filename, mime_type, size_bytes
-             FROM files WHERE entry_id IN (${placeholders})`
-          ).bind(...entryIds).all();
           const filesByEntry = {};
-          for (const row of allFiles) {
-            if (!filesByEntry[row.entry_id]) filesByEntry[row.entry_id] = [];
-            filesByEntry[row.entry_id].push({ id: row.id, r2_key: row.r2_key, prefix: row.prefix, filename: row.filename, mime_type: row.mime_type, size_bytes: row.size_bytes });
+          for (let i = 0; i < entryIds.length; i += BATCH) {
+            const batch = entryIds.slice(i, i + BATCH);
+            const placeholders = batch.map(() => "?").join(",");
+            // Tags via junction
+            const { results: allTags } = await env.DB.prepare(
+              `SELECT et.entry_id, t.id, t.label, t.icon, t.color, t.namespace
+               FROM entry_tags et JOIN tags t ON t.id = et.tag_id
+               WHERE et.entry_id IN (${placeholders})`
+            ).bind(...batch).all();
+            for (const row of allTags) {
+              if (!tagsByEntry[row.entry_id]) tagsByEntry[row.entry_id] = [];
+              tagsByEntry[row.entry_id].push({ id: row.id, label: row.label, icon: row.icon, color: row.color, namespace: row.namespace });
+            }
+            // Files
+            const { results: allFiles } = await env.DB.prepare(
+              `SELECT id, entry_id, r2_key, prefix, filename, mime_type, size_bytes
+               FROM files WHERE entry_id IN (${placeholders})`
+            ).bind(...batch).all();
+            for (const row of allFiles) {
+              if (!filesByEntry[row.entry_id]) filesByEntry[row.entry_id] = [];
+              filesByEntry[row.entry_id].push({ id: row.id, r2_key: row.r2_key, prefix: row.prefix, filename: row.filename, mime_type: row.mime_type, size_bytes: row.size_bytes });
+            }
           }
           // S64 audit: mapear from_user→from, to_user→to para compatibilidad frontend
           for (const entry of results) {
@@ -537,15 +547,19 @@ export default {
         const { results } = await env.DB.prepare(
           "SELECT * FROM eras ORDER BY sort_order, created_at"
         ).all();
-        // Enriquecer con conteo de entradas no eliminadas
+        // Enriquecer con conteo de entradas no eliminadas (batched)
         if (results.length) {
           const eraIds = results.map(e => e.id);
-          const placeholders = eraIds.map(() => "?").join(",");
-          const { results: counts } = await env.DB.prepare(
-            `SELECT era_id, COUNT(*) as entry_count FROM entries WHERE is_deleted = 0 AND era_id IN (${placeholders}) GROUP BY era_id`
-          ).bind(...eraIds).all();
+          const BATCH = 100;
           const countMap = {};
-          for (const row of counts) countMap[row.era_id] = row.entry_count;
+          for (let i = 0; i < eraIds.length; i += BATCH) {
+            const batch = eraIds.slice(i, i + BATCH);
+            const placeholders = batch.map(() => "?").join(",");
+            const { results: counts } = await env.DB.prepare(
+              `SELECT era_id, COUNT(*) as entry_count FROM entries WHERE is_deleted = 0 AND era_id IN (${placeholders}) GROUP BY era_id`
+            ).bind(...batch).all();
+            for (const row of counts) countMap[row.era_id] = row.entry_count;
+          }
           for (const era of results) era.entry_count = countMap[era.id] || 0;
         }
         return json(results);
