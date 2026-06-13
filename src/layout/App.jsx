@@ -391,7 +391,7 @@ const UnauthorizedScreen = ({ userEmail }) => {
 
 // ─── APP CORE (consumes VaultContext) ────────────────────────
 const AppCore = () => {
-  const { authStatus, bootPhase, bootError, isLoading, login, user, db } = useVault();
+  const { authStatus, bootPhase, bootError, isLoading, login, user, db, jwtToken } = useVault();
 
   if (isLoading) return <GlobalLoadingScreen phase={bootPhase} />;
 
@@ -411,7 +411,7 @@ const AppCore = () => {
   const tracks = db?.music_lab?.tracks ?? [];
   const tags   = db?.music_lab?.tags   ?? [];
   return (
-    <PlayerProvider userId={user?.id ?? null} tracks={tracks} tags={tags}>
+    <PlayerProvider userId={user?.id ?? null} tracks={tracks} tags={tags} jwtToken={jwtToken}>
       <AuthenticatedApp />
     </PlayerProvider>
   );

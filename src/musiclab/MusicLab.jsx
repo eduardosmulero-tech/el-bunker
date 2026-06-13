@@ -9,7 +9,7 @@ import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./Playlis
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, stringToColor } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
-import { createPlaylist, addTrackToPlaylist } from "../core/GoogleDriveService";
+
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
 import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
@@ -168,26 +168,75 @@ export default function MusicLab({
     setTimeout(() => setToast(null), 2500);
   };
 
+  const API_BASE_ML = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+
+  // S76: Añadir track a playlist vía Worker API (D1) en lugar de Drive
   const handleSelectPlaylist = async (playlistId) => {
-    if (!pendingTrack) return;
+    if (!pendingTrack || !_jwtToken) return;
     try {
-      await addTrackToPlaylist(playlistId, pendingTrack.id);
+      const res = await fetch(`${API_BASE_ML}/api/playlists/${playlistId}/tracks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+        body: JSON.stringify({ track_id: pendingTrack.id }),
+      });
+      if (!res.ok) throw new Error(`addTrack: ${res.status}`);
+      // Actualizar estado local inmediatamente
+      patchDb((prev) => ({
+        ...prev,
+        music_lab: {
+          ...prev.music_lab,
+          playlists: (prev.music_lab?.playlists ?? []).map((pl) =>
+            pl.id === playlistId
+              ? { ...pl, track_ids: [...(pl.track_ids ?? []), pendingTrack.id] }
+              : pl
+          ),
+        },
+      })).catch(() => {});
       setToast("AÑADIDO A PLAYLIST");
       setTimeout(() => setToast(null), 2500);
-    } catch (err) { console.warn("[Búnker] addTrackToPlaylist falló:", err); }
+    } catch (err) { console.warn("[Búnker] addTrackToPlaylist (Worker):", err); }
     finally { setShowPlaylistModal(false); setPendingTrack(null); setShowCreatePlaylist(false); }
   };
 
+  // S76: Crear playlist vía Worker API (D1) en lugar de Drive
   const handleCreatePlaylist = async (name) => {
-    if (!name?.trim() || !userId) return;
+    if (!name?.trim() || !userId || !_jwtToken) return;
     try {
-      const newPl = await createPlaylist(name, userId);
+      const res = await fetch(`${API_BASE_ML}/api/playlists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+        body: JSON.stringify({ name: name.trim(), created_by: userId }),
+      });
+      if (!res.ok) throw new Error(`createPlaylist: ${res.status}`);
+      const newPl = await res.json();
+      // Actualizar estado local inmediatamente (sin esperar refreshDb)
+      patchDb((prev) => ({
+        ...prev,
+        music_lab: {
+          ...prev.music_lab,
+          playlists: [...(prev.music_lab?.playlists ?? []), { ...newPl, track_ids: [] }],
+        },
+      })).catch(() => {});
       if (pendingTrack) {
-        await addTrackToPlaylist(newPl.id, pendingTrack.id);
+        await fetch(`${API_BASE_ML}/api/playlists/${newPl.id}/tracks`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+          body: JSON.stringify({ track_id: pendingTrack.id }),
+        });
+        // Actualizar estado local: track añadido a la nueva playlist
+        patchDb((prev) => ({
+          ...prev,
+          music_lab: {
+            ...prev.music_lab,
+            playlists: (prev.music_lab?.playlists ?? []).map((pl) =>
+              pl.id === newPl.id ? { ...pl, track_ids: [...(pl.track_ids ?? []), pendingTrack.id] } : pl
+            ),
+          },
+        })).catch(() => {});
       }
       setToast("PLAYLIST CREADA");
       setTimeout(() => setToast(null), 2500);
-    } catch (err) { console.warn("[Búnker] createPlaylist falló:", err); }
+    } catch (err) { console.warn("[Búnker] createPlaylist (Worker):", err); }
     finally { setShowPlaylistModal(false); setPendingTrack(null); }
   };
 

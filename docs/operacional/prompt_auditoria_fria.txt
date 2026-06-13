@@ -1,0 +1,132 @@
+================================================================
+  EL BÚNKER — PROMPT INICIAL PARA AUDITORÍA FRÍA
+  Usar en chat NUEVO de Codebuff con /clear
+  Objetivo: verificar specs↔código sin sesgo del ROADMAP
+================================================================
+
+Eres un auditor de software senior. NO LEAS docs/ROADMAP.md ni 
+docs/Nucleo/ESTADO.md — están inflados y sesgan la evaluación.
+
+Tu única fuente de verdad son los specs y el código fuente.
+
+═══ PASO 1: Leer los specs ═══════════════════════════════════
+
+Lee en este orden:
+1. docs/spec/el_bunker_reproductor_spec_v2.md
+2. docs/spec/el_bunker_specs_externas_y_fases.md
+3. docs/spec/capsulas_spec.md
+4. docs/spec/galeria_vault_spec.md
+5. docs/spec/taxonomia_vault.md
+6. docs/spec/auditoria_cruzada_vault_musiclab.md
+7. docs/spec/inventario_completo_features.txt
+
+═══ PASO 2: Leer TODO el código fuente ═══════════════════════
+
+Lee cada archivo en src/ y workers/:
+- src/core/   (VaultContext.jsx, PlayerContext.jsx, StatsEngine.js, FileUploadService.js, GoogleDriveService.js)
+- src/vault/  (Vault.jsx, VaultGallery.jsx, AddEntryForm.jsx)
+- src/musiclab/ (MusicLab.jsx, WinampPlayer.jsx, DropsManager.jsx, TagManager.jsx, TrackCard.jsx, AddTrackForm.jsx, PlaylistManager.jsx, AudioVisualizer.jsx)
+- src/capsules/ (Capsules.jsx, Timeline.jsx, TimeCapsules.jsx, Recaps.jsx)
+- src/smoke/  (SmokeSession.jsx)
+- src/layout/ (Layout.jsx, App.jsx, LoginScreen.jsx)
+- workers/    (worker.js, schema.sql)
+
+═══ PASO 3: Verificar CADA spec contra el código ═════════════
+
+Para cada spec numerada de el_bunker_reproductor_spec_v2.md, responde:
+
+[Q] COLA (Q1-Q17)
+  Q1: Cola manual tiene prioridad absoluta — está en el código?
+  Q2/Q3: Historial en localStorage — persiste?
+  Q4: Track manual en contexto playlist — indicador visual + botón?
+  Q5: Drag & drop cola — funciona?
+  Q6: Límite 75 tracks — implementado?
+  Q10: Cola manual sobrevive a cambios de contexto?
+  Q14: Separación visual cola manual vs contexto — visible?
+  Q15: Historial scroll arriba (5 tracks atenuados) — existe?
+  Q16/Q17: Soft delete en cola?
+
+[VB] VIBE Y TAGS (VB1-VB20)
+  VB5: Vibe se activa a los 2s de reproducción — código?
+  VB7: Vibe se mantiene en pausa — código?
+  VB9: Vibe afecta toda la UI vía :root — funciona?
+  VB10: Contraste algorítmico texto/iconos?
+
+[C] CONTEXTO DE REPRODUCCIÓN (C1-C5, EC-C1-EC-C5)
+  C4-A: Reproducir a continuación — implementado?
+  C4-B: Añadir a cola — implementado?
+  EC-C3: Bottom sheet reemplazar/añadir contexto — existe?
+
+[P] PLAYBACK (P1-P3, EC-P1-EC-P5)
+  P1: Motor automático local+R2 — implementado?
+  P3/P-M8: Gapless + precarga al 80% — código real?
+
+[SH] SHUFFLE (SH1-SH3)
+  SH1: Aleatoriza restantes, no todos — código?
+
+[L] LOOP (L1-L4)
+  L1: Loop track absoluto — seek inicio en lugar de skip?
+
+[M] MEDIASESSION (M1-M12)
+  M2: Notificación lockscreen con artwork y color vibe — existe?
+  M4: Barra progreso interactiva en notificación — código?
+
+[SC] ESCUCHA COMPARTIDA (SC1-SC14)
+  SC1-SC14: Alguna está implementada? sharedListening está hardcodeado a false
+
+[TR] GESTIÓN DE TRACKS (EC-TR1-EC-TR7)
+  EC-TR5: Thumbnail automático — existe?
+  EC-TR6: Metadatos ID3 del MP3 — existe?
+  EC-TR7: Ordenación configurable — existe?
+
+[LI] GESTIÓN DE PLAYLISTS (EC-LI1-EC-LI6)
+  EC-LI3: Tracks eliminados al abrir playlist?
+
+[A] ANDROID (A1-A6)
+  A1: OOM kill restaura sesión?
+
+[UX] EXPERIENCIA (UX1-UX11)
+  UX1: Double-tap ±10s seek?
+  UX5: Swipe horizontal/vertical?
+
+═══ PASO 4: Galería VAULT ═════════════════════════════════════
+
+Para galeria_vault_spec.md, verifica CADA afirmación:
+- Masonry JS respeta cronología left→right?
+- Zoom de densidad por pinch? (3 niveles: denso/cómodo/aireado)
+- Badges de contexto superpuestos? (quién tomó foto, música, candado)
+- CINEMA: Ken Burns, audioguías, crossfade entre Eras?
+- DIALOGUE: emparejamiento <5min, hilo conector, asimetría poética?
+- MAP: pines reales con Leaflet o placeholder Próximamente?
+- EXHIBITION: canvas 2D Figma/Miro-like o cards básicas?
+- REEL: secuencias auto-generadas con escenas o strip de imágenes?
+- Virtualización agresiva para prevenir OOM en Android?
+
+═══ PASO 5: CAPSULES ══════════════════════════════════════════
+
+Para capsulas_spec.md:
+- Timeline: 12+ iconos de evento? Filtros Era/módulo/tipo/usuario?
+- SmokeSession: historial persiste en localStorage? rachas? vibe-aware?
+- TimeCapsules: selector de contenido entries+playlists? snapshot?
+- RECAP: 6 secciones narrativas con datos reales o placeholders?
+
+═══ PASO 6: Taxonomía VAULT ═══════════════════════════════════
+
+De los ~70 tipos de contenido en 14 categorías (taxonomia_vault.md),
+cuántos están realmente implementados en el código?
+
+═══ PASO 7: Dependencias Google Drive ═════════════════════════
+
+Busca en TODO el código fuente importaciones de GoogleDriveService.
+Qué funciones se siguen usando en lugar de Worker API?
+
+═══ PASO 8: Informe final ═════════════════════════════════════
+
+Para cada módulo, da:
+- % REAL de completitud (solo lo que existe en el código)
+- Lista de specs NO implementadas
+- Lista de specs PARCIALMENTE implementadas (qué falta)
+- Bugs visibles
+
+No uses porcentajes del ROADMAP. Solo lo que veas en el código fuente.
+Sé brutalmente honesto. Si algo es un placeholder, di que es un placeholder.

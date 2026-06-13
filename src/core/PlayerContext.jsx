@@ -15,7 +15,7 @@
 //   de reproducción. No refactorizar sin tests.
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
-import { fetchQueue, saveQueue, getStreamUrl } from "./GoogleDriveService";
+import { getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 const PlayerContext = createContext(null);
@@ -33,7 +33,9 @@ const MAX_QUEUE_SIZE = 75;
 // S78: localStorage keys
 const SESSION_KEY = (uid) => `el_bunker_session_${uid}`;
 
-export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
+const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+
+export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtToken = null }) {
   // Resolver acento desde tags de DB primero, fallback a canonicos de tokens.js
   const resolveVibeAccent = useCallback((tagId) => {
     if (!tagId) return null;
@@ -150,39 +152,55 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   const wakeLockRef = useRef(null);
 
   // ── Persistencia cola en Drive ────────────────────────────
+  // S76: Fetch queue from Worker API (D1) instead of Drive
   useEffect(() => {
-    if (!userId) return;
-    fetchQueue(userId)
-      .then((trackIds) => {
-        if (!trackIds.length) return;
-        const qt = trackIds
-          .map((id) => tracks.find((t) => t.id === id))
-          .filter(Boolean)
-          .map((t) => ({ ...t, _manual: false }));
+    if (!userId || !jwtToken) return;
+    fetch(`${API_BASE}/api/queue/${userId}`, {
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((items) => {
+        if (!Array.isArray(items) || !items.length) return;
+        const qt = items
+          .map((item) => {
+            const t = tracks.find((tr) => tr.id === item.track_id);
+            return t ? { ...t, _manual: !!item._manual } : null;
+          })
+          .filter(Boolean);
         if (!qt.length) return;
         setLocalQueue(qt);
         setActiveTrack(qt[0]);
       })
-      .catch((err) => console.warn("[Búnker] fetchQueue:", err));
+      .catch((err) => console.warn("[Búnker] fetchQueue (Worker):", err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, jwtToken]);
 
+  // S76: Save queue to Worker API (D1) instead of Drive
   useEffect(() => {
-    if (!userId) return;
-    const ids = activeTrack
-      ? [activeTrack.id, ...localQueue.filter((t) => t.id !== activeTrack.id).map((t) => t.id)]
-      : localQueue.map((t) => t.id);
-    if (!ids.length) return;
+    if (!userId || !jwtToken) return;
+    const items = localQueue.map((t, i) => ({
+      track_id: t.id,
+      is_manual: t._manual ? 1 : 0,
+      context_name: queueContextName || null,
+    }));
+    if (!items.length && !activeTrack) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSyncStatus("syncing");
     const timer = setTimeout(() => {
-      saveQueue(userId, ids)
-        .then(() => setSyncStatus("idle"))
+      fetch(`${API_BASE}/api/queue/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+        body: JSON.stringify({ items }),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`queue save: ${res.status}`);
+          setSyncStatus("idle");
+        })
         .catch(() => { setSyncStatus("error"); setTimeout(() => setSyncStatus("idle"), 4000); });
     }, 2000);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTrack?.id, localQueue, userId]);
+  }, [activeTrack?.id, localQueue, userId, jwtToken]);
 
   // ── Skip ─────────────────────────────────────────────────
   // Q14: cola unificada — skip avanza en localQueue en orden.
