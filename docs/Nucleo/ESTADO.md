@@ -37,7 +37,9 @@ ninguno
 
 ---
 
-## Resumen de estado (post-S79)
+## Resumen de estado (post-S80)
+
+> S80 fue bugfixes-only (TDZ/refs); % por módulo no cambió respecto a S79.
 
 | Módulo | % | Estado |
 |---|---|---|
