@@ -5,6 +5,79 @@
 
 ---
 
+## S66 — W3: tags MusicLab sincronizan con D1 (Junio 2026)
+
+**Objetivo:** Fix del último bug activo — tags de MusicLab solo se guardaban en Drive JSON.
+
+### Cambios
+- App.jsx: handleAddTag/UpdateTag/DeleteTag ahora hacen dual-write: Drive JSON (patchDb) + Worker API (POST/PATCH/DELETE /api/tags)
+- Worker: POST /api/tags acepta body.id del cliente para mantener consistencia de IDs Drive↔D1
+
+### Archivos modificados (2)
+src/layout/App.jsx, workers/worker.js
+
+### Resultado
+0 bugs activos. ESLint limpio. Tags sincronizados en ambos stores.
+
+---
+
+## S65b — 7 bugs G corregidos: VAULT/CAPSULES/Smoke/Reproductor (Junio 2026)
+
+**Objetivo:** Fixear bugs visuales y funcionales reportados por el usuario.
+
+### Bugs corregidos
+- G1: VaultGallery densidad — `columns-2` eliminado, `columnWidth` controla layout real
+- G2: Botón "+ ERA" funcional — form inline nombre+color → Worker API POST /api/eras → patchDb local
+- G3: VAULT color — headers, botón +ENTRADA, footer usan trackVibe accent dinámico
+- G4: CAPSULES color — sub-tab bar, Timeline, Recaps, TimeCapsules reciben accentColor
+- G5: Timeline paginación (50 items, "load more") + toggle modos timeline/compact
+- G6: SmokeSession — slider de volumen interactivo, disabled en fade-out
+- G7: MiniPlayer persistente en Layout.jsx — visible en VAULT/CAPSULES, sin desync de estado
+
+### Archivos modificados (6)
+VaultGallery.jsx, Vault.jsx, Capsules.jsx, Timeline.jsx, SmokeSession.jsx, Layout.jsx
+
+### Resultado
++323/−35 líneas. ESLint: 0. 7 bugs cerrados.
+
+---
+
+## S65 — VAULT editar/eliminar entradas vía Worker API (Junio 2026)
+
+**Objetivo:** Implementar edición y eliminación de entradas del VAULT usando los endpoints PATCH/DELETE /api/entries/:id del Worker.
+
+### Cambios
+- VaultContext.jsx: updateEntry(PATCH) + deleteEntry(DELETE) como acciones públicas con optimistic state
+- AddEntryForm.jsx: modo edición (prop `entry`) — pre-popula campos, botón ACTUALIZAR, onUpdate
+- Vault.jsx: modal overlay edición, botones ✎/✕ en EraDetailPanel, body scroll lock, alert en error
+
+### Archivos modificados (3)
+src/core/VaultContext.jsx, src/vault/AddEntryForm.jsx, src/vault/Vault.jsx
+
+### Resultado
+Flujo completo: click título → modal → Worker PATCH → optimistic update. ✕ → confirm → Worker DELETE → soft-delete.
+
+---
+
+## S65a — 5 bugs corregidos: Q2/Q3/Q10/SH1/L1 (Junio 2026)
+
+**Objetivo:** Corregir bugs de reproducción y funcionalidad pendientes.
+
+### Bugs corregidos
+- Q2: skip(1) con cola manual itera saltando duplicados del activeTrack
+- Q3: shuffle filtra playHistory al regenerar orden aleatorio
+- Q10: playTrack añade al historial al cambiar de track
+- SH1: SmokeSession persiste endTime en localStorage — sobrevive cambios de pestaña
+- L1: addLibrary refresca libraryCapacity automáticamente
+
+### Archivos modificados (3)
+src/core/PlayerContext.jsx, src/smoke/SmokeSession.jsx, src/core/VaultContext.jsx
+
+### Resultado
+5 bugs cerrados. ESLint: 0.
+
+---
+
 ## S65 — Limpieza ESLint: 78→0 problemas en src/ (Junio 2026)
 
 **Objetivo:** Eliminar toda la deuda técnica de ESLint acumulada en 18 archivos.
