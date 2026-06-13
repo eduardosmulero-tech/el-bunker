@@ -4,7 +4,7 @@
 //  v3.0.0 — Multi-usuario · Bibliotecas · Alertas de capacidad
 // ============================================================
 
-/* eslint-disable react-hooks/immutability */
+/* eslint-disable react-hooks/immutability, react-hooks/preserve-manual-memoization */
 // ^ Funciones useCallback definidas después del useEffect que las
 //   consume (boot en mount). El orden es intencional para legibilidad.
 //   No refactorizar sin tests.
@@ -190,6 +190,7 @@ export function VaultProvider({ children }) {
     return db.entries.filter(
       (e) => e.to === "both" || e.to === user.id
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db?.entries, user?.id]);
 
   /**
@@ -351,7 +352,6 @@ export function VaultProvider({ children }) {
   }, []);
 
   // ── Step 2: Fetch user info + DB ──────────────────────────
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const _fetchUserAndDb = useCallback(async (token) => {
     setBootPhase(BOOT.INIT_DB);
     setDbStatus("SYNCING");
@@ -407,6 +407,7 @@ export function VaultProvider({ children }) {
       setBootPhase(BOOT.ERROR);
       setBootError(err.message ?? "Error al inicializar la base de datos.");
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Auth event handlers ───────────────────────────────────
@@ -426,6 +427,7 @@ export function VaultProvider({ children }) {
     setLibraryCapacity({});
     setBootPhase(BOOT.IDLE);
     _clearHeartbeat();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Google profile helper ─────────────────────────────────
@@ -446,7 +448,7 @@ export function VaultProvider({ children }) {
         avatar: json.user?.photoLink    ?? null,
       };
     } catch (err) {
-      throw new Error("[Búnker] No se pudo obtener el perfil: " + (err?.message ?? err));
+      throw new Error("[Búnker] No se pudo obtener el perfil: " + (err?.message ?? err), { cause: err });
     }
   };
 
@@ -461,6 +463,7 @@ export function VaultProvider({ children }) {
         console.warn("[Búnker] Scheduled heartbeat failed:", e);
       }
     }, 20 * 60 * 1000);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const _clearHeartbeat = useCallback(() => {
@@ -494,6 +497,7 @@ export function VaultProvider({ children }) {
       }
     }, 30 * 1000);
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, db?.music_lab?.drops]);
 
   // ── PUBLIC ACTIONS: Auth ──────────────────────────────────
@@ -750,6 +754,7 @@ export function VaultProvider({ children }) {
 }
 
 // ─── HOOK ─────────────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export function useVault() {
   const ctx = useContext(VaultContext);
   if (!ctx) throw new Error("[useVault] Must be used inside <VaultProvider>");

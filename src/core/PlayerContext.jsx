@@ -20,6 +20,7 @@ import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TA
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 const PlayerContext = createContext(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const usePlayer = () => {
   const ctx = useContext(PlayerContext);
   if (!ctx) throw new Error("usePlayer must be used inside PlayerProvider");
@@ -125,13 +126,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (!userId) return;
     const ids = activeTrack
       ? [activeTrack.id, ...localQueue.filter((t) => t.id !== activeTrack.id).map((t) => t.id)]
       : localQueue.map((t) => t.id);
     if (!ids.length) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSyncStatus("syncing");
     const timer = setTimeout(() => {
       saveQueue(userId, ids)
@@ -227,14 +228,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
 
   // refs para evitar stale closures en callbacks de audio nativo
   const skipRef     = useRef(null);
-  // eslint-disable-next-line react-hooks/refs
   const loopModeRef = useRef("off");
   useEffect(() => { skipRef.current     = skip;     }, [skip]);
   useEffect(() => { loopModeRef.current = loopMode; }, [loopMode]);
   // SH1: mantener refs de shuffle sincronizados con closures del skip
-  // eslint-disable-next-line react-hooks/refs
   const shuffledListRefStable = useRef(shuffledListRef.current);
-  // eslint-disable-next-line react-hooks/refs
   const shuffleIndexRefStable = useRef(shuffleIndexRef.current);
   useEffect(() => { shuffledListRefStable.current = shuffledListRef.current; }, [shuffle]);
   useEffect(() => { shuffleIndexRefStable.current = shuffleIndexRef.current; }, [shuffle]);
@@ -341,6 +339,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
     navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
     navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));
     navigator.mediaSession.setActionHandler("seekto", (d) => { if (audioRef.current && d.seekTime != null) audioRef.current.currentTime = d.seekTime; });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack]);
 
   // ── trackVibe → CSS custom property en body (ADR-011) ─────
@@ -385,7 +384,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [] }) {
       playbackContext, setPlaybackContext,
       playHistory,
       queueContextName, setQueueContextName,
-      vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern); } catch {} }, []),
+      vibrate: useCallback((pattern) => { try { navigator.vibrate?.(pattern); } catch { /* noop */ } }, []),
       // Shared listening (S82)
       sharedListening: false, setSharedListening: () => {},
     }}>

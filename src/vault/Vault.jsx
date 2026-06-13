@@ -539,9 +539,10 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   // Auto-select first era on mount only
   useEffect(() => {
     if (eras_arr.length > 0 && !activeEraId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveEraId(eras_arr[0].id);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eras_arr.length]);
 
   // ── Drag-to-scroll on desktop ─────────────────────────────

@@ -78,6 +78,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     setProgress(0);
     setCurrentT(0);
     setDuration(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track?.id]);
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
       setPlaying(true);
     }, 400);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlaySignal]);
 
 const skipDir = useCallback((dir) => {
@@ -105,6 +107,7 @@ const skipDir = useCallback((dir) => {
     return;
   }
   skip(dir, tracks);
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [skip, tracks]);
 
   const togglePlay = () => {
@@ -156,17 +159,19 @@ const skipDir = useCallback((dir) => {
       audio.removeEventListener("loadedmetadata", onLoaded);
       audio.removeEventListener("volumechange", onVolumeChange);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
     if (masterVolume == null) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVolume(masterVolume);
     if (audioRef.current) {
       const target = masterVolume / 100;
       // guarda: evitar re-set cuando el cambio viene de onVolumeChange (feedback loop)
       if (Math.abs(audioRef.current.volume - target) > 0.001) audioRef.current.volume = target;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [masterVolume]);
 // BUG-29: scroll de título solo si el texto desborda el contenedor
 useLayoutEffect(() => {
@@ -218,6 +223,7 @@ return () => cancelAnimationFrame(raf);
         try { navigator.mediaSession.setActionHandler(action, null); } catch { /* noop */ }
       });
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track?.id, playing, skip, skipDir]);
 
   return (

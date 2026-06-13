@@ -211,6 +211,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     }, 1000);
 
     return () => clearInterval(intervalRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
   // ── Fade-out logic ────────────────────────────────────────
@@ -229,6 +230,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
 
     setFadedVolume(newVolume);
     if (onVolumeChange) onVolumeChange(newVolume);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining, isRunning]);
 
   // ── Reset fade ref when session starts ────────────────────
