@@ -9,7 +9,7 @@ import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm from "./AddEntryForm";
-import { ColorPicker } from "../musiclab/TagManager";
+import { ColorPicker } from "../core/ColorPicker";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
