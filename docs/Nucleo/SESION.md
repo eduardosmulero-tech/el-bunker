@@ -5,6 +5,19 @@
 
 ---
 
+## S60+S61 — Verificación: imports ACID y JWT wiring (Junio 2026)
+
+**Objetivo:** Verificar si S60 y S61 estaban pendientes o ya implementados.
+
+### Resultado
+- **S60**: 0 imports rotos — los 6 archivos MusicLab ya importan ACID desde `../tokens`
+- **S61**: JWT wiring ya implementado — VaultContext→FileUploadService/StatsEngine en login, restore y logout
+
+### Archivos modificados
+Ninguno (solo docs: ROADMAP.md, ESTADO.md, SESION.md)
+
+---
+
 ## S66 — W3: tags MusicLab sincronizan con D1 (Junio 2026)
 
 **Objetivo:** Fix del último bug activo — tags de MusicLab solo se guardaban en Drive JSON.
