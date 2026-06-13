@@ -1,191 +1,130 @@
 ================================================================
-  EL BÚNKER — AUDITORÍA D1 + REPARACIÓN COMPLETA
-  Fecha: Junio 2026 · Commit: 3b38dbb
+  EL BUNKER — AUDITORIA D1 + RE-MIGRACION COMPLETA
+  Fecha: Junio 2026
+  Commits: 3b38dbb (auditoria) + 6c86beb (fix login admin)
 ================================================================
 
 RESUMEN
 -------
-Se auditó CADA campo de CADA entidad cruzando:
+Se audito CADA campo de CADA entidad cruzando:
   - Drive JSON (EMPTY_DB en GoogleDriveService.js)
   - D1 Schema (16 tablas en workers/schema.sql)
   - Worker API (11 endpoints en workers/worker.js)
   - Migration script (tools/migrate_drive_to_d1.py)
   - Frontend (VaultContext._buildDbFromWorker)
 
-Se encontraron 8 gaps (4 críticos, 2 altos, 2 moderados).
-TODOS fueron corregidos en el commit 3b38dbb.
+8 gaps encontrados y corregidos. 4 archivos modificados.
 
 ================================================================
-  GAPS ENCONTRADOS Y CORREGIDOS
+  PASO A PASO — LO QUE TIENES QUE HACER AHORA
 ================================================================
 
-P0 — CRÍTICOS (pérdida de datos o rotura total)
--------------------------------------------------
-
-[1] IDs y timestamps históricos destruidos
-    - Problema: Los 6 POST del Worker generaban crypto.randomUUID()
-      y datetime('now') ignorando los valores del cliente.
-      Esto rompía TODAS las FK (era_id, track_id).
-    - Fix: Worker acepta body.id, body.created_at en todos los POST.
-      Archivos: workers/worker.js (6 endpoints)
-
-[2] Eras migradas como entries (milestone)
-    - Problema: migrate_drive_to_d1.py hacía POST /api/entries
-      con type="milestone" para cada era. Se perdían color,
-      cover_image, start_date, end_date.
-    - Fix: Ahora usa POST /api/eras directamente.
-      Archivos: tools/migrate_drive_to_d1.py
-
-[3] Playlists sin track_ids
-    - Problema: GET /api/playlists no hacía JOIN con playlist_tracks.
-      Migration script ignoraba track_ids.
-    - Fix: Worker GET JOIN playlist_tracks → track_ids[].
-      Migration script sección 7b rellena tracks.
-      Archivos: workers/worker.js, tools/migrate_drive_to_d1.py
-
-[4] drive_file_id perdido
-    - Problema: getStreamUrl() usa track.r2_key || track.drive_file_id
-      como fallback. D1 no tenía columna drive_file_id.
-      Legacy tracks sin r2_key quedaban sin stream URL.
-    - Fix: Añadida columna drive_file_id TEXT en schema.sql.
-      Worker GET/POST/PATCH la incluyen. Migration la envía.
-      Archivos: workers/schema.sql, workers/worker.js,
-                tools/migrate_drive_to_d1.py
-
-P1 — ALTOS (filtrado/UI roto en frontend)
--------------------------------------------
-
-[5] from_user/to_user ≠ from/to (frontend roto)
-    - Problema: D1 devuelve from_user/to_user pero frontend
-      filtra con e.to/e.from (myEntries, myMessages).
-      Todos los filtros daban false → 0 resultados.
-    - Fix: Worker GET entries/drops mapea ambos nombres.
-      VaultContext._buildDbFromWorker también mapea.
-      Archivos: workers/worker.js, src/core/VaultContext.jsx
-
-[6] Multi-tags en tracks perdidos
-    - Problema: Drive JSON tenía track.tags[] (multi-vibe).
-      D1 tiene track_tags junction pero GET no la usaba.
-    - Fix: GET /api/tracks JOIN track_tags → tags[] array.
-      POST /api/tracks procesa body.tags → track_tags.
-      Migration script envía tags[] con ID extraction.
-      Archivos: workers/worker.js, tools/migrate_drive_to_d1.py
-
-P2 — MODERADOS (inconsistencias)
----------------------------------
-
-[7] Drops sin favorited/favorited_by
-    - Problema: POST /api/drops ignoraba favorited/favorited_by.
-      Migration script no los enviaba.
-    - Fix: Worker POST los acepta. Migration los envía.
-      Archivos: workers/worker.js, tools/migrate_drive_to_d1.py
-
-[8] Migration omitía color, play_count, last_played en tracks
-    - Problema: El script solo enviaba 9 campos de ~18 posibles.
-    - Fix: Ahora envía los 18 campos completos.
-      Archivos: tools/migrate_drive_to_d1.py
-
-================================================================
-  ARCHIVOS MODIFICADOS (4)
-================================================================
-
-workers/schema.sql
-  + drive_file_id TEXT en tracks
-
-workers/worker.js (cambios en 11 endpoints)
-  POST /api/tracks:        id, created_at, drive_file_id, color,
-                           play_count, last_played, tags multi
-  PATCH /api/tracks:       whitelist ampliada (3 campos nuevos)
-  GET /api/tracks:         JOIN track_tags → tags[] multi
-  POST /api/entries:       id, created_at, from_user
-  GET /api/entries:        from_user→from, to_user→to
-  GET /api/entries/:id:    from/to mapping
-  POST /api/eras:          id, created_at
-  POST /api/drops:         id, created_at, from_user, favorited,
-                           favorited_by
-  GET /api/drops:          from_user→from, to_user→to
-  POST /api/playlists:     id, created_at, created_by
-  GET /api/playlists:      JOIN playlist_tracks → track_ids[]
-
-src/core/VaultContext.jsx
-  _buildDbFromWorker: from_user→from, to_user→to en entries y drops
-
-tools/migrate_drive_to_d1.py
-  Eras:     POST /api/eras (no /api/entries)
-  Tracks:   18 campos (antes 9), tags con ID extraction
-  Drops:    11 campos (antes 5), from_user/to_user, favorited
-  Entries:  from→from_user, to→to_user mapping, tags ID extraction
-  Playlists: id preservado, created_by, created_at
-  Sección 7b: POST track_ids a /api/playlists/:id/tracks
-
-================================================================
-  MIGRACIONES D1 PENDIENTES (TÚ)
-================================================================
-
-La columna drive_file_id se añadió a schema.sql pero NO existe
-en la base de datos live de Cloudflare. Hay que crearla:
-
-  npx wrangler d1 execute el-bunker-db --command "ALTER TABLE tracks ADD COLUMN drive_file_id TEXT;"
-
-También verifica que la columna color existe (se añadió en el
-commit df35dbd pero puede que no se haya ejecutado la migración):
-
-  npx wrangler d1 execute el-bunker-db --command "ALTER TABLE tracks ADD COLUMN color TEXT;"
-
-================================================================
-  PASO A PASO — RE-MIGRACIÓN COMPLETA
-================================================================
-
-PASO 1 — Verificar/esquema D1
--------------------------------
+PASO 1 — Desplegar el Worker actualizado
+------------------------------------------
   cd C:\proyectos\el-bunker
 
+  npx wrangler deploy
+
+PASO 2 — Anadir columnas nuevas a D1 live
+--------------------------------------------
   npx wrangler d1 execute el-bunker-db --command "ALTER TABLE tracks ADD COLUMN drive_file_id TEXT;"
   npx wrangler d1 execute el-bunker-db --command "ALTER TABLE tracks ADD COLUMN color TEXT;"
 
-  (Si ya existen, wrangler dará error — es seguro ignorarlo)
+  (Si ya existen, wrangler da error — es seguro ignorarlo)
 
-PASO 2 — Desplegar Worker actualizado
----------------------------------------
-  npx wrangler deploy
+PASO 3 — Sacar el JWT desde la app
+-------------------------------------
+  1. Abre https://el-bunker-beige.vercel.app
+  2. Loguea con admin: thebunker.admin@gmail.com
+  3. F12 → Console → pega y ejecuta:
 
-  Verificar:
-  curl https://el-bunker-api.thebunker-admin.workers.dev/api/health
-  # Debe devolver {"status":"ok","db":true,...}
+       copy(localStorage.getItem('bunker_jwt'))
 
-PASO 3 — Obtener JWT para la migración
-----------------------------------------
-  # Necesitas un Google token. Puedes obtenerlo desde la app
-  # (DevTools → Application → LocalStorage → bunker_token)
-  # O ejecutar el login:
-
-  python3 tools/migrate_drive_to_d1.py --login tuemail@gmail.com <google_token>
-
-  # Guarda el JWT que imprime. Lo usarás en el paso 4.
+  4. El JWT ya esta en tu portapapeles. Guardalo.
 
 PASO 4 — Re-migrar desde backup JSON
---------------------------------------
-  # Opción A: si tienes un backup JSON exportado de la app:
-  python3 tools/migrate_drive_to_d1.py --file backup.json --jwt <JWT>
+---------------------------------------
+  python3 tools/migrate_drive_to_d1.py --file backup.json --jwt "<PEGA_EL_JWT>"
 
-  # Opción B: si quieres vaciar D1 primero y re-migrar limpio:
-  # (¡CUIDADO! Esto borra TODO en D1)
-  bash tools/recreate_schema.sh
-  # Luego:
-  python3 tools/migrate_drive_to_d1.py --file backup.json --jwt <JWT>
+  Si no tienes backup.json, exportalo desde la app:
+  Entra como admin → pestaNa VAULT → boton "EXPORTAR BACKUP JSON"
 
-  El script es IDEMPOTENTE — puedes ejecutarlo varias veces.
-  Los duplicados se saltan (HTTP 409 o constraint violation).
+PASO 5 — Verificar que los datos entraron bien
+-------------------------------------------------
+  curl -H "Authorization: Bearer <JWT>" https://el-bunker-api.thebunker-admin.workers.dev/api/tracks | python3 -m json.tool | head -60
 
-PASO 5 — Verificar
---------------------
-  # Comprobar que hay datos:
-  curl -H "Authorization: Bearer <JWT>" https://el-bunker-api.thebunker-admin.workers.dev/api/tracks | python3 -m json.tool | head -50
-  curl -H "Authorization: Bearer <JWT>" https://el-bunker-api.thebunker-admin.workers.dev/api/eras | python3 -m json.tool | head -50
-  curl -H "Authorization: Bearer <JWT>" https://el-bunker-api.thebunker-admin.workers.dev/api/playlists | python3 -m json.tool | head -50
+  Busca que cada track tenga:
+    "tag": "dnb"           (string, no undefined)
+    "color": "#ff6b35"     (hex, no #bfff00 generico)
+    "tags": [...]          (array multi-tag)
 
-  # Verificar que los tracks tienen tag (string) y color (hex):
-  # Busca "tag": "dnb" y "color": "#ff6b35" en la respuesta
+  curl -H "Authorization: Bearer <JWT>" https://el-bunker-api.thebunker-admin.workers.dev/api/playlists | python3 -m json.tool | head -40
 
-  # Verificar que las playlists tienen track_ids:
-  # Busca "track_ids": [...] en la respu
+  Busca que cada playlist tenga:
+    "track_ids": [...]     (no vacio si tenia tracks)
+
+  curl -H "Authorization: Bearer <JWT>" https://el-bunker-api.thebunker-admin.workers.dev/api/eras | python3 -m json.tool | head -40
+
+  Busca que las eras tengan:
+    "color": "#..."
+    "cover_image": "..."
+    "start_date": "..."
+
+================================================================
+  GAPS CORREGIDOS (para referencia)
+================================================================
+
+P0 — CRITICOS (perdida de datos o rotura total)
+-------------------------------------------------
+
+[1] IDs y timestamps historicos destruidos
+    Fix: Worker acepta body.id, body.created_at en todos los POST.
+    Archivo: workers/worker.js
+
+[2] Eras migradas como entries (sin color, cover, fechas)
+    Fix: POST /api/eras directamente.
+    Archivo: tools/migrate_drive_to_d1.py
+
+[3] Playlists sin track_ids
+    Fix: GET /api/playlists JOIN playlist_tracks → track_ids[].
+         Migration rellena tracks seccion 7b.
+    Archivos: workers/worker.js, tools/migrate_drive_to_d1.py
+
+[4] drive_file_id perdido (stream fallback roto)
+    Fix: Columna drive_file_id en schema + Worker + migration.
+    Archivos: workers/schema.sql, workers/worker.js, tools/migrate_drive_to_d1.py
+
+P1 — ALTOS (filtrado/UI roto)
+-------------------------------
+
+[5] from_user/to_user != from/to (frontend filtraba con undefined)
+    Fix: Worker GET mapea ambos nombres. VaultContext tambien.
+    Archivos: workers/worker.js, src/core/VaultContext.jsx
+
+[6] Multi-tags en tracks perdidos
+    Fix: GET /api/tracks JOIN track_tags → tags[].
+         POST procesa body.tags → track_tags junction.
+    Archivos: workers/worker.js, tools/migrate_drive_to_d1.py
+
+P2 — MODERADOS
+---------------
+
+[7] Drops sin favorited/favorited_by
+    Fix: Worker POST acepta. Migration envia.
+
+[8] Migration omitia color, play_count, last_played en tracks
+    Fix: Migration envia los 18 campos completos.
+
+================================================================
+  FIX ADICIONAL: Login admin no funcionaba (403)
+================================================================
+
+Problema: _fetchGoogleProfile usaba drive/v3/about que requiere
+el scope 'drive'. Google restringe este scope en apps no verificadas.
+La cuenta admin recibia 403 y quedaba atrapada en pantalla de error.
+
+Fix: Cambiado a oauth2/v3/userinfo (solo necesita userinfo.email
++ userinfo.profile, que Google siempre concede).
+
+Archivo: src/core/VaultContext.jsx
+Commit: 6c86beb
