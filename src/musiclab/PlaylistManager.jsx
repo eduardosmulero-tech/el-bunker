@@ -58,6 +58,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
   const [vibeFilter, setVibeFilter] = useState("all");
+  const [dragOverIdx, setDragOverIdx] = useState(null);
   const dragTrackIdx = useRef(null);
 
   if (!playlist) return null;
@@ -104,7 +105,8 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
   };
 
   const handleTrackDragStart = (i) => { dragTrackIdx.current = i; };
-  const handleTrackDragOver  = (e) => { e.preventDefault(); };
+  const handleTrackDragOver  = (e, i) => { e.preventDefault(); setDragOverIdx(i); };
+  const handleTrackDragLeave  = () => { setDragOverIdx(null); };
   const handleTrackDrop      = (i) => {
     if (dragTrackIdx.current === null || dragTrackIdx.current === i) return;
     setOrderedIds((ids) => {
@@ -112,6 +114,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
       const [moved] = next.splice(dragTrackIdx.current, 1);
       next.splice(i, 0, moved);
       dragTrackIdx.current = null;
+      setDragOverIdx(null);
       onReorderTracks?.(playlist.id, next);
       return next;
     });
@@ -204,11 +207,16 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
               <div key={track.id}
                 draggable
                 onDragStart={() => handleTrackDragStart(i)}
-                onDragOver={handleTrackDragOver}
+                onDragOver={(e) => handleTrackDragOver(e, i)}
+                onDragLeave={handleTrackDragLeave}
                 onDrop={() => handleTrackDrop(i)}
                 style={{ display: "flex", alignItems: "center", gap: 10,
-                  padding: "9px 16px", borderBottom: `1px solid ${ACID}08`, cursor: "grab" }}>
-                <span style={{ color: ACID, opacity: 0.25, fontSize: 11, flexShrink: 0 }}>⠿</span>
+                  padding: "9px 16px",
+                  borderTop: `1px solid ${dragOverIdx === i ? ACID : "transparent"}`,
+                  borderBottom: `1px solid ${dragOverIdx === i ? ACID : ACID + "08"}`,
+                  borderStyle: dragOverIdx === i ? "dashed" : "solid",
+                  cursor: "grab" }}>
+                <span style={{ color: ACID, opacity: 0.6, fontSize: 11, flexShrink: 0 }}>⠿</span>
                 <div
                   style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
                   onClick={() => handlePlayFromTrack(track, plTracks.indexOf(track))}
