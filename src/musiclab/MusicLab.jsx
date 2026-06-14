@@ -4,7 +4,7 @@
 //  Componentes extraídos a archivos propios (PLIEGO-035).
 // ============================================================
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, stringToColor } from "../tokens";
@@ -134,9 +134,104 @@ export default function MusicLab({
     playHistory,
     queueContextName, setQueueContextName,
     trackVibe, resolveVibeAccent,
+    // S85d: para los toasts Q16/Q17 (DESHACER en remove de cola + undo reorder)
+    undoRemoveFromQueue, undoColaReorder, undoPlaylistTracksReorder,
   } = usePlayer();
   // accentColor — sigue el vibe activo. ACID si no hay track.
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
+
+  // S85d Q16 + EC-P4: Escuchar eventos emitidos por PlayerContext y mostrar
+  // toasts persistentes con acción UNDO (Q16) o mensaje informativo (EC-P4).
+  // Estos eventos complementan (no reemplazan) el inline undo bar del
+  // WinampPlayer — el toast es discoverable desde cualquier tab.
+  // toastTimeoutRef: cancela timeouts anteriores para evitar que un toast
+  // antiguo (5s) borre prematuramente un toast nuevo (2.5s) — race condition
+  // típica cuando el usuario hace varias acciones rápidas.
+  const toastTimeoutRef = useRef(null);
+  // S85d: useCallback con [] para memoizar la función (estable a través de renders).
+  // Sin esto, `react-hooks/refs` v6 flaggea showToast como "ref accedida durante render"
+  // porque la función lee toastTimeoutRef.current. Con useCallback la referencia es
+  // estable → la regla considera que la función no se recrea y por tanto el acceso al
+  // ref ocurre solo en event handlers. showToast solo usa setToast (estable) y
+  // toastTimeoutRef (ref) — sin otras dependencias, [] es seguro.
+  const showToast = useCallback((toastData, duration = 2500) => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast(toastData);
+    toastTimeoutRef.current = setTimeout(() => setToast(null), duration);
+  }, []);
+  useEffect(() => {
+    const onTrackError = (e) => {
+      const { type, track } = e.detail || {};
+      if (type === "no_file") {
+        const title = track?.title?.slice(0, 28) ?? "track";
+        showToast({ msg: `SIN ARCHIVO: ${title} — SALTANDO` }, 3000);
+      }
+    };
+    const onTrackRemoved = (e) => {
+      const { trackId } = e.detail || {};
+      if (!trackId) return;
+      showToast({
+        msg: "ELIMINADO DE COLA",
+        action: () => {
+          undoRemoveFromQueue?.(trackId);
+          showToast({ msg: "TRACK RESTAURADO" }, 1500);
+        },
+        actionLabel: "DESHACER",
+      }, 5000);
+    };
+    const onColaReordered = (e) => {
+      const { snapshot } = e.detail || {};
+      if (!Array.isArray(snapshot)) return;
+      showToast({
+        msg: "COLA REORDENADA",
+        action: () => {
+          undoColaReorder?.(snapshot);
+          showToast({ msg: "ORDEN RESTAURADO" }, 1500);
+        },
+        actionLabel: "DESHACER",
+      }, 5000);
+    };
+    // S85d Q17-playlist: UNDO de reorder de tracks dentro de una playlist.
+    // A diferencia de cola (snapshot local), el reorder de playlist es
+    // server-side: undo = undoPlaylistTracksReorder (PUT) + patchDb
+    // (local). El snapshot lo captura onReorderTracks antes del PUT.
+    const onPlaylistTracksReordered = (e) => {
+      const { plId, previousIds } = e.detail || {};
+      if (!plId || !Array.isArray(previousIds)) return;
+      showToast({
+        msg: "PLAYLIST REORDENADA",
+        action: async () => {
+          const ok = await undoPlaylistTracksReorder?.(plId, previousIds);
+          if (ok) {
+            await patchDb((prev) => ({
+              ...prev,
+              music_lab: {
+                ...prev.music_lab,
+                playlists: (prev.music_lab?.playlists ?? []).map((p) =>
+                  p.id === plId ? { ...p, track_ids: previousIds } : p
+                ),
+              },
+            })).catch(() => {});
+            showToast({ msg: "ORDEN RESTAURADO" }, 1500);
+          } else {
+            showToast({ msg: "NO SE PUDO RESTAURAR" }, 2500);
+          }
+        },
+        actionLabel: "DESHACER",
+      }, 5000);
+    };
+    window.addEventListener("bunker_track_error", onTrackError);
+    window.addEventListener("bunker_track_removed_from_queue", onTrackRemoved);
+    window.addEventListener("bunker_cola_reordered", onColaReordered);
+    window.addEventListener("bunker_playlist_tracks_reordered", onPlaylistTracksReordered);
+    return () => {
+      window.removeEventListener("bunker_track_error", onTrackError);
+      window.removeEventListener("bunker_track_removed_from_queue", onTrackRemoved);
+      window.removeEventListener("bunker_cola_reordered", onColaReordered);
+      window.removeEventListener("bunker_playlist_tracks_reordered", onPlaylistTracksReordered);
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    };
+  }, [undoRemoveFromQueue, undoColaReorder, undoPlaylistTracksReorder, patchDb, showToast]);
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
@@ -163,6 +258,9 @@ export default function MusicLab({
   const [queueSearch,     setQueueSearch]     = useState("");
   const [showQueueSearch, setShowQueueSearch] = useState(false);
   const [confirmClearQueue, setConfirmClearQueue] = useState(false);
+  // S85d Q15: pull-to-reveal extended history — mostrar últimos 3 por defecto,
+  // expande con toggle si playHistory.length > 3
+  const [showFullHistory, setShowFullHistory] = useState(false);
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setVisibleCount(50); }, [libraryFilter]);
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -193,12 +291,10 @@ export default function MusicLab({
       }));
     } catch (err) {
       console.warn("[Búnker] deletePlaylist falló:", err);
-      setToast("NO SE PUDO ELIMINAR");
-      setTimeout(() => setToast(null), 2500);
+      showToast({ msg: "NO SE PUDO ELIMINAR" }, 2500);
       return; // el estado local queda intacto si D1 rechaza
     }
-    setToast("PLAYLIST ELIMINADA");
-    setTimeout(() => setToast(null), 2500);
+    showToast({ msg: "PLAYLIST ELIMINADA" }, 2500);
   };
 
   const API_BASE_ML = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
@@ -225,8 +321,7 @@ export default function MusicLab({
           ),
         },
       })).catch(() => {});
-      setToast("AÑADIDO A PLAYLIST");
-      setTimeout(() => setToast(null), 2500);
+      showToast({ msg: "AÑADIDO A PLAYLIST" }, 2500);
     } catch (err) { console.warn("[Búnker] addTrackToPlaylist (Worker):", err); }
     finally { setShowPlaylistModal(false); setPendingTrack(null); setShowCreatePlaylist(false); }
   };
@@ -267,8 +362,7 @@ export default function MusicLab({
           },
         })).catch(() => {});
       }
-      setToast("PLAYLIST CREADA");
-      setTimeout(() => setToast(null), 2500);
+      showToast({ msg: "PLAYLIST CREADA" }, 2500);
     } catch (err) { console.warn("[Búnker] createPlaylist (Worker):", err); }
     finally { setShowPlaylistModal(false); setPendingTrack(null); }
   };
@@ -333,8 +427,7 @@ export default function MusicLab({
   const handleAddTrack = (trackData) => {
     onAddTrack?.(trackData);
     setShowAdd(false);
-    setToast("TRACK AÑADIDO");
-    setTimeout(() => setToast(null), 2500);
+    showToast({ msg: "TRACK AÑADIDO" }, 2500);
   };
 
   const handleEditTrack = (trackId) => {
@@ -349,16 +442,14 @@ export default function MusicLab({
   const handleSaveEdit = (updatedData) => {
     onEditTrack?.({ ...editingTrack, ...updatedData });
     if (activeTrack?.id === editingTrack.id) setActiveTrack((t) => ({ ...t, ...updatedData }));
-    setToast("TRACK ACTUALIZADO");
-    setTimeout(() => setToast(null), 2500);
+    showToast({ msg: "TRACK ACTUALIZADO" }, 2500);
     setEditingTrack(null);
   };
 
   const handleDeleteTrack = (trackId) => {
     onDeleteTrack?.(trackId);
     if (activeTrack?.id === trackId) setActiveTrack(rawTracks.find((t) => t.id !== trackId) ?? null);
-    setToast("TRACK ELIMINADO");
-    setTimeout(() => setToast(null), 2500);
+    showToast({ msg: "TRACK ELIMINADO" }, 2500);
     setShowDelete(false);
   };
 
@@ -367,32 +458,30 @@ export default function MusicLab({
     if (!track) return;
     const result = addNext(track, force);
     if (result === "duplicate") {
-      setToast({ msg: "YA EN COLA", action: () => handleAddNext(track, true), actionLabel: "AÑADIR IGUALMENTE" });
+      showToast({ msg: "YA EN COLA", action: () => handleAddNext(track, true), actionLabel: "AÑADIR IGUALMENTE" }, 2500);
     } else {
-      setToast({ msg: "REPRODUCIR A CONTINUACIÓN" });
+      showToast({ msg: "REPRODUCIR A CONTINUACIÓN" }, 2500);
     }
-    setTimeout(() => setToast(null), 2500);
   };
 
   const handleAddToQueue = (track, force = false) => {
     if (!track) return;
     const result = addToQueue(track, force);
     if (result === "duplicate") {
-      setToast({ msg: "YA EN COLA", action: () => handleAddToQueue(track, true), actionLabel: "AÑADIR IGUALMENTE" });
+      showToast({ msg: "YA EN COLA", action: () => handleAddToQueue(track, true), actionLabel: "AÑADIR IGUALMENTE" }, 4000);
     } else if (result === "limit_reached") {
       // S85c Q6: sugerencia de guardar como playlist al alcanzar 75 tracks
-      setToast({
+      showToast({
         msg: "COLA LLENA (75)",
         action: () => {
           const name = prompt("Nombre para la playlist con la cola actual:");
           if (name?.trim()) handleCreatePlaylist(name.trim());
         },
         actionLabel: "GUARDAR COMO PLAYLIST",
-      });
+      }, 4000);
     } else {
-      setToast({ msg: "AÑADIDO A COLA" });
+      showToast({ msg: "AÑADIDO A COLA" }, 4000);
     }
-    setTimeout(() => setToast(null), 4000);  // un poco más de tiempo para leer la sugerencia
   };
 
   const handleRemoveFromQueue = (trackId) => {
@@ -401,10 +490,21 @@ export default function MusicLab({
 
   // drag&drop cola (provisional — pendiente revisión sesión diseño)
   const dragIdx = useRef(null);
+  // S85d: debounce/queue ref — previene reordenamientos concurrentes durante
+  // operaciones in-flight. Si el usuario arrastra y suelta varias veces
+  // rápido, solo procesamos el primer drop. El resto se ignora.
+  const dragInFlight = useRef(false);
   const handleDragStart = (i) => { dragIdx.current = i; };
   const handleDragOver  = (e) => { e.preventDefault(); };
   const handleDrop      = (i) => {
+    if (dragInFlight.current) return;
     if (dragIdx.current === null || dragIdx.current === i) return;
+    dragInFlight.current = true;
+    // S85d Q17: capturar snapshot ANTES del reorder para que el UNDO del
+    // toast pueda restaurar la cola a su estado previo. Se dispatcha el
+    // evento `bunker_cola_reordered` con la snapshot y MusicLab muestra
+    // toast con acción DESHACER (5s).
+    const previousQueue = localQueue;
     setLocalQueue((q) => {
       const next = q.filter((t) => t.id !== activeTrack?.id);
       const [moved] = next.splice(dragIdx.current, 1);
@@ -412,6 +512,12 @@ export default function MusicLab({
       dragIdx.current = null;
       return activeTrack ? [activeTrack, ...next] : next;
     });
+    try {
+      window.dispatchEvent(new CustomEvent("bunker_cola_reordered", {
+        detail: { snapshot: previousQueue }
+      }));
+    } catch { /* SSR / no window */ }
+    setTimeout(() => { dragInFlight.current = false; }, 400);
   };
 
   // drag&drop playlists
@@ -427,8 +533,10 @@ export default function MusicLab({
   // baja y evita la complejidad de revertir en el catch).
   const handlePlDrop      = async (i) => {
     const from = dragPlIdx.current;
+    if (dragInFlight.current) return;
     if (from === null || from === i) return;
     if (!_jwtToken) return;
+    dragInFlight.current = true;
     dragPlIdx.current = null;
     const next = [...dbPlaylists];
     const [moved] = next.splice(from, 1);
@@ -443,9 +551,10 @@ export default function MusicLab({
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
     } catch (err) {
       console.warn("[Búnker] reorderPlaylists falló:", err);
-      setToast("NO SE PUDO REORDENAR");
-      setTimeout(() => setToast(null), 2500);
+      showToast({ msg: "NO SE PUDO REORDENAR" }, 2500);
       return; // sin patchDb si D1 rechaza — estado local intacto
+    } finally {
+      setTimeout(() => { dragInFlight.current = false; }, 400);
     }
   };
 
@@ -478,12 +587,10 @@ export default function MusicLab({
       }));
     } catch (err) {
       console.warn("[Búnker] renamePlaylist falló:", err);
-      setToast("NO SE PUDO RENOMBRAR");
-      setTimeout(() => setToast(null), 2500);
+      showToast({ msg: "NO SE PUDO RENOMBRAR" }, 2500);
       return; // sin patchDb si D1 rechaza — nombre local preservado para retry
     }
-    setToast("PLAYLIST RENOMBRADA");
-    setTimeout(() => setToast(null), 2500);
+    showToast({ msg: "PLAYLIST RENOMBRADA" }, 2500);
   };
 
   // confirmar eliminar playlist inline
@@ -696,28 +803,39 @@ export default function MusicLab({
                 <div className="flex flex-col gap-1">
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: accentColor }}>anterior</span>
                   <div className="flex flex-col gap-2" style={{ opacity: 0.35 }}>
-                    {[...playHistory].reverse().map((track, i) => {
-                      const hVibe = getVibeConfig(track.tag ?? track.vibe);
-                      return (
-                        <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
-                          style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
-                          <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
-                            style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
-                            {track.thumbnail
-                              ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: hVibe?.color ?? accentColor, fontSize: 10 }}>◎</span>}
+                    {(() => {
+                      const reversed = [...playHistory].reverse();
+                      const visible = showFullHistory ? reversed : reversed.slice(0, 3);
+                      return visible.map((track, i) => {
+                        const hVibe = getVibeConfig(track.tag ?? track.vibe);
+                        return (
+                          <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
+                            style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
+                            <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
+                              style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
+                              {track.thumbnail
+                                ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
+                                : <span style={{ color: hVibe?.color ?? accentColor, fontSize: 10 }}>◎</span>}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? accentColor }}>{track.title}</p>
+                              <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
+                            </div>
+                            <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
+                              style={{ color: hVibe?.color ?? accentColor, background: `${hVibe?.color ?? accentColor}15`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
+                              {hVibe?.icon}
+                            </span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? accentColor }}>{track.title}</p>
-                            <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
-                          </div>
-                          <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
-                            style={{ color: hVibe?.color ?? accentColor, background: `${hVibe?.color ?? accentColor}15`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
-                            {hVibe?.icon}
-                          </span>
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
+                    {playHistory.length > 3 && (
+                      <button onClick={() => setShowFullHistory(p => !p)}
+                        className="text-xs tracking-widest uppercase py-1 opacity-50 hover:opacity-100 transition-opacity text-center"
+                        style={{ color: accentColor, fontFamily: FONT_MONO }}>
+                        {showFullHistory ? "▴ OCULTAR" : `▾ VER TODO (+${playHistory.length - 3})`}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -790,8 +908,7 @@ export default function MusicLab({
                                 newIds.splice(insertAt, 0, track.id);
                                 const updated = dbPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
                                 await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
-                                setToast(`AÑADIDO A ${activePl.name.toUpperCase()}`);
-                                setTimeout(() => setToast(null), 2500);
+                                showToast({ msg: `AÑADIDO A ${activePl.name.toUpperCase()}` }, 2500);
                               }}
                               className="flex-shrink-0 text-xs px-2 py-1 rounded-sm"
                               style={{ color: accentColor, border: `1px solid ${accentColor}44`, background: `${accentColor}12` }}>
@@ -1308,11 +1425,9 @@ export default function MusicLab({
                         ...prev.music_lab,
                         drops: (prev.music_lab?.drops ?? []).filter((d) => d.id !== dropId),
                       },
-                    }));                    } catch (err) {
-                      console.warn("[Búnker] deleteDrop falló:", err);
-                      setToast("NO SE PUDO ELIMINAR");
-                      setTimeout(() => setToast(null), 2500);
-                      return; // sin patchDb si D1 rechaza — estado local intacto
+                    }));                    } catch (err) {                    console.warn("[Búnker] deleteDrop falló:", err);
+                    showToast({ msg: "NO SE PUDO ELIMINAR" }, 2500);
+                    return; // sin patchDb si D1 rechaza — estado local intacto
                     }
                 }}
               />
@@ -1361,11 +1476,9 @@ export default function MusicLab({
                           p.id === plId ? { ...p, track_ids: (p.track_ids ?? []).filter((id) => id !== trackId) } : p
                         ),
                       },
-                    }));                    } catch (err) {
-                      console.warn("[Búnker] removeTrackFromPlaylist falló:", err);
-                      setToast("NO SE PUDO ELIMINAR");
-                      setTimeout(() => setToast(null), 2500);
-                      return; // sin patchDb si D1 rechaza — estado local intacto
+                    }));                    } catch (err) {                    console.warn("[Búnker] removeTrackFromPlaylist falló:", err);
+                    showToast({ msg: "NO SE PUDO ELIMINAR" }, 2500);
+                    return; // sin patchDb si D1 rechaza — estado local intacto
                     }
                 }}
                 onDeletePlaylist={(plId) => {
@@ -1373,6 +1486,11 @@ export default function MusicLab({
                 }}
                 onReorderTracks={async (plId, newIds) => {
                   if (!plId || !_jwtToken) return;
+                  // S85d Q17-playlist: capturar previousIds ANTES del PUT
+                  // para que el UNDO del toast pueda restaurar el orden
+                  // original en D1 (server) y local (patchDb).
+                  const pl = dbPlaylists.find((p) => p.id === plId);
+                  const previousIds = pl ? [...(pl.track_ids ?? [])] : null;
                   try {
                     // REORDER-TRACKS fix (S84): mismo patrón. Antes solo
                     // patchDb (Drive) — D1 mantenía el orden viejo. PUT
@@ -1387,15 +1505,25 @@ export default function MusicLab({
                       ...prev,
                       music_lab: {
                         ...prev.music_lab,
-                        playlists: (prev.music_lab?.playlists ?? []).map((pl) =>
-                          pl.id === plId ? { ...pl, track_ids: newIds } : pl
+                        playlists: (prev.music_lab?.playlists ?? []).map((plItem) =>
+                          plItem.id === plId ? { ...plItem, track_ids: newIds } : plItem
                         ),
                       },
                     }));
+                    // S85d Q17-playlist: emitir evento para que MusicLab muestre
+                    // toast persistente con acción DESHACER (5s). El listener
+                    // onPlaylistTracksReordered llama undoPlaylistTracksReorder
+                    // (server) + patchDb (local) para restaurar previousIds.
+                    if (Array.isArray(previousIds)) {
+                      try {
+                        window.dispatchEvent(new CustomEvent("bunker_playlist_tracks_reordered", {
+                          detail: { plId, previousIds }
+                        }));
+                      } catch { /* SSR / no window */ }
+                    }
                   } catch (err) {
                     console.warn("[Búnker] reorderPlaylistTracks falló:", err);
-                    setToast("NO SE PUDO REORDENAR");
-                    setTimeout(() => setToast(null), 2500);
+                    showToast({ msg: "NO SE PUDO REORDENAR" }, 2500);
                     return; // sin patchDb si D1 rechaza — estado local intacto
                   }
                 }}

@@ -68,6 +68,13 @@ export default function TimeCapsules({ token, capsules: initialCapsules = [], en
   const [showContentPicker, setShowContentPicker] = useState(false);
   // S74: Opening animation
   const [openingCapsule, setOpeningCapsule] = useState(null);
+  // S85d: toast infra para feedback de errores (silent catch fix)
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   useEffect(() => {
     if (!token) return;
@@ -76,7 +83,11 @@ export default function TimeCapsules({ token, capsules: initialCapsules = [], en
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(data => setCapsules(data))
-      .catch(err => { console.warn("[TimeCapsules] fetch:", err); });
+      .catch(err => {
+        console.warn("[TimeCapsules] fetch:", err);
+        // S85d: toast feedback para fetch error
+        setToast("NO SE PUDIERON CARGAR CÁPSULAS");
+      });
   }, [token]);
 
   const now = new Date();
@@ -122,12 +133,15 @@ export default function TimeCapsules({ token, capsules: initialCapsules = [], en
       setSelectedEntryIds([]); setSelectedPlaylistIds([]);
     } catch (e) {
       setError(e.message);
+      // S85d: toast feedback para creación fallida
+      setToast(`ERROR AL CREAR: ${e.message?.slice(0, 32) ?? ""}`);
     } finally {
       setIsCreating(false);
     }
   };
 
   return (
+    <>
     <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       {/* Formulario */}
       <div className="flex flex-col gap-2 p-3" style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
@@ -250,5 +264,16 @@ export default function TimeCapsules({ token, capsules: initialCapsules = [], en
         )}
       </AnimatePresence>
     </div>
-  );
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          style={{ position: "fixed", bottom: 90, left: 16, right: 16,
+            background: `${PURPLE}18`, border: `1px solid ${PURPLE}55`, color: PURPLE,
+            fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
+            padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}>
+          {toast}
+        </motion.div>
+      )}
+  </>);
 }

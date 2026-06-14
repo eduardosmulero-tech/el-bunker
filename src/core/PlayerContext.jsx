@@ -14,7 +14,7 @@
 //   shuffle). Son patrones establecidos y funcionales del motor
 //   de reproducción. No refactorizar sin tests.
 
-/* eslint-disable react-hooks/immutability, react-hooks/set-state-in-effect, react-hooks/refs */
+/* eslint-disable react-hooks/immutability, react-hooks/set-state-in-effect */
 // Las 3 reglas arriba son del react-hooks plugin v6+. En PlayerContext tenemos
 // patrones intencionales y bien documentados que las disparan:
 //   - immutability: refs como skipRef/loopModeRef/_activeVibeRef se sincronizan
@@ -447,6 +447,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     setLocalQueue((q) => {
       if (softDelete) {
         setSoftDeletedIds(prev => new Set([...prev, trackId]));
+        // S85d Q16: Emitir evento para que MusicLab muestre toast persistente
+        // con acción DESHACER. El undoRemoveFromQueue del contexto restaura
+        // el track del soft-delete (no requiere re-fetch de D1).
+        try {
+          window.dispatchEvent(new CustomEvent("bunker_track_removed_from_queue", {
+            detail: { trackId }
+          }));
+        } catch { /* SSR / no window */ }
         // Don't skip if active — just mark for UI dimming
         return q;
       }
@@ -475,6 +483,37 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       return next;
     });
   }, []);
+
+  // S85d Q17: undo cola reorder (cola drag&drop). El snapshot se captura
+  // antes del reorder; al pulsar DESHACER, restauramos la cola a su estado
+  // previo. Para reorders de playlist (más complejo, requiere llamada PUT
+  // con el orden original) — ver docs/legacy/PLIEGOS_HISTORIAL.md S85d.
+  const undoColaReorder = useCallback((snapshot) => {
+    if (!Array.isArray(snapshot)) return;
+    setLocalQueue(snapshot);
+  }, []);
+
+  // S85d Q17-playlist: undo reorder de tracks dentro de una playlist
+  // (PlaylistDetailModal). A diferencia de cola (local state), el reorder
+  // de playlist es server-side: undo = PUT con el orden original. La
+  // restauración del estado local la hace el handler del toast en MusicLab
+  // (que tiene acceso a patchDb). Retorna Promise<boolean> para que el
+  // toast pueda mostrar confirmación "ORDEN RESTAURADO" tras éxito.
+  const undoPlaylistTracksReorder = useCallback(async (plId, originalTrackIds) => {
+    if (!plId || !Array.isArray(originalTrackIds) || !jwtToken) return false;
+    try {
+      const res = await fetch(`${API_BASE}/api/playlists/${plId}/tracks`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+        body: JSON.stringify({ track_ids: originalTrackIds }),
+      });
+      if (!res.ok) throw new Error(`undoPlaylistReorder: ${res.status}`);
+      return true;
+    } catch (err) {
+      console.warn("[Búnker] undoPlaylistReorder falló:", err);
+      return false;
+    }
+  }, [jwtToken]);
 
   const playTrack = useCallback((track) => {
     if (activeTrack?.id === track.id) {
@@ -800,6 +839,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // Fase 1.6 — EC-P4: Track sin archivo (sin r2_key ni drive_file_id)
       console.warn("[Búnker] ⚠ Track sin archivo — saltando:", activeTrack.title);
       setResolvedAudioSrc(null);
+      // S85d: Emitir evento para que la UI (MusicLab) muestre toast con sugerencia.
+      // Antes era silent skip — el usuario no sabía por qué cambiaba de track.
+      try {
+        window.dispatchEvent(new CustomEvent("bunker_track_error", {
+          detail: { type: "no_file", track: { id: activeTrack.id, title: activeTrack.title } }
+        }));
+      } catch { /* SSR / no window */ }
       // setTimeout evita encadenamiento rápido si varios tracks seguidos no tienen archivo
       setTimeout(() => skipRef.current?.(1), 50);
       return;
@@ -988,6 +1034,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       addPlaylistToQueue,
       softDeletedIds,
       undoRemoveFromQueue,
+      // S85d Q17: undo reorder de cola (snapshot-based)
+      undoColaReorder,
+      // S85d Q17-playlist: undo reorder de tracks dentro de una playlist
+      // (server-side PUT con orden original)
+      undoPlaylistTracksReorder,
       MAX_QUEUE_SIZE,
       playHistory,
       queueContextName, setQueueContextName,
