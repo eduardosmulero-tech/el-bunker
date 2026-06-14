@@ -11,7 +11,7 @@
 ## Bugs activos
 
 ### P0 — CRÍTICO (bloquea validación en prod)
-- **S84-MANUAL-STEPS:** ejecutar `wrangler deploy` + `ALTER TABLE playlists ADD COLUMN sort_order INTEGER DEFAULT 0` + `CREATE INDEX idx_playlists_order`. Sin esto, los 4 endpoints nuevos del S84 (`/api/playlists/reorder`, `PUT/DELETE /api/playlists/:id/tracks`, `PATCH /api/playlists/:id`) devuelven 404 y todos los handlers del patrón DEL-PLAYLIST rompen en producción.
+- ~~**S84-MANUAL-STEPS:**~~ **CERRADO en S86** — `wrangler deploy` ejecutado (version `a77af4a3-1e75-40de-aa1b-2ae47f119e0a`) + D1 migration aplicada (`ALTER TABLE playlists ADD COLUMN sort_order` + `CREATE INDEX idx_playlists_order`). Smoke test confirma los 4 endpoints nuevos responden 401 (auth required) en vez de 404. Handlers DEL-PLAYLIST ahora funcionan en producción.
 
 ### P1 — visuales (Phase 2, tras manual steps)
 - **MINI-PLAYER:** opaco, transparencias dejan ver contenido de abajo (colapsa texto). Botonera no funciona, faltan botones. (baseline BACKLOG G7)

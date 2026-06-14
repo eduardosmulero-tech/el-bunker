@@ -5,6 +5,30 @@
 
 ---
 
+## v2.0.5 — "S84 Manual Steps — Prod Deploy" (14 Junio 2026)
+
+### 🚀 INFRAESTRUCTURA (producción)
+
+- **Worker desplegado:** `npx wrangler deploy` ejecutado. Version ID: `a77af4a3-1e75-40de-aa1b-2ae47f119e0a`. URL: `https://el-bunker-api.thebunker-admin.workers.dev`. Los 4 endpoints nuevos del S84 ahora responden 401 (auth required) en vez de 404.
+- **D1 migration aplicada** en `el-bunker-db` (remote):
+  - `ALTER TABLE playlists ADD COLUMN sort_order INTEGER DEFAULT 0;` — columna añadida, filas existentes quedan con `sort_order=0`.
+  - `CREATE INDEX idx_playlists_order ON playlists(sort_order, created_at);` — índice creado para queries de reorder.
+
+### 🐛 CORREGIDO
+
+- **P0 bloqueante S84-MANUAL-STEPS cerrado:** sin este deploy, los handlers DEL-PLAYLIST (RENAME, REORDER, REMOVE-TRACK, handlePlDrop) devolvían 404 en producción y todos los silenciosamente restauraban estado stale con el próximo `refreshDb`. Ahora persistencia 100% D1.
+
+### ✅ VERIFICACIÓN
+
+Smoke test con `curl` contra los 4 endpoints nuevos (todos devuelven 401 = auth required, no 404):
+- `POST /api/playlists/reorder` → 401 ✅
+- `PUT /api/playlists/:id/tracks` → 401 ✅
+- `DELETE /api/playlists/:id/tracks/:trackId` → 401 ✅
+- `PATCH /api/playlists/:id` → 401 ✅
+- `GET /api/playlists` → 200 ✅ (pre-existente, sin cambios)
+
+---
+
 ## v2.0.4 — "React Key Audit" (14 Junio 2026)
 
 ### 🐛 CORREGIDO
