@@ -5,6 +5,43 @@
 
 ---
 
+## v2.0.6 — "Phase 2.5 — Diagnostics + Q18 + Multimedia" (14 Junio 2026)
+
+### 🆕 NUEVO
+
+- **TRACKS-SORT dropdown** (PLIEGO-237): `MusicLab.jsx` — 5 botones inline reemplazados por 1 toggle + `AnimatePresence` popover. Outside-click + Escape cierran. Replantear posición real, no cosmético.
+
+### 🐛 CORREGIDO
+
+- **React key warnings (preventive)** (PLIEGO-233): `TrackCard.jsx` — `track.tags` y `multiTags` maps ahora usan `key={\`tag-${i}-${t}\`}` / `key={\`mt-${i}-${tk}\`}` en vez de `key={t}` / `key={tk}`. Tags duplicados ya no causan "two children with the same key".
+
+### 🔧 INFRAESTRUCTURA (interna)
+
+- **D1 data dup audit** (PLIEGO-234): 8 tablas auditadas (events, drops, eras, files, tracks, playlists, tags, entries) — todas CLEAN, 0 IDs duplicados. Las React key warnings NO son por data dup.
+
+### 📚 DOCS
+
+- **CARGANDO diagnostic** (PLIEGO-235): `docs/operacional/CARGANDO_diagnostic.md` — 3 causas posibles (Worker API init fail, CORS, Google OAuth blocked) + pasos de diagnostic manual.
+- **Phase 2.5 roadmap** (S87 planning): `docs/operacional/phase2_5_roadmap.md` — 4 bloques, 5 pliegos, 3h 15min estimados.
+
+### ✅ YA IMPLEMENTADO (verificado, no requirió code change)
+
+- **Q18 drag&drop reorder en PlaylistDetailModal** (PLIEGO-236): `PlaylistManager.jsx:204+` ya tiene `draggable` + `onDragStart/Over/Drop` desde S85d. `MusicLab.jsx:1445+` ya tiene `onReorderTracks` con PUT `/api/playlists/:id/tracks`. Q17-playlist UNDO toast ya emite `bunker_playlist_tracks_reordered`.
+- **media_type schema** (PLIEGO-238): `workers/schema.sql` entries.type ya acepta `note|photo|milestone|letter|document|audio`. `AddEntryForm.jsx:123` ya guarda `content.images[0].media_type` (image/video/audio). Worker ya soporta `type` query param.
+
+### 🎬 MULTIMEDIA
+
+- **Render condicional en VaultGallery** (PLIEGO-239): `VaultGallery.jsx` — nuevo helper `getMediaType(entry)` extrae `content.images[0].media_type`. `renderCinema` ahora renderiza `<video controls>` para video, `<audio controls>` para audio, `<img>` para image. Roadmap 8.2 prep básico completo.
+
+### 📊 COMMITS (4 total)
+
+- `ac85b00` — BLOQUE 1 diagnostics (PLIEGOS-233+234+235)
+- `b52ef71` — BLOQUE 2+3 Q18 + sort (PLIEGO-237, PLIEGO-236 ya done)
+- `ad2a358` — BLOQUE 4 multimedia (PLIEGOS-238+239)
+- `15326f0` — Phase 2.5 roadmap planning doc
+
+---
+
 ## v2.0.5 — "S84 Manual Steps — Prod Deploy" (14 Junio 2026)
 
 ### 🚀 INFRAESTRUCTURA (producción)
