@@ -604,8 +604,15 @@ export function VaultProvider({ children }) {
       setDbStatus("ONLINE");
     } catch (err) {
       console.error("[Búnker] patchDb failed:", err);
-      setDbStatus("ERROR");
-      await refreshDb();
+      // S102 — Si es error de red, mantener el estado optimista local
+      // y no forzar refreshDb (que también fallaría offline).
+      if (!navigator.onLine || err?.message?.includes("NetworkError") || err?.message?.includes("Failed to fetch")) {
+        console.warn("[Búnker] Offline — manteniendo estado optimista local");
+        setDbStatus("OFFLINE");
+      } else {
+        setDbStatus("ERROR");
+        await refreshDb();
+      }
     }
   }, [refreshDb]);
 

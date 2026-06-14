@@ -28,6 +28,11 @@ export function setUploadToken(token) {
 export async function uploadFile(file, prefix, metadata = {}) {
   if (!_token) throw new Error("FileUploadService: token JWT no configurado");
 
+  // S102 — Detección offline: mensaje amigable en vez de error genérico
+  if (!navigator.onLine) {
+    throw new Error("Sin conexión — el archivo se subirá cuando vuelvas a estar online.");
+  }
+
   // Paso 1: obtener r2_key
   const res = await fetch(`${API_BASE}/api/upload`, {
     method: "POST",
