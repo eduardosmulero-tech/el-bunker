@@ -5,6 +5,39 @@
 
 ---
 
+## FASE 7 — CERRADA ✅ (S89-S92)
+
+### S92 — Cierre Fase 7: verificación G5 + lint global + docs
+- **G5 verificado:** Timeline.jsx ya tiene `viewMode` (timeline/grid/compact) + `PAGE_SIZE=50` + "CARGAR MÁS"
+- **ESLint global:** 0 errores, 0 warnings en todo `src/`
+- **ESTADO.md:** Fase 7 marcada como cerrada, bugs movidos a RESUELTOS, tabla actualizada
+- **Próxima fase:** Fase 8 — VAULT Profundo (S93) · Taxonomía 14 categorías
+
+### S91 — S4 (red neutral) + A2/A3/A5 (audio focus)
+- **S4a:** Red recuperada → evento `bunker_network_restored` + toast "CONEXIÓN RECUPERADA" con REANUDAR
+- **S4b:** Track sin archivo → pausa + toast "SIN ARCHIVO" con SALTAR (no auto-skip)
+- **A2/A3:** MediaSession `setActionHandler('stop')` → `audio.pause()` + `setIsPlaying(false)`
+- **A5:** Documentado como diferido (requiere `navigator.audioSession.type`, Chromium-only)
+- Archivos: `PlayerContext.jsx`, `MusicLab.jsx`
+
+### S90 — Q12 (playlist a cola) + S3 (soft delete) + EC-TR6 (ID3)
+- **Q12:** Botón `▶▶` en PlaylistDetailModal. Aviso si >75 tracks.
+- **S3:** Columnas `deleted_at` + `deleted_by` en D1. Worker marca timestamp + userId.
+- **EC-TR6:** `jsmediatags` instalado. Selector MP3 auto-rellena título/artista desde ID3.
+- Archivos: `PlaylistManager.jsx`, `MusicLab.jsx`, `schema.sql`, `worker.js`, `AddTrackForm.jsx`, `package.json`
+
+### S89 — Auditoría BACKLOG + Fix G2 + Eliminar alert()
+- 6/8 bugs ya fixeados en S85c (BACKLOG stale). G2 (onAddEra) + 2 alert() → toast arreglados.
+- Archivos: `Vault.jsx`, `App.jsx`, `BACKLOG.md`, `ESTADO.md`
+
+---
+
+## Próxima sesión: FASE 8 — VAULT Profundo (S93)
+
+**Objetivo:** Comenzar taxonomía VAULT 14 categorías (~8% → ~50% completitud). Prioridad: Categorías 2-5 (DOCUMENTOS, AUDIO, NAVEGACIÓN, MISC).
+
+---
+
 ## S89 — Auditoría BACKLOG + Fix G2 + Eliminar alert() residuales (14 Junio 2026)
 
 **Objetivo:** Auditar los 8 bugs P1 del BACKLOG contra el código real. Resultado: 6/8 ya estaban fixeados en código (S85c) pero el BACKLOG nunca se actualizó. Solo G2 (placeholder real) y 2 alert() residuales requerían código.

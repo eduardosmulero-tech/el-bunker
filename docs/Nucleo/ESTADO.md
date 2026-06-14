@@ -2,21 +2,27 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 > Actualizar antes de cerrar sesión.
 
-**Próximo pliego:** S90 — Q12 (añadir playlist entera a cola) + S3 (soft delete tracks) + EC-TR6 (ID3 metadata)
-**Última sesión:** S89 — Auditoría BACKLOG + Fix G2 (onAddEra) + Eliminar alert() residuales (Vault.jsx)
+**Próximo pliego:** FASE 8 — VAULT Profundo (S93) · Taxonomía VAULT 14 categorías
+**Última sesión:** S92 — Cierre Fase 7 (verificación G5 + docs)
 **Rama activa:** `master`
 
 ---
 
 ## Bugs activos
 
-### P2 — features pendientes
-- **Q12:** Añadir playlist entera a cola (solo queda implementar el botón)
-- **S3:** Soft delete de tracks (campo `deleted_at` + `deleted_by` en D1)
-- **EC-TR6:** Extraer metadatos ID3 al subir MP3
+### P1
+ninguno
 
 ### P2/resto
-- **TRACKS-SORT:** Ya arreglado visualmente (PLIEGO-237), verificar en dispositivo real
+
+| Bug | Estado | Sesión |
+|---|---|---|
+| **Q12** — Añadir playlist entera a cola | ✅ CERRADO | S90 |
+| **S3** — Soft delete tracks (deleted_at + deleted_by D1) | ✅ CERRADO | S90 |
+| **EC-TR6** — Extraer metadatos ID3 al subir MP3 | ✅ CERRADO | S90 |
+| **S4** — Sin red → estado neutral consciente | ✅ CERRADO | S91 |
+| **A2/A3/A5** — Android audio focus (MediaSession stop) | ✅ CERRADO | S91 |
+| **TRACKS-SORT** — Verificar en dispositivo real | 🟡 PENDIENTE | — |
 
 ---
 
@@ -90,17 +96,28 @@ Actualizados en S85: SESION.md, ESTADO.md, CHANGELOG.md, PLIEGOS_HISTORIAL.md, l
 
 ---
 
-## Resumen de estado (post-S85)
+## FASE 7 — CERRADA ✅ (S89-S92, 4 sesiones)
 
-> S85 fue accesibilidad WCAG (romantiqueo `#bf00ff`→`#d966ff`, pasa AA) + dead code cleanup (extractor de YouTube eliminado en 3 archivos, código inalcanzable desde migración a R2 en S54).
+| Sesión | Qué | Commits |
+|---|---|---|
+| **S89** | Auditoría BACKLOG: 6 bugs stale + 3 reales (G2 onAddEra, 2 alert()→toast). Roadmap v5 | `2df9e0c` |
+| **S90** | Q12 (playlist entera a cola) + S3 (soft delete tracks D1) + EC-TR6 (ID3 metadata) | `317d263` |
+| **S91** | S4 (red sin auto-reanudar + track sin archivo neutral) + A2/A3/A5 (MediaSession stop) | `08f8cfd` |
+| **S92** | Verificación G5 + lint global + cierre docs | este commit |
+
+> **Resultado Fase 7:** 11 bugs/features cerrados. 0 bugs P1. BACKLOG limpio. App lista para Fase 8 (VAULT Profundo).
+
+---
+
+## Resumen de estado (post-Fase 7)
 
 | Módulo | % | Estado |
 |---|---|---|
-| Core/Infra | 95% | Worker 24 endpoints (+2 reorder), D1, JWT, FileUpload, StatsEngine, AnalyserNode ✅ · S64 safety gates ✅ |
-| VAULT CRUD | 96% | Entradas/eras en D1, edit/delete, foto upload a R2 ✅ · **+selector MULTIMEDIA 5 sub-tipos (8.1)** ✅ · **+toast feedback en delete (S84)** ✅ |
-| VAULT Galería | 90% | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL completos ✅ · render multimedia (8.2) 🟡 |
-| CAPSULES | 90% | Timeline filtros, Smoke historial/rachas, TimeCapsules content picker, RECAP Wrapped ✅ |
-| MUSIC LAB | 97% | Cola Q6/Q12/Q15-Q17, posición S1/S2, UX táctil, MediaSession M1-M12 ✅ · **+6 sister bugs cerradas (S84)** ✅ · **+toast feedback global (S84)** ✅ · **+vibe-aware COLA (S84)** ✅ |
-| Persistencia | 90% | **6 sister bugs del patrón DEL-PLAYLIST cerradas (S84)** — playlists/tracks/drops/entries 100% Worker API; Drive solo libraries/heartbeat 🟡 |
+| Core/Infra | 96% | Worker 24 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, AnalyserNode, MediaSession stop, red/sin-archivo neutral ✅ |
+| VAULT CRUD | 96% | Entradas/eras en D1, edit/delete, foto upload a R2, 5 sub-tipos multimedia, toast feedback ✅ |
+| VAULT Galería | 90% | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL, render multimedia básico ✅ · taxonomía 14 categorías 🟡 |
+| CAPSULES | 90% | Timeline filtros+paginación, Smoke historial/rachas/volumen, TimeCapsules CRUD, RECAP Wrapped ✅ |
+| MUSIC LAB | 98% | Cola Q6/Q12/Q15-Q17, posición S1/S2/S4, UX táctil, MediaSession M1-M12, soft delete S3, ID3 EC-TR6 ✅ |
+| Persistencia | 95% | Playlists/tracks/drops/entries/tags 100% Worker API ✅ · tags vía Worker API, Drive solo fallback 🟡 |
 
-**Pendiente:** MANUAL STEPS S84 (wrangler deploy + ALTER TABLE) → Phase 2 visuales P1 (mini player, era selector, tab playlists) + roadmap Fases 8.2–15 (schema `media_type` en D1, render multimedia, validación por tipo, búsqueda por categoría). WCAG romantiqueo cerrado en S85.
+**Pendiente Fase 8+:** Taxonomía VAULT 14 categorías, render multimedia avanzado, escucha compartida, Chromecast, Android audio focus completo.
