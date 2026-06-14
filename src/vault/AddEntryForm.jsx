@@ -15,7 +15,9 @@ import { uploadFile } from "../core/FileUploadService";
 // Tipos con `accept` → file upload (multimedia/docs). Resto → textarea.
 
 // Fase 8.4 — Campos extra por categoría (S94). Cada key → campo en content JSON.
-const CATEGORY_EXTRA_FIELDS = {
+// Exportado para Vault.jsx (S98) — render enriquecido de badges en EraDetailPanel
+// eslint-disable-next-line react-refresh/only-export-components
+export const CATEGORY_EXTRA_FIELDS = {
   "4": [  // Geografía
     { key: "location", label: "LUGAR", type: "text", placeholder: "Nombre del lugar…" },
     { key: "event_date", label: "FECHA", type: "date" },

@@ -8,7 +8,7 @@ import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
-import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
+import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
 import { ColorPicker } from "../core/ColorPicker";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID } from "../tokens";
@@ -419,6 +419,34 @@ const EraCard = ({ era, isActive, onClick }) => {
 };
 
 // ─── ERA DETAIL PANEL ────────────────────────────────────────
+// S98 — Helper: extrae campos enriquecidos de entry.content como badges inline.
+// Derivado de CATEGORY_EXTRA_FIELDS (AddEntryForm) — single source of truth.
+const EXTRA_BADGE_FORMAT = {
+  event_date: (val) => {
+    if (!val || isNaN(Date.parse(val))) return null;
+    const d = new Date(val);
+    return { icon: "📅", label: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase() };
+  },
+  location:  (val) => val ? { icon: "📍", label: val } : null,
+  rating:    (val) => val && val !== "—" ? { icon: "⭐", label: val } : null,
+  url:       (val) => val ? { icon: "🔗", label: val.length > 40 ? val.slice(0, 37) + "…" : val } : null,
+  mood:      (val) => val && val !== "—" ? { icon: null, label: val } : null,
+  amount:    (val) => val ? { icon: "€", label: val } : null,
+};
+const ALL_EXTRA_KEYS = [...new Set(Object.values(CATEGORY_EXTRA_FIELDS).flat().map((f) => f.key))];
+const getExtraBadges = (entry) => {
+  const c = entry.content ?? {};
+  const badges = [];
+  for (const key of ALL_EXTRA_KEYS) {
+    if (c[key] === undefined || c[key] === "") continue;
+    const fmt = EXTRA_BADGE_FORMAT[key];
+    if (!fmt) continue;
+    const badge = fmt(c[key]);
+    if (badge) badges.push({ ...badge, key });
+  }
+  return badges;
+};
+
 const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
   const eraEntries = entries.filter((e) => e.era_id === era.id && !e.is_deleted);
 
@@ -477,14 +505,30 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
               >
                 {CAT_LOOKUP[ENTRY_CATEGORY[entry.type]]?.icon ?? "◈"}
               </span>
-              <span
-                className="text-xs tracking-wide truncate flex-1"
-                style={{ color: era.color ?? ACID }}
-                onClick={() => onEditEntry?.(entry)}
-              >
-                {entry.title ?? entry.content?.body?.slice(0, 40) ?? "—"}
-              </span>
-              <span className="text-xs opacity-40" style={{ color: era.color ?? ACID }}>
+              <div className="flex flex-col flex-1 min-w-0">
+                <span
+                  className="text-xs tracking-wide truncate"
+                  style={{ color: era.color ?? ACID }}
+                  onClick={() => onEditEntry?.(entry)}
+                >
+                  {entry.title ?? entry.content?.body?.slice(0, 40) ?? "—"}
+                </span>
+                {/* S98 — Badges de campos extra (rating, location, date, etc.) */}
+                {(() => {
+                  const badges = getExtraBadges(entry);
+                  if (!badges.length) return null;
+                  return (
+                    <span className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                      {badges.map((b) => (
+                        <span key={b.key} className="text-[8px] opacity-40 whitespace-nowrap" style={{ color: era.color ?? ACID }}>
+                          {b.icon && <span className="mr-0.5">{b.icon}</span>}{b.label}
+                        </span>
+                      ))}
+                    </span>
+                  );
+                })()}
+              </div>
+              <span className="text-xs opacity-40 flex-shrink-0" style={{ color: era.color ?? ACID }}>
                 {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}
               </span>
               {/* S65: Botones editar/eliminar */}
