@@ -3,7 +3,7 @@
 //  Orquestador Principal · Router · State Orchestration
 //  Stack: React 18 + Framer Motion
 // ============================================================
-import { useEffect, lazy, Suspense } from "react";
+import { useEffect, lazy, Suspense, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import { VaultProvider, useVault } from "../core/VaultContext";
@@ -316,6 +316,9 @@ const CapsulesPage = () => {
 const TAB_MAP = { vault: VaultPage, music: MusicPage, capsules: CapsulesPage };
 
 // ─── AUTHENTICATED APP ───────────────────────────────────────
+// S101 — Orden de tabs para slide direccional: vault(0) → music(1) → capsules(2)
+const TAB_ORDER = { vault: 0, music: 1, capsules: 2 };
+
 const AuthenticatedApp = () => {
   const {
       user: _user, db, dbStatus, lastHeartbeat,
@@ -327,6 +330,19 @@ const AuthenticatedApp = () => {
   const { playTrack } = usePlayer();
 
   const ActivePage = TAB_MAP[activeTab] ?? VaultPage;
+
+  // S101 — Trackear tab anterior para slide direccional
+  const { current: prevTab } = useRef({ prev: activeTab });
+  useEffect(() => { prevTab.prev = activeTab; }, [activeTab, prevTab]);
+
+  // S101 — Dirección del slide: derecha→izquierda si avanzamos (vault→music→capsules)
+  const direction = (TAB_ORDER[activeTab] ?? 0) >= (TAB_ORDER[prevTab.prev] ?? 0) ? 1 : -1;
+
+  const slideVariants = {
+    initial: { opacity: 0, x: 24 * direction },
+    animate: { opacity: 1, x: 0 },
+    exit:    { opacity: 0, x: -24 * direction },
+  };
 
   const handleDropPlay = (track) => {
     if (track) playTrack(track);
@@ -357,10 +373,10 @@ const AuthenticatedApp = () => {
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            initial={slideVariants.initial}
+            animate={slideVariants.animate}
+            exit={slideVariants.exit}
+            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
           >
             <ActivePage />
           </motion.div>
