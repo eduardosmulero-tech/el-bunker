@@ -6,6 +6,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
+import { ENTRY_TYPES } from "./AddEntryForm";
 
 // ─── LONG PRESS THRESHOLD ───────────────────────────────────
 const LONG_PRESS_MS = 500;
@@ -25,6 +26,32 @@ const DENSITY_CONFIG = {
   normal:   { columns: 3, gap: 8,  minCol: "140px", label: "NORMAL" },
   expanded: { columns: 2, gap: 10, minCol: "220px", label: "EXPANDED" },
 };
+
+// S95 — Filtros por categoría de la taxonomía (14 categorías)
+const CATEGORY_FILTERS = [
+  { id: "all",  icon: "◈", label: "TODO" },
+  { id: "1",    icon: "📷", label: "MULTIMEDIA" },
+  { id: "2",    icon: "✎",  label: "ESCRITURA" },
+  { id: "3",    icon: "📄", label: "DOCUMENTOS" },
+  { id: "4",    icon: "📍", label: "GEOGRAFÍA" },
+  { id: "5",    icon: "⏳", label: "TEMPORAL" },
+  { id: "6",    icon: "📋", label: "LISTAS" },
+  { id: "7",    icon: "💚", label: "COMUNICACIÓN" },
+  { id: "8",    icon: "🔗", label: "CONOCIMIENTO" },
+  { id: "9",    icon: "🎨", label: "CREATIVO" },
+  { id: "10",   icon: "💰", label: "FINANZAS" },
+  { id: "11",   icon: "🕯",  label: "RITUALES" },
+  { id: "12",   icon: "🔐", label: "SEGURIDAD" },
+  { id: "13",   icon: "📊", label: "DATOS" },
+  { id: "14",   icon: "🔄", label: "INTEGRACIÓN" },
+];
+
+// Mapa category→label para badges rápidos
+const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
+const CAT_ICON  = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
+
+// S95 — ENTRY_CATEGORY: lookup type→category desde ENTRY_TYPES (single source of truth)
+const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
 
 
 // ─── UTILIDADES ────────────────────────────────────────────
@@ -146,13 +173,21 @@ const WallItem = ({ entry, era, density, onLongPress, onTap }) => {
         )}
       </motion.div>
 
-      {/* Era dot */}
-      {era && (
-        <div
-          className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full opacity-80"
-          style={{ background: era.color, boxShadow: `0 0 6px ${era.color}` }}
-        />
-      )}
+      {/* Era dot + category badge */}
+      <div className="absolute top-2 right-2 flex items-center gap-1">
+        {era && (
+          <div
+            className="w-2.5 h-2.5 rounded-full opacity-80"
+            style={{ background: era.color, boxShadow: `0 0 6px ${era.color}` }}
+          />
+        )}
+        <span
+          className="text-[8px] px-1 py-0.5 rounded-sm opacity-70"
+          style={{ background: "rgba(0,0,0,0.55)", color: ACID, fontFamily: FONT_MONO }}
+        >
+          {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"}
+        </span>
+      </div>
 
       {/* Long-press ring indicator */}
       {isPressed && (
@@ -196,6 +231,9 @@ const LongPressPreview = ({ entry, era, position, onClose }) => {
             {era.name}
           </span>
         )}
+        <span className="text-[9px] px-1 py-0.5 rounded-sm opacity-60" style={{ background: `${ACID}15`, color: ACID, fontFamily: FONT_MONO }}>
+          {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+        </span>
         <span className="text-xs opacity-30" style={{ color: ACID }}>
           {new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "2-digit" })}
         </span>
@@ -315,6 +353,9 @@ const ZoomModal = ({ entry, era, onClose }) => {
               {era.name}
             </span>
           )}
+          <span className="text-[9px] px-1.5 py-0.5 rounded-sm opacity-60" style={{ background: `${ACID}15`, color: ACID, fontFamily: FONT_MONO }}>
+            {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+          </span>
           <span className="text-xs opacity-40" style={{ color: ACID }}>
             {new Date(entry.created_at).toLocaleDateString("es-ES", {
               day: "numeric", month: "long", year: "numeric",
@@ -343,10 +384,19 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
   const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
   const [zoomEntry, setZoomEntry] = useState(null);
 
-  const photoEntries = useMemo(() =>
-    entries.filter(e => e.type === "photo" && !e.is_deleted),
+  // S95: mostrar todas las entradas con imagen/media, no solo photo.
+  // Los filtros de categoría reducen el subset visible.
+  const entriesWithMedia = useMemo(() =>
+    entries.filter(e => !e.is_deleted && (getImageUrl(e) || e.content?.text)),
     [entries]
   );
+
+  // S95 — Filtro por categoría
+  const [filterCategory, setFilterCategory] = useState("all");
+  const filteredEntries = useMemo(() => {
+    if (filterCategory === "all") return entriesWithMedia;
+    return entriesWithMedia.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
+  }, [entriesWithMedia, filterCategory]);
 
   // S66: WALL con masonry responsive real
   const renderWall = () => (
@@ -374,7 +424,7 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
       {/* S66: Masonry grid con columnas JS (respeta cronología left→right) */}
       {(() => {
         const config = DENSITY_CONFIG[density];
-        const columns = buildMasonryColumns(photoEntries, config.columns);
+        const columns = buildMasonryColumns(filteredEntries, config.columns);
         return (
           <div style={{ display: "flex", gap: `${config.gap}px` }}>
             {columns.map((colItems, colIdx) => (
@@ -401,17 +451,17 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
         );
       })()}
 
-      {!photoEntries.length && (
+      {!filteredEntries.length && (
         <p className="text-xs opacity-30 text-center py-4" style={{ color: ACID, fontFamily: FONT_MONO }}>
-          Sin fotos en esta era
+          Sin entradas{filterCategory !== "all" ? ` en ${CAT_LABEL[filterCategory]}` : ""}
         </p>
       )}
     </div>
   );
 
   const renderCinema = () => {
-    if (!photoEntries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin fotos</p>;
-    const entry = photoEntries[currentIdx % photoEntries.length];
+    if (!filteredEntries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+    const entry = filteredEntries[currentIdx % filteredEntries.length];
     const imgUrl = getImageUrl(entry);
     return (
       <div className="flex flex-col items-center gap-3">
@@ -435,7 +485,7 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
         <div className="flex gap-4">
           <button onClick={() => setCurrentIdx(i => Math.max(0, i - 1))} className="text-xl" style={{ color: ACID }}>◀</button>
           <span className="text-xs flex items-center opacity-40" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            {currentIdx + 1}/{photoEntries.length}
+            {currentIdx + 1}/{filteredEntries.length}
           </span>
           <button onClick={() => setCurrentIdx(i => i + 1)} className="text-xl" style={{ color: ACID }}>▶</button>
         </div>
@@ -444,8 +494,8 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
   };
 
   const renderDialogue = () => {
-    const eduPhotos = photoEntries.filter(e => e.from_user === "edu");
-    const davidPhotos = photoEntries.filter(e => e.from_user === "david");
+    const eduPhotos = filteredEntries.filter(e => e.from_user === "edu");
+    const davidPhotos = filteredEntries.filter(e => e.from_user === "david");
     return (
       <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
         <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>♥ DIALOGUE · Perspectiva dual</p>
@@ -491,8 +541,8 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
       <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>◆ EXHIBITION · Por eras</p>
       <div className="flex flex-wrap gap-2">
-        {eras.filter(era => photoEntries.some(e => e.era_id === era.id)).map(era => {
-          const eraEntries = photoEntries.filter(e => e.era_id === era.id);
+        {eras.filter(era => filteredEntries.some(e => e.era_id === era.id)).map(era => {
+          const eraEntries = filteredEntries.filter(e => e.era_id === era.id);
           const firstImg = getImageUrl(eraEntries[0]);
           return (
             <div key={era.id} className="p-3 text-xs" style={{ background: `${era.color}11`, border: `1px solid ${era.color}44` }}>
@@ -514,7 +564,7 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
       <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>◎ REEL · Secuencias</p>
       <div className="flex overflow-x-auto gap-2 pb-2">
-        {photoEntries.slice(0, 8).map((e, i) => {
+        {filteredEntries.slice(0, 8).map((e, i) => {
           const imgUrl = getImageUrl(e);
           return (
             <div key={e.id} className="flex-shrink-0 w-24 h-24 flex items-center justify-center overflow-hidden rounded-sm"
@@ -543,6 +593,25 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
           </button>
         ))}
       </nav>
+
+      {/* S95 — Filtro por categoría (14 categorías) */}
+      <div className="flex gap-0.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        {CATEGORY_FILTERS.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => { setFilterCategory(cat.id); setCurrentIdx(0); }}
+            className={`text-[9px] px-1.5 py-1 rounded-sm whitespace-nowrap transition-all flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
+            style={{
+              color: filterCategory === cat.id ? ACID : `${ACID}88`,
+              borderBottom: filterCategory === cat.id ? `1px solid ${ACID}` : "1px solid transparent",
+              fontFamily: FONT_MONO,
+            }}
+            title={cat.label}
+          >
+            {cat.icon}
+          </button>
+        ))}
+      </div>
 
       {/* Content */}
       <AnimatePresence mode="wait">

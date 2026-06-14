@@ -5,7 +5,7 @@
 //  Con subida real de archivos a R2 vía FileUploadService
 //  S59 · Fase 2 — VAULT núcleo · S81 · Fase 8.1
 // ============================================================
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
@@ -13,7 +13,51 @@ import { uploadFile } from "../core/FileUploadService";
 // Fase 8.3 — Taxonomía completa 14 categorías (docs/spec/taxonomia_vault.md)
 // Cada tipo: { id, category, icon, label, accept?, capture? }
 // Tipos con `accept` → file upload (multimedia/docs). Resto → textarea.
-const ENTRY_TYPES = [
+
+// Fase 8.4 — Campos extra por categoría (S94). Cada key → campo en content JSON.
+const CATEGORY_EXTRA_FIELDS = {
+  "4": [  // Geografía
+    { key: "location", label: "LUGAR", type: "text", placeholder: "Nombre del lugar…" },
+    { key: "event_date", label: "FECHA", type: "date" },
+  ],
+  "5": [  // Línea temporal — fecha es obligatoria conceptualmente
+    { key: "event_date", label: "FECHA", type: "date" },
+  ],
+  "6": [  // Listas y colecciones
+    { key: "rating", label: "PUNTUACIÓN", type: "select", options: ["—","5 ★","4 ★","3 ★","2 ★","1 ★"] },
+    { key: "url", label: "ENLACE", type: "url", placeholder: "https://…" },
+  ],
+  "7": [  // Comunicación y crecimiento
+    { key: "mood", label: "ESTADO", type: "select", options: ["—","😊 Genial","🙂 Bien","😐 Neutral","🙁 Regular","😞 Mal"] },
+  ],
+  "8": [  // Conocimiento externo
+    { key: "url", label: "ENLACE", type: "url", placeholder: "https://…" },
+  ],
+  "10": [ // Finanzas
+    { key: "amount", label: "CANTIDAD (€)", type: "number", placeholder: "0.00" },
+  ],
+  "11": [ // Rituales y tradiciones
+    { key: "event_date", label: "FECHA", type: "date" },
+  ],
+};
+
+// Placeholder contextual por tipo
+const PLACEHOLDER_BY_TYPE = {
+  letter: "Querido…",
+  gratitude: "Hoy agradezco…",
+  dream_log: "Anoche soñé que…",
+  inside_joke: "El origen de este inside joke…",
+  nickname: "Te empecé a llamar así porque…",
+  open_when: "Abrir cuando…",
+  decision_log: "Decidimos que… porque…",
+  conflict_log: "Qué pasó, cómo lo arreglamos…",
+  rel_checkin: "¿Cómo estamos? …",
+  quote: "«…» — …",
+  review: "Qué pedimos, qué tal estuvo…",
+};
+// Exportado para VaultGallery (S95) — single source of truth de categorías
+// eslint-disable-next-line react-refresh/only-export-components
+export const ENTRY_TYPES = [
   // ── 1. MULTIMEDIA ──────────────────────────────────────────
   { id: "photo",      category: "1",  icon: "📷", label: "FOTOS",      accept: "image/*",             capture: "environment" },
   { id: "video",      category: "1",  icon: "🎬", label: "VÍDEOS",     accept: "video/*",             capture: "environment" },
@@ -189,8 +233,35 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  // Fase 8.1 — Meta del tipo actual (evita 4× O(n) lookups en el render)
+    // Fase 8.1 — Meta del tipo actual (evita 4× O(n) lookups en el render)
   const currentMeta = ENTRY_TYPES.find((t) => t.id === type);
+  const currentCategory = currentMeta?.category;
+  const extraFields = CATEGORY_EXTRA_FIELDS[currentCategory] ?? [];
+
+  // Fase 8.4 — Estado de campos extra. Se inicializan desde entry.content si existe.
+  const [extraValues, setExtraValues] = useState(() => {
+    const vals = {};
+    for (const f of extraFields) {
+      vals[f.key] = entry?.content?.[f.key] ?? "";
+    }
+    return vals;
+  });
+
+  // Reset extra values cuando cambia la categoría.
+  // La inicialización desde entry.content solo ocurre al montar (entry es estable).
+  useEffect(() => {
+    const vals = {};
+    for (const f of extraFields) {
+      vals[f.key] = entry?.content?.[f.key] ?? "";
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reset de categoría es intencional
+    setExtraValues(vals);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- entry y extraFields son estables
+  }, [currentCategory]);
+
+  const setExtraValue = (key, value) => {
+    setExtraValues((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0];
@@ -206,10 +277,16 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
     if (!text.trim() && !title.trim() && !photoFile && !isEditing) return;
     setIsSubmitting(true);
     try {
+      // Fase 8.4 — Merge campos extra en content JSON
+      const extraContent = {};
+      for (const f of extraFields) {
+        const val = extraValues[f.key];
+        if (val !== "" && val !== "—") extraContent[f.key] = val;
+      }
       const entryData = {
         type,
         title,
-        content: { text: isEditing && !text.trim() ? (entry?.content?.text ?? "") : text, images: entry?.content?.images ?? [] },
+        content: { text: isEditing && !text.trim() ? (entry?.content?.text ?? "") : text, images: entry?.content?.images ?? [], ...extraContent },
         era_id: eraId,
         to_user: toUser,
         tags,
@@ -233,7 +310,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
         await onAdd?.(entryData);
       }
       setTitle(""); setText(""); setPhotoFile(null); setPhotoPreview(null);
-      setTags([]);
+      setTags([]); setExtraValues({});
     } finally {
       setIsSubmitting(false);
     }
@@ -264,6 +341,40 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           />
         ))}
       </div>
+
+      {/* Fase 8.4 — Campos extra por categoría (fecha, url, rating, etc.) */}
+      {extraFields.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {extraFields.map((f) => {
+            if (f.type === "select") {
+              return (
+                <select
+                  key={f.key}
+                  value={extraValues[f.key] || ""}
+                  onChange={(e) => setExtraValue(f.key, e.target.value)}
+                  className="bg-transparent text-xs p-2 flex-1 min-w-[100px]"
+                  style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}
+                >
+                  {(f.options ?? []).map((opt) => (
+                    <option key={opt} value={opt === "—" ? "" : opt} style={{ background: "#050505" }}>{opt}</option>
+                  ))}
+                </select>
+              );
+            }
+            return (
+              <input
+                key={f.key}
+                type={f.type}
+                value={extraValues[f.key] || ""}
+                onChange={(e) => setExtraValue(f.key, e.target.value)}
+                placeholder={f.placeholder ?? f.label}
+                className="bg-transparent text-xs p-2 flex-1 min-w-[100px] outline-none"
+                style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {/* Campos */}
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO"
@@ -306,7 +417,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
         </>
       ) : (
         <textarea value={text} onChange={e => setText(e.target.value)}
-          placeholder={type === "letter" ? "Querido..." : "Escribe aquí..."} rows={4}
+          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} rows={4}
           className="bg-transparent text-sm p-2 outline-none resize-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
       )}
 
