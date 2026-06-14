@@ -1,0 +1,96 @@
+PLIEGO-230 — Mini player opaco + botonera consolidada
+Fecha: 2026-06-14
+Estado: pendiente
+ARCHIVOS: src/musiclab/WinampPlayer.jsx
+CAMBIO: Phase 2.1 — fix opacidad (visualizer + track info a #0a0a0a sólido), slider de volumen más grande (w-16 h-1.5), ⚡ LANZAR DROP movido al bloque central de la botonera entre ▶▶ y ⊕ con padding compacto.
+CRITERIO DE ÉXITO: Lint 0 errors, build clean. browser-use confirma: visualizer y track info totalmente opacos (no se ve contenido de abajo), ⚡ DROP visible en la botonera central, slider de volumen más fácil de tocar.
+RESULTADO: —
+
+SEARCH/REPLACE 1 — Visualizer section opaca
+SEARCH:
+      {/* Visualizer */}
+      <div className="px-3 pt-3 pb-1" style={{ background: "rgba(0,0,0,0.4)" }}>
+REPLACE:
+      {/* PLIEGO-230: Visualizer opaco — antes rgba(0,0,0,0.4) dejaba ver contenido de abajo */}
+      <div className="px-3 pt-3 pb-1" style={{ background: "#0a0a0a" }}>
+
+---
+
+SEARCH/REPLACE 2 — Track info section opaca
+SEARCH:
+      {/* Track Info */}
+      <div className="px-3 py-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+REPLACE:
+      {/* PLIEGO-230: Track info opaco — antes rgba(0,0,0,0.3) colapsaba el texto sobre el fondo */}
+      <div className="px-3 py-2 overflow-hidden" style={{ background: "#0a0a0a" }}>
+
+---
+
+SEARCH/REPLACE 3 — Volumen slider más grande (w-12 → w-16, h-1 → h-1.5)
+SEARCH:
+          <input type="range" min={0} max={100} value={volume}
+            onChange={(e) => changeVolume(Number(e.target.value))}
+            className="w-12 h-1 appearance-none cursor-pointer rounded-full"
+            style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}22 ${volume}%)`, accentColor }} />
+REPLACE:
+          {/* PLIEGO-230: vol slider más grande (w-16 h-1.5) — mejor touch target en mobile */}
+          <input type="range" min={0} max={100} value={volume}
+            onChange={(e) => changeVolume(Number(e.target.value))}
+            className="w-16 h-1.5 appearance-none cursor-pointer rounded-full"
+            style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}22 ${volume}%)`, accentColor }} />
+
+---
+
+SEARCH/REPLACE 4 — ⚡ DROP movido a botonera central (entre ▶▶ y ⊕)
+SEARCH:
+          <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" size="sm" />
+          {track && (
+            <WinampBtn
+              label="⊕"
+              color={accentColor}
+              onClick={() => addToQueue?.(track)}
+              title="Añadir a cola"
+              aria-label="Añadir a cola"
+              size="sm"
+            />
+          )}
+REPLACE:
+          <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" size="sm" />
+          {/* PLIEGO-230: ⚡ DROP consolidado en la botonera central — antes estaba separado al final */}
+          {track && (
+            <WinampBtn
+              label="⚡"
+              color={accentColor}
+              onClick={() => setShowDrop(true)}
+              title="Lanzar drop"
+              aria-label="Lanzar drop"
+              size="sm"
+            />
+          )}
+          {track && (
+            <WinampBtn
+              label="⊕"
+              color={accentColor}
+              onClick={() => addToQueue?.(track)}
+              title="Añadir a cola"
+              aria-label="Añadir a cola"
+              size="sm"
+            />
+          )}
+
+---
+
+SEARCH/REPLACE 5 — Eliminar bloque ⚡ LANZAR DROP separado al final (ahora en botonera)
+SEARCH:
+      {/* Drop Button */}
+      {track && (
+        <motion.button whileTap={{ scale: 0.96 }} onClick={() => setShowDrop(true)}
+          className="w-full py-2 text-xs tracking-[0.25em] uppercase font-bold transition-all"
+          style={{ background: `linear-gradient(90deg, ${withAlpha(accentColor, 0.13)} 0%, ${withAlpha(accentColor, 0.07)} 100%)`,
+            borderTop: `1px solid ${withAlpha(accentColor, 0.2)}`, color: accentColor, textShadow: `0 0 8px ${withAlpha(accentColor, 0.53)}` }}>
+          ⚡ LANZAR DROP
+        </motion.button>
+      )}
+REPLACE:
+      {/* PLIEGO-230: ⚡ LANZAR DROP movido a la botonera central (entre ▶▶ y ⊕).
+          El botón full-width separado se eliminó para consolidar la UX. */}
