@@ -29,6 +29,8 @@ const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString
 
 // S96 — ENTRY_CATEGORY desde ENTRY_TYPES, CATEGORY_FILTERS importado de AddEntryForm
 const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
+// S97 — Lookup rápido de categoría → { icon, label } para badges en EraDetailPanel
+const CAT_LOOKUP = Object.fromEntries(CATEGORY_FILTERS.filter(c => c.id !== "all").map(c => [c.id, c]));
 const DEMO_ERAS = [
   { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
   { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
@@ -467,6 +469,13 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
             >
               <span style={{ color: era.color ?? ACID }}>
               {entry.type === "photo" || entry.content?.images?.length ? "◎" : "◉"}
+              </span>
+              {/* S97 — Badge de categoría */}
+              <span
+                className="text-[9px] opacity-50 flex-shrink-0"
+                title={CAT_LOOKUP[ENTRY_CATEGORY[entry.type]]?.label ?? entry.type}
+              >
+                {CAT_LOOKUP[ENTRY_CATEGORY[entry.type]]?.icon ?? "◈"}
               </span>
               <span
                 className="text-xs tracking-wide truncate flex-1"
@@ -922,7 +931,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               </div>
             }>
               <VaultGallery
-                entries={entries.filter(e => e.era_id === activeDisplayEra.id && !e.is_deleted)}
+                entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
                 eras={displayEras}
                 jwtToken={jwtToken}                />
               </Suspense>

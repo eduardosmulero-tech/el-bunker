@@ -1,9 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
+  resolve: {
+    alias: {
+      // jsmediatags → ReactNativeFileReader.js importa react-native-fs
+      // Shim vacío para build browser (S98)
+      'react-native-fs': path.resolve(__dirname, 'src/shims/react-native-fs.js'),
+    },
+  },
   plugins: [
     react(), // build-bust-2026-05-19
     visualizer({
