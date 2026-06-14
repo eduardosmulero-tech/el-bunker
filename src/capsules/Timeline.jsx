@@ -135,8 +135,8 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             {todayEvents.slice(0, 3).map((e, i) => {
               const year = e.created_at?.slice(0, 4);
               const icon = EVENT_ICONS[e.event_type] || "●";
-              return (
-                <span key={i} className="text-xs px-1.5 py-0.5 rounded-sm" style={{ background: `${PURPLE}15`, color: PURPLE }}>
+    return (
+      <span key={e.id || `ev-${i}`} className="text-xs px-1.5 py-0.5 rounded-sm" style={{ background: `${PURPLE}15`, color: PURPLE }}>
                   {icon} {year}
                 </span>
               );
@@ -253,7 +253,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             const icon = EVENT_ICONS[e.event_type] || "●";
             const label = e.event_type?.replace(/_/g, " ").toUpperCase() ?? "EVENTO";
             return (
-              <motion.div key={`${e.id || i}-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
+              <motion.div key={e.id || `tev-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
                 className="flex items-center gap-2 px-2 py-1 text-xs"
                 style={{ borderBottom: `1px solid ${accent}11` }}>
                 <span style={{ color: accent }}>{icon}</span>
@@ -280,7 +280,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
               detail = e.payload ? (typeof e.payload === "string" ? JSON.parse(e.payload) : e.payload) : {};
             } catch { /* keep empty */ }
             return (
-              <motion.div key={`${e.id || day}-${i}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+              <motion.div key={e.id || `${day}-${i}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
                 className="flex items-center gap-3 px-3 py-2 text-xs"
                 style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>

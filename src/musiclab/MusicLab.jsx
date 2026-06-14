@@ -806,10 +806,10 @@ export default function MusicLab({
                     {(() => {
                       const reversed = [...playHistory].reverse();
                       const visible = showFullHistory ? reversed : reversed.slice(0, 3);
-                      return visible.map((track, i) => {
+                      return visible.map((track) => {
                         const hVibe = getVibeConfig(track.tag ?? track.vibe);
                         return (
-                          <div key={`hist-${track.id}-${i}`} className="flex items-center gap-3 p-3 rounded-sm"
+                          <div key={`hist-${track.id}`} className="flex items-center gap-3 p-3 rounded-sm"
                             style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
                             <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                               style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>

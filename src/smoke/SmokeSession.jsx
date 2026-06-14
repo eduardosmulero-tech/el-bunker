@@ -520,7 +520,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
                   <p className="text-xs opacity-25 text-center py-2" style={{ color: ACID }}>Sin sesiones aún</p>
                 ) : (
                   history.slice(0, 12).map((h, i) => (
-                    <div key={h.id || i} className="flex items-center gap-2 text-xs py-1 px-2"
+                    <div key={h.id || `session-${i}`} className="flex items-center gap-2 text-xs py-1 px-2"
                       style={{ borderBottom: `1px solid ${ACID}0a`, fontFamily: FONT }}>
                       <span style={{ color: h.completed ? PURPLE : `${ACID}33` }}>
                         {h.completed ? "✓" : "⌁"}
