@@ -37,7 +37,7 @@ CREATE TABLE eras (
 CREATE TABLE entries (
   id          TEXT PRIMARY KEY,
   era_id      TEXT REFERENCES eras(id) ON DELETE SET NULL,
-  type        TEXT NOT NULL DEFAULT 'note',  -- note|photo|milestone|letter|document|audio
+  type        TEXT NOT NULL DEFAULT 'note',  -- Fase 8.3: 70 tipos en 14 categorías (taxonomia_vault.md)
   title       TEXT DEFAULT '',
   content     TEXT NOT NULL DEFAULT '{}',    -- JSON blob: { text, images[], metadata }
   from_user   TEXT NOT NULL REFERENCES users(id),
