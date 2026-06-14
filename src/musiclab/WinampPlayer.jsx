@@ -114,11 +114,12 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [skip, tracks]);
 
-  const togglePlay = () => {
+  const togglePlay = useCallback(() => {
     if (!audioRef.current) return;
     if (playing) { audioRef.current.pause(); setPlaying(false); }
     else         { audioRef.current.play().catch(() => {}); setPlaying(true); }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- audioRef es estable (ref), setPlaying es estable (useState setter)
+  }, [playing]);
 
   useEffect(() => {
     // BUG-10: no resetear isPlaying en montaje inicial (desync al volver de pestaña)
@@ -187,7 +188,6 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track, togglePlay, skipDir, addToQueue, liked]);
 
 
@@ -328,20 +328,13 @@ return () => cancelAnimationFrame(raf);
   useEffect(() => {
     if (!("mediaSession" in navigator) || !track) return;
     const eraTag = track.era_name || track.era_id || "";
-    // Phase 2.1.a11y: artwork de mayor resolución. Para YouTube usamos hqdefault
-    // (480x360) y sddefault (640x480) en lugar de default (120x90). El browser
-    // pickea el primero que pueda renderizar — mejor calidad en lock screen.
-    // FIX TDZ (review 4ade25b): declarado ANTES de MediaMetadata para evitar
-    // ReferenceError al ejecutar el useEffect.
-    const ytId = track.url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
-    const artwork = ytId
-      ? [
-          { src: `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`, sizes: "480x360", type: "image/jpeg" },
-          { src: `https://img.youtube.com/vi/${ytId}/sddefault.jpg`, sizes: "640x480", type: "image/jpeg" },
-        ]
-      : track.thumbnail
-        ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
-        : [];
+    // S85: artwork usa exclusivamente track.thumbnail. El extractor de YouTube
+    // se eliminó (código muerto desde la migración a R2 — track.url ya no es
+    // una URL de YouTube, siempre es un blob/object R2). Ver docs/legacy/SESIONES.md
+    // (S85) para la limpieza.
+    const artwork = track.thumbnail
+      ? [{ src: track.thumbnail, sizes: "512x512", type: "image/jpeg" }]
+      : [];
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track.title ?? "Sin título",
       artist: track.artist ?? "El Búnker",

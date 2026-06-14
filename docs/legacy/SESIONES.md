@@ -4,6 +4,96 @@
 
 ---
 
+## S85 — WCAG Romantiqueo + Dead YouTube Code Cleanup (14 Junio 2026)
+
+**Tipo:** Accesibilidad + limpieza de código muerto
+**Pliegos aplicados:** WCAG-FIX-1, YT-CLEANUP-1
+**Bugs resueltos:**
+- WCAG-ROMANTIQUEEO: contraste del purple sube de 4.40:1 → ~5.5:1 (pasa AA)
+- YT-PARSEO-MUERTO: extractor de YouTube inalcanzable desde S54 eliminado de 3 archivos
+
+**Archivos tocados (11 código + 4 docs + 2 HTML):**
+- `src/tokens.js` — `PURPLE` const + VIBE_TAGS romantiqueo seedColor + palette
+- `src/layout/Layout.jsx` — const local
+- `src/vault/Vault.jsx` — const local
+- `src/smoke/SmokeSession.jsx` — const local
+- `src/layout/LoginScreen.jsx` — const local
+- `src/core/ColorPicker.jsx` — color picker palette
+- `src/core/GoogleDriveService.js` — seed romantiqueo
+- `src/musiclab/WinampPlayer.jsx` — MediaSession artwork simplificado (sin YouTube)
+- `src/musiclab/TrackCard.jsx` — `extractYouTubeId` + 3 ramas + `ytId` prop eliminados
+- `src/musiclab/MusicLab.jsx` — extractor inline + `ytId` wiring eliminado
+- `workers/schema.sql` — seed romantiqueo
+- `docs/Nucleo/SESION.md`, `docs/Nucleo/ESTADO.md`, `docs/Nucleo/CHANGELOG.md`, `docs/legacy/SESIONES.md`, `docs/legacy/PLIEGOS_HISTORIAL.md`
+- `docs/roadmap_tracker.html`, `docs/operacional/el_bunker_roadmap.html`
+- `tools/el_bunker_backup_2026-06-13.json` — snapshot pre-S85 actualizado
+
+**Validación:** Build ✅ 2.18s · Lint 0 errors (2 warnings pre-existentes en `WinampPlayer.jsx` exhaustive-deps) · Code-reviewer ship-it con 1 flag menor (background fallback semantics) resuelto.
+
+**Decisiones arquitecturales:**
+- **Color shift global vs override per-vibe:** se eligió el shift global (`#d966ff`) sobre `accentAlt` override porque el cambio es semánticamente neutro (mismo hue, solo más luminoso) y `buildPalette()` en `tokens.js` deriva el resto automáticamente.
+- **Dead code removal scope:** extractor + 4 usos eliminados en bloque, no guarded por feature flag, porque `track.url` es tipado como R2 URL en el D1 schema y no hay path donde pueda ser YouTube. La rama era inalcanzable, no "rara".
+
+**Out of scope (logged en S85):**
+- Consistencia event naming: `playlists_reordered` (plural) vs `playlist_reordered` (singular) — pendiente
+- Debounce/queue para drags concurrentes — pendiente
+- Toast infrastructure en otros módulos (Capsules, Smoke) — auditoría preventiva pendiente
+- Roadmap Fases 8.2–15 (schema `media_type` en D1, render multimedia) — pendiente
+
+---
+
+## S84 — Sister-Bug Cleanup + UX Feedback + Vibe-Aware COLA + handlePlDrop (14 Junio 2026)
+
+**Tipo:** Bugfixes + refactor + UX + schema migration
+**Pliegos aplicados (8 commits):**
+- `4c94540` (pre-S84) DEL-PLAYLIST fix — handleDeletePlaylist routea por Worker API
+- `a71171e` (pre-S84) DEL-DROP fix — handleDeleteDrop routea por Worker API
+- `9351603` S84-001 RENAME-PLAYLIST — handleRenamePlaylist routea por `PATCH /api/playlists/:id`
+- `ee9263f` S84-002 REORDER/REMOVE-TRACK — 2 endpoints nuevos + wirings + handleEditPlaylist eliminado
+- `f68f8df` S84-003 Toasts de error en 3 catches (handleDeletePlaylist, onDeleteDrop, handleRenamePlaylist)
+- `d12bf3b` S84-004 COLA tab vibe-aware refactor (ACID → accentColor, 49 refs scoped)
+- `3828446` S84-005 Toasts extendidos (onRemoveTrack, onReorderTracks, handleDeleteEntry + toast infra en Vault.jsx)
+- `3405d16` S84-006 handlePlDrop — sort_order column + `POST /api/playlists/reorder` + wiring
+
+**Bugs resueltos (6 sister bugs del mismo patrón DEL-PLAYLIST):**
+- RENAME-PLAYLIST: el próximo refreshDb restauraba el nombre viejo de la playlist
+- REORDER-TRACK: el próximo refreshDb restauraba el orden antiguo de tracks
+- REMOVE-TRACK: el próximo refreshDb restauraba el track eliminado
+- HANDLE-PL-DROP: el próximo refreshDb restauraba el orden antiguo de cards
+- (DEL-PLAYLIST y DEL-DROP ya cerrados en commits previos 4c94540 y a71171e)
+
+**Bugs UX resueltos (silent catches):**
+- handleDeletePlaylist, onDeleteDrop, handleRenamePlaylist, onRemoveTrack, onReorderTracks, handleDeleteEntry — todos ahora muestran toast "NO SE PUDO Y" en error.
+
+**Archivos tocados (5):**
+- `workers/schema.sql` (+2 líneas: sort_order column + idx_playlists_order)
+- `workers/worker.js` (+50/-5: GET ordering, POST auto-sort_order, POST /api/playlists/reorder, PUT/DELETE /api/playlists/:id/tracks)
+- `src/musiclab/MusicLab.jsx` (+~100: 6 handlers reescritos con patrón Worker-first + 49 ACID→accentColor scoped a COLA + handleEditPlaylist eliminado)
+- `src/vault/Vault.jsx` (+toast infra: state + UI vibe-aware con accent, alert() reemplazado por setToast)
+- `docs/*` (SESION.md, ESTADO.md, CHANGELOG.md, PLIEGOS_HISTORIAL.md, SESIONES.md)
+
+**Validación:** Build ✅ en todos los commits · Lint 0 errors (2 warnings pre-existentes) · Code-reviewer ship-it en todos (con 1 amend en 3405d16 para añadir `wrangler deploy` al manual step).
+
+**Decisiones arquitecturales:** ninguna nueva. Patrón "Worker API primero, patchDb en success, toast en error" ya estaba formalizado en S82 (DEL-PLAYLIST fix) — S84 lo extendió consistentemente a los 6 sister bugs.
+
+**Manual steps pendientes (CRÍTICOS):**
+1. `wrangler deploy` desde raíz del proyecto
+2. `ALTER TABLE playlists ADD COLUMN sort_order INTEGER DEFAULT 0;`
+3. `CREATE INDEX idx_playlists_order ON playlists(sort_order, created_at);`
+
+**Out of scope (logged en S84):**
+- Consistencia event naming: `playlists_reordered` (plural) vs `playlist_reordered` (singular) — pliego de rename
+- Debounce/queue para drags concurrentes durante reorder in-flight — mismo patrón que los otros 5 handlers
+- Fix WCAG romantiqueo purple (`#bf00ff` daba 4.40:1, fallaba AA) — **cerrado en S85** cambiando a `#d966ff` (~5.5:1)
+- Toast infrastructure en otros módulos (Capsules, Smoke) — auditoría preventiva pendiente
+
+**Verificación live recomendada (tras manual steps):**
+- refreshDb tras cada operación del patrón (delete/rename/reorder playlist, remove/reorder track, delete entry, drop) NO debe restaurar el estado stale
+- Drag&drop de playlist cards en LISTS tab debe persistir el orden tras F5
+- 6 catches (los listados arriba) deben mostrar toast de error si el Worker falla
+
+---
+
 ## SESIÓN 38 — 2026-05-29
 **Pliegos:** 101, 102, 103, 104b
 **Commits:**

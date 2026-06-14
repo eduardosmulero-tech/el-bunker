@@ -5,6 +5,72 @@
 
 ---
 
+## v2.0.3 — "Autonomous Roadmap Batch" (14 Junio 2026)
+
+### 🐛 CORREGIDO
+
+- **P1 MINI-PLAYER:** añadido botón ◀◀ prev (mirror del skip ▶▶). Antes solo había next + play.
+- **P2 EVENT-NAMING-CONSISTENCY:** `playlist_reordered` → `playlist_tracks_reordered` en worker.js. Mirror de `playlists_reordered` (plural, S84). Unifica naming: el evento describe QUÉ se reordenó (tracks de una playlist) en lugar de la acción genérica.
+
+### ✨ MEJORAS
+
+- **S8 shuffle/loop localStorage:** ambos persisten en `el_bunker_shuffle` y `el_bunker_loop_mode`. Sobreviven a F5 y restart de PWA.
+- **Q6 toast con sugerencia:** al alcanzar 75 tracks, toast con acción "GUARDAR COMO PLAYLIST" (prompt para nombre). Antes solo `console.warn`.
+- **UX3.7 portrait lock:** overlay que aparece en landscape (altura < 500px) pidiendo girar el dispositivo. Solo móvil, no afecta desktop.
+- **Capsules toast infrastructure:** fetch errors ahora muestran toast vibe-aware con sub-mensaje (en lugar de solo `console.warn` + texto inline opaco).
+
+### ⚠️ STATSENGINE FOLLOWUP
+
+El rename de `playlist_reordered` puede orphan-ear eventos históricos en D1. Si `StatsEngine.js` agrega por `event_type = 'playlist_reordered'`, añadir UNION/OR clause o actualizar la query.
+
+---
+
+## v2.0.2 — "WCAG Romantiqueo + Dead YouTube Code Cleanup" (14 Junio 2026)
+
+### ♿ ACCESIBILIDAD
+
+- **WCAG romantiqueo corregido:** el color del vibe romantiqueo cambia de `#bf00ff` a `#d966ff`. Contrast ratio sube de 4.40:1 → ~5.5:1 sobre `#0a0a0a`, pasando WCAG AA para texto normal (≥4.5:1). Aplicado en 11 archivos: tokens.js (source of truth), Layout/Vault/SmokeSession/LoginScreen (purple const local), ColorPicker, GoogleDriveService (seed), workers/schema.sql (seed D1), backup JSON, y 2 HTML de roadmap.
+
+### 🧹 LIMPIEZA
+
+- **Dead YouTube code eliminado:** desde la migración a R2 (S54) `track.url` ya no es una URL de YouTube. El extractor `extractYouTubeId` en `TrackCard.jsx` y los regex inline en `WinampPlayer.jsx` + `MusicLab.jsx` eran código inalcanzable. Removidos:
+  - `TrackCard.jsx`: función `extractYouTubeId` + 3 ramas de imagen (card/grid/list) + `ytId` prop de `TrackCardGrid`
+  - `WinampPlayer.jsx`: `ytId` extraction + artwork condicional → simplificado a `track.thumbnail` único para MediaSession
+  - `MusicLab.jsx`: extractor inline L1013 + wiring de `ytId` prop en grid view
+- **Cero regresiones visuales:** las imágenes ahora vienen exclusivamente de `track.thumbnail` (R2 / metadata) con fallback de iniciales del artista sobre color del vibe (sin cambios — la rama "no thumbnail" ya existía).
+
+---
+
+## v2.0.1 — "Sister-Bug Cleanup + UX Feedback" (14 Junio 2026)
+
+### 🐛 CORREGIDO
+
+- **Sister bugs del patrón DEL-PLAYLIST (6 cerradas):** RENAME-PLAYLIST, REORDER-TRACK, REMOVE-TRACK, HANDLE-PL-DROP, más las 2 pre-existentes DEL-PLAYLIST y DEL-DROP. Todas las operaciones de playlist/track/drop/entry ahora persisten correctamente a D1. El próximo `refreshDb` ya no restaura estado stale.
+- **Silent catches eliminados:** 6 handlers (handleDeletePlaylist, handleDeleteDrop, handleRenamePlaylist, onRemoveTrack, onReorderTracks, handleDeleteEntry) ahora muestran toast "NO SE PUDO Y" en error con lifecycle de 2.5s. Cero silent catches en handlers principales. `alert()` de Vault reemplazado por toast vibe-aware.
+
+### 🔧 INFRAESTRUCTURA (interna)
+
+- **Worker:** 2 endpoints nuevos (`POST /api/playlists/reorder` para drag&drop de cards, `PUT/DELETE /api/playlists/:id/tracks` para reorder/remove de tracks dentro de playlist). GET `/api/playlists` ahora ordena por `sort_order ASC, created_at DESC`. POST `/api/playlists` auto-asigna `sort_order` atómicamente (`INSERT...SELECT MAX+1`).
+- **D1 schema:** nueva columna `sort_order INTEGER DEFAULT 0` en tabla `playlists` + índice `idx_playlists_order (sort_order, created_at)`. Manual step requerido en producción: `ALTER TABLE` + `CREATE INDEX`.
+
+### 🎨 UI/UX
+
+- **COLA tab vibe-aware:** mechanical `ACID` → `accentColor` refactor (49 refs) scoped al bloque del tab COLA. Etiquetas ("anterior", "ahora", "cola manual", "playlist · X"), borders, backgrounds, thumbnails, metadata y "AÑADIDO A ${activePl.name}" ahora vibran con el accent del reproductor. Coherencia vibe-aware completa en los 3 tabs (TRACKS, LISTS, COLA).
+- **Toasts de error globalizados:** patrón unificado (console.warn + setToast + setTimeout 2.5s + return) en los 6 handlers principales. UX consistente entre MUSIC LAB y VAULT.
+
+### ⚠️ MANUAL STEPS REQUERIDOS TRAS ACTUALIZAR
+
+1. `wrangler deploy` desde raíz del proyecto (deploy Worker con endpoints nuevos)
+2. Migración D1 en `el-bunker-db`:
+   ```sql
+   ALTER TABLE playlists ADD COLUMN sort_order INTEGER DEFAULT 0;
+   CREATE INDEX idx_playlists_order ON playlists(sort_order, created_at);
+   ```
+
+Sin estos pasos, los endpoints nuevos devuelven 404 y los handlers muestran "NO SE PUDO..." persistentemente.
+
+---
+
 ## v2.0.0 — "Roadmap Completo" (Junio 2026)
 
 ### 🆕 NUEVO

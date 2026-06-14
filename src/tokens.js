@@ -7,7 +7,7 @@
 
 // ─── CORE COLORS ─────────────────────────────────────────────
 export const ACID   = "#bfff00";
-export const PURPLE = "#bf00ff";
+export const PURPLE = "#d966ff";
 export const RED    = "#ff3b3b";
 export const ORANGE = "#ff6b35";
 export const BG     = "#050505";
@@ -21,8 +21,8 @@ export const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 // ─── GLASS SURFACES ──────────────────────────────────────────
 export const GLASS_BG      = "rgba(191,255,0,0.03)";
 export const GLASS_BORDER  = "rgba(191,255,0,0.12)";
-export const PURPLE_BG     = "rgba(191,0,255,0.04)";
-export const PURPLE_BORDER = "rgba(191,0,255,0.2)";
+export const PURPLE_BG     = "rgba(217,102,255,0.04)";
+export const PURPLE_BORDER = "rgba(217,102,255,0.2)";
 
 // ─── VIBE PALETTE BUILDER ─────────────────────────────────────
 // Deriva 6 tokens de color desde un hex semilla.
@@ -96,8 +96,8 @@ export const VIBE_TAGS = [
     label:     "♥",
     icon:      "♥",
     namespace: "music",
-    seedColor: "#bf00ff",
-    palette:   buildPalette("#bf00ff"),
+    seedColor: "#d966ff",
+    palette:   buildPalette("#d966ff"),
   },
 ];
 

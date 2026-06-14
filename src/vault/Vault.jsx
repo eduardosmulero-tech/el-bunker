@@ -19,7 +19,7 @@ const VaultGallery = lazy(() => import("./VaultGallery"));
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 // ⚠️  Definir antes de DEMO_ERAS — se usa en el array (TDZ)
-const PURPLE      = "#bf00ff";
+const PURPLE      = "#d966ff";
 const GLASS_BG    = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";
 const FONT_MONO   = "'JetBrains Mono', 'Courier New', monospace";

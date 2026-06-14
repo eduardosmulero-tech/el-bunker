@@ -17,7 +17,7 @@ const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 // 12 colores: 4 cool (cyan/verde/azul/violeta), 4 warm (naranja/rojo/rosa/amarillo),
 // 2 accent (lima/magenta) que rompen la grid.
 const PALETTE = [
-  "#00ffcc", "#aaff44", "#ff6b35", "#bf00ff",
+  "#00ffcc", "#aaff44", "#ff6b35", "#d966ff",
   "#ff2d55", "#00b4ff", "#ffcc00", "#ff69b4",
   "#7fff00", "#ff4500", "#1effbc", "#c77dff",
 ];

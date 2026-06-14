@@ -28,6 +28,13 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
   const [capsules, setCapsules] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  // S85c: toast global para feedback de fetch errors y otros catch
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
   // G4: usar trackVibe accent en lugar de ACID fijo
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
@@ -63,7 +70,10 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
         }
       } catch (e) {
         console.warn("[Capsules] fetch error:", e.message);
-        if (!cancelled) setFetchError(e.message);
+        if (!cancelled) {
+          setFetchError(e.message);
+          setToast({ msg: "NO SE PUDO CARGAR", sub: e.message });
+        }
       } finally {
         if (!cancelled) setLoadingEvents(false);
       }
@@ -74,6 +84,24 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
 
   return (
     <div className="px-4 py-4 max-w-lg mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+      {/* S85c Toast (mismo patrón vibe-aware que MusicLab/Vault) */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.25 }}
+            className="fixed bottom-20 left-4 right-4 z-50 px-4 py-2 text-center"
+            style={{
+              background: `${accent}15`, border: `1px solid ${accent}55`, color: accent,
+              fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.25em",
+              textTransform: "uppercase", borderRadius: 2,
+            }}
+          >
+            {toast.msg}
+            {toast.sub && <div className="text-[8px] opacity-40 mt-1 normal-case">{toast.sub}</div>}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Sub-tab bar — swipeable en móvil, sin scrollbar */}
       <nav
         className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none"

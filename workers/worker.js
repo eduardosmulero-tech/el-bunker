@@ -413,7 +413,7 @@ export default {
         ).bind(plId).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'playlist',?3,?4)"
-        ).bind("playlist_reordered", userId, plId, JSON.stringify({ count: trackIds.length })).run();
+        ).bind("playlist_tracks_reordered", userId, plId, JSON.stringify({ count: trackIds.length })).run();
         return json({ ok: true, playlist_id: plId, count: trackIds.length });
       }
 

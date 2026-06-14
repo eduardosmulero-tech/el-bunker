@@ -5,6 +5,72 @@
 
 ---
 
+## S85 — WCAG Romantiqueo + Dead YouTube Code Cleanup (14 Junio 2026)
+
+**Objetivo:** Cerrar el bug de accesibilidad WCAG del vibe romantiqueo (purple `#bf00ff` daba 4.40:1 sobre `#0a0a0a`, fallaba AA) cambiando a `#d966ff` (~5.5:1, pasa AA). Limpiar el código muerto de YouTube en TrackCard/WinampPlayer/MusicLab — desde la migración a R2 (S54) `track.url` ya no es URL de YouTube, así que el extractor de YouTube y todas sus ramas eran inalcanzables.
+
+### Resultado
+- **WCAG romantiqueo corregido** — `#bf00ff` → `#d966ff` reemplazado en 11 archivos (8 código + 2 docs + 1 backup JSON). Contrast ratio sube de 4.40:1 → ~5.5:1, pasa WCAG AA para texto normal.
+- **Dead YouTube code eliminado** — 4 lugares:
+  1. `src/musiclab/TrackCard.jsx` — `extractYouTubeId` function eliminada + `ytId` prop de `TrackCardGrid` + 3 ramas de imagen (`ytId ? <img.youtube> : ...`) en card/grid/list views
+  2. `src/musiclab/MusicLab.jsx` — extractor inline L1013 + wiring de `ytId` prop eliminado
+  3. `src/musiclab/WinampPlayer.jsx` — `ytId` extraction + artwork condicional simplificado a `track.thumbnail` único
+- **Validación:** Build ✅ (2.18s) · Lint 0 errors (2 warnings pre-existentes) · Code-reviewer ship-it (1 minor flag resuelto)
+- **Cero regresiones:** las imágenes ahora vienen exclusivamente de `track.thumbnail` (R2 / metadata), con fallback de iniciales del artista sobre color del vibe.
+
+### Archivos modificados (11 código + 4 docs)
+- Código: `src/tokens.js`, `src/layout/Layout.jsx`, `src/vault/Vault.jsx`, `src/smoke/SmokeSession.jsx`, `src/layout/LoginScreen.jsx`, `src/core/ColorPicker.jsx`, `src/core/GoogleDriveService.js`, `src/musiclab/WinampPlayer.jsx`, `src/musiclab/TrackCard.jsx`, `src/musiclab/MusicLab.jsx`, `workers/schema.sql`
+- Docs: `docs/Nucleo/SESION.md`, `docs/Nucleo/ESTADO.md`, `docs/Nucleo/CHANGELOG.md`, `docs/legacy/SESIONES.md`, `docs/legacy/PLIEGOS_HISTORIAL.md`, `tools/el_bunker_backup_2026-06-13.json`
+- HTML: `docs/roadmap_tracker.html`, `docs/operacional/el_bunker_roadmap.html`
+
+### Decisiones arquitecturales
+- **Color shift vs override per-vibe:** se eligió el color shift global (`#d966ff`) sobre `accentAlt` override porque el cambio es semánticamente neutro (mismo hue, solo más luminoso) y no requiere lógica condicional en el build de paletas. `buildPalette()` en `tokens.js` deriva el resto (backgrounds, borders, opacities) automáticamente.
+- **Dead code removal scope:** el extractor de YT y sus 4 usos se eliminaron en bloque en lugar de dejarlos guarded por un feature flag, porque `track.url` es tipado como R2 URL en el D1 schema y no hay path donde pueda ser una URL de YouTube. La rama era código inalcanzable, no "raro".
+
+### Out of scope (logged en S84, todavía pendiente)
+- Consistencia event naming: `playlists_reordered` (plural) vs `playlist_reordered` (singular)
+- Debounce/queue para drags concurrentes durante reorder in-flight
+- Toast infrastructure en otros módulos (Capsules, Smoke) — auditoría preventiva pendiente
+- Roadmap Fases 8.2–15 (schema `media_type` en D1, render multimedia, validación por tipo, búsqueda por categoría)
+
+---
+
+## S84 — Sister-Bug Cleanup + UX Feedback + Vibe-Aware COLA + handlePlDrop (14 Junio 2026)
+
+**Objetivo:** Diagnosticar el DEL-DROP sister bug (cerrado en a71171e) y cualquier otro del mismo patrón — operaciones que solo llaman `patchDb` (Drive JSON) sin routear por el Worker API (D1), así el próximo `refreshDb` restaura el estado stale. Más feedback de error explícito y refactor vibe-aware del COLA tab.
+
+### Resultado
+- **6 sister bugs identificadas y cerradas** (todas con el mismo patrón: handler solo llamaba `patchDb`):
+  1. **RENAME-PLAYLIST** (`9351603`) — `handleRenamePlaylist` ahora routea por `PATCH /api/playlists/:id` antes de patchDb. Toast "PLAYLIST RENOMBRADA" en success, "NO SE PUDO RENOMBRAR" en catch.
+  2. **REORDER/REMOVE-TRACK** (`ee9263f`) — Backend: 2 endpoints nuevos (`PUT /api/playlists/:id/tracks` para reorder atómico, `DELETE /api/playlists/:id/tracks/:trackId` para remove con 404). Frontend: `onRemoveTrack` y `onReorderTracks` ahora routean por Worker. Plus `handleEditPlaylist` eliminado (huérfano).
+  3. **handlePlDrop (sister #3)** (`3405d16`) — Schema: `sort_order INTEGER DEFAULT 0` en `playlists` + `idx_playlists_order`. Worker: `GET` ordena por `sort_order`, `POST` auto-asigna atómicamente (`INSERT...SELECT MAX+1`), nuevo `POST /api/playlists/reorder` con batch UPDATE + 404 + evento `playlists_reordered`. Frontend: `handlePlDrop` routea por el endpoint nuevo.
+- **Pliego global de feedback de error** (`f68f8df`) — 3 catch blocks (handleDeletePlaylist, onDeleteDrop, handleRenamePlaylist) ahora muestran toast "NO SE PUDO Y" en catch + `setTimeout(2500ms)` + return. Cero silent catches en estos handlers.
+- **Pliego extendido de feedback** (`3828446`) — Patrón aplicado también a `onRemoveTrack`, `onReorderTracks` y `handleDeleteEntry` de `Vault.jsx`. Bonus: `Vault.jsx` ahora tiene sistema de toast propio (state + UI vibe-aware con `accent`) — el `alert()` anterior reemplazado. Cero `alert()`, cero silent catch en handlers principales.
+- **Refactor vibe-aware COLA tab** (`d12bf3b`) — Mechanical `ACID` → `accentColor` scoped al bloque del tab COLA (49 refs). Preserva literales `#ff4444` (botones remove/danger) y `#ffcc00` (sync indicator). Coherencia vibe-aware completa en los 3 tabs: TRACKS, LISTS, COLA.
+- **Audit visual** (browser-use, sin commit) — Verificó contraste WCAG de los vibes: gaming/420_chill/dnb en AAA/AA, pero **romantiqueo (purple `#bf00ff`) FALLA WCAG AA** (4.40:1, necesita 4.5:1). **Cerrado en S85** cambiando a `#d966ff` (~5.5:1).
+
+### Archivos modificados (5 código)
+`workers/schema.sql` (+2) · `workers/worker.js` (+50/-5) · `src/musiclab/MusicLab.jsx` (+~100) · `src/vault/Vault.jsx` (+toast infra) · `src/tokens.js` (sin tocar, ref de auditoría)
+
+(8 commits: `9351603`, `ee9263f`, `f68f8df`, `d12bf3b`, `3828446`, `3405d16`, más los previos del patrón `4c94540` y `a71171e`)
+
+### Manual steps pendientes (CRÍTICOS antes de validar en prod)
+1. **`wrangler deploy`** desde raíz del proyecto. Sin esto, los nuevos endpoints (`/api/playlists/reorder`, `PUT /api/playlists/:id/tracks`, `DELETE /api/playlists/:id/tracks/:trackId`, `PATCH /api/playlists/:id`) no existen en producción y todos los handlers del patrón devolverán 404.
+2. **Migración D1 producción** (`el-bunker-db`):
+   ```sql
+   ALTER TABLE playlists ADD COLUMN sort_order INTEGER DEFAULT 0;
+   CREATE INDEX idx_playlists_order ON playlists(sort_order, created_at);
+   ```
+   Filas existentes quedan con `sort_order=0`, tie-breaker `created_at DESC` mantiene el orden visual actual.
+
+### Out of scope (logged)
+- **Consistencia event naming:** `playlists_reordered` (plural, S84 handlePlDrop) vs `playlist_reordered` (singular, S84 REORDER/REMOVE-TRACK ee9263f). Pliego para rename `playlist_reordered` → `playlist_tracks_reordered`.
+- **Debounce/queue para drags concurrentes** durante reorder in-flight. Mismo patrón que los otros 5 handlers (sin protección), consistente.
+- **Fix WCAG romantiqueo purple:** color `#bf00ff` daba 4.40:1 sobre #0a0a0a, fallaba AA. **Cerrado en S85** cambiando a `#d966ff` (~5.5:1).
+- **Toast infrastructure en otros módulos** que puedan tener handlers con silent catch (Capsules, Smoke). Auditoría preventiva pendiente.
+
+---
+
 ## S82 — Compat Sprint (data loss prevention) [audit S64] (13 Junio 2026)
 
 **Objetivo:** Investigar y cerrar el patrón de 3 pérdidas de datos al migrar. El usuario reportó: foto borrada, playlist real desaparecida (6 de testing en su lugar), "eliminar playlist no guarda".
@@ -94,8 +160,9 @@
 
 ---
 
-## Próxima sesión: Phase 2 — visuales P1 (mini player opaco + botonera, era color selector, tab playlists) + DEL-PLAYLIST regression investigation
+## Próxima sesión: MANUAL STEPS URGENTES (wrangler deploy + ALTER TABLE) → Phase 2 visuales P1
 
-Compat Sprint S64/S82 cerrado. Quedan 3 issues P1 visuales + 1 P2 + 1 regresión sin diagnosticar + roadmap 8.2-15.
-Recomendación: arrancar Phase 2 con el mini player (impacto visual más alto) en PLIEGOs separados.
+Sister-bug cleanup S84 cerrado: 6 bugs del mismo patrón aplicadas, feedback de error global unificado, COLA tab vibe-aware. Pendiente: ejecutar los 2 manual steps (sin ellos los endpoints nuevos devuelven 404) y luego Phase 2 visuales (mini player, era color selector, tab playlists).
+
+**Blockers antes de Phase 2:** el `wrangler deploy` y el `ALTER TABLE` son prerequisito para que cualquier handler del patrón DEL-PLAYLIST funcione en producción. Aplicar antes de validar nada.
 

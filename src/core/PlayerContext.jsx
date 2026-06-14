@@ -67,8 +67,12 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // _manual:true  → "Añadir a cola" / "Reproducir a continuación" (C4-A, C4-B)
   // _manual:false → tracks cargados desde contexto de playlist (C2/C4)
   const [localQueue,       setLocalQueue]       = useState([]);
-  const [loopMode,         setLoopMode]         = useState("off");
-  const [shuffle,          setShuffle]          = useState(false);
+  const [loopMode,         setLoopMode]         = useState(() => {
+    try { return localStorage.getItem("el_bunker_loop_mode") ?? "off"; } catch { return "off"; }
+  });
+  const [shuffle,          setShuffle]          = useState(() => {
+    try { return localStorage.getItem("el_bunker_shuffle") === "1"; } catch { return false; }
+  });
   // SH1: orden aleatorio de tracks restantes. Se regenera al activar shuffle o al agotarse.
   const shuffledListRef  = useRef([]);
   const shuffleIndexRef  = useRef(0);
@@ -79,6 +83,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       shuffledListRef.current = [];
       shuffleIndexRef.current = 0;
     }
+  }, [shuffle]);
+
+  // S8: persistir loopMode en localStorage (S85b)
+  useEffect(() => {
+    try { localStorage.setItem("el_bunker_loop_mode", loopMode); } catch { /* noop */ }
+  }, [loopMode]);
+  // S8: persistir shuffle en localStorage (S85b)
+  useEffect(() => {
+    try { localStorage.setItem("el_bunker_shuffle", shuffle ? "1" : "0"); } catch { /* noop */ }
   }, [shuffle]);
   const [autoPlaySignal,   setAutoPlaySignal]   = useState(0);
   const [syncStatus,       setSyncStatus]       = useState("idle");
@@ -370,13 +383,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, []);
 
   // addToQueue — C4-B: añade al final, _manual:true
+  // Returns: "added" | "duplicate" | "limit_reached" (S85c Q6: para toast con sugerencia)
   const addToQueue = useCallback((track, force = false) => {
     if (!track) return "added";
     const isDup = localQueue.some((t) => t.id === track.id);
     if (isDup && !force) return "duplicate";
+    // S85c Q6: detectar límite ANTES de añadir (no después) para que el handler
+    // pueda mostrar toast con sugerencia de guardar como playlist
+    if (localQueue.length >= MAX_QUEUE_SIZE && !force) return "limit_reached";
     setLocalQueue((q) => {
       const next = enforceQueueLimit([...q, { ...track, _manual: true }]);
-      // Fase 3.1 — Q6: Aviso al alcanzar el límite de cola
       if (next.length >= MAX_QUEUE_SIZE && q.length < MAX_QUEUE_SIZE) {
         console.warn("[Búnker] ⚠ Cola llena (75 tracks). Considera guardar como playlist.");
       }

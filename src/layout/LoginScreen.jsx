@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const PURPLE  = "#bf00ff";
+const PURPLE  = "#d966ff";
 const RED     = "#ff3b3b";
 const BG      = "#050505";
 const FONT    = "'JetBrains Mono', 'Courier New', monospace";

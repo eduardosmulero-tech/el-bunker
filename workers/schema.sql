@@ -224,7 +224,7 @@ INSERT INTO tags (id, namespace, label, icon, color, created_by, sort_order) VAL
   ('gaming',      'music', 'GAMING', '◉', '#00ffcc', 'system', 0),
   ('420_chill',   'music', '420',    '◎', '#aaff44', 'system', 1),
   ('dnb',         'music', 'DnB',    '⚡', '#ff6b35', 'system', 2),
-  ('romantiqueo', 'music', '♥',      '♥', '#bf00ff', 'system', 3);
+  ('romantiqueo', 'music', '♥',      '♥', '#d966ff', 'system', 3);
 
 -- ═══ SEED DATA: app_config ══════════════════════════════════
 INSERT INTO app_config (key, value) VALUES

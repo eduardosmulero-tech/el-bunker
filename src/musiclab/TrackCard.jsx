@@ -5,10 +5,9 @@ import { ACID, stringToColor } from "../tokens";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
-const extractYouTubeId = (url) => {
-  const match = url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
-};
+// S85: extractYouTubeId eliminado — track.url ya no es una URL de YouTube
+// (migración a R2 en S54). El extractor y todas sus ramas (3 usos en este
+// archivo + 1 en MusicLab.jsx) eran código muerto. Ver docs/legacy/SESIONES.md (S85).
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen, accentColor = ACID }) => (
   <div style={{ position: "relative", width: "100%", minWidth: 0, paddingBottom: 8 }}>
@@ -60,7 +59,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
   </div>
 );
 
-export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, onAddToQueue, onAddNext, onAddToPlaylist }) => {
+export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddToQueue, onAddNext, onAddToPlaylist }) => {
   const [showCtx, setShowCtx] = useState(false);
   const vibe = vc ?? null;
   const FONT_MONO_LOCAL = "'JetBrains Mono', 'Courier New', monospace";
@@ -122,13 +121,10 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, ytId, onClick, o
             overflow: "hidden", cursor: "pointer",
             border: `1px solid ${isActive ? vibeColor + "88" : vibeColor + "44"}`,
             boxShadow: isActive ? `0 0 14px ${vibeColor}44` : "none",
-            background: ytId ? "transparent" : `${vibeColor}18`,
+            background: track.thumbnail ? "transparent" : `${vibeColor}18`,
             fontFamily: FONT_MONO_LOCAL,
           }}>
-          {ytId ? (
-            <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
-              style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
-          ) : track.thumbnail ? (
+          {track.thumbnail ? (
             <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
           ) : (
             /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
@@ -185,7 +181,6 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
   // Resolver color: 1) vibeConfig.tag.color  2) track.color (del worker/D1)  3) hash del tag ID  4) gris
   const vibe = vibeConfig ?? null;
   const vibeColor = vibe?.color ?? track?.color ?? stringToColor(track?.tag ?? track?.vibe ?? track?.tag_id);
-  const ytId = extractYouTubeId(track.url ?? "");
   const [showCtx, setShowCtx] = useState(false);
   // Multi-tags desde D1 (track_tags junction) o desde el array tags del track
   const multiTags = track?.tags ?? [];
@@ -262,10 +257,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             display: "flex", alignItems: "center", justifyContent: "center",
             background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
             border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
-            {ytId ? (
-              <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }} />
-            ) : track.thumbnail ? (
+            {track.thumbnail ? (
               <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
             ) : (
               /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
@@ -345,10 +337,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
         <div className="w-10 h-10 flex-shrink-0 rounded-sm flex items-center justify-center text-base overflow-hidden"
           style={{ background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
             border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
-          {ytId ? (
-            <img src={`https://img.youtube.com/vi/${ytId}/default.jpg`} alt=""
-              className="w-full h-full object-cover opacity-70" />
-          ) : track.thumbnail ? (
+          {track.thumbnail ? (
             <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
           ) : (
             /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */

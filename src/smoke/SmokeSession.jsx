@@ -13,7 +13,7 @@ import { ACID } from "../tokens";
 const SMOKE_HISTORY_KEY = "el_bunker_smoke_history";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const PURPLE  = "#bf00ff";
+const PURPLE  = "#d966ff";
 const RED     = "#ff3b3b";
 const ORANGE  = "#ff6b35";
 const BG      = "#050505";

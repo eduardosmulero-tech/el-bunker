@@ -817,7 +817,7 @@ const _migrateSchema = (data) => {
       { id: "gaming",      label: "GAMING", icon: "◉", color: "#00ffcc", created_by: "system", created_at: new Date().toISOString() },
       { id: "420_chill",   label: "420",    icon: "◎", color: "#aaff44", created_by: "system", created_at: new Date().toISOString() },
       { id: "dnb",         label: "DnB",    icon: "⚡", color: "#ff6b35", created_by: "system", created_at: new Date().toISOString() },
-      { id: "romantiqueo", label: "♥",      icon: "♥", color: "#bf00ff", created_by: "system", created_at: new Date().toISOString() },
+      { id: "romantiqueo", label: "♥",      icon: "♥", color: "#d966ff", created_by: "system", created_at: new Date().toISOString() },
     ];
     migrated = {
       ...migrated,

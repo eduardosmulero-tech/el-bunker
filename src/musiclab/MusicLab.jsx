@@ -379,10 +379,20 @@ export default function MusicLab({
     const result = addToQueue(track, force);
     if (result === "duplicate") {
       setToast({ msg: "YA EN COLA", action: () => handleAddToQueue(track, true), actionLabel: "AÑADIR IGUALMENTE" });
+    } else if (result === "limit_reached") {
+      // S85c Q6: sugerencia de guardar como playlist al alcanzar 75 tracks
+      setToast({
+        msg: "COLA LLENA (75)",
+        action: () => {
+          const name = prompt("Nombre para la playlist con la cola actual:");
+          if (name?.trim()) handleCreatePlaylist(name.trim());
+        },
+        actionLabel: "GUARDAR COMO PLAYLIST",
+      });
     } else {
       setToast({ msg: "AÑADIDO A COLA" });
     }
-    setTimeout(() => setToast(null), 2500);
+    setTimeout(() => setToast(null), 4000);  // un poco más de tiempo para leer la sugerencia
   };
 
   const handleRemoveFromQueue = (trackId) => {
@@ -1010,10 +1020,9 @@ export default function MusicLab({
                           const vc = getVibeConfig(track.tag ?? track.vibe);
                           const vibeColor = vc?.color ?? "#555555";
                           const isActive = activeTrack?.id === track.id;
-                          const ytId = track.url?.match(/(?:v=|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})/)?.[1];
                           return (
                             <TrackCardGrid key={track.id} track={track} vc={vc} vibeColor={vibeColor}
-                              isActive={isActive} ytId={ytId}
+                              isActive={isActive}
                               onClick={() => showEdit ? handleEditTrack(track.id) : playTrack(track)}
                               onAddToQueue={handleAddToQueue}
                               onAddNext={handleAddNext}

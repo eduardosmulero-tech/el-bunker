@@ -10,7 +10,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { ACID } from "../tokens";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-const PURPLE = "#bf00ff";
+const PURPLE = "#d966ff";
 const BG     = "#050505";
 
 // ─── SCANLINE OVERLAY ────────────────────────────────────────
@@ -308,6 +308,17 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           {fmtTime(currentT)} / {fmtTime(duration)}
         </span>
 
+        {/* Prev */}
+        <motion.div
+          whileTap={{ scale: 0.85 }}
+          onClick={(e) => { e.stopPropagation(); skip(-1); }}
+          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm"
+          style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
+          title="Anterior"
+        >
+          <span className="text-xs opacity-60" style={{ color: accentColor }}>◀◀</span>
+        </motion.div>
+
         {/* Skip */}
         <motion.div
           whileTap={{ scale: 0.85 }}
@@ -329,6 +340,43 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           style={{ background: `linear-gradient(90deg, ${accentColor}cc 0%, ${accentColor} 100%)`, boxShadow: `0 0 6px ${accentColor}88` }}
         />
       </div>
+    </motion.div>
+  );
+};
+
+// ─── PORTRAIT LOCK OVERLAY (UX3.7) ────────────────────────
+const PortraitLockOverlay = ({ accentColor = ACID }) => {
+  // Hooks SIEMPRE al inicio (rules-of-hooks)
+  const [isLandscape, setIsLandscape] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
+    const handler = (e) => setIsLandscape(e.matches);
+    handler(mq);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  if (!isLandscape) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 px-6"
+      style={{
+        background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)",
+        fontFamily: "'JetBrains Mono', monospace",
+      }}
+    >
+      <motion.div
+        animate={{ rotate: [0, 90, 90, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        className="text-5xl"
+        style={{ color: accentColor, textShadow: `0 0 24px ${accentColor}66` }}
+      >◢◣</motion.div>
+      <p className="text-sm tracking-[0.3em] uppercase font-bold text-center" style={{ color: accentColor }}>
+        GIRA EL DISPOSITIVO
+      </p>
+      <p className="text-xs opacity-50 tracking-widest uppercase text-center" style={{ color: accentColor }}>
+        El Búnker solo funciona en vertical
+      </p>
     </motion.div>
   );
 };
@@ -416,6 +464,11 @@ export default function Layout({
 
       {/* ── Layer 4: Bottom Nav ── */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
+
+      {/* ── Layer 5: Portrait Lock (UX3.7) ── */}
+      <AnimatePresence>
+        <PortraitLockOverlay accentColor={accentColor} />
+      </AnimatePresence>
     </div>
   );
 }
