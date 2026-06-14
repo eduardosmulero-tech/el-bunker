@@ -595,6 +595,17 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
     if (filterCategory === "all") return active;
     return active.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
   }, [entries, filterCategory]);
+  // S99 — Contadores de entradas por categoría para badges en la barra de filtros
+  const categoryCounts = useMemo(() => {
+    const counts = { all: 0 };
+    for (const e of entries) {
+      if (e.is_deleted) continue;
+      counts.all++;
+      const cat = ENTRY_CATEGORY[e.type];
+      if (cat) counts[cat] = (counts[cat] || 0) + 1;
+    }
+    return counts;
+  }, [entries]);
   const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
   const [exporting, setExporting] = useState(false);
   // Toast state — usado por handleDeleteEntry (reemplaza alert) y otros catch.
@@ -908,23 +919,31 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               {showAddEntry ? "CANCELAR" : "+ ENTRADA"}
             </motion.button>
           </div>
-        {/* S96 — Filtro por categoría (14 categorías) */}
+        {/* S96 — Filtro por categoría (14 categorías) · S99 — count badges */}
         <div className="flex gap-0.5 overflow-x-auto pb-1 mb-1" style={{ scrollbarWidth: "none" }}>
-          {CATEGORY_FILTERS.map((cat) => (
+          {CATEGORY_FILTERS.map((cat) => {
+            const count = categoryCounts[cat.id] ?? 0;
+            const isActive = filterCategory === cat.id;
+            return (
             <button
               key={cat.id}
               onClick={() => setFilterCategory(cat.id)}
-              className={`text-[9px] px-1.5 py-1 rounded-sm whitespace-nowrap flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
+              className={`text-[9px] px-1.5 py-1 rounded-sm whitespace-nowrap flex-shrink-0 flex items-center gap-0.5 ${isActive ? "" : "opacity-25 hover:opacity-50"}`}
               style={{
-                color: filterCategory === cat.id ? accent : `${accent}88`,
-                borderBottom: filterCategory === cat.id ? `1px solid ${accent}` : "1px solid transparent",
+                color: isActive ? accent : `${accent}88`,
+                borderBottom: isActive ? `1px solid ${accent}` : "1px solid transparent",
                 fontFamily: FONT_MONO,
               }}
-              title={cat.label}
+              title={`${cat.label}${count > 0 ? ` (${count})` : ""}`}
             >
-              {cat.icon}
+              <span>{cat.icon}</span>
+              {count > 0 && (
+                <span className="text-[7px] opacity-60 tabular-nums" style={{ fontFamily: FONT_MONO }}>
+                  {count}
+                </span>
+              )}
             </button>
-          ))}
+          )})}
         </div>
           {showAddEntry && (
             <AddEntryForm
