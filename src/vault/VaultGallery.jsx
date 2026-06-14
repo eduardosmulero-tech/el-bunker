@@ -37,6 +37,16 @@ const getImageUrl = (entry) => {
   return null;
 };
 
+// PLIEGO-239: getMediaType helper — extrae el multimedia subtype
+// de entry.content.images[0].media_type (image|video|audio) o
+// fallback a entry.type. Usado por renderCinema para elegir entre
+// <img>, <video> o <audio>.
+const getMediaType = (entry) => {
+  const images = entry.content?.images;
+  if (images?.length && images[0].media_type) return images[0].media_type;
+  return entry.type ?? "note";
+};
+
 // ─── WALL MASONRY (JS — respeta cronología left→right) ──────
 const buildMasonryColumns = (items, columnCount) => {
   const columns = Array.from({ length: columnCount }, () => []);
@@ -392,7 +402,13 @@ export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtTo
           className="w-full aspect-video flex items-center justify-center overflow-hidden rounded-sm"
           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
           {imgUrl ? (
-            <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" />
+            getMediaType(entry) === "video" ? (
+              <video src={imgUrl} controls className="w-full h-full object-contain" />
+            ) : getMediaType(entry) === "audio" ? (
+              <audio src={imgUrl} controls className="w-full" />
+            ) : (
+              <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" />
+            )
           ) : (
             <span className="text-6xl opacity-30" style={{ color: ACID }}>📷</span>
           )}
