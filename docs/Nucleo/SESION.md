@@ -5,36 +5,38 @@
 
 ---
 
-## FASE 7 — CERRADA ✅ (S89-S92)
+## FASE 8 — VAULT Profundo (S93-S95) 🟢 EN PROGRESO
 
-### S92 — Cierre Fase 7: verificación G5 + lint global + docs
-- **G5 verificado:** Timeline.jsx ya tiene `viewMode` (timeline/grid/compact) + `PAGE_SIZE=50` + "CARGAR MÁS"
-- **ESLint global:** 0 errores, 0 warnings en todo `src/`
-- **ESTADO.md:** Fase 7 marcada como cerrada, bugs movidos a RESUELTOS, tabla actualizada
-- **Próxima fase:** Fase 8 — VAULT Profundo (S93) · Taxonomía 14 categorías
+### S95 — Galería con filtros 14 categorías + badges
+- Filtro 15 botones (TODO + 14 categorías) bajo barra de modos. Resetea currentIdx.
+- Badges de categoría en WallItem (esquina sup-der), LongPressPreview, ZoomModal.
+- `entriesWithMedia` reemplaza `photoEntries` — ahora todas las entradas con imagen o texto.
+- `ENTRY_CATEGORY` se construye dinámicamente desde `ENTRY_TYPES` (importado de AddEntryForm).
+- Archivos: `VaultGallery.jsx`, `AddEntryForm.jsx` (export de ENTRY_TYPES).
 
-### S91 — S4 (red neutral) + A2/A3/A5 (audio focus)
-- **S4a:** Red recuperada → evento `bunker_network_restored` + toast "CONEXIÓN RECUPERADA" con REANUDAR
-- **S4b:** Track sin archivo → pausa + toast "SIN ARCHIVO" con SALTAR (no auto-skip)
-- **A2/A3:** MediaSession `setActionHandler('stop')` → `audio.pause()` + `setIsPlaying(false)`
-- **A5:** Documentado como diferido (requiere `navigator.audioSession.type`, Chromium-only)
-- Archivos: `PlayerContext.jsx`, `MusicLab.jsx`
+### S94 — UI por categoría: campos extra
+- `CATEGORY_EXTRA_FIELDS`: 7 categorías con campos específicos (fecha, rating, url, amount, mood, location).
+- Render dinámico de selects/inputs entre selector de tipo y textarea.
+- Valores persistidos en `content.{key}` JSON. Restauración en edición vía useEffect.
+- `PLACEHOLDER_BY_TYPE`: placeholders contextuales (gratitud, sueños, inside jokes, etc.).
+- Archivos: `AddEntryForm.jsx`.
 
-### S90 — Q12 (playlist a cola) + S3 (soft delete) + EC-TR6 (ID3)
-- **Q12:** Botón `▶▶` en PlaylistDetailModal. Aviso si >75 tracks.
-- **S3:** Columnas `deleted_at` + `deleted_by` en D1. Worker marca timestamp + userId.
-- **EC-TR6:** `jsmediatags` instalado. Selector MP3 auto-rellena título/artista desde ID3.
-- Archivos: `PlaylistManager.jsx`, `MusicLab.jsx`, `schema.sql`, `worker.js`, `AddTrackForm.jsx`, `package.json`
-
-### S89 — Auditoría BACKLOG + Fix G2 + Eliminar alert()
-- 6/8 bugs ya fixeados en S85c (BACKLOG stale). G2 (onAddEra) + 2 alert() → toast arreglados.
-- Archivos: `Vault.jsx`, `App.jsx`, `BACKLOG.md`, `ESTADO.md`
+### S93 — Taxonomía 14 categorías completas
+- `ENTRY_TYPES` expandido: 8→71 tipos con { id, category, icon, label, accept?, capture? }.
+- `FILE_UPLOAD_TYPES` reemplaza `MULTIMEDIA_TYPES`. `ALL_CATEGORIES` + `CATEGORY_LABELS`.
+- Render dinámico de 14 TypeGroups con scroll `max-h-[40vh]`.
+- Schema entries.type actualizado. `note` preservado como "NOTA RÁPIDA" en cat 2.
+- Archivos: `AddEntryForm.jsx`, `workers/schema.sql`.
 
 ---
 
-## Próxima sesión: FASE 8 — VAULT Profundo (S93)
+## Próxima sesión: FASE 8 — Continuar (S96)
 
-**Objetivo:** Comenzar taxonomía VAULT 14 categorías (~8% → ~50% completitud). Prioridad: Categorías 2-5 (DOCUMENTOS, AUDIO, NAVEGACIÓN, MISC).
+**Objetivo:** Añadir filtro por categoría en Vault.jsx (vista principal de entradas) para consistencia con VaultGallery. Luego S97: render enriquecido de entradas según tipo (mostrar rating, location, date en las cards).
+
+---
+
+## FASE 7 — CERRADA ✅ (S89-S92)
 
 ---
 

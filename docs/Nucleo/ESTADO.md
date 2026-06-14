@@ -2,8 +2,8 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 > Actualizar antes de cerrar sesión.
 
-**Próximo pliego:** FASE 8 — VAULT Profundo (S93) · Taxonomía VAULT 14 categorías
-**Última sesión:** S92 — Cierre Fase 7 (verificación G5 + docs)
+**Próximo pliego:** S96 — Vault.jsx: filtro por categoría en vista principal de entradas
+**Última sesión:** S95 — Galería con filtros 14 categorías + badges (VaultGallery.jsx)
 **Rama activa:** `master`
 
 ---
@@ -96,28 +96,27 @@ Actualizados en S85: SESION.md, ESTADO.md, CHANGELOG.md, PLIEGOS_HISTORIAL.md, l
 
 ---
 
-## FASE 7 — CERRADA ✅ (S89-S92, 4 sesiones)
+## FASE 8 — VAULT Profundo (S93-S95, 3 sesiones) 🟢 EN PROGRESO
 
 | Sesión | Qué | Commits |
 |---|---|---|
-| **S89** | Auditoría BACKLOG: 6 bugs stale + 3 reales (G2 onAddEra, 2 alert()→toast). Roadmap v5 | `2df9e0c` |
-| **S90** | Q12 (playlist entera a cola) + S3 (soft delete tracks D1) + EC-TR6 (ID3 metadata) | `317d263` |
-| **S91** | S4 (red sin auto-reanudar + track sin archivo neutral) + A2/A3/A5 (MediaSession stop) | `08f8cfd` |
-| **S92** | Verificación G5 + lint global + cierre docs | este commit |
+| **S93** | Taxonomía 14 categorías: ENTRY_TYPES 8→71 tipos en AddEntryForm | `0c390be` |
+| **S94** | UI por categoría: campos extra (fecha, rating, url, location, amount, mood) | — |
+| **S95** | VaultGallery: filtros 14 categorías + badges + entriesWithMedia | `fca7fa9` |
 
-> **Resultado Fase 7:** 11 bugs/features cerrados. 0 bugs P1. BACKLOG limpio. App lista para Fase 8 (VAULT Profundo).
+> **Progreso Fase 8:** 3/8 sesiones. Taxonomía 100% en UI. Galería multi-categoría funcional.
 
 ---
 
-## Resumen de estado (post-Fase 7)
+## Resumen de estado (post-S95)
 
 | Módulo | % | Estado |
 |---|---|---|
-| Core/Infra | 96% | Worker 24 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, AnalyserNode, MediaSession stop, red/sin-archivo neutral ✅ |
-| VAULT CRUD | 96% | Entradas/eras en D1, edit/delete, foto upload a R2, 5 sub-tipos multimedia, toast feedback ✅ |
-| VAULT Galería | 90% | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL, render multimedia básico ✅ · taxonomía 14 categorías 🟡 |
-| CAPSULES | 90% | Timeline filtros+paginación, Smoke historial/rachas/volumen, TimeCapsules CRUD, RECAP Wrapped ✅ |
-| MUSIC LAB | 98% | Cola Q6/Q12/Q15-Q17, posición S1/S2/S4, UX táctil, MediaSession M1-M12, soft delete S3, ID3 EC-TR6 ✅ |
-| Persistencia | 95% | Playlists/tracks/drops/entries/tags 100% Worker API ✅ · tags vía Worker API, Drive solo fallback 🟡 |
+| Core/Infra | 96% | Worker 24 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, MediaSession stop ✅ |
+| VAULT CRUD | 98% | 71 tipos en 14 categorías, campos extra por categoría, upload a R2, toast feedback ✅ |
+| VAULT Galería | 95% | 6 modos + filtros 14 categorías + badges + entriesWithMedia ✅ |
+| CAPSULES | 90% | Timeline filtros+paginación, Smoke historial/rachas, TimeCapsules CRUD, RECAP Wrapped ✅ |
+| MUSIC LAB | 98% | Cola Q6/Q12/Q15-Q17, S1/S2/S4, MediaSession M1-M12, soft delete S3, ID3 EC-TR6 ✅ |
+| Persistencia | 95% | Playlists/tracks/drops/entries/tags 100% Worker API ✅ |
 
-**Pendiente Fase 8+:** Taxonomía VAULT 14 categorías, render multimedia avanzado, escucha compartida, Chromecast, Android audio focus completo.
+**Pendiente:** Escucha compartida, Chromecast, Android audio focus A5, Vault.jsx filtro categoría.
