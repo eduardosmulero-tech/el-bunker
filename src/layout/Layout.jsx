@@ -7,11 +7,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlayer } from "../core/PlayerContext";
-import { ACID } from "../tokens";
-
-// ─── CONSTANTS ───────────────────────────────────────────────
-const PURPLE = "#d966ff";
-const BG     = "#050505";
+import { ACID, PURPLE, BG } from "../tokens";
 
 // ─── SCANLINE OVERLAY ────────────────────────────────────────
 // CRT scanline effect via repeating linear gradient
@@ -79,7 +75,6 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-2"
       style={{
         background: `linear-gradient(180deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
-        fontFamily: "'JetBrains Mono', 'Courier New', monospace",
       }}
     >
       {/* LEFT: Brand */}
@@ -144,7 +139,6 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
       className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-4 py-3"
       style={{
         background: `linear-gradient(0deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
-        fontFamily: "'JetBrains Mono', monospace",
       }}
     >
       {tabs.map((tab) => {
@@ -259,7 +253,6 @@ const MiniPlayer = ({ accentColor = ACID }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="fixed bottom-16 left-0 right-0 z-[25] mx-2"
-      style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       <div
         className="flex items-center gap-2.5 px-3 py-2.5 rounded-sm cursor-pointer select-none"
@@ -362,7 +355,6 @@ const PortraitLockOverlay = ({ accentColor = ACID }) => {
       className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 px-6"
       style={{
         background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)",
-        fontFamily: "'JetBrains Mono', monospace",
       }}
     >
       <motion.div
@@ -408,7 +400,7 @@ export default function Layout({
   return (
     <div
       className="relative min-h-screen overflow-hidden"
-      style={{ background: BG, color: accentColor, fontFamily: "'JetBrains Mono', 'Courier New', monospace" }}
+      style={{ background: BG, color: accentColor }}
     >
       {/* ── Layer 0: Atmosphere ── */}
       <GridBackground accentColor={accentColor} />
@@ -434,7 +426,6 @@ export default function Layout({
             exit={{ opacity: 0, y: -20 }}
             className="fixed top-14 left-1/2 -translate-x-1/2 z-40 px-4 py-1.5 rounded-sm"
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
               fontSize: "10px",
               letterSpacing: "0.2em",
               textTransform: "uppercase",
@@ -454,7 +445,6 @@ export default function Layout({
            No duplicar AnimatePresence aquí — causa doble animación y flicker. */}
       <main
         className="relative z-20 pt-10 pb-20 min-h-screen"
-        style={{ scrollbarColor: `${ACID}44 transparent` }}
       >
         {children}
       </main>

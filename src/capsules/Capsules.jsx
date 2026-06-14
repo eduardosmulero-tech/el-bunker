@@ -83,7 +83,7 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
   }, [jwtToken]);
 
   return (
-    <div className="px-4 py-4 max-w-lg mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="px-4 py-6 max-w-md mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       {/* S85c Toast (mismo patrón vibe-aware que MusicLab/Vault) */}
       <AnimatePresence>
         {toast && (

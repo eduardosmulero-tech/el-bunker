@@ -1,11 +1,51 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── S104 Design System: CSS Custom Properties ── */
+:root {
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  --bg: #050505;
+  --accent: #bfff00;
+  --purple: #d966ff;
+}
+
+/* ── S104: Smooth scrolling ── */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ── S104: Global scrollbar — thin, dark, accent-aware ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  opacity: 0.3;
+  border-radius: 2px;
+}
+
+/* ── S104: Utility — hide scrollbar ── */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 html, body {
   -webkit-overscroll-behavior: none;
   overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
+  font-family: var(--font-mono);
 }
 
 /* ── Fase 4.6 T8: Pulso sutil cuando mismo tag suena otra vez ── */
