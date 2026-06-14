@@ -6,7 +6,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
-import { ENTRY_TYPES } from "./AddEntryForm";
+import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 
 // ─── LONG PRESS THRESHOLD ───────────────────────────────────
 const LONG_PRESS_MS = 500;
@@ -27,24 +27,7 @@ const DENSITY_CONFIG = {
   expanded: { columns: 2, gap: 10, minCol: "220px", label: "EXPANDED" },
 };
 
-// S95 — Filtros por categoría de la taxonomía (14 categorías)
-const CATEGORY_FILTERS = [
-  { id: "all",  icon: "◈", label: "TODO" },
-  { id: "1",    icon: "📷", label: "MULTIMEDIA" },
-  { id: "2",    icon: "✎",  label: "ESCRITURA" },
-  { id: "3",    icon: "📄", label: "DOCUMENTOS" },
-  { id: "4",    icon: "📍", label: "GEOGRAFÍA" },
-  { id: "5",    icon: "⏳", label: "TEMPORAL" },
-  { id: "6",    icon: "📋", label: "LISTAS" },
-  { id: "7",    icon: "💚", label: "COMUNICACIÓN" },
-  { id: "8",    icon: "🔗", label: "CONOCIMIENTO" },
-  { id: "9",    icon: "🎨", label: "CREATIVO" },
-  { id: "10",   icon: "💰", label: "FINANZAS" },
-  { id: "11",   icon: "🕯",  label: "RITUALES" },
-  { id: "12",   icon: "🔐", label: "SEGURIDAD" },
-  { id: "13",   icon: "📊", label: "DATOS" },
-  { id: "14",   icon: "🔄", label: "INTEGRACIÓN" },
-];
+// S95 — CATEGORY_FILTERS importado de AddEntryForm (single source of truth)
 
 // Mapa category→label para badges rápidos
 const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));

@@ -4,11 +4,11 @@
 //  Stack: React + Tailwind CSS + Framer Motion
 // ============================================================
 
-import { useState, useRef, useEffect, lazy, Suspense } from "react";
+import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
-import AddEntryForm from "./AddEntryForm";
+import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 import { ColorPicker } from "../core/ColorPicker";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID } from "../tokens";
@@ -26,6 +26,9 @@ const FONT_MONO   = "'JetBrains Mono', 'Courier New', monospace";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
+
+// S96 — ENTRY_CATEGORY desde ENTRY_TYPES, CATEGORY_FILTERS importado de AddEntryForm
+const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
 const DEMO_ERAS = [
   { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
   { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
@@ -437,9 +440,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
         <div className="flex gap-6 mb-5 pt-1">
           {[
             { label: "ENTRADAS", val: eraEntries.length },
-            { label: "FOTOS",    val: eraEntries.filter((e) => e.type === "photo").length },
-            { label: "NOTAS",    val: eraEntries.filter((e) => e.type === "note").length },
-            { label: "HITOS",    val: eraEntries.filter((e) => e.type === "milestone").length },
+            { label: "FOTOS",    val: eraEntries.filter((e) => e.content?.images?.length || e.type === "photo").length },
           ].map(({ label, val }) => (
             <div key={label} className="text-center">
               <p
@@ -465,7 +466,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
               style={{ borderColor: `${era.color ?? ACID}14` }}
             >
               <span style={{ color: era.color ?? ACID }}>
-                {entry.type === "photo" ? "◎" : entry.type === "milestone" ? "◈" : "◉"}
+              {entry.type === "photo" || entry.content?.images?.length ? "◎" : "◉"}
               </span>
               <span
                 className="text-xs tracking-wide truncate flex-1"
@@ -533,7 +534,14 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   // G3: usar trackVibe accent en lugar de ACID fijo
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
-  const entries = db?.entries ?? [];
+  const entries = useMemo(() => db?.entries ?? [], [db?.entries]);
+  // S96 — Filtro por categoría en la vista principal
+  const [filterCategory, setFilterCategory] = useState("all");
+  const filteredEntries = useMemo(() => {
+    const active = entries.filter(e => !e.is_deleted);
+    if (filterCategory === "all") return active;
+    return active.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
+  }, [entries, filterCategory]);
   const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
   const [exporting, setExporting] = useState(false);
   // Toast state — usado por handleDeleteEntry (reemplaza alert) y otros catch.
@@ -847,6 +855,24 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               {showAddEntry ? "CANCELAR" : "+ ENTRADA"}
             </motion.button>
           </div>
+        {/* S96 — Filtro por categoría (14 categorías) */}
+        <div className="flex gap-0.5 overflow-x-auto pb-1 mb-1" style={{ scrollbarWidth: "none" }}>
+          {CATEGORY_FILTERS.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setFilterCategory(cat.id)}
+              className={`text-[9px] px-1.5 py-1 rounded-sm whitespace-nowrap flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
+              style={{
+                color: filterCategory === cat.id ? accent : `${accent}88`,
+                borderBottom: filterCategory === cat.id ? `1px solid ${accent}` : "1px solid transparent",
+                fontFamily: FONT_MONO,
+              }}
+              title={cat.label}
+            >
+              {cat.icon}
+            </button>
+          ))}
+        </div>
           {showAddEntry && (
             <AddEntryForm
               eras={displayEras}
@@ -856,7 +882,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
           )}
           <EraDetailPanel
             era={activeDisplayEra}
-            entries={entries}
+            entries={filteredEntries}
             onEditEntry={setEditingEntry}
             onDeleteEntry={handleDeleteEntry}
           />

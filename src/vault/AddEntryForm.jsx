@@ -55,7 +55,7 @@ const PLACEHOLDER_BY_TYPE = {
   quote: "«…» — …",
   review: "Qué pedimos, qué tal estuvo…",
 };
-// Exportado para VaultGallery (S95) — single source of truth de categorías
+// Exportado para VaultGallery + Vault (S95/S96) — single source of truth de categorías
 // eslint-disable-next-line react-refresh/only-export-components
 export const ENTRY_TYPES = [
   // ── 1. MULTIMEDIA ──────────────────────────────────────────
@@ -152,6 +152,26 @@ export const ENTRY_TYPES = [
 // Conjuntos rápidos para ramas de render condicional
 const FILE_UPLOAD_TYPES = new Set(ENTRY_TYPES.filter((t) => t.accept).map((t) => t.id));
 const ALL_CATEGORIES = [...new Set(ENTRY_TYPES.map((t) => t.category))].sort((a, b) => parseInt(a) - parseInt(b));
+
+// S96 — Filtro de categorías (exportado para Vault.jsx + VaultGallery.jsx)
+// eslint-disable-next-line react-refresh/only-export-components
+export const CATEGORY_FILTERS = [
+  { id: "all",  icon: "◈", label: "TODO" },
+  { id: "1",    icon: "📷", label: "MULTIMEDIA" },
+  { id: "2",    icon: "✎",  label: "ESCRITURA" },
+  { id: "3",    icon: "📄", label: "DOCUMENTOS" },
+  { id: "4",    icon: "📍", label: "GEOGRAFÍA" },
+  { id: "5",    icon: "⏳", label: "TEMPORAL" },
+  { id: "6",    icon: "📋", label: "LISTAS" },
+  { id: "7",    icon: "💚", label: "COMUNICACIÓN" },
+  { id: "8",    icon: "🔗", label: "CONOCIMIENTO" },
+  { id: "9",    icon: "🎨", label: "CREATIVO" },
+  { id: "10",   icon: "💰", label: "FINANZAS" },
+  { id: "11",   icon: "🕯",  label: "RITUALES" },
+  { id: "12",   icon: "🔐", label: "SEGURIDAD" },
+  { id: "13",   icon: "📊", label: "DATOS" },
+  { id: "14",   icon: "🔄", label: "INTEGRACIÓN" },
+];
 
 const CATEGORY_LABELS = {
   "1":  "1 · MULTIMEDIA",
