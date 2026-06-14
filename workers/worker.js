@@ -197,11 +197,14 @@ export default {
         return json({ id: trackId, ...body, updated_by: userId });
       }
 
-      // DELETE /api/tracks/:id (S55 — soft delete)
+      // DELETE /api/tracks/:id (S55 — soft delete) S90: añade deleted_at + deleted_by
       if (path.startsWith("/api/tracks/") && request.method === "DELETE") {
         if (!userId) return err("Unauthorized", 401);
         const trackId = path.split("/")[3];
-        await env.DB.prepare("UPDATE tracks SET is_deleted = 1, updated_at = datetime('now') WHERE id = ?1").bind(trackId).run();
+        const now = new Date().toISOString();
+        await env.DB.prepare(
+          "UPDATE tracks SET is_deleted = 1, deleted_at = ?1, deleted_by = ?2, updated_at = ?1 WHERE id = ?3"
+        ).bind(now, userId, trackId).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'track',?3)"
         ).bind("track_deleted", userId, trackId).run();

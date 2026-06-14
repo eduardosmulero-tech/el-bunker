@@ -88,6 +88,8 @@ CREATE TABLE tracks (
   play_count  INTEGER DEFAULT 0,
   last_played TEXT,
   is_deleted  INTEGER NOT NULL DEFAULT 0,  -- soft delete
+  deleted_at  TEXT,                        -- S90: timestamp de soft delete
+  deleted_by  TEXT,                        -- S90: user que ejecutó el soft delete
   added_by    TEXT NOT NULL REFERENCES users(id),
   created_at  TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at  TEXT NOT NULL DEFAULT (datetime('now'))

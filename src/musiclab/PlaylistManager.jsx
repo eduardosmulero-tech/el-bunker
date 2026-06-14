@@ -52,7 +52,7 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
 );
 
 // ── PlaylistDetailModal ────────────────────────────────────────────────────────
-export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose, onPlay, onPlayFromTrack, onAddToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
+export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose, onPlay, onPlayFromTrack, onAddToQueue, onAddAllToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -161,6 +161,15 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                   fontSize: 11, padding: "5px 12px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.2em" }}>
                 ▶ PLAY
+              </motion.button>
+            )}
+            {plTracks.length > 0 && onAddAllToQueue && (
+              <motion.button whileTap={{ scale: 0.92 }} onClick={() => onAddAllToQueue(plTracks)}
+                title="Añadir toda la playlist a la cola"
+                style={{ background: `${ACID}0d`, border: `1px solid ${ACID}33`, color: ACID,
+                  fontSize: 10, padding: "5px 8px", borderRadius: 2, cursor: "pointer",
+                  fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
+                ▶▶
               </motion.button>
             )}
             <motion.button whileTap={{ scale: 0.9 }} onClick={onClose}

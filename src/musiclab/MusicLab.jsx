@@ -52,7 +52,7 @@ export default function MusicLab({
   jwtToken: _jwtToken = null,
   onAddTrack,
   onEditTrack,
-  onDeleteTrack,
+  _onDeleteTrack,
   onAddDrop,
   onMarkDropSeen,
   _onMasterVolumeChange,
@@ -463,9 +463,32 @@ export default function MusicLab({
     setEditingTrack(null);
   };
 
-  const handleDeleteTrack = (trackId) => {
-    onDeleteTrack?.(trackId);
-    if (activeTrack?.id === trackId) setActiveTrack(rawTracks.find((t) => t.id !== trackId) ?? null);
+  // S90: soft delete vía Worker API (deleted_at + deleted_by en D1)
+  const handleDeleteTrack = async (trackId) => {
+    if (_jwtToken) {
+      try {
+        const res = await fetch(`${API_BASE_ML}/api/tracks/${trackId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${_jwtToken}` },
+        });
+        if (!res.ok) throw new Error(`deleteTrack: ${res.status}`);
+      } catch (e) {
+        console.warn("[Búnker] soft-delete track falló:", e);
+        showToast({ msg: "NO SE PUDO ELIMINAR" }, 2500);
+        return;
+      }
+    }
+    // Sync estado local: marcar como deleted en vez de remover
+    await patchDb((prev) => ({
+      ...prev,
+      music_lab: {
+        ...prev.music_lab,
+        tracks: (prev.music_lab?.tracks ?? []).map((t) =>
+          t.id === trackId ? { ...t, is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: userId } : t
+        ),
+      },
+    })).catch(() => {});
+    if (activeTrack?.id === trackId) setActiveTrack(rawTracks.find((t) => t.id !== trackId && !t.is_deleted) ?? null);
     showToast({ msg: "TRACK ELIMINADO" }, 2500);
     setShowDelete(false);
   };
@@ -1509,6 +1532,25 @@ export default function MusicLab({
                   setShowPlaylistDetail(null);
                 }}
                 onAddToQueue={addToQueue}
+                onAddAllToQueue={(plTracks) => {
+                  // Q12: Añadir playlist entera a cola con aviso si supera 75
+                  const currentCount = localQueue.filter(t => t.id !== activeTrack?.id).length;
+                  const totalAfter = currentCount + plTracks.length;
+                  if (totalAfter > 75) {
+                    showToast({
+                      msg: `LA COLA LLEGARÍA A ${totalAfter} (LÍMITE 75)`,
+                      action: () => {
+                        const toAdd = plTracks.slice(0, Math.max(0, 75 - currentCount));
+                        toAdd.forEach(t => addToQueue(t));
+                        showToast({ msg: `${toAdd.length} TRACKS AÑADIDOS A COLA` }, 2500);
+                      },
+                      actionLabel: "AÑADIR MÁXIMO (75)",
+                    }, 4000);
+                  } else {
+                    plTracks.forEach(t => addToQueue(t));
+                    showToast({ msg: `PLAYLIST AÑADIDA (${plTracks.length})` }, 2500);
+                  }
+                }}
                 onRemoveTrack={async (plId, trackId) => {
                   if (!plId || !trackId || !_jwtToken) return;
                   try {

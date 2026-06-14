@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID } from "../tokens";
+// S90 EC-TR6: extraer metadatos ID3 al seleccionar MP3
+import jsmediatags from "jsmediatags";
 
 const GLASS_BG     = "rgba(191,255,0,0.03)";
 const GLASS_BORDER = "rgba(191,255,0,0.12)";
@@ -17,6 +19,10 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
         }
       : { title: "", artist: "", note: "", tag: "" }
   );
+  // S90 EC-TR6: estado para el archivo MP3 seleccionado y flag de ID3 leído
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [readingId3, setReadingId3] = useState(false);
+  const fileInputRef = useRef(null);
 
   const set = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
 
@@ -58,6 +64,68 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           <label style={labelStyle}>Nota</label>
           <input style={inputStyle} value={form.note} onChange={set("note")} placeholder="¿Por qué este track?" />
         </div>
+        {/* S90 EC-TR6: File input para MP3 con extracción ID3 */}
+        {!initialData && (
+          <div>
+            <label style={labelStyle}>Archivo MP3</label>
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs px-3 py-2 rounded-sm"
+                style={{
+                  color: selectedFile ? ACID : `${ACID}55`,
+                  border: `1px solid ${selectedFile ? ACID + "44" : ACID + "22"}`,
+                  background: selectedFile ? `${ACID}08` : "transparent",
+                  fontFamily: FONT_MONO,
+                }}
+              >
+                {selectedFile ? selectedFile.name : "SELECCIONAR MP3..."}
+              </motion.button>
+              {readingId3 && (
+                <span className="text-xs opacity-40" style={{ color: ACID }}>LEYENDO ID3...</span>
+              )}
+              {selectedFile && (
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  className="text-xs px-2 py-2 rounded-sm"
+                  style={{ color: "#ff4444", border: "1px solid #ff444433", background: "#ff444408", fontFamily: FONT_MONO }}
+                >
+                  ✕
+                </motion.button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/mpeg,audio/mp3"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setSelectedFile(file);
+                setReadingId3(true);
+                // Extraer ID3 tags
+                jsmediatags.read(file, {
+                  onSuccess: (tag) => {
+                    const tags = tag.tags;
+                    setForm((p) => ({
+                      ...p,
+                      title: p.title || tags.title || "",
+                      artist: p.artist || tags.artist || "",
+                    }));
+                    setReadingId3(false);
+                  },
+                  onError: () => {
+                    console.warn("[AddTrackForm] ID3 read failed for", file.name);
+                    setReadingId3(false);
+                  },
+                });
+              }}
+            />
+          </div>
+        )}
         <div>
           <label style={labelStyle}>Vibe <span style={{ color: "#ff4444", marginLeft: 2 }}>*</span></label>
           <div className="flex flex-wrap gap-2 mt-1">
@@ -93,7 +161,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
             cursor:      form.tag ? "pointer" : "not-allowed",
           }}
         >
-          {initialData ? "✎ GUARDAR" : "+ AÑADIR"}
+          {initialData ? "✎ GUARDAR" : (selectedFile ? "+ AÑADIR CON MP3" : "+ AÑADIR")}
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }} onClick={onClose}
