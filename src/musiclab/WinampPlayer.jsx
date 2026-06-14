@@ -431,13 +431,13 @@ return () => cancelAnimationFrame(raf);
         </motion.div>
       )}
 
-      {/* Visualizer */}
-      <div className="px-3 pt-3 pb-1" style={{ background: "rgba(0,0,0,0.4)" }}>
+      {/* PLIEGO-230: Visualizer opaco — antes rgba(0,0,0,0.4) dejaba ver contenido de abajo */}
+      <div className="px-3 pt-3 pb-1" style={{ background: "#0a0a0a" }}>
         <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} />
       </div>
 
-      {/* Track Info */}
-      <div className="px-3 py-2 overflow-hidden" style={{ background: "rgba(0,0,0,0.3)" }}>
+      {/* PLIEGO-230: Track info opaco — antes rgba(0,0,0,0.3) colapsaba el texto sobre el fondo */}
+      <div className="px-3 py-2 overflow-hidden" style={{ background: "#0a0a0a" }}>
         <div className="overflow-hidden whitespace-nowrap" style={{ width: "100%" }}>
           <motion.p
             ref={titleRef}
@@ -507,6 +507,17 @@ return () => cancelAnimationFrame(raf);
             {playing ? <Pause size={18} color={accentColor} strokeWidth={2.5} /> : <Play size={18} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" size="sm" />
+          {/* PLIEGO-230: ⚡ DROP consolidado en la botonera central — antes estaba separado al final */}
+          {track && (
+            <WinampBtn
+              label="⚡"
+              color={accentColor}
+              onClick={() => setShowDrop(true)}
+              title="Lanzar drop"
+              aria-label="Lanzar drop"
+              size="sm"
+            />
+          )}
           {track && (
             <WinampBtn
               label="⊕"
@@ -520,22 +531,16 @@ return () => cancelAnimationFrame(raf);
         </div>
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>
+          {/* PLIEGO-230: vol slider más grande (w-16 h-1.5) — mejor touch target en mobile */}
           <input type="range" min={0} max={100} value={volume}
             onChange={(e) => changeVolume(Number(e.target.value))}
-            className="w-12 h-1 appearance-none cursor-pointer rounded-full"
+            className="w-16 h-1.5 appearance-none cursor-pointer rounded-full"
             style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}22 ${volume}%)`, accentColor }} />
         </div>
       </div>
 
-      {/* Drop Button */}
-      {track && (
-        <motion.button whileTap={{ scale: 0.96 }} onClick={() => setShowDrop(true)}
-          className="w-full py-2 text-xs tracking-[0.25em] uppercase font-bold transition-all"
-          style={{ background: `linear-gradient(90deg, ${withAlpha(accentColor, 0.13)} 0%, ${withAlpha(accentColor, 0.07)} 100%)`,
-            borderTop: `1px solid ${withAlpha(accentColor, 0.2)}`, color: accentColor, textShadow: `0 0 8px ${withAlpha(accentColor, 0.53)}` }}>
-          ⚡ LANZAR DROP
-        </motion.button>
-      )}
+      {/* PLIEGO-230: ⚡ LANZAR DROP movido a la botonera central (entre ▶▶ y ⊕).
+          El botón full-width separado se eliminó para consolidar la UX. */}
 
       {/* Phase 2.1: Toast efímero al tocar ♡/♥ — confirma que el tap registró */}
       <AnimatePresence>
