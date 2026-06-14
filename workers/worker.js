@@ -144,6 +144,7 @@ export default {
           tag: r.tag_id,
           color: r.color || r.tag_color || '#bfff00',
           tags: tagsByTrack[r.id] || [],
+          thumbnail: r.thumbnail ? (r.thumbnail.startsWith("http") ? r.thumbnail : `${url.origin}/${r.thumbnail}`) : null,
           tag_label: undefined, tag_icon: undefined, tag_color: undefined,
         }));
         return json(mapped);
@@ -197,14 +198,14 @@ export default {
         return json({ id: trackId, ...body, updated_by: userId });
       }
 
-      // DELETE /api/tracks/:id (S55 — soft delete) S90: añade deleted_at + deleted_by
+      // DELETE /api/tracks/:id (S55 — soft delete)
       if (path.startsWith("/api/tracks/") && request.method === "DELETE") {
         if (!userId) return err("Unauthorized", 401);
         const trackId = path.split("/")[3];
         const now = new Date().toISOString();
         await env.DB.prepare(
-          "UPDATE tracks SET is_deleted = 1, deleted_at = ?1, deleted_by = ?2, updated_at = ?1 WHERE id = ?3"
-        ).bind(now, userId, trackId).run();
+          "UPDATE tracks SET is_deleted = 1, updated_at = ?1 WHERE id = ?2"
+        ).bind(now, trackId).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'track',?3)"
         ).bind("track_deleted", userId, trackId).run();

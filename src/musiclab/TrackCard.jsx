@@ -289,13 +289,17 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             )}
             {track.tags?.length > 0 && (
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 2 }}>
-                {track.tags.map((t, i) => (
-                  <span key={`tag-${i}-${t}`} style={{ fontSize: 9, letterSpacing: "0.08em", padding: "1px 6px",
-                    borderRadius: 2, color: `${vibeColor}88`,
-                    border: `1px solid ${vibeColor}22`, background: `${vibeColor}08` }}>
-                    {t}
-                  </span>
-                ))}
+                {track.tags.map((t, i) => {
+                  const tl = typeof t === "string" ? t : (t.label ?? t.id ?? "?");
+                  const tk = typeof t === "string" ? t : (t.id ?? t.label ?? "?");
+                  return (
+                    <span key={`tag-${i}-${tk}`} style={{ fontSize: 9, letterSpacing: "0.08em", padding: "1px 6px",
+                      borderRadius: 2, color: `${vibeColor}88`,
+                      border: `1px solid ${vibeColor}22`, background: `${vibeColor}08` }}>
+                      {tl}
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
