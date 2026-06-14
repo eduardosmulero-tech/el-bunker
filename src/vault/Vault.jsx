@@ -74,7 +74,7 @@ const monthsSince = (isoDate) => {
  * AdventureCounter
  * Reads adventures_start_date from the DB and animates day/month/year counters.
  */
-const AdventureCounter = ({ startDate }) => {
+const AdventureCounter = ({ startDate, accentColor = ACID }) => {
   const time   = timeSince(startDate);
   const digits = String(time.totalDays).padStart(4, "0").split("");
 
@@ -88,8 +88,8 @@ const AdventureCounter = ({ startDate }) => {
       }}
     >
 
-      {/* Label */}
-      <p className="text-xs tracking-[0.35em] uppercase mb-3 opacity-40" style={{ color: ACID }}>
+      {/* Label — G3: vibe-aware */}
+      <p className="text-xs tracking-[0.35em] uppercase mb-3 opacity-40" style={{ color: accentColor }}>
         ◈ AVENTURA EN CURSO
       </p>
 
@@ -103,21 +103,21 @@ const AdventureCounter = ({ startDate }) => {
             transition={{ delay: i * 0.08, duration: 0.4 }}
             className="text-4xl font-bold tabular-nums leading-none"
             style={{
-              color: ACID,
-              textShadow: `0 0 20px ${ACID}88`,
+              color: accentColor,
+              textShadow: `0 0 20px ${accentColor}88`,
               fontFeatureSettings: "'tnum'",
             }}
           >
             {d}
           </motion.span>
         ))}
-        <span className="text-xs ml-2 mb-1 opacity-50 tracking-widest uppercase" style={{ color: ACID }}>
+        <span className="text-xs ml-2 mb-1 opacity-50 tracking-widest uppercase" style={{ color: accentColor }}>
           días
         </span>
       </div>
 
       {/* Sub-breakdown */}
-      <div className="flex gap-4 text-xs opacity-40" style={{ color: ACID }}>
+      <div className="flex gap-4 text-xs opacity-40" style={{ color: accentColor }}>
         <span>{time.years}Y</span>
         <span className="opacity-30">·</span>
         <span>{time.months}M</span>
@@ -703,7 +703,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
         transition={{ duration: 0.5 }}
         className="grid grid-cols-2 gap-3"
       >
-        <AdventureCounter startDate={db?.adventures_start_date ?? DEFAULT_ADVENTURE_DATE} />
+        <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date ?? DEFAULT_ADVENTURE_DATE} />
         <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
       </motion.div>
 

@@ -135,23 +135,23 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
         <style>{`.capsules-subnav::-webkit-scrollbar { display: none; }`}</style>
       </nav>
 
-      {/* Loading indicator */}
+      {/* Loading indicator — G4: vibe-aware */}
       {loadingEvents && (
         <div className="flex items-center justify-center gap-2 py-3">
           <motion.span
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 1.5, repeat: Infinity }}
             className="text-xs tracking-[0.3em] uppercase"
-            style={{ color: ACID }}
+            style={{ color: accent }}
           >
             ◌ CARGANDO EVENTOS...
           </motion.span>
         </div>
       )}
 
-      {/* Error feedback */}
+      {/* Error feedback — G4: vibe-aware */}
       {fetchError && !loadingEvents && (
-        <div className="py-2 px-3 text-xs opacity-40 text-center" style={{ color: ACID, fontFamily: FONT_MONO }}>
+        <div className="py-2 px-3 text-xs opacity-40 text-center" style={{ color: accent, fontFamily: FONT_MONO }}>
           ⚠ {fetchError}
         </div>
       )}
@@ -169,8 +169,8 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
           {subTab === "smoke" && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 px-1">
-                <span style={{ color: ACID }}>⧖</span>
-                <h2 className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: ACID }}>
+                <span style={{ color: accent }}>⧖</span>
+                <h2 className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accent }}>
                   SESIÓN ESPECIAL
                 </h2>
               </div>
