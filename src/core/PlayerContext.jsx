@@ -185,6 +185,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const _wasPlayingBeforeOffline = useRef(false);
   // Fase 1.7 — EC-P5: clave de archivo del track anterior para detectar duplicados
   const _prevFileKeyRef = useRef(null);
+  // S106 — Gapless: trackea la URL del siguiente track ya precargado para evitar refetch
+  const _nextTrackUrlRef = useRef(null);
 
   // ── Persistencia cola en Drive ────────────────────────────
   // S76: Fetch queue from Worker API (D1) instead of Drive
@@ -680,9 +682,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
   }, [activeVibe, resolveVibeAccent]);
 
-  // ── Fase 1.1 — P-M8: Precarga del siguiente track al 80% ──────
+  // ── S106 — Precarga del siguiente track ──────
   // Resuelve la URL del siguiente track sin efectos secundarios.
   // No muta estado — es una proyección pura del estado actual.
+  // Usada por los dos useEffect de precarga (inmediata + 50% threshold).
   // ADR-TDZ: declarado ANTES de handleAudioEnded para evitar ReferenceError
   // al evaluar el dependency array del useCallback.
   const _resolveNextTrackUrl = useCallback(() => {
@@ -715,26 +718,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, [activeTrack, localQueue, loopMode, shuffle, tracks]);
 
   // ── onEnded centralizado ──────────────────────────────────────────────
+  // S106 — Gapless: skip(1) ya maneja la inyección gapless del src
+  // (via preloadAudioRef en la rama de cola unificada).
   const handleAudioEnded = useCallback(() => {
     if (loopMode === "track" && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
     } else {
-      // Fase 1.2 — P3: Gapless. Si el preload ya tiene el siguiente track cargado,
-      // inyectar su src en el audio principal antes de skip().
-      // El navegador ya tiene el recurso en cache → arranque near-zero gap.
-      const preload = preloadAudioRef.current;
-      const nextUrl = _resolveNextTrackUrl();
-      if (preload && nextUrl && preload.src === nextUrl && audioRef.current) {
-        const isR2 = nextUrl.includes("workers.dev");
-        if (isR2) audioRef.current.crossOrigin = "anonymous";
-        else audioRef.current.removeAttribute("crossOrigin");
-        audioRef.current.src = nextUrl;
-        audioRef.current.play().catch(() => {});
-      }
       skip(1);
     }
-  }, [loopMode, skip, _resolveNextTrackUrl]);
+  }, [loopMode, skip]);
 
   // ── Fase 1.4 — P2: Reintento con backoff exponencial ante errores de red ──
   // 3 reintentos: inmediato, 1s, 2s. Tras agotarlos → skip(1) automático.
@@ -930,16 +923,44 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     ? (resolvedAudioSrc.startsWith("blob:") ? undefined : resolvedAudioSrc.includes("workers.dev") ? "anonymous" : undefined)
     : undefined;
 
-  // Activar precarga cuando el track actual supera el 80% de duración.
+  // S106 — Gapless: Precarga del siguiente track.
+  // Dos fases: (1) inmediata al arrancar el track actual (1s delay),
+  // (2) threshold al 50% como safety net por si la cola cambió.
   // El segundo <audio> carga la URL en cache del navegador. Silencioso.
   // Al saltar al siguiente track, el browser ya tiene el archivo → carga instantánea.
+
+  // ── S106 Fase 1: Precarga inmediata al arrancar un track nuevo ──
+  useEffect(() => {
+    if (!isPlaying || !activeTrack) return;
+    // Esperar 1s para que el track actual tenga tiempo de buffer inicial
+    const timer = setTimeout(() => {
+      const nextUrl = _resolveNextTrackUrl();
+      const preload = preloadAudioRef.current;
+      if (!nextUrl || !preload) return;
+      // Evitar refetch si ya tenemos el mismo URL precargado
+      if (_nextTrackUrlRef.current === nextUrl && preload.src) {
+        console.info("[Búnker] ⏭ Precarga inmediata (ya cached):", nextUrl.slice(-40));
+        return;
+      }
+      _nextTrackUrlRef.current = nextUrl;
+      const isR2 = nextUrl.includes("workers.dev");
+      if (isR2) preload.crossOrigin = "anonymous";
+      else preload.removeAttribute("crossOrigin");
+      preload.src = nextUrl;
+      preload.load();
+      console.info("[Búnker] ⏭ Precarga inmediata (1s):", nextUrl.slice(-40));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [isPlaying, activeTrack?.id, _resolveNextTrackUrl]);
+
+  // ── S106 Fase 2: Safety net al 50% (bajado de 80%) ──
   useEffect(() => {
     const audio = audioRef.current;
     const preload = preloadAudioRef.current;
     if (!audio || !preload || !isPlaying) return;
 
     let triggered = false;
-    const THRESHOLD = 0.8;
+    const THRESHOLD = 0.5;
 
     const onTimeUpdate = () => {
       if (triggered) return;
@@ -949,31 +970,39 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
       if (ct / dur >= THRESHOLD) {
         triggered = true;
-        audio.removeEventListener("timeupdate", onTimeUpdate); // cleanup inmediato tras disparar
+        audio.removeEventListener("timeupdate", onTimeUpdate);
         const nextUrl = _resolveNextTrackUrl();
-        if (nextUrl && preload.src !== nextUrl) {
-          // crossOrigin debe coincidir con el audio principal
+        if (nextUrl && _nextTrackUrlRef.current !== nextUrl) {
+          _nextTrackUrlRef.current = nextUrl;
           const isR2 = nextUrl.includes("workers.dev");
           if (isR2) preload.crossOrigin = "anonymous";
           else preload.removeAttribute("crossOrigin");
           preload.src = nextUrl;
           preload.load();
-          console.info("[Búnker] Precarga activada al 80%:", nextUrl.slice(-40));
+          console.info("[Búnker] ⏭ Precarga 50% (cola cambió):", nextUrl.slice(-40));
         }
       }
     };
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     return () => audio.removeEventListener("timeupdate", onTimeUpdate);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, _resolveNextTrackUrl]);
 
-  // Limpiar precarga cuando cambia el track activo
+  // S106 — Limpiar precarga cuando cambia el track activo.
+  // Si el src del preloader es el siguiente track, NO limpiar — ya está listo.
   useEffect(() => {
     const preload = preloadAudioRef.current;
-    if (preload && preload.src) {
+    if (!preload) return;
+    const nextUrl = _resolveNextTrackUrl();
+    // Si el preloader ya tiene el siguiente track, preservarlo para gapless
+    if (nextUrl && preload.src === nextUrl) return;
+    if (preload.src) {
+      _nextTrackUrlRef.current = null;
       preload.removeAttribute("src");
       preload.load();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id]);
 
   // ── Fase 2.8 — A1: Persistir estado para OOM kill recovery ──
@@ -1100,9 +1129,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           if (activeTrack) restorePosition(activeTrack);
         }}
       />
-      {/* Fase 1.1 — P-M8: Precarga silenciosa del siguiente track.
+      {/* S106 — Precarga silenciosa del siguiente track (gapless).
           Sin volumen, sin controles. Solo para cache del navegador.
-          El src se asigna programáticamente al alcanzar 80% de duración. */}
+          El src se asigna en 2 fases: inmediata (1s tras arrancar track) y safety net al 50%. */}
       <audio
         ref={preloadAudioRef}
         preload="none"
