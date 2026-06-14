@@ -7,37 +7,9 @@
 
 ## PRIORIDAD ALTA — desbloquean features
 
-### W3 — Tags MusicLab no sincronizan con D1
-**Archivo:** `src/musiclab/TagManager.jsx`, `workers/worker.js`
-**Causa raíz:** Tags solo se guardan en Drive JSON, no en tabla `tags` de D1
-
-### G1 — Densidad VaultGallery no funciona
-**Archivo:** `src/vault/VaultGallery.jsx`
-**Causa raíz:** Botones compact/normal/expanded cambian `density` state pero el CSS (`columnWidth`) no produce cambio visual real
-
-### G2 — Botón "+ ERA" placeholder
-**Archivo:** `src/vault/Vault.jsx`
-**Causa raíz:** `onAddEra` se pasa como prop pero no está implementado en App.jsx
-
-### G3 — VAULT ignora color de la app
-**Archivo:** `src/vault/Vault.jsx`
-**Causa raíz:** Usa ACID fijo (#bfff00) en lugar de `trackVibe` (--vibe-accent) como el resto de la app
-
-### G4 — CAPSULES ignora color de la app
-**Archivo:** `src/capsules/Capsules.jsx`
-**Causa raíz:** Colores fijos sin reaccionar al `trackVibe` activo
-
-### G5 — Timeline sin modos de vista ni paginación
-**Archivo:** `src/capsules/Capsules.jsx` (Timeline)
-**Causa raíz:** Carga plana de tracks sin modos (timeline/grid/compact) ni lazy loading
-
-### G6 — Barra volumen SmokeSession display-only
-**Archivo:** `src/smoke/SmokeSession.jsx`
-**Causa raíz:** `VolumeFadeBar` es solo `<div>` visual, no tiene `<input type="range">` ni onClick para modificar volumen
-
-### G7 — Reproductor no sigue entre pestañas
-**Archivo:** `src/musiclab/WinampPlayer.jsx`, `src/layout/Layout.jsx`
-**Causa raíz:** WinampPlayer está dentro de MusicLab.jsx, no en Layout. No hay mini-player persistente en BottomNav
+### Q12 — Añadir playlist entera a cola
+**Archivo:** `src/musiclab/MusicLab.jsx`
+**Causa raíz:** Botón en playlist detail no implementado. Bloqueada por arquitectura de Q14 (ya resuelta).
 
 ---
 
@@ -63,3 +35,12 @@
 | SH1 | SmokeSession persiste endTime en localStorage | SmokeSession.jsx | 2026-06-13 |
 | L1 | addLibrary refresca libraryCapacity automáticamente | VaultContext.jsx | 2026-06-13 |
 | PLIEGO-227 | Modo Edición persistente | MusicLab.jsx | 2026-06-04 |
+| G3 | VAULT vibe-aware — S85c ya añadió usePlayer() + trackVibe accent dinámico | Vault.jsx | 2026-06-14 |
+| G4 | CAPSULES vibe-aware — S85c ya añadió usePlayer() + trackVibe accent dinámico | Capsules.jsx | 2026-06-14 |
+| G1 | Densidad VaultGallery — buildMasonryColumns JS cambia columnas reales (no CSS columns) | VaultGallery.jsx | 2026-06-14 |
+| G2 | Botón "+ ERA" — S89 fix: onAddEra ahora refresca eras desde Worker API | App.jsx, Vault.jsx | 2026-06-14 |
+| W3 | Tags MusicLab → D1 — S85c añadió sync con Worker API /api/tags | App.jsx | 2026-06-14 |
+| G5 | Timeline modos + paginación — S85c añadió viewMode (timeline/compact) + PAGE_SIZE + "CARGAR MÁS" | Timeline.jsx | 2026-06-14 |
+| G6 | Volumen SmokeSession — S85c añadió `<input type="range">` funcional | SmokeSession.jsx | 2026-06-14 |
+| G7 | Mini-player entre pestañas — Layout.jsx ya renderiza `<MiniPlayer>` en `activeTab !== "music"` | Layout.jsx | 2026-06-14 |
+| ALERT-1/2 | alert() → toast vibe-aware en Vault.jsx (addEra + updateEntry) | Vault.jsx | 2026-06-14 |

@@ -157,14 +157,26 @@ const ErrorScreen = ({ message, onRetry }) => (
 
 /** Wrapper para la pestaña VAULT */
 const VaultPage = () => {
-  const { db, jwtToken } = useVault();
+  const { db, jwtToken, patchDb } = useVault();
   return (
     <Vault
       db={db}
       jwtToken={jwtToken}
-      onAddEra={async () => {
-        // Could open a modal; placeholder for now
-        console.log("[App] onAddEra triggered");
+      onAddEra={async (_created) => {
+        // G2: refresh db from Worker API tras crear era, para que aparezca sin F5
+        if (!jwtToken) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/eras`, {
+            headers: { Authorization: `Bearer ${jwtToken}` },
+          });
+          if (res.ok) {
+            const freshEras = await res.json();
+            // Merge: actualizar eras en el db local sin perder entries ni otros datos
+            patchDb((prev) => ({ ...prev, eras: freshEras }));
+          }
+        } catch (e) {
+          console.warn("[App] onAddEra refresh failed:", e);
+        }
       }}
       onOpenEra={(era) => {
         console.log("[App] Opening era:", era.name);

@@ -2,28 +2,21 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 > Actualizar antes de cerrar sesión.
 
-**Próximo pliego:** MANUAL STEPS URGENTES (wrangler deploy + ALTER TABLE playlists.sort_order) → Phase 2 visuales P1
-**Última sesión:** S85c — Autonomous Roadmap Batch (P1 mini-player, S8 persist, Q6 toast, UX3.7, debounce, event naming, Capsules toast infra) — 6 archivos
+**Próximo pliego:** S90 — Q12 (añadir playlist entera a cola) + S3 (soft delete tracks) + EC-TR6 (ID3 metadata)
+**Última sesión:** S89 — Auditoría BACKLOG + Fix G2 (onAddEra) + Eliminar alert() residuales (Vault.jsx)
 **Rama activa:** `master`
 
 ---
 
 ## Bugs activos
 
-### P0 — CRÍTICO (bloquea validación en prod)
-- ~~**S84-MANUAL-STEPS:**~~ **CERRADO en S86** — `wrangler deploy` ejecutado (version `a77af4a3-1e75-40de-aa1b-2ae47f119e0a`) + D1 migration aplicada (`ALTER TABLE playlists ADD COLUMN sort_order` + `CREATE INDEX idx_playlists_order`). Smoke test confirma los 4 endpoints nuevos responden 401 (auth required) en vez de 404. Handlers DEL-PLAYLIST ahora funcionan en producción.
-
-### P1 — visuales (Phase 2, tras manual steps)
-- **MINI-PLAYER:** opaco, transparencias dejan ver contenido de abajo (colapsa texto). Botonera no funciona, faltan botones. (baseline BACKLOG G7)
-- ~~**ERA-COLOR:** selector de color de nueva era no coincide con el de tags (hecho a mano). Estética "menú 2000s", monotona, no encaja con el design system.~~ **CERRADO en S85** — `Vault.jsx:765-766` ya usa el mismo `<ColorPicker>` unificado que `TagManager.jsx`. El componente (`src/core/ColorPicker.jsx`) acepta `accentColor` opcional (refactor S84d) y se usa con la misma paleta en ambos sitios. La "estética menú 2000s" ya no aplica — es el mismo componente del design system.
-- **PLAYLISTS-TAB:** al lado de la de tracks, parece de otra app (diseño inferior).
-
-### P1 — accesibilidad
-- ~~**WCAG-ROMANTIQUEEO:** el color `#bf00ff` (vibe romantiqueo/purple) da contrast ratio 4.40:1 sobre `#0a0a0a` — falla WCAG AA para texto normal (necesita 4.5:1).~~ **CERRADO en S85** cambiando a `#d966ff` (~5.5:1 sobre #0a0a0a, pasa AA). Aplica a 11 archivos.
+### P2 — features pendientes
+- **Q12:** Añadir playlist entera a cola (solo queda implementar el botón)
+- **S3:** Soft delete de tracks (campo `deleted_at` + `deleted_by` en D1)
+- **EC-TR6:** Extraer metadatos ID3 al subir MP3
 
 ### P2/resto
-- **TRACKS-SORT:** botones de ordenar se ven horribles, replantear posición en pantalla.
-- ~~**EVENT-NAMING-CONSISTENCY:**~~ **CERRADO en S85c** — `playlist_reordered` → `playlist_tracks_reordered` en worker.js. Verificación: no quedan consumers con el nombre viejo.
+- **TRACKS-SORT:** Ya arreglado visualmente (PLIEGO-237), verificar en dispositivo real
 
 ---
 

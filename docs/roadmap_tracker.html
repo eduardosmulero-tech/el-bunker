@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>El Búnker — Roadmap Tracker</title>
+<title>El Búnker — Roadmap Tracker v5</title>
 <style>
   :root {
     --bg: #050505;
@@ -23,7 +23,7 @@
     font-family: var(--font);
     line-height: 1.6;
     padding: 2rem;
-    max-width: 900px;
+    max-width: 960px;
     margin: 0 auto;
     min-height: 100vh;
   }
@@ -32,20 +32,18 @@
     letter-spacing: 0.3em;
     text-transform: uppercase;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     text-shadow: 0 0 20px var(--acid);
   }
   .subtitle {
     text-align: center;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     letter-spacing: 0.2em;
     opacity: 0.4;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
-
-  /* ── Progress bar ── */
   .progress-container {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding: 1rem;
     border: 1px solid var(--border);
     background: var(--glass);
@@ -71,10 +69,8 @@
     transition: width 0.5s ease;
     border-radius: 2px;
   }
-
-  /* ── Phase ── */
   .phase {
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     border: 1px solid var(--border);
     background: var(--glass);
     border-radius: 2px;
@@ -83,62 +79,58 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.8rem 1rem;
+    padding: 0.7rem 1rem;
     cursor: pointer;
     user-select: none;
     border-bottom: 1px solid var(--border);
   }
   .phase-header:hover { background: rgba(191,255,0,0.02); }
   .phase-title {
-    font-size: 0.8rem;
-    letter-spacing: 0.2em;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
   }
   .phase-stats {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     opacity: 0.6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .phase-arrow {
     transition: transform 0.3s ease;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
   .phase.collapsed .phase-arrow { transform: rotate(-90deg); }
   .phase.collapsed .phase-sessions { display: none; }
-
-  /* ── Sessions ── */
-  .phase-sessions { padding: 0.5rem 1rem 1rem; }
+  .phase-sessions { padding: 0.4rem 0.8rem 0.8rem; }
   .session {
     display: flex;
     align-items: flex-start;
-    gap: 0.8rem;
-    padding: 0.7rem 0;
+    gap: 0.6rem;
+    padding: 0.5rem 0;
     border-bottom: 1px solid rgba(191,255,0,0.04);
     transition: background 0.2s;
     cursor: pointer;
+    font-size: 0.68rem;
   }
   .session:hover { background: rgba(191,255,0,0.015); }
   .session:last-child { border-bottom: none; }
-
   .session-check {
-    width: 18px;
-    height: 18px;
+    width: 16px; height: 16px;
     border: 1.5px solid var(--border);
     border-radius: 2px;
     flex-shrink: 0;
-    margin-top: 0.15rem;
+    margin-top: 0.12rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     transition: all 0.3s ease;
-    background: transparent;
-    cursor: pointer;
   }
   .session-check.done {
-    background: var(--acid);
-    border-color: var(--acid);
-    color: var(--bg);
-    box-shadow: 0 0 8px var(--acid);
+    background: var(--acid); border-color: var(--acid);
+    color: var(--bg); box-shadow: 0 0 8px var(--acid);
   }
   .session-check.active {
     border-color: var(--cyan);
@@ -149,130 +141,105 @@
     0%,100% { box-shadow: 0 0 4px var(--cyan); }
     50% { box-shadow: 0 0 14px var(--cyan); }
   }
-
   .session-content { flex: 1; min-width: 0; }
   .session-id {
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    opacity: 0.5;
-    margin-bottom: 0.15rem;
+    font-size: 0.55rem; letter-spacing: 0.12em;
+    opacity: 0.4; margin-bottom: 0.1rem;
   }
   .session-name {
-    font-size: 0.75rem;
-    font-weight: bold;
-    letter-spacing: 0.05em;
+    font-size: 0.7rem; font-weight: bold; letter-spacing: 0.04em;
   }
   .session-files {
-    font-size: 0.6rem;
-    opacity: 0.35;
-    margin-top: 0.2rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.55rem; opacity: 0.3; margin-top: 0.15rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .session-badge {
-    font-size: 0.55rem;
-    padding: 2px 6px;
-    border-radius: 2px;
-    letter-spacing: 0.1em;
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-top: 0.15rem;
-  }
-  .badge-impact { border: 1px solid var(--acid); color: var(--acid); }
-  .badge-infra { border: 1px solid var(--purple); color: var(--purple); }
-  .badge-done { background: rgba(191,255,0,0.08); color: var(--acid); opacity: 0.5; text-decoration: line-through; }
-
-  /* ── Buttons ── */
   .controls {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
+    display: flex; gap: 0.5rem; justify-content: center;
+    margin-bottom: 1rem; flex-wrap: wrap;
   }
   .btn {
-    font-family: var(--font);
-    font-size: 0.65rem;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 0.5rem 1rem;
+    font-family: var(--font); font-size: 0.6rem;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.4rem 0.8rem;
     border: 1px solid var(--border);
-    background: var(--glass);
-    color: var(--acid);
-    cursor: pointer;
-    border-radius: 2px;
-    transition: all 0.2s;
+    background: var(--glass); color: var(--acid);
+    cursor: pointer; border-radius: 2px; transition: all 0.2s;
   }
   .btn:hover { background: rgba(191,255,0,0.06); border-color: var(--acid); }
   .btn.danger { border-color: rgba(255,59,59,0.4); color: var(--red); }
   .btn.danger:hover { background: rgba(255,59,59,0.06); }
-
-  /* ── Footer ── */
-  .footer {
-    text-align: center;
-    font-size: 0.6rem;
-    opacity: 0.25;
-    margin-top: 3rem;
-    letter-spacing: 0.2em;
+  .hito {
+    padding: 0.4rem 1rem; font-size: 0.55rem;
+    letter-spacing: 0.12em; opacity: 0.45; text-align: center;
+    border-top: 1px solid var(--border); margin-top: 0.2rem;
   }
-
-  /* ── Toast ── */
+  .hito.done { color: var(--acid); opacity: 0.65; }
+  .hito.active { color: var(--cyan); opacity: 0.7; }
+  .footer {
+    text-align: center; font-size: 0.55rem;
+    opacity: 0.22; margin-top: 2rem; letter-spacing: 0.18em;
+  }
   .toast {
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
+    position: fixed; bottom: 2rem; left: 50%;
     transform: translateX(-50%);
-    background: var(--acid);
-    color: var(--bg);
-    padding: 0.5rem 1.2rem;
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    border-radius: 2px;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-    z-index: 100;
-    font-family: var(--font);
+    background: var(--acid); color: var(--bg);
+    padding: 0.4rem 1rem; font-size: 0.6rem;
+    letter-spacing: 0.1em; border-radius: 2px;
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none; z-index: 100; font-family: var(--font);
   }
   .toast.show { opacity: 1; }
-
-  /* ── Hito ── */
-  .hito {
-    padding: 0.5rem 1rem;
-    font-size: 0.6rem;
-    letter-spacing: 0.15em;
-    opacity: 0.5;
-    text-align: center;
-    border-top: 1px solid var(--border);
-    margin-top: 0.3rem;
+  .stats-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.5rem; margin-bottom: 1rem;
   }
-  .hito.done { color: var(--acid); opacity: 0.7; }
-
-  /* ── Responsive ── */
+  .stat-card {
+    padding: 0.6rem; text-align: center;
+    border: 1px solid var(--border);
+    background: var(--glass); border-radius: 2px;
+  }
+  .stat-val { font-size: 1.1rem; font-weight: bold; line-height: 1.1; }
+  .stat-lbl { font-size: 0.55rem; opacity: 0.4; letter-spacing: 0.12em; margin-top: 0.2rem; text-transform: uppercase; }
   @media (max-width: 600px) {
-    body { padding: 1rem; }
-    .session-badge { display: none; }
-    h1 { font-size: 1.1rem; }
+    body { padding: 0.8rem; }
+    h1 { font-size: 1rem; }
   }
 </style>
 </head>
 <body>
 
 <h1>◈ EL BÚNKER ◈</h1>
-<p class="subtitle">ROADMAP TRACKER · S49 · JUNIO 2026</p>
+<p class="subtitle">ROADMAP TRACKER v5 · S89 · JUNIO 2026</p>
 
 <div class="controls">
   <button class="btn" onclick="expandAll()">▸ EXPANDIR TODO</button>
   <button class="btn" onclick="collapseAll()">▾ COLAPSAR TODO</button>
-  <button class="btn" onclick="markNextUndone()">● MARCAR SIGUIENTE</button>
   <button class="btn danger" onclick="resetAll()">↺ RESET</button>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--acid)">40</div>
+    <div class="stat-lbl">Sesiones completadas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--cyan)">26</div>
+    <div class="stat-lbl">Pendientes</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--purple)">~70%</div>
+    <div class="stat-lbl">Specs completas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-val" style="color:var(--orange)">0</div>
+    <div class="stat-lbl">Bugs P1 activos</div>
+  </div>
 </div>
 
 <div class="progress-container">
   <div class="progress-label">
-    <span>PROGRESO GENERAL</span>
-    <span id="progressText">0 / 29 sesiones</span>
+    <span>PROGRESO SESIONES</span>
+    <span id="progressText">0 / 0</span>
   </div>
   <div class="progress-bar">
     <div class="progress-fill" id="progressFill" style="width: 0%"></div>
@@ -282,183 +249,215 @@
 <div id="phases"></div>
 
 <div class="toast" id="toast"></div>
-<p class="footer">THE_VAULT · ENCRYPTED · S49</p>
+<p class="footer">THE_VAULT · ENCRYPTED · v5 · S89</p>
 
 <script>
 const roadmap = [
   {
     id: 0, name: "FASE 0 — ESTABILIZACIÓN", icon: "🔧", sessions: [
-      { id: "S50", name: "Fix historial (Q2/Q3)", files: "PlayerContext.jsx", impact: "impact", specs: "Q2, Q3, Q15" },
-      { id: "S51", name: "Fix shuffle (SH1)", files: "PlayerContext.jsx", impact: "impact", specs: "SH1, SH2, SH3" },
-      { id: "S52", name: "Fix loop (L1)", files: "PlayerContext.jsx", impact: "impact", specs: "L1, L2, L3, L4" },
-      { id: "S53", name: "Q14 + Q10 — Cola manual", files: "PlayerContext.jsx", impact: "impact", specs: "Q14, Q10, Q4" }
-    ],
-    hito: "✅ Reproductor sin bugs conocidos. Base sólida."
+      { id:"S50", name:"Fix historial (Q2/Q3)", files:"PlayerContext.jsx", specs:"Q2,Q3,Q15" },
+      { id:"S51", name:"Fix shuffle (SH1)", files:"PlayerContext.jsx", specs:"SH1,SH2,SH3" },
+      { id:"S52", name:"Fix loop (L1)", files:"PlayerContext.jsx", specs:"L1,L2,L3,L4" },
+      { id:"S53", name:"Q14+Q10 — Cola manual", files:"PlayerContext.jsx", specs:"Q14,Q10,Q4" }
+    ], hito:"✅ Reproductor sin bugs conocidos."
   },
   {
-    id: 1, name: "FASE 1 — INFRAESTRUCTURA CLOUDFLARE", icon: "🔧", sessions: [
-      { id: "S54", name: "D1 schema + Workers init", files: "workers/, schema.sql", impact: "infra", specs: "ADR-024, ADR-019" },
-      { id: "S55", name: "Workers API CRUD", files: "workers/api/", impact: "infra", specs: "ADR-024" },
-      { id: "S56", name: "FileUploadService — R2", files: "workers/upload.js, FileUploadService.js", impact: "infra", specs: "ADR-022, ADR-014" },
-      { id: "S57", name: "StatsEngine emitter", files: "workers/events.js, StatsEngine.js", impact: "infra", specs: "ADR-019, ADR-026" },
-      { id: "S58", name: "Migrar tracks a R2", files: "workers/migrate.js", impact: "infra", specs: "ADR-010, ADR-024" }
-    ],
-    hito: "✅ D1 + Workers + R2 operativos. App sin dependencia Drive."
+    id: 1, name: "FASE 1 — INFRAESTRUCTURA CLOUDFLARE", icon: "☁️", sessions: [
+      { id:"S54", name:"D1 schema + Workers init + health", files:"workers/, schema.sql", specs:"ADR-024,ADR-019" },
+      { id:"S55", name:"Workers: tracks + playlists CRUD", files:"workers/worker.js", specs:"ADR-024" },
+      { id:"S56", name:"Workers: entries + tags + JWT", files:"workers/worker.js", specs:"ADR-024" },
+      { id:"S57", name:"FileUploadService + StatsEngine", files:"src/core/", specs:"ADR-022,ADR-014" },
+      { id:"S58", name:"Auditoría 12 bugs + fix imports", files:"12 archivos", specs:"—" },
+      { id:"S59", name:"AddEntryForm + VaultGallery + Capsules", files:"src/vault/, src/capsules/", specs:"Taxonomía,ADR-021" }
+    ], hito:"✅ D1+Workers+R2 operativos."
   },
   {
     id: 2, name: "FASE 2 — VAULT NÚCLEO", icon: "🏛️", sessions: [
-      { id: "S59", name: "CRUD de entradas", files: "Vault.jsx, AddEntryForm.jsx, Workers API", impact: "impact", specs: "Taxonomía VAULT" },
-      { id: "S60", name: "Subida de archivos al VAULT", files: "Vault.jsx, FileUploadService.js", impact: "impact", specs: "ADR-022" },
-      { id: "S61", name: "Galería WALL — masonry + virtualización", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (WALL)" },
-      { id: "S62", name: "Panel de detalle — metadatos emocionales", files: "VaultGallery.jsx", impact: "impact", specs: "Galería spec (detalle)" }
-    ],
-    hito: "✅ VAULT usable. Entradas, fotos, galería WALL."
+      { id:"S60", name:"Fix imports — MusicLab→tokens", files:"8 archivos MusicLab", specs:"—" },
+      { id:"S61", name:"Wiring JWT frontend", files:"App.jsx, VaultContext.jsx", specs:"ADR-024" },
+      { id:"S62", name:"Worker: CRUD entries (5 endpoints)", files:"workers/worker.js", specs:"ADR-019" },
+      { id:"S63", name:"Worker: CRUD eras (5 endpoints)", files:"workers/worker.js", specs:"ADR-019" },
+      { id:"S64", name:"VaultContext→Worker API", files:"VaultContext.jsx", specs:"ADR-024" },
+      { id:"S65", name:"VAULT edit/delete entries", files:"Vault.jsx, AddEntryForm.jsx", specs:"Taxonomía" },
+      { id:"S65a", name:"5 bugs: Q2/Q3/Q10/SH1/L1", files:"PlayerContext.jsx, SmokeSession", specs:"Q,L,SH" },
+      { id:"S65b", name:"7 bugs G: colores/paginación/miniplayer", files:"6 archivos", specs:"G1-G7" },
+      { id:"S66", name:"WALL gallery + W3 tags→D1", files:"VaultGallery.jsx, App.jsx", specs:"ADR-021,ADR-016" },
+      { id:"S67", name:"Galería CINEMA — swipe+Ken Burns", files:"VaultGallery.jsx", specs:"ADR-021" },
+      { id:"S68", name:"Galería DIALOGUE — emparejamiento", files:"VaultGallery.jsx", specs:"ADR-021,ADR-027" },
+      { id:"S69", name:"Galería MAP — Leaflet pines+líneas", files:"VaultGallery.jsx", specs:"ADR-021" },
+      { id:"S70", name:"Capa ambiental — paleta+AnalyserNode", files:"VaultGallery.jsx", specs:"ADR-021" },
+      { id:"S71", name:"EXHIBITION+REEL — salas+secuencias", files:"VaultGallery.jsx", specs:"ADR-021" }
+    ], hito:"✅ VAULT 6 modos de galería + CRUD completo."
   },
   {
-    id: 3, name: "FASE 3 — CAPSULES NÚCLEO", icon: "⧖", sessions: [
-      { id: "S63", name: "Capsules.jsx — 4 sub-tabs", files: "Capsules.jsx, App.jsx, Layout.jsx", impact: "impact", specs: "ADR-017, ADR-020" },
-      { id: "S64", name: "Migrar + mejorar Smoke Session", files: "SmokeSession.jsx", impact: "impact", specs: "SS-1, SS-4, SS-7, SS-8" },
-      { id: "S65", name: "Timeline con datos reales", files: "Timeline.jsx", impact: "impact", specs: "ADR-020 (Timeline)" },
-      { id: "S66", name: "Time Capsules reales — CRUD + sellar", files: "TimeCapsules.jsx", impact: "impact", specs: "TC-1 a TC-9" }
-    ],
-    hito: "✅ CAPSULES funcional. 4 experiencias con datos reales."
+    id: 3, name: "FASE 3 — CAPSULES PREMIUM", icon: "⧖", sessions: [
+      { id:"S72", name:"Timeline — filtros+banner \"Un día…\"", files:"Timeline.jsx", specs:"ADR-020" },
+      { id:"S73", name:"SmokeSession — nombre/historial/rachas", files:"SmokeSession.jsx", specs:"SS-1,4,7,8" },
+      { id:"S74", name:"Time Capsules — content picker+snapshot", files:"TimeCapsules.jsx", specs:"TC-1 a TC-9" },
+      { id:"S75", name:"RECAP Wrapped — 6 secciones", files:"Recaps.jsx", specs:"ADR-026" }
+    ], hito:"✅ 4 sub-tabs premium con datos reales."
   },
   {
-    id: 4, name: "FASE 4 — RECAP + GALERÍA AVANZADA", icon: "📊", sessions: [
-      { id: "S67", name: "RECAP semanal", files: "Recaps.jsx, Workers", impact: "impact", specs: "ADR-026" },
-      { id: "S68", name: "RECAP mensual + anual", files: "Recaps.jsx", impact: "impact", specs: "ADR-026" },
-      { id: "S69", name: "Galería CINEMA + MAP", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (CINEMA, MAP)" },
-      { id: "S70", name: "Galería DIALOGUE — killer feature", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (DIALOGUE), ADR-027" }
-    ],
-    hito: "✅ RECAP funcional. DIALOGUE activo."
+    id: 4, name: "FASE 4 — MIGRACIÓN DRIVE→D1", icon: "🔄", sessions: [
+      { id:"S76", name:"Playlists/drops/tags→Worker API", files:"VaultContext.jsx, Capsules.jsx", specs:"ADR-024" },
+      { id:"S82", name:"Compat Sprint — safety gates D1", files:"tools/migrate_drive_to_d1.py", specs:"—" },
+      { id:"S80", name:"Bugfixes TDZ + ref-during-render (5 fixes)", files:"PlayerContext,Layout,WinampPlayer", specs:"—" },
+      { id:"S81", name:"Fase 8.1 — MULTIMEDIA selector 5 tipos", files:"AddEntryForm.jsx", specs:"Taxonomía 1" }
+    ], hito:"✅ Drive JSON deprecado. D1 fuente de verdad."
   },
   {
-    id: 5, name: "FASE 5 — MUSICLAB PENDIENTE", icon: "🎵", sessions: [
-      { id: "S71", name: "Cola avanzada (Q6, Q12, Q15)", files: "PlayerContext.jsx, MusicLab.jsx", impact: "impact", specs: "Q6, Q12, Q15" },
-      { id: "S72", name: "Sesión + UX (S1, S2, UX1, UX5)", files: "PlayerContext.jsx, WinampPlayer.jsx", impact: "impact", specs: "S1, S2, S8, UX1, UX2, UX5" },
-      { id: "S73", name: "Android + MediaSession completos", files: "PlayerContext.jsx, WinampPlayer.jsx", impact: "impact", specs: "A, M" },
-      { id: "S74", name: "Escucha compartida (SC1-SC14)", files: "PlayerContext.jsx, WinampPlayer.jsx", impact: "impact", specs: "SC" },
-      { id: "S75", name: "Soft delete + ID3 metadatos", files: "MusicLab.jsx, AddTrackForm.jsx", impact: "impact", specs: "S3, EC-TR6" }
-    ],
-    hito: "✅ Reproductor completo según spec v2. Escucha compartida."
+    id: 5, name: "FASE 5 — MUSIC LAB REMANENTE", icon: "🎵", sessions: [
+      { id:"S77", name:"Cola Q6/Q12/Q16/Q17 + undo", files:"PlayerContext.jsx", specs:"Q" },
+      { id:"S78", name:"Sesión+UX S1/S2/S8/UX1/UX2/UX5", files:"PlayerContext,WinampPlayer", specs:"S,UX" },
+      { id:"S79", name:"MediaSession M1-M12 completo", files:"PlayerContext,WinampPlayer", specs:"M" }
+    ], hito:"✅ Reproductor según spec v2."
   },
   {
-    id: 6, name: "FASE 6 — PULIDO Y REFINAMIENTO", icon: "✨", sessions: [
-      { id: "S81", name: "Galería EXHIBITION + REEL", files: "VaultGallery.jsx", impact: "impact", specs: "ADR-021 (EXHIBITION, REEL)" },
-      { id: "S82", name: "Integraciones finales", files: "Varios", impact: "impact", specs: "DA-6, DA-7, DA-8" },
-      { id: "S83", name: "Pulido general — edge cases, rendimiento", files: "Varios", impact: "impact", specs: "Varios" }
-    ],
-    hito: "✨ Experiencia premium. Sin bugs. 6 modos de galería."
+    id: 6, name: "FASE 6 — PULIDO", icon: "✨", sessions: [
+      { id:"S84", name:"Sister-Bug Cleanup (6 bugs patrón)", files:"MusicLab.jsx, Worker", specs:"—" },
+      { id:"S85", name:"WCAG Romantiqueo + Dead YT Code", files:"11 archivos", specs:"WCAG" },
+      { id:"S85c", name:"Autonomous Batch (G3-G7 fixes implícitos)", files:"6 archivos", specs:"G3-G7,W3" },
+      { id:"S86", name:"React Key Audit (61 sitios)", files:"Timeline,MusicLab,SmokeSession", specs:"—" },
+      { id:"S87", name:"Phase 2.5 — sort+diagnostics+multimedia", files:"MusicLab,VaultGallery", specs:"—" },
+      { id:"S88", name:"Multi-media + drag debounce/queue", files:"VaultGallery,PlaylistManager", specs:"—" }
+    ], hito:"✅ 0 bugs P1 conocidos. Código limpio."
+  },
+  {
+    id: 7, name: "FASE 7 — CIERRE DE BACKLOG", icon: "🎯", sessions: [
+      { id:"S89", name:"Auditoría BACKLOG + Fix G2 + sin alert()", files:"Vault.jsx,App.jsx,BACKLOG.md", specs:"G1-G7,W3" },
+      { id:"S90", name:"Q12 playlist entera + S3 soft delete + ID3", files:"MusicLab,Worker,AddTrackForm", specs:"Q12,S3,EC-TR6" },
+      { id:"S91", name:"S4 sin red→neutral + A1-A6 verificar", files:"PlayerContext.jsx", specs:"S4,A" },
+      { id:"S92", name:"Verificación final Fase 7", files:"—", specs:"—" }
+    ], hito:"🟡 0 bugs P1. BACKLOG vacío."
+  },
+  {
+    id: 8, name: "FASE 8 — VAULT PROFUNDO", icon: "🏛️", sessions: [
+      { id:"S93", name:"Taxonomía: Escritura+Docs (cats 2-3)", files:"AddEntryForm,Worker,schema", specs:"Taxonomía 2-3" },
+      { id:"S94", name:"Taxonomía: Geografía+Línea (cats 4-5)", files:"AddEntryForm.jsx", specs:"Taxonomía 4-5" },
+      { id:"S95", name:"Taxonomía: Listas+Comunicación (cats 6-7)", files:"AddEntryForm.jsx", specs:"Taxonomía 6-7" },
+      { id:"S96", name:"WALL virtualización+long press+badges", files:"VaultGallery.jsx", specs:"Galería WALL" },
+      { id:"S97", name:"CINEMA audioguías+Ken Burns+pausa", files:"VaultGallery.jsx", specs:"Galería CINEMA" },
+      { id:"S98", name:"DIALOGUE emparejamiento+MAP clusters", files:"VaultGallery.jsx", specs:"Galería DIALOGUE,MAP" },
+      { id:"S99", name:"EXHIBITION salas+REEL premium", files:"VaultGallery.jsx", specs:"Galería EXHIBITION,REEL" },
+      { id:"S100", name:"Panel detalle+música ambiente Era", files:"VaultGallery.jsx", specs:"Galería spec" }
+    ], hito:"🔴 Taxonomía 7/14 cats. Galería ~95% spec."
+  },
+  {
+    id: 9, name: "FASE 9 — ESCUCHA COMPARTIDA", icon: "💜", sessions: [
+      { id:"S101", name:"SC1-SC4: Botón corazón+iniciar sesión", files:"WinampPlayer,PlayerContext", specs:"SC" },
+      { id:"S102", name:"SC5-SC10: Emitir/recibir sync+posición", files:"StatsEngine,Worker", specs:"SC" },
+      { id:"S103", name:"SC11-SC14: UI presencia+cola compartida", files:"MusicLab,Layout", specs:"SC" },
+      { id:"S104", name:"Edge cases: reconexión,merge,desync", files:"PlayerContext.jsx", specs:"SC" },
+      { id:"S105", name:"Testing real (Edu+David)", files:"—", specs:"SC" }
+    ], hito:"🔴 Escucha compartida 100%."
+  },
+  {
+    id: 10, name: "FASE 10 — PLAYBACK PREMIUM", icon: "🎵", sessions: [
+      { id:"S106", name:"P1-P3: Motor dual local/R2+gapless", files:"PlayerContext,sw.js", specs:"P" },
+      { id:"S107", name:"A1-A6: Android audio focus+OOM validado", files:"PlayerContext.jsx", specs:"A" },
+      { id:"S108", name:"VIZ1-6: Visualizador presets+BPM", files:"AudioVisualizer.jsx", specs:"VIZ" },
+      { id:"S109", name:"CAST1-6: Chromecast SDK+receiver", files:"PlayerContext,cast-receiver/", specs:"CAST" },
+      { id:"S110", name:"ID3 metadata+edge cases playback", files:"AddTrackForm,PlayerContext", specs:"EC-TR6,EC-P" }
+    ], hito:"🔴 Playback premium 100%."
+  },
+  {
+    id: 11, name: "FASE 11 — PULIDO FINAL", icon: "✨", sessions: [
+      { id:"S111", name:"Taxonomía cats 8-10: Conoc+Ident+Finanzas", files:"AddEntryForm.jsx", specs:"Taxonomía 8-10" },
+      { id:"S112", name:"Taxonomía cats 11-14: Ritual+Seg+Stats+Integ", files:"AddEntryForm.jsx", specs:"Taxonomía 11-14" },
+      { id:"S113", name:"Edge cases: sin conexión,R2 quotas", files:"Varios", specs:"S4,EC-P" },
+      { id:"S114", name:"Animaciones+rendimiento Android", files:"Layout,App.jsx", specs:"—" },
+      { id:"S115", name:"Testing final+WCAG+ESLint+CHANGELOG v3.0", files:"—", specs:"—" }
+    ], hito:"🔴 App ~98% specs. 14/14 taxonomía."
   }
 ];
 
-// ── State ──
-const STORAGE_KEY = 'el_bunker_roadmap';
-let doneSessions = new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
+const preDone = new Set([
+  "S50","S51","S52","S53","S54","S55","S56","S57","S58","S59",
+  "S60","S61","S62","S63","S64","S65","S65a","S65b",
+  "S66","S67","S68","S69","S70","S71","S72","S73","S74","S75",
+  "S76","S77","S78","S79","S80","S81","S82",
+  "S84","S85","S85c","S86","S87","S88","S89"
+]);
+
+const STORAGE_KEY = 'el_bunker_roadmap_v5';
+let doneSessions = new Set(preDone);
+try {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  if (saved.length > 0) doneSessions = new Set([...preDone, ...saved]);
+} catch(e) {}
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...doneSessions]));
+  const extra = [...doneSessions].filter(s => !preDone.has(s));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(extra));
   render();
 }
 
-function toggleSession(sessionId) {
-  if (doneSessions.has(sessionId)) {
-    doneSessions.delete(sessionId);
-  } else {
-    doneSessions.add(sessionId);
-  }
+function toggleSession(sid) {
+  if (preDone.has(sid)) { toast('⚠ ' + sid + ' es pre-completada (Fase 0-6)'); return; }
+  if (doneSessions.has(sid)) { doneSessions.delete(sid); }
+  else { doneSessions.add(sid); }
   save();
-  toast(doneSessions.has(sessionId) ? '✓ ' + sessionId + ' completada' : sessionId + ' pendiente');
+  toast(doneSessions.has(sid) ? '✓ ' + sid + ' completada' : sid + ' pendiente');
 }
 
 function toast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-function expandAll() {
-  document.querySelectorAll('.phase').forEach(p => p.classList.remove('collapsed'));
-}
-
-function collapseAll() {
-  document.querySelectorAll('.phase').forEach(p => p.classList.add('collapsed'));
-}
-
-function markNextUndone() {
-  for (const phase of roadmap) {
-    for (const s of phase.sessions) {
-      if (!doneSessions.has(s.id)) {
-        doneSessions.add(s.id);
-        save();
-        toast('✓ ' + s.id + ' marcada como completada');
-        return;
-      }
-    }
-  }
-  toast('¡Todas las sesiones completadas! ✨');
-}
+function expandAll() { document.querySelectorAll('.phase').forEach(p => p.classList.remove('collapsed')); }
+function collapseAll() { document.querySelectorAll('.phase').forEach(p => p.classList.add('collapsed')); }
+function togglePhase(id) { document.querySelector(`[data-phase="${id}"]`)?.classList.toggle('collapsed'); }
 
 function resetAll() {
-  if (confirm('¿Resetear todo el progreso? Esta acción no se puede deshacer.')) {
-    doneSessions.clear();
+  if (confirm('¿Resetear progreso de Fase 7-11? Las Fases 0-6 son inmutables.')) {
+    doneSessions = new Set(preDone);
     save();
-    toast('↺ Progreso reseteado');
+    toast('↺ Progreso Fase 7-11 reseteado');
   }
 }
 
-function togglePhase(phaseId) {
-  const el = document.querySelector(`[data-phase="${phaseId}"]`);
-  if (el) el.classList.toggle('collapsed');
-}
-
-// ── Render ──
 function render() {
   const container = document.getElementById('phases');
-  let totalDone = 0;
-  let totalSessions = 0;
-
+  let totalDone = 0, totalSessions = 0;
   let html = '';
+
   for (const phase of roadmap) {
     let phaseDone = 0;
-    let phaseTotal = phase.sessions.length;
-    totalSessions += phaseTotal;
+    totalSessions += phase.sessions.length;
 
-    let sessionItems = '';
+    let items = '';
     for (const s of phase.sessions) {
       const isDone = doneSessions.has(s.id);
+      const isLocked = preDone.has(s.id);
       if (isDone) phaseDone++;
-      const badgeClass = isDone ? 'badge-done' : (s.impact === 'infra' ? 'badge-infra' : 'badge-impact');
-      const badgeText = isDone ? '✓ DONE' : (s.impact === 'infra' ? 'INFRA' : 'FEATURE');
-      
-      sessionItems += `
-        <div class="session" onclick="toggleSession('${s.id}')">
-          <div class="session-check ${isDone ? 'done' : ''}">${isDone ? '✓' : ''}</div>
+      items += `
+        <div class="session" onclick="toggleSession('${s.id}')" title="${isLocked?'Fase 0-6 — inmutable':''}">
+          <div class="session-check ${isDone?'done':(!isLocked&&phase.id===7?'active':'')}">${isDone?'✓':''}</div>
           <div class="session-content">
             <div class="session-id">${s.id}</div>
             <div class="session-name">${s.name}</div>
-            <div class="session-files">${s.files} · ${s.specs}</div>
+            <div class="session-files">📁 ${s.files} · 📐 ${s.specs}</div>
           </div>
-          <div class="session-badge ${badgeClass}">${badgeText}</div>
         </div>`;
     }
     totalDone += phaseDone;
+    const allDone = phaseDone === phase.sessions.length;
+    const isActivePhase = phase.id === 7;
 
-    const allPhaseDone = phaseDone === phaseTotal;
     html += `
       <div class="phase collapsed" data-phase="${phase.id}">
         <div class="phase-header" onclick="togglePhase(${phase.id})">
           <span class="phase-title">${phase.icon} ${phase.name}</span>
-          <span class="phase-stats">${phaseDone}/${phaseTotal} · <span class="phase-arrow">▼</span></span>
+          <span class="phase-stats">${phaseDone}/${phase.sessions.length} <span class="phase-arrow">▼</span></span>
         </div>
-        <div class="phase-sessions">${sessionItems}</div>
-        <div class="hito ${allPhaseDone ? 'done' : ''}">${phase.hito}</div>
+        <div class="phase-sessions">${items}</div>
+        <div class="hito ${allDone?'done':isActivePhase?'active':''}">${phase.hito}</div>
       </div>`;
   }
 
   container.innerHTML = html;
-
   document.getElementById('progressText').textContent = `${totalDone} / ${totalSessions} sesiones`;
   document.getElementById('progressFill').style.width = (totalDone / totalSessions * 100) + '%';
 }

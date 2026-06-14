@@ -1,6 +1,6 @@
-# EL BÚNKER — Roadmap de Desarrollo v4
+# EL BÚNKER — Roadmap de Desarrollo v5
 > **Generado:** S66 — Junio 2026 · Post-auditoría completa (specs ↔ código ↔ D1)
-> **Actualizado:** S79 — ROADMAP Fase B completado. Las 13 sesiones priorizadas (S67-S79) implementadas.
+> **Actualizado:** S89 — Auditoría BACKLOG. 9 bugs cerrados (6 stale + 3 reales). Plan Fase 7-11.
 > **Formato:** Sesiones Codebuff de ~45-60 min cada una
 
 ---
@@ -10,26 +10,26 @@
 | Métrica | Valor |
 |---|---|
 | **Total features implementadas** | ~155 (de ~180 especificadas) |
-| **Sesiones completadas** | S50-S79 (30 sesiones) |
-| **Sesiones pendientes priorizadas** | 0 — Fase B completada |
-| **Sesiones diferidas (Fase C)** | 8 (S80-S87) |
-| **Progreso general** | `████████████████████░░░░░` ~86% |
+| **Sesiones completadas** | S50-S89 (40 sesiones) |
+| **Sesiones pendientes (Fase 7-11)** | ~27 (S90-S116) |
+| **Progreso contra specs** | `████████████████████░░░░░` ~70% |
 | **Rama activa** | `master` (desplegada en Vercel) |
-| **Hito actual** | ✅ VAULT, CAPSULES y MUSIC LAB premium completados |
-| **Próxima sesión** | **S80** (diferida) — Escucha Compartida SC1-SC14 (WebSocket) |
+| **Hito actual** | ✅ Fase 0-6 completas · 🟡 Fase 7 iniciada (BACKLOG cerrado) |
+| **Próxima sesión** | **S90** — Q12 (playlist entera a cola) + S3 (soft delete tracks) + EC-TR6 (ID3) |
 
 ---
 
 ## 🧭 Mapa de Fases
 
 ```
-✅ COMPLETADO            🟡 EN PROGRESO           🔴 PENDIENTE              ⚪ DIFERIDO (Fase C)
-Fase 0: S50-S53         (ninguna)                (ninguna)                Fase 6: S80-S87
-Fase 1: S54-S59
-Fase 2: S60-S71
+✅ COMPLETADO            🟡 EN PROGRESO           🔴 PENDIENTE
+Fase 0: S50-S53         Fase 7: S89-S92         Fase 9: S101-S105
+Fase 1: S54-S59                                 Fase 10: S106-S110
+Fase 2: S60-S71                                 Fase 11: S111-S115
 Fase 3: S72-S75
 Fase 4: S76
 Fase 5: S77-S79
+Fase 6: S84-S88
 ```
 
 ---
@@ -124,6 +124,78 @@ Fase 5: S77-S79
 
 ---
 
+## 🟡 FASE 7 — CIERRE DE BACKLOG [EN PROGRESO]
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| **S89** | Auditoría BACKLOG + Fix G2 + Eliminar alert() | `Vault.jsx`, `App.jsx`, `BACKLOG.md` | G1-G7, W3 | ✅ |
+| **S90** | Q12 (playlist entera a cola) + S3 (soft delete) + EC-TR6 (ID3) | `MusicLab.jsx`, `Worker`, `AddTrackForm.jsx` | Q12, S3, EC-TR6 | 🔴 |
+| **S91** | S4 (sin red → neutral) + A1-A6 verificar | `PlayerContext.jsx` | S4, A1-A6 | 🔴 |
+| **S92** | Verificación final Fase 7: build + lint + smoke test | — | — | 🔴 |
+
+**Hito Fase 7:** 0 bugs P1. BACKLOG vacío (solo features nuevas).
+
+---
+
+## 🔴 FASE 8 — VAULT PROFUNDO
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| S93 | Taxonomía: Escritura Íntima + Docs Personales (cats 2-3) | `AddEntryForm.jsx`, `Worker`, schema | Taxonomía 2-3 | 🔴 |
+| S94 | Taxonomía: Geografía + Línea Temporal (cats 4-5) | `AddEntryForm.jsx` | Taxonomía 4-5 | 🔴 |
+| S95 | Taxonomía: Listas + Comunicación (cats 6-7) | `AddEntryForm.jsx` | Taxonomía 6-7 | 🔴 |
+| S96 | Galería avanzada: WALL virtualización + long press ribbon + badges | `VaultGallery.jsx` | Galería WALL | 🔴 |
+| S97 | Galería avanzada: CINEMA audioguías + Ken Burns + pausa contemplativa | `VaultGallery.jsx` | Galería CINEMA | 🔴 |
+| S98 | Galería avanzada: DIALOGUE emparejamiento + MAP clusters | `VaultGallery.jsx` | Galería DIALOGUE, MAP | 🔴 |
+| S99 | Galería avanzada: EXHIBITION salas semánticas + REEL premium | `VaultGallery.jsx` | Galería EXHIBITION, REEL | 🔴 |
+| S100 | Panel detalle completo + música ambiente de Era | `VaultGallery.jsx` | Galería spec | 🔴 |
+
+**Hito Fase 8:** Taxonomía 7/14 categorías. Galería 6 modos al ~95% spec.
+
+---
+
+## 🔴 FASE 9 — ESCUCHA COMPARTIDA
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| S101 | SC1-SC4: Botón corazón + iniciar sesión compartida | `WinampPlayer.jsx`, `PlayerContext.jsx` | SC | 🔴 |
+| S102 | SC5-SC10: Emitir/recibir eventos sync + posición | `StatsEngine.js`, `Worker` | SC | 🔴 |
+| S103 | SC11-SC14: UI presencia mutua + cola compartida + desconexión | `MusicLab.jsx`, `Layout.jsx` | SC | 🔴 |
+| S104 | Edge cases: reconexión, merge, track diferente | `PlayerContext.jsx` | SC | 🔴 |
+| S105 | Testing real con ambos usuarios (Edu + David) | — | SC | 🔴 |
+
+**Hito Fase 9:** Escucha compartida 100% funcional. SC1-SC14 completo.
+
+---
+
+## 🔴 FASE 10 — PLAYBACK PREMIUM
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| S106 | P1-P3: Motor dual local/R2 + fallback red + gapless | `PlayerContext.jsx`, `sw.js` | P1-P3 | 🔴 |
+| S107 | A1-A6: Android audio focus + OOM recovery validado | `PlayerContext.jsx` | A | 🔴 |
+| S108 | VIZ1-6: Visualizador avanzado (presets por vibe, BPM, lockscreen) | `AudioVisualizer.jsx` | VIZ | 🔴 |
+| S109 | CAST1-6: Chromecast SDK + receiver app | `PlayerContext.jsx`, `cast-receiver/` | CAST | 🔴 |
+| S110 | EC-TR6 (ID3) + EC-P1-P5 (edge cases playback) | `AddTrackForm.jsx`, `PlayerContext.jsx` | EC-TR6, EC-P | 🔴 |
+
+**Hito Fase 10:** Playback premium 100%. Android validado. Cast funcional.
+
+---
+
+## 🔴 FASE 11 — PULIDO FINAL
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| S111 | Taxonomía cats 8-10: Conocimiento + Identidad + Finanzas | `AddEntryForm.jsx` | Taxonomía 8-10 | 🔴 |
+| S112 | Taxonomía cats 11-14: Rituales + Seguridad + Stats + Integraciones | `AddEntryForm.jsx` | Taxonomía 11-14 | 🔴 |
+| S113 | Edge cases: sin conexión, archivos corruptos, R2 quotas | Varios | S4, EC-P | 🔴 |
+| S114 | Animaciones: transición tabs, rendimiento Android antiguo | `Layout.jsx`, `App.jsx` | — | 🔴 |
+| S115 | Testing final + WCAG + ESLint 0 warnings + CHANGELOG v3.0 | — | — | 🔴 |
+
+**Hito Fase 11:** App al ~98% specs. Taxonomía 14/14. 0 bugs.
+
+---
+
 ## 📊 Resumen de Esfuerzo
 
 | Fase | Nombre | Sesiones | Estado |
@@ -134,10 +206,16 @@ Fase 5: S77-S79
 | 3 | CAPSULES premium | S72-S75 (4) | ✅ Completo |
 | 4 | Migración Drive→D1 | S76 (1) | ✅ Completo |
 | 5 | MusicLab remanente | S77-S79 (3) | ✅ Completo |
-| 6 | Diferido (Fase C) | S80-S87 (8) | ⚪ No priorizado |
+| 6 | Pulido | S84-S88 (5) | ✅ Completo |
+| 7 | Cierre BACKLOG | S89-S92 (4) | 🟡 En progreso |
+| 8 | VAULT Profundo | S93-S100 (8) | 🔴 Pendiente |
+| 9 | Escucha Compartida | S101-S105 (5) | 🔴 Pendiente |
+| 10 | Playback Premium | S106-S110 (5) | 🔴 Pendiente |
+| 11 | Pulido Final | S111-S115 (5) | 🔴 Pendiente |
 
-| **Completado** | **S50-S79** | **30 sesiones** | **~39h** |
-| **Total proyecto** | **S50-S87** | **38 sesiones** | **~47h** |
+| **Completado** | **S50-S89** | **40 sesiones** | **~52h** |
+| **Pendiente** | **S90-S115** | **26 sesiones** | **~35h** |
+| **Total proyecto** | **S50-S115** | **66 sesiones** | **~87h** |
 
 ---
 

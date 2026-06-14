@@ -564,7 +564,8 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
       onAddEra(created);
     } catch (e) {
       console.warn("[Vault] addEra failed:", e);
-      alert("Error al crear la era. Reintenta.");
+      setToast("NO SE PUDO CREAR LA ERA");
+      setTimeout(() => setToast(null), 2500);
     } finally {
       setAddingEra(false);
     }
@@ -594,7 +595,8 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
       setEditingEntry(null);
     } catch (e) {
       console.warn("[Vault] updateEntry failed:", e);
-      alert("Error al actualizar la entrada. Reintenta.");
+      setToast("NO SE PUDO ACTUALIZAR LA ENTRADA");
+      setTimeout(() => setToast(null), 2500);
     }
   };
 

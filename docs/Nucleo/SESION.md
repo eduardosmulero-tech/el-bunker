@@ -5,7 +5,35 @@
 
 ---
 
-## S85 — WCAG Romantiqueo + Dead YouTube Code Cleanup (14 Junio 2026)
+## S89 — Auditoría BACKLOG + Fix G2 + Eliminar alert() residuales (14 Junio 2026)
+
+**Objetivo:** Auditar los 8 bugs P1 del BACKLOG contra el código real. Resultado: 6/8 ya estaban fixeados en código (S85c) pero el BACKLOG nunca se actualizó. Solo G2 (placeholder real) y 2 alert() residuales requerían código.
+
+### Resultado
+- **6 bugs P1 cerrados (ya fixeados en S85c, BACKLOG stale):**
+  - G3 (VAULT vibe-aware) — `Vault.jsx:533-535` ya usa `usePlayer()` + `trackVibe`
+  - G4 (CAPSULES vibe-aware) — `Capsules.jsx:33-34` ya usa `usePlayer()` + `trackVibe`
+  - G1 (Densidad VaultGallery) — `buildMasonryColumns()` JS masonry cambia columnas reales
+  - W3 (Tags → D1) — `App.jsx:190-240` ya sync con Worker API `/api/tags`
+  - G5 (Timeline modos/paginación) — `Timeline.jsx` ya tiene `viewMode` + `PAGE_SIZE=50` + "CARGAR MÁS"
+  - G6 (Volumen SmokeSession) — `SmokeSession.jsx:600+` ya tiene `<input type="range">` funcional
+  - G7 (Mini-player entre tabs) — `Layout.jsx:463` ya renderiza `<MiniPlayer>` en `activeTab !== "music"`
+- **G2 fix:** `App.jsx:165` — `onAddEra` placeholder (`console.log`) reemplazado por fetch `/api/eras` + `patchDb` merge. Eras nuevas ahora aparecen sin F5.
+- **alert() residuales eliminados:** `Vault.jsx:567` (addEra catch) y `Vault.jsx:597` (updateEntry catch) ahora usan toast vibe-aware (`setToast` + `setTimeout 2500ms`). **Cero `alert()` en toda la app.**
+- **BACKLOG.md actualizado:** 8 bugs movidos a RESUELTOS. Solo queda Q12 como P1 pendiente.
+- **ESTADO.md actualizado:** bugs activos limpiados.
+
+### Archivos modificados (3 código + 2 docs)
+`src/vault/Vault.jsx`, `src/layout/App.jsx`, `docs/Nucleo/BACKLOG.md`, `docs/Nucleo/ESTADO.md`, `docs/Nucleo/SESION.md`
+
+### Validación
+- ESLint: 0 errores en archivos modificados ✅
+- Code-reviewer: ship-it ✅
+- Build: no disponible (rolldown native binding error pre-existente en WSL)
+
+---
+
+## Próxima sesión: S90 — Q12 (playlist entera a cola) + S3 (soft delete tracks) + EC-TR6 (ID3 metadata)
 
 **Objetivo:** Cerrar el bug de accesibilidad WCAG del vibe romantiqueo (purple `#bf00ff` daba 4.40:1 sobre `#0a0a0a`, fallaba AA) cambiando a `#d966ff` (~5.5:1, pasa AA). Limpiar el código muerto de YouTube en TrackCard/WinampPlayer/MusicLab — desde la migración a R2 (S54) `track.url` ya no es URL de YouTube, así que el extractor de YouTube y todas sus ramas eran inalcanzables.
 
