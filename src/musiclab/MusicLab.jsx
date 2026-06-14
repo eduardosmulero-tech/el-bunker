@@ -1214,7 +1214,7 @@ export default function MusicLab({
                     {rawTracks.length === 0 ? (
                       <p className="text-xs opacity-40" style={{ color: "#ff4444" }}>NO HAY TRACKS</p>
                     ) : (
-                      rawTracks.map((track) => (
+                      rawTracks.filter(t => !t.is_deleted).map((track) => (
                         <div key={track.id} className="flex items-center justify-between px-3 py-2 rounded-sm"
                           style={{ background: "rgba(255,68,68,0.03)", border: "1px solid #ff444418" }}>
                           <div className="flex flex-col gap-0.5 min-w-0">

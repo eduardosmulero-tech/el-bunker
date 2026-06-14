@@ -258,7 +258,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-16 left-0 right-0 z-25 mx-2"
+      className="fixed bottom-16 left-0 right-0 z-[25] mx-2"
       style={{ fontFamily: "'JetBrains Mono', monospace" }}
     >
       <div
