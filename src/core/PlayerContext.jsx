@@ -599,6 +599,22 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
     navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));
     navigator.mediaSession.setActionHandler("seekto", (d) => { if (audioRef.current && d.seekTime != null) audioRef.current.currentTime = d.seekTime; });
+    // S91 A2/A3/A5: stop action handler para audio focus release (llamadas,
+    // auriculares desconectados, otra app de audio). El sistema pausa
+    // automáticamente; este handler limpia el estado interno.
+    navigator.mediaSession.setActionHandler("stop", () => {
+      // S91 A2/A3: audio focus release — pausar y actualizar estado.
+      // Se dispara en llamadas entrantes, desconexión de auriculares,
+      // o cuando otra app de audio toma el foco. El navegador ya pausó
+      // el audio nativamente; este handler limpia el estado React.
+      audioRef.current?.pause();
+      setIsPlaying(false);
+    });
+    // S91 A2/A3 adicional: el evento 'pause' del elemento <audio> cubre
+    // escenarios donde MediaSession 'stop' no se dispara (e.g. desconexión
+    // Bluetooth en algunos dispositivos). El onPause del JSX ya maneja esto.
+    // A5 (no ducking): requiere navigator.audioSession.type = 'playback'
+    // (Chromium-only, no estándar) — diferido hasta que haya soporte cross-browser.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id]);
 
@@ -804,9 +820,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     const handleOnline = () => {
       console.info("[Búnker] 📡 Conexión recuperada");
       setNetworkStatus("online");
-      if (_wasPlayingBeforeOffline.current && audioRef.current) {
+      // S91 S4: no auto-reanudar — el usuario decide. Mostrar toast para que
+      // la UI (Layout/MusicLab) ofrezca reanudar explícitamente.
+      if (_wasPlayingBeforeOffline.current) {
         _wasPlayingBeforeOffline.current = false;
-        audioRef.current.play().catch(() => {});
+        try {
+          window.dispatchEvent(new CustomEvent("bunker_network_restored"));
+        } catch { /* SSR */ }
       }
     };
 
@@ -836,18 +856,17 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
     const url = getStreamUrl(activeTrack);
     if (!url) {
-      // Fase 1.6 — EC-P4: Track sin archivo (sin r2_key ni drive_file_id)
-      console.warn("[Búnker] ⚠ Track sin archivo — saltando:", activeTrack.title);
+      // S91 S4: Track sin archivo → estado neutral consciente. Sin auto-skip.
+      // Mostrar el track en pausa con toast informativo. El usuario decide
+      // si saltar manualmente. La UI de Layout/MusicLab muestra el toast.
+      console.warn("[Búnker] ⚠ Track sin archivo — estado neutral:", activeTrack.title);
       setResolvedAudioSrc(null);
-      // S85d: Emitir evento para que la UI (MusicLab) muestre toast con sugerencia.
-      // Antes era silent skip — el usuario no sabía por qué cambiaba de track.
+      setIsPlaying(false);
       try {
         window.dispatchEvent(new CustomEvent("bunker_track_error", {
           detail: { type: "no_file", track: { id: activeTrack.id, title: activeTrack.title } }
         }));
       } catch { /* SSR / no window */ }
-      // setTimeout evita encadenamiento rápido si varios tracks seguidos no tienen archivo
-      setTimeout(() => skipRef.current?.(1), 50);
       return;
     }
 

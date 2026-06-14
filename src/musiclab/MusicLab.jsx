@@ -134,6 +134,8 @@ export default function MusicLab({
     playHistory,
     queueContextName, setQueueContextName,
     trackVibe, resolveVibeAccent,
+    // S91: audioRef para acceder al elemento <audio> desde handlers (network restore)
+    audioRef,
     // S85d: para los toasts Q16/Q17 (DESHACER en remove de cola + undo reorder)
     undoRemoveFromQueue, undoColaReorder, undoPlaylistTracksReorder,
   } = usePlayer();
@@ -167,7 +169,19 @@ export default function MusicLab({
       const { type, track } = e.detail || {};
       if (type === "no_file") {
         const title = track?.title?.slice(0, 28) ?? "track";
-        showToast({ msg: `SIN ARCHIVO: ${title} — SALTANDO` }, 3000);
+        // S91 S4: track sin archivo → estado neutral. Toast con acción SALTAR
+        // en lugar de auto-skip. El usuario decide manualmente.
+        const validTracks = rawTracks.filter(t => !t.is_deleted);
+        const hasOtherTrack = validTracks.length > 1 && validTracks.some(t => t.id !== activeTrack?.id);
+        showToast({
+          msg: `SIN ARCHIVO: ${title}`,
+          action: hasOtherTrack ? () => {
+            const currentIdx = validTracks.findIndex(t => t.id === activeTrack?.id);
+            const next = validTracks[(currentIdx + 1) % validTracks.length];
+            if (next && next.id !== activeTrack?.id) playTrack(next);
+          } : null,
+          actionLabel: hasOtherTrack ? "SALTAR" : null,
+        }, 5000);
       }
     };
     const onTrackRemoved = (e) => {
@@ -193,6 +207,18 @@ export default function MusicLab({
         },
         actionLabel: "DESHACER",
       }, 5000);
+    };
+    // S91 S4: toast de reconexión de red — el usuario decide si reanudar
+    const onNetworkRestored = () => {
+      showToast({
+        msg: "CONEXIÓN RECUPERADA",
+        actionLabel: "REANUDAR",
+        action: () => {
+          if (audioRef?.current) {
+            audioRef.current.play().catch(() => {});
+          }
+        },
+      }, 6000);
     };
     // S85d Q17-playlist: UNDO de reorder de tracks dentro de una playlist.
     // A diferencia de cola (snapshot local), el reorder de playlist es
@@ -227,14 +253,16 @@ export default function MusicLab({
     window.addEventListener("bunker_track_removed_from_queue", onTrackRemoved);
     window.addEventListener("bunker_cola_reordered", onColaReordered);
     window.addEventListener("bunker_playlist_tracks_reordered", onPlaylistTracksReordered);
+    window.addEventListener("bunker_network_restored", onNetworkRestored);
     return () => {
       window.removeEventListener("bunker_track_error", onTrackError);
       window.removeEventListener("bunker_track_removed_from_queue", onTrackRemoved);
       window.removeEventListener("bunker_cola_reordered", onColaReordered);
       window.removeEventListener("bunker_playlist_tracks_reordered", onPlaylistTracksReordered);
+      window.removeEventListener("bunker_network_restored", onNetworkRestored);
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     };
-  }, [undoRemoveFromQueue, undoColaReorder, undoPlaylistTracksReorder, patchDb, showToast]);
+  }, [undoRemoveFromQueue, undoColaReorder, undoPlaylistTracksReorder, patchDb, showToast, rawTracks, activeTrack?.id, audioRef, playTrack]);
 
   // libraryFilter — estado local de UI (ADR-011). No afecta al reproductor.
   const [libraryFilter, setLibraryFilter] = useState("all");
