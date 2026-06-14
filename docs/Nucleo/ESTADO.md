@@ -15,7 +15,7 @@
 
 ### P1 — visuales (Phase 2, tras manual steps)
 - **MINI-PLAYER:** opaco, transparencias dejan ver contenido de abajo (colapsa texto). Botonera no funciona, faltan botones. (baseline BACKLOG G7)
-- **ERA-COLOR:** selector de color de nueva era no coincide con el de tags (hecho a mano). Estética "menú 2000s", monotona, no encaja con el design system.
+- ~~**ERA-COLOR:** selector de color de nueva era no coincide con el de tags (hecho a mano). Estética "menú 2000s", monotona, no encaja con el design system.~~ **CERRADO en S85** — `Vault.jsx:765-766` ya usa el mismo `<ColorPicker>` unificado que `TagManager.jsx`. El componente (`src/core/ColorPicker.jsx`) acepta `accentColor` opcional (refactor S84d) y se usa con la misma paleta en ambos sitios. La "estética menú 2000s" ya no aplica — es el mismo componente del design system.
 - **PLAYLISTS-TAB:** al lado de la de tracks, parece de otra app (diseño inferior).
 
 ### P1 — accesibilidad

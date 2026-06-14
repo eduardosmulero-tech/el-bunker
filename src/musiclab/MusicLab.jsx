@@ -883,7 +883,7 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${trackColor}33`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
                             {track.thumbnail
@@ -943,7 +943,7 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${accentColor}12`, border: `1px solid ${accentColor}33` }}>
                             {track.thumbnail
@@ -1300,12 +1300,12 @@ export default function MusicLab({
                         onDragStart={() => handlePlDragStart(i)}
                         onDragOver={handlePlDragOver}
                         onDrop={() => handlePlDrop(i)}
-                        className="flex flex-col rounded-sm"
-                        style={{ background: GLASS_BG, border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? accentColor) + "33"}`, fontFamily: FONT_MONO, opacity: isEmpty ? 0.6 : 1, cursor: "grab" }}>
+                        className="flex flex-col rounded-sm transition-transform duration-150 hover:scale-[1.02]"
+                        style={{ background: GLASS_BG,          border: `1px ${isEmpty ? "dashed" : "solid"} ${isEmpty ? accentColor + "55" : (plVibe?.color ?? accentColor) + "33"}`, fontFamily: FONT_MONO, opacity: isEmpty ? 0.6 : 1, cursor: "grab" }}>
                         <div className="flex items-center gap-3 p-3"
                           onClick={() => !isRenaming && !isConfirmDel && setShowPlaylistDetail(pl.id)}
                           style={{ cursor: isRenaming || isConfirmDel ? "default" : "pointer" }}>
-                          <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
                           <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${plVibe?.color ?? accentColor}12`, border: `1px solid ${plVibe?.color ?? accentColor}33` }}>
                             {plTracks[0]?.thumbnail
@@ -1321,7 +1321,7 @@ export default function MusicLab({
                                 style={{ width: "100%", background: "transparent", border: `1px solid ${accentColor}44`, borderRadius: 2,
                                   color: accentColor, fontSize: 11, padding: "2px 6px", fontFamily: FONT_MONO, outline: "none" }} />
                             ) : (
-                              <span className="text-xs font-bold truncate block" style={{ color: plVibe?.color ?? accentColor }}>{pl.name}</span>
+                              <span className="text-xs font-bold truncate block" style={{ color: accentColor }}>{pl.name}</span>
                             )}
                             <span className="text-xs opacity-30 truncate block" style={{ color: accentColor }}>
                               {pl.track_ids.length} tracks{durStr ? ` · ${durStr}` : ""}
