@@ -4,6 +4,30 @@
 
 ---
 
+## S86 — React Key Audit (browser-use hallazgo) (14 Junio 2026)
+
+**Tipo:** Audit + bugfixes (no manual steps, no infra)
+**Pliegos aplicados (1 commit):**
+- `989b158` S86-001 React Key Audit — 6 str_replaces en 3 archivos
+
+**Bugs resueltos:**
+- React "Encountered two children with the same key" console warnings (hallazgo de browser-use verification S86)
+- Position-dependent keys que forzaban remount innecesario en reorder
+
+**Archivos tocados (3):**
+- `src/capsules/Timeline.jsx` (3 keys: lineas 139, 256, 283)
+- `src/musiclab/MusicLab.jsx` (2 keys + 1 .map signature: lineas 809, 812)
+- `src/smoke/SmokeSession.jsx` (1 key: linea 523)
+
+**Audit scope:** 61 sitios `key={...}` en `src/` revisados
+- 43 ya tenian IDs estables
+- 12 verificados safe (arrays estaticos que no reordenan)
+- 6 corregidos (position-dependent + non-unique)
+
+**Validación:** Lint 0 errors, build clean (1.81s). Code-reviewer ship-it.
+
+---
+
 ## S85 — WCAG Romantiqueo + Dead YouTube Code Cleanup (14 Junio 2026)
 
 **Tipo:** Accesibilidad + limpieza de código muerto

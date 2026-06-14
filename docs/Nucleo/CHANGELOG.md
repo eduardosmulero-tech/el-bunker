@@ -5,6 +5,24 @@
 
 ---
 
+## v2.0.4 — "React Key Audit" (14 Junio 2026)
+
+### 🐛 CORREGIDO
+
+- **React "non-unique key" warnings:** 6 str_replaces en 3 archivos eliminan position-dependent keys y non-unique key warnings del console. Audit completo de 61 sitios `key={...}` en `src/`: 43 ya usaban IDs estables, 12 verificados safe (arrays estáticos que no reordenan), 6 corregidos (Timeline x3, MusicLab x2, SmokeSession x1). Verificación browser-use pendiente (OAuth wall) — los warnings del console deberían desaparecer en el siguiente login.
+
+### 🔧 INFRAESTRUCTURA (interna)
+
+- **`src/capsules/Timeline.jsx`:** keys de `todayEvents` (línea 139) y `visibleEvents`/`grouped` (líneas 256, 283) pasan de `key={\`${e.id || i}-${i}\`}` a `key={e.id || \`tev-${i}\`}` — elimina suffix position-dependent que forzaba remount en reorder.
+- **`src/musiclab/MusicLab.jsx`:** key de `visible` (playHistory slice, línea 812) pasa de `key={\`hist-${track.id}-${i}\`}` a `key={\`hist-${track.id}\`}`. Plus `.map((track, i) => {` → `.map((track) => {` (línea 809, `i` era solo usado en el key suffix).
+- **`src/smoke/SmokeSession.jsx`:** key de `history.slice(0, 12)` (línea 523) pasa de `key={h.id || i}` a `key={h.id || \`session-${i}\`}` — fallback explícito namespaced vs raw `i`.
+
+### 🔍 AUDIT (out of code)
+
+- **61 sitios `key={...}` revisados.** 43 ya usaban `key={x.id}` con IDs estables de D1. 12 verificados safe: `key={i}` en Recaps.jsx:123, LoginScreen.jsx:149/286/501, SmokeSession.jsx:427, Vault.jsx:100 (todos arrays estáticos que no reordenan); VaultGallery.jsx:331/354/391, TrackCard.jsx:293/368, ColorPicker.jsx:39 (keys derivados de valores únicos en su scope).
+
+---
+
 ## v2.0.3 — "Autonomous Roadmap Batch" (14 Junio 2026)
 
 ### 🐛 CORREGIDO

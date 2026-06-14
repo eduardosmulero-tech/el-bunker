@@ -74,6 +74,29 @@ Actualizados en S85: SESION.md, ESTADO.md, CHANGELOG.md, PLIEGOS_HISTORIAL.md, l
 
 ---
 
+## S86 Key Audit — CERRADO ✅
+
+**Pliego aplicado:** S86-001 (commit `989b158`) — React Key Audit.
+
+**Problema:** browser-use verification previa (S86) detectó que el console de React estaba flooded con warnings `Encountered two children with the same key, %s`. Causa raíz: position-dependent keys (suffixes con `-${i}`) y `key={i}` puros que forzaban remount innecesario en reorder.
+
+**Audit scope:** 61 sitios `key={...}` revisados en `src/`:
+- **43 OK** — ya usaban `key={x.id}` con IDs estables de D1
+- **12 safe** — `key={i}` en arrays estáticos (Recaps/LoginScreen/SmokeSession/Vault — no reordenan); keys derivados de valores únicos en su scope (VaultGallery/TrackCard/ColorPicker)
+- **6 corregidos** — position-dependent + non-unique:
+  - Timeline.jsx:139 `<span key={i}>` → `key={e.id || \`ev-${i}\`}`
+  - Timeline.jsx:256 `motion.div key={\`${e.id || i}-${i}\`}` → `key={e.id || \`tev-${i}\`}`
+  - Timeline.jsx:283 `motion.div key={\`${e.id || day}-${i}\`}` → `key={e.id || \`${day}-${i}\`}`
+  - MusicLab.jsx:812 `<div key={\`hist-${track.id}-${i}\`}>` → `key={\`hist-${track.id}\`}`
+  - MusicLab.jsx:809 `.map((track, i) => {` → `.map((track) => {` (drop unused `i`)
+  - SmokeSession.jsx:523 `<div key={h.id || i}>` → `key={h.id || \`session-${i}\`}`
+
+**Validación:** lint 0 errors, build clean (1.81s). Code-reviewer ship-it.
+
+**Verificación browser-use pendiente:** OAuth wall impide confirmar visualmente que los warnings desaparecieron. Diagnóstico manual recomendado (2 min): login en prod + filtrar console por "same key" + compartir stack trace del primer warning.
+
+---
+
 ## Resumen de estado (post-S85)
 
 > S85 fue accesibilidad WCAG (romantiqueo `#bf00ff`→`#d966ff`, pasa AA) + dead code cleanup (extractor de YouTube eliminado en 3 archivos, código inalcanzable desde migración a R2 en S54).
