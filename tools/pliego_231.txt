@@ -1,0 +1,68 @@
+PLIEGO-231 — LISTS tab visual fixes (Phase 2.2)
+Fecha: 2026-06-14
+Estado: pendiente
+ARCHIVOS: src/musiclab/MusicLab.jsx
+CAMBIO: Phase 2.2 — 4 fixes visuales en el LISTS tab para coherencia con TRACKS tab y vibe-awareness: (1) drag handle visible + cursor:grab + tooltip, (2) empty border dashed accent, (3) card title siempre accentColor (coherencia vibe-aware), (4) hover state via whileHover.
+CRITERIO DE ÉXITO: Lint 0 errors, build clean. browser-use confirma: drag handle visible con cursor grab, empty playlist tiene borde dashed accent, card title vibra con accent del reproductor, hover sobre card produce scale sutil.
+RESULTADO: —
+
+---
+
+SEARCH/REPLACE 1 — Drag handle visible + cursor grab + tooltip a11y
+SEARCH:
+        <span style={{ color: accentColor, opacity: 0.3, fontSize: 12, flexShrink: 0 }}>⠿</span>
+REPLACE:
+        {/* PLIEGO-231: drag handle visible (op 0.6), cursor:grab + title/aria-label para a11y. Antes op 0.3 invisible en dark bg. */}
+        <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
+
+---
+
+SEARCH/REPLACE 2 — Empty border pasa a dashed accent (placeholder signal)
+SEARCH:
+          border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? accentColor) + "33"}`,
+REPLACE:
+          /* PLIEGO-231: empty state usa borde DASHED + accent color (señal de placeholder). Populated sigue solid + vibe color. */
+          border: `1px ${isEmpty ? "dashed" : "solid"} ${isEmpty ? accentColor + "55" : (plVibe?.color ?? accentColor) + "33"}`,
+
+---
+
+SEARCH/REPLACE 3 — Card title color siempre accentColor (vibe-aware coherence)
+SEARCH:
+                <span className="truncate text-sm" style={{ color: plVibe?.color ?? accentColor }}>{pl.name}</span>
+REPLACE:
+                {/* PLIEGO-231: title usa siempre accentColor (vibe-aware coherence con TRACKS tab). Remueve plVibe para no disonar con el accent del reproductor. */}
+                <span className="truncate text-sm" style={{ color: accentColor }}>{pl.name}</span>
+
+---
+
+SEARCH/REPLACE 4 — Hover state en card via whileHover (Framer Motion)
+SEARCH:
+              <motion.div
+                key={pl.id}
+                layout
+                drag="y"
+                onDragStart={() => onPlDragStart(pl.id)}
+                onDragEnd={(e, info) => onPlDragEnd(pl.id, info)}
+                dragSnapToOrigin
+                dragElastic={0.1}
+                whileDrag={{ scale: 1.03, zIndex: 10 }}
+                className="p-3 rounded-lg cursor-grab"
+                style={{
+                  background: GLASS_BG,
+                  border: `1px solid ${isEmpty ? GLASS_BORDER : (plVibe?.color ?? accentColor) + "33"}`,
+REPLACE:
+              <motion.div
+                key={pl.id}
+                layout
+                drag="y"
+                onDragStart={() => onPlDragStart(pl.id)}
+                onDragEnd={(e, info) => onPlDragEnd(pl.id, info)}
+                dragSnapToOrigin
+                dragElastic={0.1}
+                whileHover={{ scale: 1.02 }}
+                whileDrag={{ scale: 1.03, zIndex: 10 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="p-3 rounded-lg cursor-grab"
+                style={{
+                  background: GLASS_BG,
+                  border: `1px ${isEmpty ? "dashed" : "solid"} ${isEmpty ? accentColor + "55" : (plVibe?.color ?? accentColor) + "33"}`,

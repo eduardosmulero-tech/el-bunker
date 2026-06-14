@@ -1,0 +1,16 @@
+PLIEGO-232 — ERA-COLOR doc-only cierre (Phase 2 stale cleanup)
+Fecha: 2026-06-14
+Estado: pendiente
+ARCHIVOS: docs/Nucleo/ESTADO.md
+CAMBIO: Marcar ERA-COLOR como CERRADO en ESTADO.md (strikethrough + nota explicativa). No code changes — el selector de color de nueva era en Vault.jsx linea 765-766 ya usa el mismo <ColorPicker> unificado que TagManager.jsx desde S85. El componente ColorPicker (src/core/ColorPicker.jsx) es el design system, acepta accentColor opcional (refactor S84d), y se usa con la misma paleta en ambos sitios. Por lo tanto, la "estetica menu 2000s monotona" ya no aplica — es el mismo componente del design system.
+CRITERIO DE ÉXITO: git diff docs/Nucleo/ESTADO.md muestra ERA-COLOR con strikethrough. Lint 0 errors (no aplica a .md). Docs stale list actualizada.
+RESULTADO: —
+
+---
+
+SEARCH/REPLACE 1 — ERA-COLOR marcado CERRADO en ESTADO.md
+SEARCH:
+- **ERA-COLOR:** selector de color de nueva era no coincide con el de tags (hecho a mano). Estética "menú 2000s", monotona, no encaja con el design system.
+
+REPLACE:
+- ~~**ERA-COLOR:** selector de color de nueva era no coincide con el de tags (hecho a mano). Estética "menú 2000s", monotona, no encaja con el design system.~~ **CERRADO en S85** — `Vault.jsx:765-766` ya usa el mismo `<ColorPicker>` unificado que `TagManager.jsx`. El componente (`src/core/ColorPicker.jsx`) acepta `accentColor` opcional (refactor S84d) y se usa con la misma paleta en ambos sitios. La "estética menú 2000s" ya no aplica — es el mismo componente del design system.
