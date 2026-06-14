@@ -590,11 +590,20 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
   const entries = useMemo(() => db?.entries ?? [], [db?.entries]);
   // S96 — Filtro por categoría en la vista principal
   const [filterCategory, setFilterCategory] = useState("all");
+  // S100 — Búsqueda por texto en título y contenido
+  const [searchQuery, setSearchQuery] = useState("");
   const filteredEntries = useMemo(() => {
-    const active = entries.filter(e => !e.is_deleted);
-    if (filterCategory === "all") return active;
-    return active.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
-  }, [entries, filterCategory]);
+    let active = entries.filter(e => !e.is_deleted);
+    if (filterCategory !== "all") active = active.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      active = active.filter((e) =>
+        (e.title ?? "").toLowerCase().includes(q) ||
+        (typeof e.content?.text === "string" ? e.content.text : "").toLowerCase().includes(q)
+      );
+    }
+    return active;
+  }, [entries, filterCategory, searchQuery]);
   // S99 — Contadores de entradas por categoría para badges en la barra de filtros
   const categoryCounts = useMemo(() => {
     const counts = { all: 0 };
@@ -944,6 +953,17 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
               )}
             </button>
           )})}
+        </div>
+        {/* S100 — Búsqueda por texto */}
+        <div className="px-1 mb-1">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="BUSCAR…"
+            className="bg-transparent text-xs p-1.5 w-full outline-none"
+            style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO }}
+          />
         </div>
           {showAddEntry && (
             <AddEntryForm
