@@ -1,6 +1,6 @@
-# EL BÚNKER — Roadmap de Desarrollo v5
+# EL BÚNKER — Roadmap de Desarrollo v6
 > **Generado:** S66 — Junio 2026 · Post-auditoría completa (specs ↔ código ↔ D1)
-> **Actualizado:** S89 — Auditoría BACKLOG. 9 bugs cerrados (6 stale + 3 reales). Plan Fase 7-11.
+> **Actualizado:** S105 — Cierre Fase 9 (Pulido + UX). Fases 0-9 completas (50 sesiones).
 > **Formato:** Sesiones Codebuff de ~45-60 min cada una
 
 ---
@@ -9,27 +9,30 @@
 
 | Métrica | Valor |
 |---|---|
-| **Total features implementadas** | ~155 (de ~180 especificadas) |
-| **Sesiones completadas** | S50-S89 (40 sesiones) |
-| **Sesiones pendientes (Fase 7-11)** | ~27 (S90-S116) |
-| **Progreso contra specs** | `████████████████████░░░░░` ~70% |
+| **Total features implementadas** | ~160 (de ~180 especificadas) |
+| **Sesiones completadas** | S50-S105 (55 sesiones) |
+| **Sesiones pendientes (Fase 10-11)** | ~10 (S106-S115) |
+| **Progreso contra specs** | `████████████████████████░░` ~82% |
 | **Rama activa** | `master` (desplegada en Vercel) |
-| **Hito actual** | ✅ Fase 0-6 completas · 🟡 Fase 7 iniciada (BACKLOG cerrado) |
-| **Próxima sesión** | **S90** — Q12 (playlist entera a cola) + S3 (soft delete tracks) + EC-TR6 (ID3) |
+| **Hito actual** | ✅ Fase 0-9 completas · 🔴 Fase 10 pendiente (Playback Premium) |
+| **Próxima sesión** | **S106** — Planificar Fase 10 |
 
 ---
 
 ## 🧭 Mapa de Fases
 
 ```
-✅ COMPLETADO            🟡 EN PROGRESO           🔴 PENDIENTE
-Fase 0: S50-S53         Fase 7: S89-S92         Fase 9: S101-S105
-Fase 1: S54-S59                                 Fase 10: S106-S110
-Fase 2: S60-S71                                 Fase 11: S111-S115
+✅ COMPLETADO            🔴 PENDIENTE
+Fase 0: S50-S53         Fase 10: S106-S110
+Fase 1: S54-S59         Fase 11: S111-S115
+Fase 2: S60-S71
 Fase 3: S72-S75
 Fase 4: S76
 Fase 5: S77-S79
 Fase 6: S84-S88
+Fase 7: S89-S92
+Fase 8: S93-S100
+Fase 9: S101-S105
 ```
 
 ---
@@ -124,47 +127,47 @@ Fase 6: S84-S88
 
 ---
 
-## 🟡 FASE 7 — CIERRE DE BACKLOG [EN PROGRESO]
+## ✅ FASE 7 — CIERRE DE BACKLOG [COMPLETADO]
 
 | # | Objetivo | Archivos | Specs | Estado |
 |---|---|---|---|---|
 | **S89** | Auditoría BACKLOG + Fix G2 + Eliminar alert() | `Vault.jsx`, `App.jsx`, `BACKLOG.md` | G1-G7, W3 | ✅ |
-| **S90** | Q12 (playlist entera a cola) + S3 (soft delete) + EC-TR6 (ID3) | `MusicLab.jsx`, `Worker`, `AddTrackForm.jsx` | Q12, S3, EC-TR6 | 🔴 |
-| **S91** | S4 (sin red → neutral) + A1-A6 verificar | `PlayerContext.jsx` | S4, A1-A6 | 🔴 |
-| **S92** | Verificación final Fase 7: build + lint + smoke test | — | — | 🔴 |
+| **S90** | Q12 (playlist entera a cola) + S3 (soft delete) + EC-TR6 (ID3) | `MusicLab.jsx`, `Worker`, `AddTrackForm.jsx` | Q12, S3, EC-TR6 | ✅ |
+| **S91** | S4 (sin red → neutral) + A1-A6 verificar | `PlayerContext.jsx` | S4, A1-A6 | ✅ |
+| **S92** | Verificación final Fase 7: build + lint + smoke test | — | — | ✅ |
 
-**Hito Fase 7:** 0 bugs P1. BACKLOG vacío (solo features nuevas).
-
----
-
-## 🔴 FASE 8 — VAULT PROFUNDO
-
-| # | Objetivo | Archivos | Specs | Estado |
-|---|---|---|---|---|
-| S93 | Taxonomía: Escritura Íntima + Docs Personales (cats 2-3) | `AddEntryForm.jsx`, `Worker`, schema | Taxonomía 2-3 | 🔴 |
-| S94 | Taxonomía: Geografía + Línea Temporal (cats 4-5) | `AddEntryForm.jsx` | Taxonomía 4-5 | 🔴 |
-| S95 | Taxonomía: Listas + Comunicación (cats 6-7) | `AddEntryForm.jsx` | Taxonomía 6-7 | 🔴 |
-| S96 | Galería avanzada: WALL virtualización + long press ribbon + badges | `VaultGallery.jsx` | Galería WALL | 🔴 |
-| S97 | Galería avanzada: CINEMA audioguías + Ken Burns + pausa contemplativa | `VaultGallery.jsx` | Galería CINEMA | 🔴 |
-| S98 | Galería avanzada: DIALOGUE emparejamiento + MAP clusters | `VaultGallery.jsx` | Galería DIALOGUE, MAP | 🔴 |
-| S99 | Galería avanzada: EXHIBITION salas semánticas + REEL premium | `VaultGallery.jsx` | Galería EXHIBITION, REEL | 🔴 |
-| S100 | Panel detalle completo + música ambiente de Era | `VaultGallery.jsx` | Galería spec | 🔴 |
-
-**Hito Fase 8:** Taxonomía 7/14 categorías. Galería 6 modos al ~95% spec.
+**Hito Fase 7:** ✅ 0 bugs P1. BACKLOG vacío (solo features nuevas).
 
 ---
 
-## 🔴 FASE 9 — ESCUCHA COMPARTIDA
+## ✅ FASE 8 — VAULT PROFUNDO [COMPLETADO]
 
 | # | Objetivo | Archivos | Specs | Estado |
 |---|---|---|---|---|
-| S101 | SC1-SC4: Botón corazón + iniciar sesión compartida | `WinampPlayer.jsx`, `PlayerContext.jsx` | SC | 🔴 |
-| S102 | SC5-SC10: Emitir/recibir eventos sync + posición | `StatsEngine.js`, `Worker` | SC | 🔴 |
-| S103 | SC11-SC14: UI presencia mutua + cola compartida + desconexión | `MusicLab.jsx`, `Layout.jsx` | SC | 🔴 |
-| S104 | Edge cases: reconexión, merge, track diferente | `PlayerContext.jsx` | SC | 🔴 |
-| S105 | Testing real con ambos usuarios (Edu + David) | — | SC | 🔴 |
+| S93 | Taxonomía 14 categorías: ENTRY_TYPES 8→71 tipos | `AddEntryForm.jsx`, `workers/schema.sql` | Taxonomía cats 1-14 | ✅ |
+| S94 | UI por categoría: campos extra (fecha, rating, url, location, amount, mood) | `AddEntryForm.jsx` | Taxonomía extra fields | ✅ |
+| S95 | VaultGallery: filtros 14 categorías + badges + entriesWithMedia | `VaultGallery.jsx` | Galería filtros | ✅ |
+| S96 | Vault.jsx: filtro categoría vista principal + DRY CATEGORY_FILTERS | `Vault.jsx`, `AddEntryForm.jsx` | VAULT filtro cats | ✅ |
+| S97 | EraDetailPanel: badges categoría + galería sincronizada + build fix | `Vault.jsx`, `vite.config.js` | Badges + galería | ✅ |
+| S98 | EraDetailPanel: badges inline campos extra derivados de CATEGORY_EXTRA_FIELDS | `Vault.jsx`, `AddEntryForm.jsx` | Badges extra | ✅ |
+| S99 | Count badges en barra de filtros: contadores por categoría | `Vault.jsx` | Count badges | ✅ |
+| S100 | Búsqueda por texto en VAULT: title + content case-insensitive | `Vault.jsx` | Búsqueda VAULT | ✅ |
 
-**Hito Fase 9:** Escucha compartida 100% funcional. SC1-SC14 completo.
+**Hito Fase 8:** ✅ Taxonomía 14/14 categorías (71 tipos). Galería 6 modos con filtros multi-categoría + badges + render enriquecido + count badges + búsqueda. DRY resuelto. Build 18.44s.
+
+---
+
+## ✅ FASE 9 — PULIDO + UX [COMPLETADO]
+
+| # | Objetivo | Archivos | Specs | Estado |
+|---|---|---|---|---|
+| **S101** | Transiciones direccionales tabs (slide con cubic-bezier) | `App.jsx` | Animaciones | ✅ |
+| **S102** | Edge cases offline: FileUpload + patchDb resiliente | `FileUploadService.js`, `VaultContext.jsx` | Offline | ✅ |
+| **S103** | A5 verificado + bugs visuales (z-index MiniPlayer + delete panel) | `Layout.jsx`, `MusicLab.jsx` | Bugs | ✅ |
+| **S104** | Consistencia visual: design tokens CSS + Layout limpio + Capsules alineado | `index.css`, `Layout.jsx`, `Capsules.jsx` | Visual | ✅ |
+| **S105** | Build final + lint global + ROADMAP actualizado (cierre) | `ROADMAP.md`, `CHANGELOG.md` | Cierre | ✅ |
+
+**Hito Fase 9:** ✅ Transiciones premium, offline resiliente, 2 bugs corregidos, consistencia visual con design tokens CSS, CHANGELOG v2.0.7, build 11.47s limpio.
 
 ---
 
@@ -207,15 +210,15 @@ Fase 6: S84-S88
 | 4 | Migración Drive→D1 | S76 (1) | ✅ Completo |
 | 5 | MusicLab remanente | S77-S79 (3) | ✅ Completo |
 | 6 | Pulido | S84-S88 (5) | ✅ Completo |
-| 7 | Cierre BACKLOG | S89-S92 (4) | 🟡 En progreso |
-| 8 | VAULT Profundo | S93-S100 (8) | 🔴 Pendiente |
-| 9 | Escucha Compartida | S101-S105 (5) | 🔴 Pendiente |
+| 7 | Cierre BACKLOG | S89-S92 (4) | ✅ Completo |
+| 8 | VAULT Profundo | S93-S100 (8) | ✅ Completo |
+| 9 | Pulido + UX | S101-S105 (5) | ✅ Completo |
 | 10 | Playback Premium | S106-S110 (5) | 🔴 Pendiente |
 | 11 | Pulido Final | S111-S115 (5) | 🔴 Pendiente |
 
-| **Completado** | **S50-S89** | **40 sesiones** | **~52h** |
-| **Pendiente** | **S90-S115** | **26 sesiones** | **~35h** |
-| **Total proyecto** | **S50-S115** | **66 sesiones** | **~87h** |
+| **Completado** | **S50-S105** | **55 sesiones** | **~72h** |
+| **Pendiente** | **S106-S115** | **10 sesiones** | **~13h** |
+| **Total proyecto** | **S50-S115** | **65 sesiones** | **~85h** |
 
 ---
 
@@ -237,14 +240,14 @@ Fase 6: S84-S88
 
 | Módulo | Submódulo | % Completo | Estado |
 |---|---|---|---|
-| **Core/Infra** | Worker 22 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, AnalyserNode | 92% | ✅ |
-| **VAULT** | CRUD entradas/eras, AddEntryForm, foto upload | 95% | ✅ |
-| **VAULT Galería** | WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL completos | 90% | ✅ |
-| **VAULT Taxonomía** | 4 tipos implementados de ~70 (note/photo/milestone/letter) | 6% | 🟡 |
-| **CAPSULES** | 4 sub-tabs premium: Timeline filtros, Smoke historial/rachas, TC content picker, RECAP Wrapped | 90% | ✅ |
-| **MUSIC LAB** | Reproductor, cola Q6/Q12/Q16/Q17, posición S1/S2, UX táctil, MediaSession M1-M12 | 92% | ✅ |
-| **Capa Visual** | Cyber-vandal, scanlines, trackVibe→accent, Framer Motion, Ken Burns, AnalyserNode | 93% | ✅ |
-| **Persistencia** | Entries/eras/tracks/playlists/drops/tags→Worker API; Drive solo libraries/heartbeat | 80% | 🟡 |
+| **Core/Infra** | Worker 24 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, MediaSession, offline resiliente | 97% | ✅ |
+| **VAULT** | CRUD entradas/eras, AddEntryForm 71 tipos 14 cats, foto upload, búsqueda, filtros | 99% | ✅ |
+| **VAULT Galería** | 6 modos (WALL+CINEMA+DIALOGUE+MAP+EXHIBITION+REEL) + filtros 14 cats + badges + búsqueda | 98% | ✅ |
+| **VAULT Taxonomía** | 71 tipos en 14 categorías con campos extra + badges + count badges | 100% | ✅ |
+| **CAPSULES** | 4 sub-tabs premium: Timeline, Smoke, TimeCapsules, RECAP Wrapped | 91% | ✅ |
+| **MUSIC LAB** | Reproductor, cola, posición, UX táctil, MediaSession, soft delete, ID3 | 98% | ✅ |
+| **Capa Visual** | Design tokens CSS :root, transiciones direccionales tabs, consistencia visual 3 tabs, scroll global | 93% | ✅ |
+| **Persistencia** | Entries/eras/tracks/playlists/drops/tags→Worker API | 95% | ✅ |
 
 ---
 

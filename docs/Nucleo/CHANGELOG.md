@@ -5,6 +5,33 @@
 
 ---
 
+## v2.0.7 — "Fase 9 — Pulido + UX" (14 Junio 2026)
+
+### 🎨 UI/UX
+
+- **Transiciones direccionales entre tabs** (S101): `App.jsx` — slide left/right según dirección de navegación (vault→music→capsules). Custom easing `cubic-bezier(0.32, 0.72, 0, 1)` + `AnimatePresence mode="wait"`.
+- **Consistencia visual** (S104): Design tokens CSS en `:root` (`--font-mono`, `--bg`, `--accent`, `--purple`). Fuente mono heredada desde `body` — elimina 8 duplicaciones inline de `FONT_MONO`. Scroll global thin con accent-color. `smooth scrolling` en `html`.
+- **Capsules alineado** (S104): `max-w-lg` → `max-w-md` + `py-4` → `py-6` — mismo ancho y padding que VAULT y MUSIC LAB.
+
+### 🐛 CORREGIDO
+
+- **z-index MiniPlayer** (S103): `z-25` (clase Tailwind inválida) → `z-[25]` (arbitrary value).
+- **Delete panel muestra tracks eliminados** (S103): `MusicLab.jsx` — `rawTracks.map(...)` ahora filtra `!is_deleted` antes de mapear en panel "ELIMINAR TRACK".
+- **A5 no-ducking verificado** (S103): documentado como diferido — requiere `navigator.audioSession.type = 'playback'` (Chromium-only). A2/A3 sí funcionan vía MediaSession `stop` handler.
+
+### 🛡️ ROBUSTEZ
+
+- **Offline resiliente** (S102): `FileUploadService.js` — early-guard `navigator.onLine` con mensaje "Sin conexión a Internet". `VaultContext.jsx` — `patchDb` no llama `refreshDb` en error de red (evita fallos en cascada).
+
+### 📊 COMMITS (4 total)
+
+- `0e54ceb` — S101: Transiciones direccionales tabs
+- `535a750` — S102: Edge cases offline
+- `ddab3a7` — S103: A5 verificado + bugs visuales
+- _(S104 pendiente de commit)_
+
+---
+
 ## v2.0.6 — "Phase 2.5 — Diagnostics + Q18 + Multimedia" (14 Junio 2026)
 
 ### 🆕 NUEVO

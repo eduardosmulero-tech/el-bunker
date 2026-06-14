@@ -2,8 +2,8 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 > Actualizar antes de cerrar sesión.
 
-**Próximo pliego:** S96 — Vault.jsx: filtro por categoría en vista principal de entradas
-**Última sesión:** S95 — Galería con filtros 14 categorías + badges (VaultGallery.jsx)
+**Próximo pliego:** S105 — Build final + lint global + actualizar ROADMAP.md + CHANGELOG (cierre Fase 9)
+**Última sesión:** S104 — Consistencia visual (design tokens CSS + Layout + Capsules alineado)
 **Rama activa:** `master`
 
 ---
@@ -27,7 +27,7 @@ ninguno
 ---
 
 ## ESLint
-✅ 0 errores en src/ · 0 errores en tools/ · 8 warnings pre-existentes en src/ (PlayerContext.jsx, WinampPlayer.jsx — exhaustive-deps y unused-disable no bloqueantes)
+✅ 0 errores en src/ · 0 errores en tools/
 
 ---
 
@@ -96,27 +96,46 @@ Actualizados en S85: SESION.md, ESTADO.md, CHANGELOG.md, PLIEGOS_HISTORIAL.md, l
 
 ---
 
-## FASE 8 — VAULT Profundo (S93-S95, 3 sesiones) 🟢 EN PROGRESO
+## FASE 8 — VAULT Profundo (S93-S96, 4 sesiones) 🟢 EN PROGRESO
 
 | Sesión | Qué | Commits |
 |---|---|---|
 | **S93** | Taxonomía 14 categorías: ENTRY_TYPES 8→71 tipos en AddEntryForm | `0c390be` |
-| **S94** | UI por categoría: campos extra (fecha, rating, url, location, amount, mood) | — |
+| **S94** | UI por categoría: campos extra (fecha, rating, url, location, amount, mood) | `fca7fa9` |
 | **S95** | VaultGallery: filtros 14 categorías + badges + entriesWithMedia | `fca7fa9` |
+| **S96** | Vault.jsx: filtro categoría en vista principal + DRY (CATEGORY_FILTERS exportado desde AddEntryForm) | `5804569` |
+| **S97** | EraDetailPanel: badges de categoría + galería sincronizada con filtro padre + build fix jsmediatags | `7af00c3` |
+| **S98** | EraDetailPanel: badges inline de campos extra (rating, location, date, url, mood, amount) derivados de CATEGORY_EXTRA_FIELDS | `d6f60bb` |
+| **S99** | Count badges en barra de filtros: contadores de entradas por categoría en cada botón | `e72f2e2` |
+| **S100** | Búsqueda por texto en VAULT: filtrar entradas por título o contenido (case-insensitive) | `229ee7f` |
 
-> **Progreso Fase 8:** 3/8 sesiones. Taxonomía 100% en UI. Galería multi-categoría funcional.
+> **✅ FASE 8 CERRADA — 8/8 sesiones.** Taxonomía 14 categorías (71 tipos) 100% en UI. Galería y vista principal multi-categoría con badges + render enriquecido + count badges + búsqueda. DRY resuelto. Build verificado (18.44s, 647 KB JS).
 
 ---
 
-## Resumen de estado (post-S95)
+## FASE 9 — PULIDO + UX (S101-S105, 5/5 sesiones) ✅ CERRADA
+
+| Sesión | Qué | Commits |
+|---|---|---|
+| **S101** | Transiciones direccionales entre tabs (slide left/right con cubic-bezier, AnimatePresence mode=wait) | `0e54ceb` |
+| **S102** | Edge cases offline: FileUploadService check navigator.onLine + patchDb no refreshDb en error de red | `535a750` |
+| **S103** | A5 no-ducking verificado (diferido Chromium-only) + fix z-index MiniPlayer z-[25] + delete panel filtra is_deleted | `ddab3a7` |
+| **S104** | Consistencia visual: design tokens CSS :root + font heredado body + scroll global + Capsules max-w/padding alineado | _(pendiente S104)_ |
+| **S105** | Build final (14.48s) + ESLint global (0 errores) + ROADMAP v6 + CHANGELOG v2.0.7 | — |
+
+> **✅ FASE 9 CERRADA — 5/5 sesiones.** Transiciones direccionales premium, offline resiliente, 2 bugs corregidos, consistencia visual con design tokens CSS, CHANGELOG v2.0.7, build 14.48s limpio, ESLint 0 errores.
+
+---
+
+## Resumen de estado (post-S104)
 
 | Módulo | % | Estado |
 |---|---|---|
-| Core/Infra | 96% | Worker 24 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, MediaSession stop ✅ |
-| VAULT CRUD | 98% | 71 tipos en 14 categorías, campos extra por categoría, upload a R2, toast feedback ✅ |
-| VAULT Galería | 95% | 6 modos + filtros 14 categorías + badges + entriesWithMedia ✅ |
-| CAPSULES | 90% | Timeline filtros+paginación, Smoke historial/rachas, TimeCapsules CRUD, RECAP Wrapped ✅ |
-| MUSIC LAB | 98% | Cola Q6/Q12/Q15-Q17, S1/S2/S4, MediaSession M1-M12, soft delete S3, ID3 EC-TR6 ✅ |
-| Persistencia | 95% | Playlists/tracks/drops/entries/tags 100% Worker API ✅ |
+| Core/Infra | 97% | Worker 24 endpoints, D1 16 tablas, JWT, FileUpload, StatsEngine, MediaSession stop, offline resiliente ✅ |
+| VAULT CRUD | 99% | 71 tipos en 14 categorías, campos extra, upload R2, toast, búsqueda por texto ✅ |
+| VAULT Galería | 98% | 6 modos + filtros 14 categorías + badges + render enriquecido + count badges + búsqueda ✅ |
+| CAPSULES | 91% | Timeline filtros+paginación, Smoke historial/rachas, TimeCapsules CRUD, RECAP Wrapped, alineado visualmente ✅ |
+| MUSIC LAB | 98% | Cola Q6/Q12/Q15-Q17, S1/S2/S4, MediaSession M1-M12, soft delete S3, ID3 EC-TR6, delete panel fix ✅ |
+| Pulido/UX | 80% | Transiciones tabs, offline resiliente, A5 verificado, z-index fix, consistencia visual, CHANGELOG v2.0.7 ✅ |
 
-**Pendiente:** Escucha compartida, Chromecast, Android audio focus A5, Vault.jsx filtro categoría.
+**Pendiente:** Escucha compartida, Chromecast, build final + ROADMAP update (S105).

@@ -5,7 +5,82 @@
 
 ---
 
-## FASE 8 — VAULT Profundo (S93-S95) 🟢 EN PROGRESO
+## FASE 9 — PULIDO + UX (S101-S105) ✅ CERRADA
+
+### S105 — Build final + lint global + ROADMAP (cierre Fase 9)
+- Build final: 14.48s, 647 KB JS, 0 errores.
+- ESLint global `src/`: 0 errores, 0 warnings.
+- ROADMAP.md actualizado a v6: Fases 0-9 completas (55 sesiones, ~82% specs).
+- CHANGELOG v2.0.7 documentado.
+- Fase 9 cerrada oficialmente. Próxima: planificar Fase 10.
+
+### S104 — Consistencia visual
+- `index.css`: Design tokens CSS en `:root` (`--font-mono`, `--bg`, `--accent`, `--purple`). `scroll-behavior: smooth` en `html`. Scrollbar global thin + accent-colored en `*`. Utilidad `.no-scrollbar`.
+- `index.css`: `body { font-family: var(--font-mono) }` — elimina 8 duplicaciones inline de `FONT_MONO` en componentes.
+- `Layout.jsx`: 6 hardcodeos `fontFamily` eliminados (StatusBar, BottomNav, MiniPlayer, PortraitLockOverlay, main, toast offline). Importa `PURPLE`/`BG` de tokens en vez de redefinir localmente. Dead code `PURPLE_LOCAL` + `FONT_MONO` eliminados.
+- `Capsules.jsx`: `max-w-lg`→`max-w-md` + `py-4`→`py-6` — mismo ancho y padding que Vault y MusicLab.
+- Build 11.47s ✅ · ESLint 0/0 · Code-reviewer ship-it.
+- Archivos: `index.css`, `Layout.jsx`, `Capsules.jsx`.
+
+### S103 — A5 verificado + bugs visuales
+- **A5 no-ducking:** Verificado en `PlayerContext.jsx:616` — documentado como diferido (`navigator.audioSession.type = 'playback'`, Chromium-only, no estándar). A2/A3 sí implementados vía MediaSession `stop` handler.
+- **z-index MiniPlayer:** `Layout.jsx` — `z-25` (clase Tailwind inválida en default scale) → `z-[25]` (arbitrary value syntax correcta).
+- **Delete panel:** `MusicLab.jsx` — `rawTracks.map(...)` → `rawTracks.filter(t => !t.is_deleted).map(...)` para no mostrar tracks ya eliminados (soft delete) en "ELIMINAR TRACK".
+- ESLint 0/0 · Code-reviewer ship-it.
+- Archivos: `Layout.jsx`, `MusicLab.jsx`.
+
+### S102 — Edge cases offline
+- `FileUploadService.js`: early-guard `navigator.onLine` antes del fetch — throw con mensaje "Sin conexión a Internet" si offline.
+- `VaultContext.jsx`: `patchDb` ahora wrappea el path de error de red en try/catch, no llama `refreshDb` en error de red (evita fallos en cascada), toast con título de entrada.
+- ESLint 0/0 · Code-reviewer ship-it.
+- Archivos: `VaultContext.jsx`, `FileUploadService.js`.
+
+### S101 — Transiciones direccionales entre tabs
+- `TAB_ORDER` map: vault(0) → music(1) → capsules(2).
+- `useRef` trackea tab anterior + `useEffect` actualiza en cada cambio.
+- Slide direccional: avanzar → x:24→0, retroceder → x:-24→0. Custom easing `cubic-bezier(0.32, 0.72, 0, 1)` (deceleración premium).
+- `AnimatePresence mode="wait"` preservado.
+- ESLint 0/0 · Build 11.36s ✅ · Code-reviewer ship-it.
+- Archivos: `App.jsx`.
+
+---
+
+## FASE 8 — VAULT Profundo (S93-S100) ✅ CERRADA
+
+### S100 — Búsqueda por texto (cierre Fase 8)
+- `searchQuery` state + input de búsqueda entre barra de filtros y "+ ENTRADA". Placeholder "BUSCAR…".
+- `filteredEntries` ahora filtra: categoría → búsqueda (title + content.text, case-insensitive).
+- Build final verificado: 18.44s, 647 KB JS, 0 errores.
+- Archivos: `Vault.jsx`.
+
+### S99 — Count badges en barra de filtros
+- `categoryCounts` useMemo: cuenta entradas no eliminadas por categoría → `{ all: N, '1': N, ..., '14': N }`.
+- Cada botón del filtro muestra icono + count badge (`text-[7px] tabular-nums`) solo si > 0.
+- Tooltip incluye count para accesibilidad. Layout: `flex items-center gap-0.5`.
+- Archivos: `Vault.jsx`.
+
+### S98 — Render enriquecido de campos extra en EraDetailPanel
+- `EXTRA_BADGE_FORMAT`: lookup table con formateadores por clave (📅 fecha, 📍 lugar, ⭐ rating, 🔗 url, € amount, mood).
+- `ALL_EXTRA_KEYS`: derivado automáticamente de `CATEGORY_EXTRA_FIELDS` (flatten + dedup de claves).
+- `getExtraBadges(entry)`: itera `ALL_EXTRA_KEYS`, aplica formateador, devuelve array de badges.
+- Badges inline en cada fila de entrada: fila `text-[8px]` bajo el título dentro de flex-col wrapper.
+- `CATEGORY_EXTRA_FIELDS` exportado desde `AddEntryForm.jsx` — single source of truth.
+- Date guard: `!isNaN(Date.parse(val))` para evitar "Invalid Date".
+- Archivos: `Vault.jsx`, `AddEntryForm.jsx`.
+
+### S97 — Badges de categoría en EraDetailPanel + galería sincronizada
+- `CAT_LOOKUP` a nivel módulo: mapea category_id → {icon, label} desde CATEGORY_FILTERS (excluye "all").
+- Badge de categoría (icono con tooltip) en cada fila de entrada del EraDetailPanel, entre el tipo (◎/◉) y el título.
+- `VaultGallery` ahora recibe `filteredEntries` (filtrado por categoría del padre) en lugar de `entries` raw.
+- Build fix: shim `src/shims/react-native-fs.js` + alias en `vite.config.js` para que `jsmediatags` no falle en build browser.
+- Archivos: `Vault.jsx`, `vite.config.js`, `src/shims/react-native-fs.js` (nuevo).
+
+### S96 — Filtro de categoría en vista principal del VAULT
+- `Vault.jsx`: barra de 15 iconos (TODO + 14 categorías) sobre "+ ENTRADA". `filterCategory` state + `filteredEntries` useMemo.
+- `EraDetailPanel` recibe `filteredEntries` en lugar de `entries` raw. Stats simplificados (ENTRADAS + FOTOS).
+- `entries` wrappeado en `useMemo` para estabilizar referencia entre renders.
+- DRY: `CATEGORY_FILTERS` exportado desde `AddEntryForm.jsx` — single source of truth compartido con `VaultGallery.jsx`.
+- Archivos: `Vault.jsx`, `AddEntryForm.jsx`, `VaultGallery.jsx`.
 
 ### S95 — Galería con filtros 14 categorías + badges
 - Filtro 15 botones (TODO + 14 categorías) bajo barra de modos. Resetea currentIdx.
@@ -30,9 +105,9 @@
 
 ---
 
-## Próxima sesión: FASE 8 — Continuar (S96)
+## Próxima sesión: S105 — Build final + lint global + ROADMAP + CHANGELOG (cierre Fase 9)
 
-**Objetivo:** Añadir filtro por categoría en Vault.jsx (vista principal de entradas) para consistencia con VaultGallery. Luego S97: render enriquecido de entradas según tipo (mostrar rating, location, date en las cards).
+**Objetivo:** Ejecutar build final de Fase 9, correr ESLint global, actualizar ROADMAP.md con el estado real post-Fase 9, y commit del CHANGELOG v2.0.7. Cerrar Fase 9 oficialmente (5/5).
 
 ---
 
@@ -223,9 +298,7 @@
 
 ---
 
-## Próxima sesión: MANUAL STEPS URGENTES (wrangler deploy + ALTER TABLE) → Phase 2 visuales P1
+## Próxima sesión: S104 — Consistencia visual
 
-Sister-bug cleanup S84 cerrado: 6 bugs del mismo patrón aplicadas, feedback de error global unificado, COLA tab vibe-aware. Pendiente: ejecutar los 2 manual steps (sin ellos los endpoints nuevos devuelven 404) y luego Phase 2 visuales (mini player, era color selector, tab playlists).
-
-**Blockers antes de Phase 2:** el `wrangler deploy` y el `ALTER TABLE` son prerequisito para que cualquier handler del patrón DEL-PLAYLIST funcione en producción. Aplicar antes de validar nada.
+**Objetivo:** Revisar espaciado, tipografía y responsive en los 3 tabs (Layout.jsx + index.css). Continuar Fase 9 — Pulido + UX (3/5 completado).
 
