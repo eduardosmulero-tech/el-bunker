@@ -258,6 +258,20 @@ export default function MusicLab({
   const [queueSearch,     setQueueSearch]     = useState("");
   const [showQueueSearch, setShowQueueSearch] = useState(false);
   const [confirmClearQueue, setConfirmClearQueue] = useState(false);
+  // PLIEGO-237: dropdown de sort (antes era un row de 5 botones inline)
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const sortMenuRef = useRef(null);
+  // Code-reviewer fix: outside-click + Escape cierran el popover
+  useEffect(() => {
+    if (!showSortMenu) return;
+    const onClick = (e) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target)) setShowSortMenu(false);
+    };
+    const onKey = (e) => { if (e.key === "Escape") setShowSortMenu(false); };
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => { document.removeEventListener("mousedown", onClick); document.removeEventListener("keydown", onKey); };
+  }, [showSortMenu]);
   // S85d Q15: pull-to-reveal extended history — mostrar últimos 3 por defecto,
   // expande con toggle si playHistory.length > 3
   const [showFullHistory, setShowFullHistory] = useState(false);
@@ -989,25 +1003,56 @@ export default function MusicLab({
                     [{String(filteredTracks.length).padStart(2, "0")}]
                   </span>
                 </div>
-                <div className="flex gap-1">
-                  {/* Fase 6.4 EC-TR7: Selector de ordenación */}
-                  {SORT_OPTIONS.map((opt) => (
-                    <motion.button
-                      key={opt.id}
-                      whileTap={{ scale: 0.9 }}
-                      onClick={() => handleSortChange(opt.id)}
-                      title={`Ordenar: ${opt.label}`}
-                      className="text-xs px-1.5 py-1 rounded-sm transition-all flex-shrink-0"
-                      style={{
-                        color: trackSort === opt.id ? accentColor : `${accentColor}44`,
-                        border: `1px solid ${trackSort === opt.id ? accentColor + "66" : accentColor + "22"}`,
-                        background: trackSort === opt.id ? `${accentColor}0d` : "transparent",
-                        fontFamily: FONT_MONO,
-                      }}
-                    >
-                      {opt.icon}
-                    </motion.button>
-                  ))}
+                <div className="flex relative" ref={sortMenuRef}>
+                  {/* PLIEGO-237: dropdown de sort — antes era row de 5 botones inline ("horrible" per ESTADO P2) */}
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setShowSortMenu((v) => !v)}
+                    title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
+                    aria-label="Cambiar ordenación"
+                    className="text-[10px] px-1.5 py-0.5 rounded-sm transition-all flex-shrink-0 flex items-center gap-1"
+                    style={{
+                      color: accentColor,
+                      border: `1px solid ${accentColor}33`,
+                      background: `${accentColor}08`,
+                      fontFamily: FONT_MONO,
+                    }}
+                  >
+                    {SORT_OPTIONS.find((o) => o.id === trackSort)?.icon ?? "⇅"}
+                    <span style={{ fontSize: 8, opacity: 0.6 }}>▾</span>
+                  </motion.button>
+                  <AnimatePresence>
+                    {showSortMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.12 }}
+                        className="absolute top-full mt-1 right-0 z-50 flex flex-col gap-0.5 p-1 rounded-sm"
+                        style={{
+                          background: "#0a0a0a",
+                          border: `1px solid ${accentColor}44`,
+                          fontFamily: FONT_MONO,
+                          minWidth: 100,
+                        }}
+                      >
+                        {SORT_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.id}
+                            onClick={() => { handleSortChange(opt.id); setShowSortMenu(false); }}
+                            className="text-[10px] px-2 py-1 rounded-sm text-left flex items-center gap-2 transition-colors"
+                            style={{
+                              color: trackSort === opt.id ? accentColor : `${accentColor}66`,
+                              background: trackSort === opt.id ? `${accentColor}15` : "transparent",
+                            }}
+                          >
+                            <span>{opt.icon}</span>
+                            <span>{opt.label}</span>
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   <span style={{ width: 1, background: `${accentColor}15`, margin: "2px 2px" }} />
                   <motion.button whileTap={{ scale: 0.9 }} title={`Vista: ${viewMode}`}
                     onClick={cycleViewMode}
