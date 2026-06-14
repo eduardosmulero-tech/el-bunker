@@ -201,10 +201,16 @@ const LongPressPreview = ({ entry, era, position, onClose }) => {
         </span>
       </div>
 
-      {/* Image */}
+      {/* Image — PLIEGO-239 ext: video/audio/img condicional */}
       {imgUrl ? (
         <div className="rounded-sm overflow-hidden mb-2" style={{ maxHeight: 180 }}>
-          <img src={imgUrl} alt={entry.title || ""} className="w-full object-cover" style={{ maxHeight: 180 }} />
+          {getMediaType(entry) === "video" ? (
+            <video src={imgUrl} controls className="w-full" style={{ maxHeight: 180 }} />
+          ) : getMediaType(entry) === "audio" ? (
+            <audio src={imgUrl} controls className="w-full" />
+          ) : (
+            <img src={imgUrl} alt={entry.title || ""} className="w-full object-cover" style={{ maxHeight: 180 }} />
+          )}
         </div>
       ) : (
         <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ACID }}>📷</div>
@@ -265,12 +271,23 @@ const ZoomModal = ({ entry, era, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {imgUrl ? (
-          <img
-            src={imgUrl}
-            alt={entry.title || ""}
-            className="max-w-full max-h-[75vh] object-contain rounded-sm"
-            style={{ boxShadow: `0 0 60px ${era?.color || ACID}22` }}
-          />
+          getMediaType(entry) === "video" ? (
+            <video
+              src={imgUrl}
+              controls
+              className="max-w-full max-h-[75vh] object-contain rounded-sm"
+              style={{ boxShadow: `0 0 60px ${era?.color || ACID}22` }}
+            />
+          ) : getMediaType(entry) === "audio" ? (
+            <audio src={imgUrl} controls className="w-full" />
+          ) : (
+            <img
+              src={imgUrl}
+              alt={entry.title || ""}
+              className="max-w-full max-h-[75vh] object-contain rounded-sm"
+              style={{ boxShadow: `0 0 60px ${era?.color || ACID}22` }}
+            />
+          )
         ) : (
           <div className="w-64 h-64 flex items-center justify-center text-6xl opacity-20 rounded-sm"
             style={{ color: ACID, background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>

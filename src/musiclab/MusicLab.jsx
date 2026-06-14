@@ -148,6 +148,9 @@ export default function MusicLab({
   // antiguo (5s) borre prematuramente un toast nuevo (2.5s) — race condition
   // típica cuando el usuario hace varias acciones rápidas.
   const toastTimeoutRef = useRef(null);
+  // S88: debounce para drags concurrentes — previene que múltiples
+  // reorders disparen API calls en paralelo y generen race conditions
+  const reorderingRef = useRef(false);
   // S85d: useCallback con [] para memoizar la función (estable a través de renders).
   // Sin esto, `react-hooks/refs` v6 flaggea showToast como "ref accedida durante render"
   // porque la función lee toastTimeoutRef.current. Con useCallback la referencia es
@@ -675,12 +678,18 @@ export default function MusicLab({
                 onAdd={onAddTag}
                 onUpdate={onUpdateTag}
                 onDelete={onDeleteTag}
-                onReorder={async (newTags) => {
-                  await patchDb((prev) => ({
-                    ...prev,
-                    music_lab: { ...prev.music_lab, tags: newTags },
-                  }));
-                }}
+    onReorder={async (newTags) => {
+      if (reorderingRef.current) return;
+      reorderingRef.current = true;
+      try {
+        await patchDb((prev) => ({
+          ...prev,
+          music_lab: { ...prev.music_lab, tags: newTags },
+        }));
+      } finally {
+        reorderingRef.current = false;
+      }
+    }}
                 onFilterByTag={(tagId) => {
                   setLibraryFilter(tagId);
                   setShowTagManager(false);
@@ -1530,6 +1539,9 @@ export default function MusicLab({
                   handleDeletePlaylist(plId);
                 }}
                 onReorderTracks={async (plId, newIds) => {
+                  if (reorderingRef.current) return;
+                  reorderingRef.current = true;
+                  try {
                   if (!plId || !_jwtToken) return;
                   // S85d Q17-playlist: capturar previousIds ANTES del PUT
                   // para que el UNDO del toast pueda restaurar el orden
@@ -1570,6 +1582,9 @@ export default function MusicLab({
                     console.warn("[Búnker] reorderPlaylistTracks falló:", err);
                     showToast({ msg: "NO SE PUDO REORDENAR" }, 2500);
                     return; // sin patchDb si D1 rechaza — estado local intacto
+                  }
+                  } finally {
+                    reorderingRef.current = false;
                   }
                 }}
               />
