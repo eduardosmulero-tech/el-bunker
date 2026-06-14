@@ -883,7 +883,7 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${trackColor}33`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
+                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
                             {track.thumbnail
@@ -943,7 +943,7 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
+                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${accentColor}12`, border: `1px solid ${accentColor}33` }}>
                             {track.thumbnail
@@ -1305,7 +1305,7 @@ export default function MusicLab({
                         <div className="flex items-center gap-3 p-3"
                           onClick={() => !isRenaming && !isConfirmDel && setShowPlaylistDetail(pl.id)}
                           style={{ cursor: isRenaming || isConfirmDel ? "default" : "pointer" }}>
-                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0, cursor: "grab" }}>⠿</span>
+                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0 }}>⠿</span>
                           <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${plVibe?.color ?? accentColor}12`, border: `1px solid ${plVibe?.color ?? accentColor}33` }}>
                             {plTracks[0]?.thumbnail
