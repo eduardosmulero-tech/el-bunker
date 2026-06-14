@@ -289,8 +289,8 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             )}
             {track.tags?.length > 0 && (
               <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 2 }}>
-                {track.tags.map((t) => (
-                  <span key={t} style={{ fontSize: 9, letterSpacing: "0.08em", padding: "1px 6px",
+                {track.tags.map((t, i) => (
+                  <span key={`tag-${i}-${t}`} style={{ fontSize: 9, letterSpacing: "0.08em", padding: "1px 6px",
                     borderRadius: 2, color: `${vibeColor}88`,
                     border: `1px solid ${vibeColor}22`, background: `${vibeColor}08` }}>
                     {t}
@@ -360,12 +360,12 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
           )}
           {multiTags.length > 0 && (
             <div className="flex gap-1 flex-wrap mt-1">
-              {multiTags.map((t) => {
+              {multiTags.map((t, i) => {
                 const tl = typeof t === "string" ? t : (t.label ?? t.id ?? "?");
                 const tk = typeof t === "string" ? t : (t.id ?? t.label ?? "?");
                 const tc = typeof t === "object" ? (t.color ?? vibeColor) : vibeColor;
                 return (
-                  <span key={tk} className="text-[9px] px-1.5 py-0.5 rounded-sm"
+                  <span key={`mt-${i}-${tk}`} className="text-[9px] px-1.5 py-0.5 rounded-sm"
                     style={{ color: tc, background: `${tc}12`, border: `1px solid ${tc}22`, opacity: 0.7 }}>
                     {tl}
                   </span>
