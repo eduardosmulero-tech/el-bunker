@@ -142,7 +142,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const restorePosition = useCallback((track) => {
     if (!track?.id) return;
     const savedPos = trackPositionRef.current[track.id];
-    if (savedPos && savedPos > 5 && audioRef.current) {
+    // S121-A: spec dice >5min (300s), no >5s
+    if (savedPos && savedPos >= 300 && audioRef.current) {
       if (savedPos < (audioRef.current.duration || Infinity)) {
         audioRef.current.currentTime = savedPos;
       }
@@ -1132,16 +1133,24 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // ── Fase 2.8 — A1: Persistir estado para OOM kill recovery ──
   // Guarda activeTrack, localQueue, currentTime en localStorage cada 5s.
   // Al restaurar, reconstruye estado. Reproducción pausada.
+  // S121-A: Solo guarda posición para tracks >25min con >5min escuchados (S2).
+  // Tracks ≤25min siempre empiezan desde 0 (S1).
   const _recoveryRef = useRef(false);
   useEffect(() => {
     if (!userId || !activeTrack) return;
     const SAVE_KEY = `el_bunker_recovery_${userId}`;
+    const DURATION_THRESHOLD = 25 * 60; // 25min
+    const POSITION_THRESHOLD = 5 * 60;  // 5min
     const interval = setInterval(() => {
       try {
+        const dur = audioRef.current?.duration;
+        const pos = audioRef.current?.currentTime;
+        // S121-A: solo guardar posición si track >25min Y posición >5min (S2)
+        const shouldSavePos = dur && dur > DURATION_THRESHOLD && pos != null && pos >= POSITION_THRESHOLD;
         const state = {
           activeTrackId: activeTrack?.id ?? null,
           queueIds: localQueue.map((t) => t.id),
-          position: audioRef.current?.currentTime ?? 0,
+          position: shouldSavePos ? pos : 0,
           loopMode,
           shuffle,
           savedAt: Date.now(),
@@ -1157,6 +1166,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!userId || !tracks.length || _recoveryRef.current) return;
     _recoveryRef.current = true;
     const SAVE_KEY = `el_bunker_recovery_${userId}`;
+    const POSITION_THRESHOLD = 5 * 60;
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return;
@@ -1174,12 +1184,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           if (restoredQueue.length) setLocalQueue(restoredQueue);
           setLoopMode(state.loopMode ?? "off");
           setShuffle(state.shuffle ?? false);
-          // Restaurar posición tras breve delay (esperar a que audioRef esté listo)
-          setTimeout(() => {
-            if (audioRef.current && state.position > 0) {
-              audioRef.current.currentTime = state.position;
-            }
-          }, 300);
+          // S121-A: Solo restaurar posición si >5min guardados (S2).
+          // Si position < 300s → era track ≤25min o posición <5min → empezar desde 0 (S1).
+          if (state.position >= POSITION_THRESHOLD) {
+            setTimeout(() => {
+              if (audioRef.current && state.position > 0) {
+                audioRef.current.currentTime = state.position;
+              }
+            }, 300);
+          }
           console.info("[Búnker] ♻ Sesión restaurada tras OOM kill");
         }
       }
