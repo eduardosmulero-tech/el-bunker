@@ -14,7 +14,8 @@ export const BG     = "#050505";
 
 // ─── INFRASTRUCTURE URLS (fuente única de verdad) ───────────
 // S121: Unificado a el-bunker-api (tiene binding R2 verificado en wrangler.toml).
-// El R2 proxy (el-bunker-r2-proxy) es un worker separado sin configuración visible.
+// R2 se sirve desde el-bunker-api (tiene binding R2 verificado en wrangler.toml).
+// El antiguo el-bunker-r2-proxy fue eliminado — ya no se usa.
 export const R2_PUBLIC_BASE = "https://el-bunker-api.thebunker-admin.workers.dev";
 
 // ─── TYPOGRAPHY ──────────────────────────────────────────────
