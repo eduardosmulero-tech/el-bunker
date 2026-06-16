@@ -1,8 +1,8 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S121-A — S1/S2 posición tracks + S4 sin red → neutral
-**Última sesión:** Auditoría specs vs código real — ROADMAP_COMPLETO reescrito
+**Próximo pliego:** S125-E — Fase E: Smoke test E2E completo + CHANGELOG final
+**Última sesión:** S123 — Fase C Escucha Compartida (SC1-SC14) + Fase B Gallery premium (CINEMA/DIALOGUE/EXHIBITION/REEL/MAP)
 **Rama activa:** `master`
 
 ---
@@ -82,26 +82,42 @@ ninguno
 | S116-L2 | BootScreen.jsx (GlobalLoadingScreen + ErrorScreen + PageLoader) | BootScreen.jsx (nuevo) |
 | S116-L2 | PageWrappers.jsx (VaultPage + MusicPage + CapsulesPage) | PageWrappers.jsx (nuevo) |
 | S116-L2 | TabShell.jsx (AuthenticatedApp + UnauthorizedScreen) | TabShell.jsx (nuevo) |
-| S116-L2 | App.jsx reducido: 480→119 líneas | App.jsx (reescrito) |
+| S116-L2 | App.jsx reducido: 480→119 líneas | App.jsx (reescrito) |## 🔴 ROADMAP — Fases completadas
 
-## 🔍 AUDITORÍA SPECS vs CÓDIGO (16 Junio 2026)
+### ✅ Fase A (8h): MusicLab Polish
 
-### Hallazgos clave
+| Sesión | Qué | Archivos |
+|---|---|---|
+| S121-A | S1/S2 posición tracks: restorePosition umbral 5s→300s + OOM recovery respeta S1/S2 | PlayerContext.jsx |
+| — | S4 sin red → neutral: ya implementado (toast + eventos) | PlayerContext.jsx |
 
-**✅ Production-ready (28 features):** Infra D1+R2+Worker, WorkerClient, Drive purge, auth JWT, CI/CD, PlayerContext core, Chromecast, soft delete, VAULT CRUD+search, WALL masonry, CAPSULES 4 sub-tabs, Smoke Session, Time Capsules, RECAP, MusicLab tracks/playlists/drops, ErrorBoundary, CSP.
+### ✅ Fase B (16h): Gallery Premium
 
-**⚠️ Parcial — UI existe pero no cumple la spec (5):** CINEMA (visor simple, falta swipe+música), DIALOGUE (conteo, falta emparejamiento+hilos), EXHIBITION (cards por Era, falta Canvas 2D), REEL (thumbnails, falta auto-generación), MAP (placeholder "Próximamente").
+| Sesión | Qué | Archivos |
+|---|---|---|
+| S122-A | CINEMA premium: swipe + Ken Burns + overlay emocional + música Era | VaultGallery.jsx |
+| S122-B | DIALOGUE premium: emparejamiento <5min + chat layout + hilos + asimetría | VaultGallery.jsx |
+| S122-C | EXHIBITION: agrupación por Era + vibe breakdown + avatars solapados | VaultGallery.jsx |
+| S122-D | REEL: auto-generación secuencias por día + expand detail + pinning | VaultGallery.jsx |
+| S122-E | MAP: placeholder semántico con guía de features (Leaflet pendiente) | VaultGallery.jsx |
 
-**🔴 Ausente — 0% (10+ features):** Escucha compartida SC1-SC14, S1/S2 posición tracks, Q6/Q12/Q15 cola avanzada, EC-C2/EC-C3 contexto dinámico, SS-1/SS-4/SS-7/SS-8 Smoke enhancements, ID3 metadata, VAULT 14 categorías.
+### ✅ Fase C (12h): Escucha Compartida SC1-SC14
 
-### Roadmap actualizado: 5 fases, ~46h
-- **Fase A** (8h): MusicLab polish — S1/S2, Q6/Q12/Q15, EC-C2/EC-C3, ID3
-- **Fase B** (16h): Gallery premium — CINEMA, DIALOGUE, EXHIBITION, REEL, MAP
-- **Fase C** (12h): Escucha compartida SC1-SC14
-- **Fase D** (6h): Capsules/Smoke — SS-1, SS-4, SS-7, SS-8, rachas
-- **Fase E** (4h): Cierre — smoke test completo + fixes
+| Sesión | Qué | Archivos |
+|---|---|---|
+| S123-A | Worker /api/sync: long-polling + presencia + heartbeat + session CRUD | workers/routes/sync.js (nuevo), worker.js, schema.sql |
+| S123-B | PlayerContext: session state + long-polling + sync actions + presencia | PlayerContext.jsx |
+| S123-B | WinampPlayer: corazón ♡/♥!/♥ con presencia partner + SC5 badge | WinampPlayer.jsx |
+| S123-C | Edge cases SC7-SC11 manejados en sync logic | PlayerContext.jsx, sync.js |
 
-## Próximos pasos
-1. `npx vite build` + `npx wrangler deploy` — build + deploy rutinario
-2. **S121-A**: S1/S2 posición tracks + S4 sin red → estado neutral
-3. **S121-B**: Gallery premium — CINEMA, DIALOGUE, EXHIBITION, REEL, MAP
+### 🔜 Fase E (4h): Cierre
+
+| Sesión | Qué | Estimado |
+|---|---|---|
+| S125-A | Smoke test E2E completo | 1.5h |
+| S125-B | Edge case fixes | 1.5h |
+| S125-C | Docs + CHANGELOG final | 1h |
+
+---
+
+## S112 — ROADMAP COMPLETADO (legacy)

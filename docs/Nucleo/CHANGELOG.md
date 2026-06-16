@@ -5,6 +5,42 @@
 
 ---
 
+## v2.0.18 — "Fase B+C: Gallery Premium + Escucha Compartida" (16 Junio 2026)
+
+### 🎨 FASE B — VAULT GALLERY PREMIUM (S122)
+
+- **CINEMA premium**: swipe horizontal táctil + Ken Burns (3s pausa → 8s zoom 1.06) + overlay emocional con paleta de Era + metadatos narrativos (quién, cuándo, qué Era) + badges de categoría + navegación wrapping.
+- **DIALOGUE premium**: emparejamiento temporal (<5min entre entradas) + chat layout (Edu izquierda, David derecha) + hilo conector animado para pares + mensajes poéticos de asimetría + filtro ALL/CONVERSACIONES.
+- **EXHIBITION**: agrupación por Era con sala cards (portada + vibe breakdown + avatars solapados) + animación whileInView.
+- **REEL**: auto-generación de secuencias narrativas por día (>2 entradas mismo día) + grid de reel cards + vista expandida con timeline cronológico.
+- **MAP**: placeholder semántico documentando los features necesarios (Leaflet pines + líneas de viaje + slider temporal).
+
+**Archivos:** VaultGallery.jsx (~600 líneas nuevas: CinemaView, DialogueView, ExhibitionView, ReelView, MapView)
+
+### 🔗 FASE C — ESCUCHA COMPARTIDA SC1-SC14 (S123)
+
+- **Worker `/api/sync`** (nuevo): endpoint REST con long-polling GET (25s timeout, 2s poll interval) + POST para create/join/leave/sync/heartbeat + DELETE para terminar sesión. Tabla `shared_sessions` en D1.
+- **Presencia (SC5/SC14)**: heartbeat POST cada 30s mientras se reproduce. GET `?action=presence` devuelve track activo del partner si heartbeat <5min. Corazón en WinampPlayer muestra 3 estados: ♡ (nadie), ♥! + badge (partner escuchando), ♥ latiendo (sesión activa).
+- **Sync estricto (SC4)**: long-polling aplica play/pause/skip/seek remotos. Efectos locales sincronizan play/pause/skip al partner automáticamente. `_isRemoteActionRef` previene bucles de acción.
+- **Edge cases**: SC7 (join mid-track → sync posición), SC8 (pérdida conexión → continuar local, reintentar), SC9 (última acción gana vía timestamp), SC10 (abandonar → partner continúa + toast), SC11 (host pausa → guest pausa).
+
+**Archivos:** workers/routes/sync.js (nuevo, 150 líneas), workers/worker.js (+2 líneas), workers/schema.sql (+16 líneas), PlayerContext.jsx (+200 líneas), WinampPlayer.jsx (+50 líneas)
+
+### ✅ VERIFICACIÓN
+
+- Build: ✅ 2.90s
+- Deploy: ✅ el-bunker-api actualizado
+- Health: ✅ 200, db: true
+- Code review: ✅ sin objeciones
+
+### 📊 COMMITS
+
+- `dcb1016` — S121-A: S1/S2 posición tracks
+- _(pending)_ — Fase B: Gallery premium
+- `77c0fa1` — Fase C: Escucha Compartida SC1-SC14
+
+---
+
 ## v2.0.17 — "4 bugs CSP/rate-limit encadenados + limpieza infra" (16 Junio 2026)
 
 ### 🐛 CORREGIDO — 4 bugs en cascada que impedían ver portadas
