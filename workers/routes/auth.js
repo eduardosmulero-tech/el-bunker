@@ -7,7 +7,7 @@ import { WHITELIST } from "../config.js";
 import { json, err } from "../utils/response.js";
 import { signJWT } from "../utils/auth.js";
 
-export default async function handleAuth(request, env) {
+export default async function handleAuth(request, env, _url, _userId) {
   if (request.method !== "POST") return err("Method not allowed", 405);
 
   const body = await request.json().catch(() => null);
