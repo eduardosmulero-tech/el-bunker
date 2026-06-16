@@ -48,17 +48,17 @@ export default {
       return new Response(null, { headers: CORS_HEADERS });
     }
 
-    // Rate limit
-    if (!checkRateLimit(request)) return err("Too many requests", 429);
-
+    // Rate limit (solo para endpoints /api/ — R2 binario va antes, sin límite)
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // R2 binary serving (público, sin /api/ prefix)
+    // R2 binary serving (público, sin /api/ prefix) — SIN rate limit
     if (!path.startsWith("/api/")) {
       try { return await handleR2(request, env, path); }
       catch (e) { return err(e.message || "R2 error", 500); }
     }
+
+    if (!checkRateLimit(request)) return err("Too many requests", 429);
 
     // Autenticar (se aplica en el dispatcher para rutas que lo requieran)
     const userId = await authenticate(request, env);

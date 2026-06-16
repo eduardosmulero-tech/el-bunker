@@ -125,7 +125,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
             fontFamily: FONT_MONO_LOCAL,
           }}>
           {track.thumbnail ? (
-            <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
+            <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} loading="lazy" />
           ) : (
             /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
             <div style={{ width: "100%", height: "100%", display: "flex",
@@ -258,7 +258,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
             border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
             {track.thumbnail ? (
-              <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} />
+              <img src={track.thumbnail} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.8 }} loading="lazy" />
             ) : (
               /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
               <div style={{ width: "100%", height: "100%", display: "flex",
@@ -342,7 +342,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
           style={{ background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
             border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
           {track.thumbnail ? (
-            <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-80" />
+            <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-80" loading="lazy" />
           ) : (
             /* Fase 6.3 EC-TR5: Iniciales del artista sobre color sólido del vibe */
             <div className="w-full h-full flex items-center justify-center"
