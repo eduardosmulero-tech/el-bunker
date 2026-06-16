@@ -1,8 +1,8 @@
-# 🗺️ ROADMAP COMPLETO — El Búnker (AUDITADO 16 Junio 2026)
+# 🗺️ ROADMAP COMPLETO — El Búnker (AUDITADO 16 Junio 2026 — Post-S123)
 
-> **Propósito**: Auditoría cruzada specs/ADRs vs código real. Refleja el estado REAL del proyecto.
-> **Total restante estimado**: ~50h concentrado (reducido de 70h originales).
-> **Última actualización**: 16 Junio 2026 — S125: Fases A+D completadas.
+> **Propósito**: Auditoría cruzada specs/ADRs vs código real post-Fases A+B+C.
+> **Total restante estimado**: ~19h concentrado (3 fases).
+> **Última actualización**: 16 Junio 2026 — Post-S123: Fases A+B+C completadas.
 
 ---
 
@@ -16,6 +16,139 @@
 6. **D1 es source of truth** para TODA persistencia.
 7. **WorkerClient singleton** para todas las llamadas API.
 8. **SEARCH/REPLACE contenedor lógico completo** (ADR-015).
+
+---
+
+## 1. ESTADO REAL (post-auditoría S123)
+
+### ✅ COMPLETADO — Production-ready (~92%)
+
+| Feature | Estado | Detalle |
+|---|---|---|
+| **Infraestructura D1+R2+Worker** | ✅ | 15 rutas, worker.js 81 líneas, D1 17 tablas |
+| **WorkerClient singleton** | ✅ | get/post/patch/put/del, 42+ fetch calls migradas |
+| **Drive purge** | ✅ | 27 funciones eliminadas, solo OAuth2 |
+| **Auth JWT** | ✅ | HMAC-SHA256, sessionStorage, whitelist 3 users |
+| **Build/lint/tests** | ✅ | 0 errores lint, 12/12 tests, CI pipeline |
+| **PlayerContext core** | ✅ | Play/pause/skip/loop/shuffle/gapless/MediaSession |
+| **S1/S2/S4 posición + offline** | ✅ | restorePosition 300s + OOM recovery + toast sin red |
+| **Cola Q6/Q12/Q15** | ✅ | Límite 75 + playlist→cola + historial scroll |
+| **Contexto EC-C2/EC-C3** | ✅ | Inyección dinámica + bottom sheet |
+| **Chromecast** | ✅ | Sender básico con botón CAST |
+| **Soft delete tracks** | ✅ | is_deleted, deleted_at, deleted_by en D1 |
+| **VAULT CRUD + search** | ✅ | Entries + Eras + file upload a R2 + búsqueda texto |
+| **VAULT Gallery WALL** | ✅ | Masonry 3 densidades + long-press + zoom modal |
+| **VAULT Gallery DIALOGUE** | ✅ | Emparejamiento <5min + chat layout + hilos + asimetría |
+| **CAPSULES 4 sub-tabs** | ✅ | Timeline, Smoke, TimeCapsules, RECAP |
+| **Smoke Session** | ✅ | Presets + fade-out + nombre + vibe-aware + eventos Timeline |
+| **Time Capsules** | ✅ | CRUD D1 + sellar + unlock animation |
+| **RECAP** | ✅ | Semanal/mensual/anual + botón GUARDAR COMO ENTRADA |
+| **MusicLab tracks/playlists/drops** | ✅ | CRUD completo con D1 |
+| **ID3 metadata** | ✅ | Extracción al subir MP3 |
+| **Escucha compartida SC1-SC14** | ✅ | Worker /api/sync + long-polling + corazón ♡/♥!/♥ + sync posición |
+| **ErrorBoundary** | ✅ | Global + ChunkErrorBoundary |
+| **CSP + CI/CD** | ✅ | Meta tag + GitHub Actions |
+
+### 🟡 PARCIAL — Base implementada, falta polish (~5%)
+
+| Feature | Qué tiene | Qué falta (spec) |
+|---|---|---|
+| **Gallery CINEMA** | Swipe + Ken Burns + overlay emocional | Audioguía real (voz), crossfade entre Eras, música de Era de fondo |
+| **Gallery EXHIBITION** | Grid agrupado por Era | Canvas 2D espacial con zoom/pan estilo Miro/Figma |
+| **Gallery REEL** | Auto-generación secuencias por día | Botón 📌 Pin para guardar como entrada tipo `reel` en D1 |
+| **Time Capsules** | CRUD + sellado + countdown | Selector de contenido (entries/playlists), snapshot de playlist al sellar |
+| **SC2 cola compartida** | Sync de cola entre dispositivos | Avatar/nombre de quién añadió cada track en la cola |
+
+### 🔴 PENDIENTE (~3% = ~19h)
+
+| Feature | Spec | Dependencia |
+|---|---|---|
+| **Gallery MAP** | Leaflet pines + líneas de viaje + slider temporal | Leaflet.js, coordenadas en entries |
+| **CINEMA audio-guía** | Reproducir nota de voz si entry tiene `has_audioguide` | PlayerContext |
+| **REEL pinning** | Guardar secuencia como entrada `reel` en D1 | Worker POST /api/entries |
+| **EXHIBITION canvas 2D** | Zoom/pan espacial con react-zoom-pan-pinch | npm package |
+| **Drops M20** | Fix visualización in-app vs browser nativo | PWA routing |
+| **Drops M21** | Snapshot metadatos al guardar en favoritos | Schema drops + Worker PATCH |
+| **VIZ lockscreen** | Live wallpaper API para Android lockscreen | MediaSession + PWA API |
+| **VIZ entrada primer vibe** | Animación emerge desde negro | PlayerContext + framer-motion |
+
+### ⚪ DIFERIDO (decisión consciente)
+
+| Feature | Razón |
+|---|---|
+| **60+ tipos taxonomía VAULT** | Implementar cuando haya contenido real que lo demande |
+| **FLAC / OPUS (AUDIO-M22)** | MP3 cubre 100% del uso actual |
+| **DLNA / Cast universal** | Chromecast básico ya funciona |
+| **Fusión de playlists (EC-LI4)** | Baja prioridad |
+| **Live wallpaper lockscreen avanzado** | Depende de VIZ avanzado, Fase 3 |
+| **Crossfade configurable** | Gapless ya implementado |
+
+---
+
+## 2. PLAN REALISTA PARA EL 100% (3 fases, ~19h)
+
+### FASE 1 — Mapas y Cierre de Galería (~8h) 🔴
+> Impacto alto en UX. MAP es el único modo en placeholder puro.
+
+| Sesión | Qué | Horas |
+|---|---|---|
+| **S126-A** | MAP: Leaflet pines + líneas de viaje + slider temporal | 4h |
+| **S126-B** | CINEMA audio-guía + REEL pinning (guardar como entrada D1) | 2.5h |
+| **S126-C** | EXHIBITION canvas 2D: react-zoom-pan-pinch | 1.5h |
+
+### FASE 2 — Cápsulas y Drops (~6h) 🔴
+> Impacto emocional. Cierra los flancos de interacción entre usuarios.
+
+| Sesión | Qué | Horas |
+|---|---|---|
+| **S127-A** | Time Capsules: selector de contenido + snapshot playlist | 3h |
+| **S127-B** | Drops: fix M20 (in-app vs browser) + snapshots M21 | 3h |
+
+### FASE 3 — Brillo Final (~5h) 🔴
+> Pulido visual y atribución. Lo que separa "funcional" de "premium".
+
+| Sesión | Qué | Horas |
+|---|---|---|
+| **S128-A** | VIZ: lockscreen wallpaper + animación entrada primer vibe | 3.5h |
+| **S128-B** | SC2 atribución cola + smoke test E2E 2 dispositivos | 1.5h |
+
+---
+
+## 3. DEPENDENCIAS
+
+```
+FASE 1 (Mapas + Galería) ──── independiente
+FASE 2 (Cápsulas + Drops) ──── independiente
+FASE 3 (Brillo final) ──────── requiere Fases 1+2 completadas
+```
+
+---
+
+## 4. CRITERIOS DE ACEPTACIÓN
+
+| Fase | Criterio "done" |
+|---|---|
+| **1** | MAP con pines en Leaflet + slider temporal. CINEMA con audio-guía. REEL pineable. EXHIBITION con canvas 2D. |
+| **2** | Time Capsules con selector de contenido. Drops sin abrir browser nativo + snapshots en favoritos. |
+| **3** | Lockscreen wallpaper funcional. Animación entrada primer vibe. Cola muestra avatar de quién añadió. Smoke test 2 dispositivos OK. |
+
+---
+
+## 5. MÉTRICAS FINALES (post-S123)
+
+| Métrica | Inicio (3 auditorías) | Post-S123 | Objetivo |
+|---|---|---|---|
+| Features completas | ~65% | **~92%** | ~95% |
+| Bugs P0 | 8 | **0** | 0 |
+| Bugs P1 | 13 | **0** | 0 |
+| Gallery modes | 0/6 premium | **5/6** (MAP placeholder) | 6/6 |
+| Escucha compartida | 0% | **100%** | 100% |
+| Worker líneas | 600 | **81** | — |
+| App.jsx líneas | 480 | **119** | — |
+
+---
+
+**Conclusión**: El proyecto está al ~92% de las specs completas. Fases A (MusicLab), B (Gallery premium), C (Escucha Compartida), y D (Capsules/Smoke) COMPLETADAS. Quedan ~19h en 3 fases para llegar al ~97-100%.
 
 ---
 

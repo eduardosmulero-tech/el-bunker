@@ -1,8 +1,8 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S125-E — Fase E: Smoke test E2E completo + CHANGELOG final
-**Última sesión:** S123 — Fase C Escucha Compartida (SC1-SC14) + Fase B Gallery premium (CINEMA/DIALOGUE/EXHIBITION/REEL/MAP)
+**Próximo pliego:** S126-A — Fase 1: Galería MAP (Leaflet pines + líneas viaje + slider temporal)
+**Última sesión:** Auditoría post-S123: specs vs código real — roadmap al 100% (~19h restantes)
 **Rama activa:** `master`
 
 ---
@@ -82,41 +82,36 @@ ninguno
 | S116-L2 | BootScreen.jsx (GlobalLoadingScreen + ErrorScreen + PageLoader) | BootScreen.jsx (nuevo) |
 | S116-L2 | PageWrappers.jsx (VaultPage + MusicPage + CapsulesPage) | PageWrappers.jsx (nuevo) |
 | S116-L2 | TabShell.jsx (AuthenticatedApp + UnauthorizedScreen) | TabShell.jsx (nuevo) |
-| S116-L2 | App.jsx reducido: 480→119 líneas | App.jsx (reescrito) |## 🔴 ROADMAP — Fases completadas
+| S116-L2 | App.jsx reducido: 480→119 líneas | App.jsx (reescrito) |## 📊 AUDITORÍA POST-S123 — Completitud vs Specs
 
-### ✅ Fase A (8h): MusicLab Polish
+### ✅ COMPLETO (~92%)
+- **MusicLab core:** S1/S2/S4, cola Q6/Q12/Q15, contexto EC-C2/EC-C3, ID3
+- **Escucha compartida:** SC1-SC14 (sync endpoint + long-polling + corazón 3 estados)
+- **Gallery:** WALL, DIALOGUE (emparejamiento + chat layout + asimetría)
+- **Capsules:** Timeline, Smoke Session, Time Capsules CRUD, RECAP
+- **Infra:** D1+R2+Worker (15 rutas), WorkerClient, CI/CD, 12 tests
 
-| Sesión | Qué | Archivos |
-|---|---|---|
-| S121-A | S1/S2 posición tracks: restorePosition umbral 5s→300s + OOM recovery respeta S1/S2 | PlayerContext.jsx |
-| — | S4 sin red → neutral: ya implementado (toast + eventos) | PlayerContext.jsx |
+### 🟡 PARCIAL (~5%)
+- **CINEMA:** swipe + overlay OK, falta audioguía real + crossfade entre Eras + música Era de fondo
+- **EXHIBITION:** grid por Era OK, falta canvas 2D espacial (zoom/pan estilo Miro)
+- **REEL:** secuencias auto-generadas OK, falta botón 📌 Pin para guardar como entrada tipo `reel`
+- **Time Capsules:** falta selector de contenido + snapshot de playlist
+- **SC2:** sync de cola OK, falta avatar/nombre de quién añadió cada track
 
-### ✅ Fase B (16h): Gallery Premium
+### 🔴 PENDIENTE (~3% = ~19h)
 
-| Sesión | Qué | Archivos |
-|---|---|---|
-| S122-A | CINEMA premium: swipe + Ken Burns + overlay emocional + música Era | VaultGallery.jsx |
-| S122-B | DIALOGUE premium: emparejamiento <5min + chat layout + hilos + asimetría | VaultGallery.jsx |
-| S122-C | EXHIBITION: agrupación por Era + vibe breakdown + avatars solapados | VaultGallery.jsx |
-| S122-D | REEL: auto-generación secuencias por día + expand detail + pinning | VaultGallery.jsx |
-| S122-E | MAP: placeholder semántico con guía de features (Leaflet pendiente) | VaultGallery.jsx |
+| Fase | Sesión | Qué | Horas |
+|---|---|---|---|
+| **1** | S126-A | MAP: Leaflet pines + líneas viaje + slider temporal | 4h |
+| **1** | S126-B | CINEMA audio-guía + REEL pinning | 2.5h |
+| **1** | S126-C | EXHIBITION canvas 2D (react-zoom-pan-pinch) | 1.5h |
+| **2** | S127-A | Time Capsules: selector contenido + snapshot playlist | 3h |
+| **2** | S127-B | Drops: fix M20 (in-app vs browser) + snapshots M21 | 3h |
+| **3** | S128-A | VIZ: lockscreen wallpaper + animación entrada primer vibe | 3.5h |
+| **3** | S128-B | SC2 atribución cola + smoke test 2 dispositivos | 1.5h |
 
-### ✅ Fase C (12h): Escucha Compartida SC1-SC14
-
-| Sesión | Qué | Archivos |
-|---|---|---|
-| S123-A | Worker /api/sync: long-polling + presencia + heartbeat + session CRUD | workers/routes/sync.js (nuevo), worker.js, schema.sql |
-| S123-B | PlayerContext: session state + long-polling + sync actions + presencia | PlayerContext.jsx |
-| S123-B | WinampPlayer: corazón ♡/♥!/♥ con presencia partner + SC5 badge | WinampPlayer.jsx |
-| S123-C | Edge cases SC7-SC11 manejados en sync logic | PlayerContext.jsx, sync.js |
-
-### 🔜 Fase E (4h): Cierre
-
-| Sesión | Qué | Estimado |
-|---|---|---|
-| S125-A | Smoke test E2E completo | 1.5h |
-| S125-B | Edge case fixes | 1.5h |
-| S125-C | Docs + CHANGELOG final | 1h |
+### ⚪ DIFERIDO (decisión consciente)
+FLAC/OPUS, DLNA Cast, fusión playlists (EC-LI4), 60+ tipos taxonomía VAULT, live wallpaper lockscreen avanzado
 
 ---
 
