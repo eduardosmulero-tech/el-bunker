@@ -139,7 +139,9 @@ export default {
       }
 
       // ═══ TRACKS ═══════════════════════════════════════════
+      // S113-W2 fix: GET /api/tracks requiere auth (era leak P0 — antes devolvía 200 con datos privados)
       if (path === "/api/tracks" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const era = url.searchParams.get("era_id");
         const vibe = url.searchParams.get("tag_id");
         let q = `SELECT t.*, tg.label as tag_label, tg.icon as tag_icon, tg.color as tag_color
@@ -245,7 +247,9 @@ export default {
       }
 
       // ═══ DROPS ════════════════════════════════════════════
+      // S113-W2 fix: GET /api/drops requiere auth (leak P0 — historial de drops es privado)
       if (path === "/api/drops" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const { results } = await env.DB.prepare(
           "SELECT * FROM drops ORDER BY created_at DESC LIMIT 200"
         ).all();
@@ -333,7 +337,9 @@ export default {
       }
 
       // ═══ PLAYLISTS ════════════════════════════════════════
+      // S113-W2 fix: GET /api/playlists requiere auth (leak P0 — listas son privadas)
       if (path === "/api/playlists" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         // S84: ordenar por sort_order (asc) con created_at (desc) como tie-breaker.
         // Permite drag-reorder de cards en LISTS tab (handlePlDrop).
         const { results } = await env.DB.prepare(
@@ -570,7 +576,9 @@ export default {
 
       // ═══ ENTRIES (S62 — VAULT CRUD mejorado) ══════════════
       // GET /api/entries — listado con tags y archivos
+      // S113-W2 fix: GET /api/entries requiere auth (leak P0 — contenido privado del VAULT)
       if (path === "/api/entries" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const era = url.searchParams.get("era_id");
         const type = url.searchParams.get("type");
         const from = url.searchParams.get("from_user");
@@ -624,7 +632,9 @@ export default {
       }
 
       // GET /api/entries/:id — detalle de una entrada (NUEVO S62)
+      // S113-W2 fix: GET /api/entries/:id requiere auth (leak P0 — entry content privado)
       if (path.startsWith("/api/entries/") && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const entryId = path.split("/")[3];
         if (!entryId) return err("entry id required", 400);
         const entry = await env.DB.prepare(
@@ -739,7 +749,9 @@ export default {
 
       // ═══ ERAS (S63 — VAULT CRUD) ════════════════════════
       // GET /api/eras — listado con conteo de entradas
+      // S113-W2 fix: GET /api/eras requiere auth (leak P0 — fechas y colores privados)
       if (path === "/api/eras" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const { results } = await env.DB.prepare(
           "SELECT * FROM eras ORDER BY sort_order, created_at"
         ).all();
@@ -762,7 +774,9 @@ export default {
       }
 
       // GET /api/eras/:id — detalle de una era (NUEVO S63)
+      // S113-W2 fix: GET /api/eras/:id requiere auth (leak P0 — era detail privado)
       if (path.startsWith("/api/eras/") && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const eraId = path.split("/")[3];
         if (!eraId) return err("era id required", 400);
         const era = await env.DB.prepare(
@@ -843,7 +857,9 @@ export default {
       }
 
       // ═══ FILES (S63 — listado R2) ════════════════════════
+      // S113-W2 fix: GET /api/files requiere auth (leak P0 — r2_keys, filenames, sizes)
       if (path === "/api/files" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const entry = url.searchParams.get("entry_id");
         const prefix = url.searchParams.get("prefix");
         const track = url.searchParams.get("track_id");
@@ -904,7 +920,9 @@ export default {
         return json({ ok: true, event_type: body.event_type }, 201);
       }
 
+      // S113-W2 fix: GET /api/events requiere auth (leak P0 — historial de escuchas es privado)
       if (path === "/api/events" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const limit = Math.min(parseInt(url.searchParams.get("limit") || "100"), 500);
         const type = url.searchParams.get("type");
         const since = url.searchParams.get("since");
@@ -921,7 +939,9 @@ export default {
       }
 
       // ═══ TIME CAPSULES (S68 — ADR-020) ═══════════════════
+      // S113-W2 fix: GET /api/time_capsules requiere auth (leak P0 — memorias selladas privadas)
       if (path === "/api/time_capsules" && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const { results } = await env.DB.prepare(
           "SELECT * FROM time_capsules ORDER BY created_at DESC LIMIT 100"
         ).all();
