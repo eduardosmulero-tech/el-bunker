@@ -215,6 +215,23 @@ CREATE TABLE capsule_items (
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- ═══ SHARED SESSIONS (Fase C — Escucha Compartida SC1-SC14) ═══
+CREATE TABLE shared_sessions (
+  id              TEXT PRIMARY KEY,
+  host_user_id    TEXT NOT NULL REFERENCES users(id),
+  guest_user_id   TEXT REFERENCES users(id),
+  active_track_id TEXT REFERENCES tracks(id) ON DELETE SET NULL,
+  position        REAL NOT NULL DEFAULT 0,     -- current playback position in seconds
+  is_playing      INTEGER NOT NULL DEFAULT 0,  -- 0=paused, 1=playing
+  last_action     TEXT NOT NULL DEFAULT 'created',  -- created|joined|left|play|pause|skip|seek
+  last_action_by  TEXT REFERENCES users(id),
+  queue_json      TEXT NOT NULL DEFAULT '[]',   -- JSON array: [{track_id, added_by, added_at}]
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_shared_sessions_host ON shared_sessions(host_user_id);
+CREATE INDEX idx_shared_sessions_guest ON shared_sessions(guest_user_id);
+
 -- ═══ SEED DATA: usuarios ════════════════════════════════════
 INSERT INTO users (id, email, name, role) VALUES
   ('admin', 'thebunker.admin@gmail.com', 'Admin', 'admin'),

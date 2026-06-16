@@ -57,6 +57,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     trackVibe,
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
+    // Fase C — Escucha Compartida (S123)
+    sessionId, isHost, partnerListening, partnerTrack,
+    createSession, joinSession, leaveSession,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
   // Se resetea al cambiar de track para que el corazón no quede "pegado".
@@ -510,17 +513,74 @@ return () => cancelAnimationFrame(raf);
             aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
           />
           <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
-          <WinampBtn
-            label={liked ? "♥" : "♡"}
-            active={liked}
-            color={liked ? "#ff2d55" : accentColor}
-            onClick={() => {
-              setLiked((p) => !p);
-              setLikeToast(liked ? "QUITADO DE FAVORITOS" : "AÑADIDO A FAVORITOS");
+          {/* Fase C — S123: Corazón de escucha compartida (SC5) */}
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={async () => {
+              if (sessionId) {
+                // En sesión → abandonar (SC10)
+                await leaveSession();
+              } else if (partnerListening) {
+                // Partner escuchando → crear sesión y unirse (SC5)
+                await createSession();
+              } else {
+                // Nadie escuchando → feedback (no crear sesión sin partner)
+                setLikeToast("NADIE ESTÁ ESCUCHANDO");
+              }
             }}
-            title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
-            aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
-          />
+            title={sessionId
+              ? (isHost ? "Sesión compartida activa (host) — tocar para salir" : "Sesión compartida activa (guest) — tocar para salir")
+              : partnerListening
+                ? `${partnerTrack?.title || "El otro"} está escuchando — tocar para unirte`
+                : "Iniciar escucha compartida"}
+            aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
+            className="rounded-sm flex items-center justify-center text-xs font-bold transition-all w-10 h-10 relative"
+            style={{
+              background: sessionId
+                ? withAlpha("#ff2d55", 0.18)
+                : partnerListening
+                  ? withAlpha("#ffcc00", 0.18)
+                  : withAlpha(accentColor, 0.08),
+              border: `1px solid ${sessionId ? withAlpha("#ff2d55", 0.6) : partnerListening ? withAlpha("#ffcc00", 0.6) : withAlpha(accentColor, 0.2)}`,
+              color: sessionId ? "#ff2d55" : partnerListening ? "#ffcc00" : withAlpha(accentColor, 0.4),
+              boxShadow: sessionId ? `0 0 12px ${withAlpha("#ff2d55", 0.5)}` : partnerListening ? `0 0 8px ${withAlpha("#ffcc00", 0.3)}` : "none",
+            }}
+          >
+            <motion.span
+              animate={sessionId
+                ? { scale: [1, 1.25, 1], opacity: [1, 0.7, 1] }
+                : partnerListening
+                  ? { y: [0, -3, 0], opacity: [0.5, 1, 0.5] }
+                  : {}}
+              transition={{
+                duration: sessionId ? 1.2 : 0.6,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            >
+              {sessionId ? "♥" : partnerListening ? "♥!" : "♡"}
+            </motion.span>
+            {/* SC5: indicador de presencia — track del partner */}
+            {partnerListening && !sessionId && partnerTrack && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-sm"
+                style={{
+                  background: "#0a0a0a",
+                  border: "1px solid #ffcc0066",
+                  color: "#ffcc00",
+                  fontFamily: FONT_MONO,
+                  whiteSpace: "nowrap",
+                  maxWidth: "80px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {partnerTrack.title?.slice(0, 10) || "..."}
+              </motion.span>
+            )}
+          </motion.button>
         </div>
         <div className="flex items-center gap-2.5">
           <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" size="sm" />

@@ -178,6 +178,237 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // trackVibe — derivado de activeTrack?.tag, nunca state (ADR-011)
   const trackVibe = activeTrack?.tag ?? null;
 
+  // ═══════════════════════════════════════════════════════════
+  //  Fase C — Escucha Compartida SC1-SC14 (S123)
+  // ═══════════════════════════════════════════════════════════
+  const [sessionId,        setSessionId]        = useState(null);
+  const [isHost,           setIsHost]           = useState(false);
+  const [partnerId,        setPartnerId]        = useState(null);
+  const [partnerTrack,     setPartnerTrack]     = useState(null);  // SC14: track activo del otro
+  const [partnerListening, setPartnerListening] = useState(false);  // SC5: ¿el otro está escuchando?
+  const _sessionPollRef     = useRef(null);       // AbortController para long-polling
+  const _lastSyncTsRef      = useRef(0);          // Último timestamp recibido del server
+  const _isRemoteActionRef  = useRef(false);       // Previene bucles: ignora cambios locales durante sync remoto
+
+  // SC5: Chequear presencia del partner (¿está escuchando? ¿qué track?)
+  const checkPresence = useCallback(async () => {
+    if (!workerClient.hasToken() || !userId) return;
+    try {
+      const res = await workerClient.get(`/api/sync?action=presence&user_id=${userId}`);
+      if (res?.active) {
+        setPartnerListening(true);
+        setPartnerTrack(res.active_track || null);
+      } else {
+        setPartnerListening(false);
+        setPartnerTrack(null);
+      }
+    } catch { /* noop */ }
+  }, [userId]);
+
+  // Poll loop: chequear presencia cada 15s (SC5)
+  useEffect(() => {
+    if (!userId || sessionId) return;  // Si ya estoy en sesión, no necesito poll de presencia
+    checkPresence();
+    const interval = setInterval(checkPresence, 15000);
+    return () => clearInterval(interval);
+  }, [userId, sessionId, checkPresence]);
+
+  // Crear sesión (host)
+  const createSession = useCallback(async () => {
+    if (!workerClient.hasToken()) return;
+    try {
+      const data = await workerClient.post("/api/sync", { action: "create" });
+      setSessionId(data.session_id);
+      setIsHost(true);
+      setPartnerId(null);
+      setPartnerListening(false);
+      console.info("[Búnker] 🔗 Sesión compartida creada:", data.session_id);
+    } catch (e) { console.warn("[Búnker] createSession error:", e); }
+  }, []);
+
+  // Unirse a sesión (guest)
+  const joinSession = useCallback(async (sid) => {
+    if (!workerClient.hasToken()) return;
+    try {
+      const data = await workerClient.post("/api/sync", { action: "join", session_id: sid });
+      if (!data.active) return;
+      setSessionId(sid);
+      setIsHost(false);
+      setPartnerId(data.host_id || data.guest_id);
+      // SC7: sincronizar al estado actual (track + posición)
+      if (data.active_track_id) {
+        const track = tracks.find(t => t.id === data.active_track_id);
+        if (track) {
+          _isRemoteActionRef.current = true;
+          setActiveTrack(track);
+          setAutoPlaySignal(n => n + 1);
+          if (data.position > 0) {
+            setTimeout(() => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = data.position;
+              }
+              _isRemoteActionRef.current = false;
+            }, 600);
+          } else {
+            // SC7: Sin posición guardada → timeout de seguridad amplio (300ms)
+            setTimeout(() => { _isRemoteActionRef.current = false; }, 300);
+          }
+        }
+      }
+      console.info("[Búnker] 🔗 Unido a sesión:", sid);
+    } catch (e) { console.warn("[Búnker] joinSession error:", e); }
+  }, [tracks]);
+
+  // Abandonar sesión (SC10, SC13)
+  const leaveSession = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      await workerClient.del(`/api/sync?session_id=${sessionId}`);
+    } catch { /* noop */ }
+    setSessionId(null);
+    setIsHost(false);
+    setPartnerId(null);
+    setPartnerTrack(null);
+    _lastSyncTsRef.current = 0;
+    console.info("[Búnker] 🔗 Sesión finalizada");
+  }, [sessionId]);
+
+  // Sync: enviar acción local al partner (SC1, SC4)
+  const syncAction = useCallback((action, opts = {}) => {
+    if (!sessionId || _isRemoteActionRef.current) return;
+    workerClient.post("/api/sync", {
+      session_id: sessionId,
+      action,
+      track_id: opts.trackId || activeTrack?.id || null,
+      position: opts.position ?? (audioRef.current?.currentTime ?? null),
+      is_playing: opts.isPlaying ?? isPlaying,
+      queue: opts.queue || null,
+    }).catch(() => {});
+  }, [sessionId, activeTrack, isPlaying]);
+
+  // Long-polling: recibir cambios del partner (SC4)
+  useEffect(() => {
+    if (!sessionId) return;
+    let active = true;
+
+    const poll = async () => {
+      let data;
+      while (active) {
+        try {
+          const since = _lastSyncTsRef.current;
+          const url = `/api/sync?session_id=${sessionId}&since=${since}`;
+          const res = await workerClient.fetch(url);
+          if (!active) break;
+          data = await res.json();
+
+          if (data.ended) {
+            // SC10: partner terminó la sesión
+            setSessionId(null);
+            setIsHost(false);
+            setPartnerId(null);
+            setPartnerTrack(null);
+            try {
+              window.dispatchEvent(new CustomEvent("bunker_session_ended", {
+                detail: { by: "partner" }
+              }));
+            } catch { /* noop */ }
+            break;
+          }
+
+          if (!data.unchanged && data.session_id && data.action && data.action !== "created" && data.action !== "joined") {
+            _lastSyncTsRef.current = new Date(data.updated_at).getTime();
+            _isRemoteActionRef.current = true;
+
+            // SC4: aplicar acción remota
+            if (data.action === "play") {
+              if (data.is_playing && audioRef.current) {
+                audioRef.current.play().catch(() => {});
+                setIsPlaying(true);
+              }
+              if (data.position != null && audioRef.current) {
+                audioRef.current.currentTime = data.position;
+              }
+            } else if (data.action === "pause") {
+              audioRef.current?.pause();
+              setIsPlaying(false);
+              if (data.position != null && audioRef.current) {
+                audioRef.current.currentTime = data.position;
+              }
+            } else if (data.action === "skip" && data.active_track_id) {
+              const track = tracks.find(t => t.id === data.active_track_id);
+              if (track) {
+                setActiveTrack(track);
+                setAutoPlaySignal(n => n + 1);
+                if (data.position > 0) {
+                  setTimeout(() => {
+                    if (audioRef.current) audioRef.current.currentTime = data.position;
+                  }, 300);
+                }
+              }
+            } else if (data.action === "seek" && data.position != null) {
+              if (audioRef.current) audioRef.current.currentTime = data.position;
+            }
+
+            // Actualizar presencia
+            if (data.active_track_id) {
+              const pt = tracks.find(t => t.id === data.active_track_id);
+              setPartnerTrack(pt || null);
+            }
+
+            setTimeout(() => { _isRemoteActionRef.current = false; }, 150);
+          }
+        } catch {
+          // Error de red — reintentar en 3s (SC8: continuar localmente)
+          await new Promise(r => setTimeout(r, 3000));
+        }
+
+        if (!data?.unchanged) await new Promise(r => setTimeout(r, 1000));
+      }
+    };
+
+    poll();
+    return () => { active = false; };
+  }, [sessionId, tracks]);
+
+  // SC4: Sincronizar play/pause locales al partner
+  const isPlayingRefShared = useRef(isPlaying);
+  useEffect(() => { isPlayingRefShared.current = isPlaying; }, [isPlaying]);
+  useEffect(() => {
+    if (!sessionId || _isRemoteActionRef.current) return;
+    const action = isPlaying ? "play" : "pause";
+    syncAction(action, {
+      position: audioRef.current?.currentTime ?? null,
+      isPlaying,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, sessionId]);
+
+  // SC4: Sincronizar skip al partner
+  useEffect(() => {
+    if (!sessionId || _isRemoteActionRef.current || !activeTrack) return;
+    syncAction("skip", {
+      trackId: activeTrack.id,
+      position: 0,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTrack?.id, sessionId]);
+
+  // SC5: Heartbeat de presencia cada 30s mientras se está reproduciendo
+  useEffect(() => {
+    if (!userId || !workerClient.hasToken() || !activeTrack) return;
+    const sendHeartbeat = () => {
+      if (!isPlayingRef.current) return;
+      workerClient.post("/api/sync", {
+        action: "heartbeat",
+        track_id: activeTrackRef.current?.id || null,
+        track_title: activeTrackRef.current?.title || null,
+      }).catch(() => {});
+    };
+    sendHeartbeat(); // enviar inmediatamente
+    const interval = setInterval(sendHeartbeat, 30000);
+    return () => clearInterval(interval);
+  }, [userId, activeTrack?.id]);
+
   const audioRef        = useRef(null);
   const preloadAudioRef = useRef(null);  // Fase 1.1 — P-M8: segundo <audio> para precarga silenciosa
   const wakeLockRef     = useRef(null);
@@ -1239,8 +1470,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       vibePulse,
       // S109 — Chromecast
       castState, startCasting, stopCasting, isCasting, castDeviceName,
-      // Shared listening (S82)
-      sharedListening: false, setSharedListening: () => {},
+      // Fase C — Escucha Compartida (S123)
+      sessionId, isHost, partnerId, partnerTrack, partnerListening,
+      createSession, joinSession, leaveSession, syncAction, checkPresence,
+      sharedListening: !!sessionId, setSharedListening: () => {},
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio
