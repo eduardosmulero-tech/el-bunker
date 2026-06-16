@@ -13,7 +13,9 @@ export const ORANGE = "#ff6b35";
 export const BG     = "#050505";
 
 // ─── INFRASTRUCTURE URLS (fuente única de verdad) ───────────
-export const R2_PUBLIC_BASE = "https://el-bunker-r2-proxy.thebunker-admin.workers.dev";
+// S121: Unificado a el-bunker-api (tiene binding R2 verificado en wrangler.toml).
+// El R2 proxy (el-bunker-r2-proxy) es un worker separado sin configuración visible.
+export const R2_PUBLIC_BASE = "https://el-bunker-api.thebunker-admin.workers.dev";
 
 // ─── TYPOGRAPHY ──────────────────────────────────────────────
 export const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";

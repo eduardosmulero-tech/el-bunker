@@ -7,7 +7,7 @@
 // ============================================================
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS } from "../tokens";
+import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
 
 // Fase 8.3 — Taxonomía completa 14 categorías (docs/spec/taxonomia_vault.md)
@@ -250,7 +250,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
     if (!entry?.content?.images?.length) return null;
     const img = entry.content.images[0];
     if (img.dataUrl) return img.dataUrl;
-    if (img.r2_key) return `https://el-bunker-api.thebunker-admin.workers.dev/${img.r2_key}`;
+    if (img.r2_key) return `${R2_PUBLIC_BASE}/${img.r2_key}`;
     return null;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);

@@ -5,6 +5,7 @@
 // ============================================================
 
 import { workerClient } from "./WorkerClient";
+import { R2_PUBLIC_BASE } from "../tokens";
 
 /** @deprecated S115-D3: token ahora via workerClient singleton. Se mantiene por compatibilidad. */
 export function setUploadToken(token) {
@@ -58,8 +59,7 @@ export async function uploadFile(file, prefix, metadata = {}) {
  */
 export function getStreamUrl(r2_key) {
   if (!r2_key) return null;
-  // S115-D3: usa el mismo API_BASE que WorkerClient
-  return `${import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev"}/${r2_key}`;
+  return `${R2_PUBLIC_BASE}/${r2_key}`;
 }
 
 /**

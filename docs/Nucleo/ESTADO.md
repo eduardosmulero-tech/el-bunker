@@ -12,6 +12,11 @@
 ### P1
 ninguno
 
+### Fix reciente (16 Junio)
+| Bug | Fix | Archivo |
+|---|---|---|
+| App stuck en "CARGANDO SERVICIOS..." | CSP frame-src no permitía content.googleapis.com → gapi.client.load() colgaba | index.html |
+
 ### P2/resto
 
 | Bug | Estado |
