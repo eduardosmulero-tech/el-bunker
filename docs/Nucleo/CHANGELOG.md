@@ -5,6 +5,51 @@
 
 ---
 
+## v2.0.17 — "4 bugs CSP/rate-limit encadenados + limpieza infra" (16 Junio 2026)
+
+### 🐛 CORREGIDO — 4 bugs en cascada que impedían ver portadas
+
+Los bugs se revelaron uno tras otro al ir destapando capas:
+
+| # | Síntoma | Causa | Fix |
+|---|---------|-------|-----|
+| 1 | App clavada en "CARGANDO SERVICIOS..." | CSP `frame-src` no permitía `content.googleapis.com` → `gapi.client.load()` colgaba para siempre | Añadido `apis.google.com` + `*.googleapis.com` al `frame-src` |
+| 2 | 0 portadas visibles (tras fix #1) | CSP `img-src` no incluía `el-bunker-api` (el Worker que sirve los thumbnails desde R2) | Añadido `el-bunker-api` al `img-src` y `media-src` |
+| 3 | Solo algunas portadas cargaban | `R2_PUBLIC_BASE` apuntaba a `el-bunker-r2-proxy` (Worker separado sin binding R2 verificado). La mitad de las URLs iban al worker bueno y la mitad al malo | Unificado `R2_PUBLIC_BASE` a `el-bunker-api` en `tokens.js` + `AddEntryForm.jsx` + `FileUploadService.js` |
+| 4 | Solo las primeras 8-10 portadas cargaban | El rate limiter del Worker (10 req/s) se ejecutaba **antes** de servir archivos R2. Al pedir 50 thumbnails a la vez, los primeros pasaban y el resto recibía `429 Too Many Requests` | R2 binary serving movido **antes** del rate limit en `worker.js`. Solo endpoints `/api/` tienen límite ahora. `loading="lazy"` añadido a 3 `<img>` en TrackCard como defensa adicional |
+
+**Commits:** `7c00c6c` `0d30708` `2802025` `1ebf3dd`
+
+### 🔧 CORREGIDO — Regresiones del refactor S114-W
+
+- **`/api/health` devolvía 500**: `handleHealth(env, userId)` no coincidía con el dispatch `handler(request, env, url, userId)` → `env.DB` era `undefined`. Firme alineada a `(_request, env, _url, userId)`. Commit `ef80ee0`.
+- **`handleAuth` firma inconsistente**: alineada a `(request, env, _url, _userId)` como los otros 13 handlers. Commit `4ba57ed`.
+
+### 🧹 LIMPIEZA — Worker `el-bunker-r2-proxy` eliminado
+
+- **Worker eliminado del dashboard de Cloudflare** (4 deploys del 28 Mayo). No tenía binding R2 verificado y ya no tenía referencias en el código.
+- **CSP limpiado**: removido `el-bunker-r2-proxy` de `img-src` y `media-src` en `index.html`.
+- **Service Worker actualizado**: regla cache-first de audio ahora apunta a `el-bunker-api`. Añadido bypass `/api/*` para no cachear respuestas de API accidentalmente.
+- **Comentario en `tokens.js`** actualizado documentando la eliminación.
+
+**Commits:** `48be31d`
+
+### ✅ VERIFICACIÓN
+
+- **Build**: ✅ ~2.6s, 0 errores
+- **Worker health**: ✅ 200, `db: true`
+- **Thumbnails**: ✅ 25/25 éxito (0 errores 429) — verificado con stress test
+- **Auth**: ✅ 401 con token inválido (sin regresión)
+- **Code review**: ✅ 6 revisiones, sin objeciones
+
+### 📊 INFRA ACTUAL
+
+- **1 solo Worker**: `el-bunker-api` (API + R2) — antes eran 2
+- **Rate limit**: solo en endpoints `/api/*` — assets R2 sin límite
+- **CSP**: 5 directivas actualizadas con dominios correctos
+
+---
+
 ## v2.0.16 — "S125 — Cierre Fases A+D" (16 Junio 2026)
 
 ### 🎵 MUSICLAB POLISH (Fase A)
