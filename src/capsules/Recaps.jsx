@@ -3,9 +3,10 @@
 //  RECAP Wrapped — 6 secciones narrativas (ADR-026)
 //  S75 — Portada, música, memoria, conexión, hitos, cierre
 // ============================================================
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
+import { workerClient } from "../core/WorkerClient";
 
 const PERIODS = [
   { id: "weekly", label: "SEMANAL", icon: "📅" },
@@ -30,6 +31,13 @@ function getPeriodRange(period) {
 export default function Recaps({ events = [], accentColor = ACID }) {
   const [period, setPeriod] = useState("weekly");
   const [section, setSection] = useState(0);
+  // S119: guardar RECAP anual como entrada VAULT (ADR-026)
+  const [savingRecap, setSavingRecap] = useState(false);
+  const [recapSaved, setRecapSaved] = useState(false);
+  const [recapError, setRecapError] = useState(null);
+  // Reset save state when switching periods
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { setRecapSaved(false); setRecapError(null); }, [period]);
   const range = getPeriodRange(period);
   const accent = accentColor ?? ACID;
 
@@ -179,6 +187,55 @@ export default function Recaps({ events = [], accentColor = ACID }) {
             </p>
           </motion.div>
         </AnimatePresence>
+
+        {/* S119: Guardar RECAP anual como entrada VAULT */}
+        {period === "annual" && (
+          <div className="flex flex-col items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={async () => {
+                if (!workerClient.hasToken() || savingRecap) return;
+                setSavingRecap(true);
+                setRecapError(null);
+                try {
+                  await workerClient.post('/api/entries', {
+                    title: `RECAP ${new Date().getFullYear() - 1}`,
+                    type: 'recap',
+                    content: JSON.stringify({
+                      period: 'annual',
+                      year: new Date().getFullYear() - 1,
+                      generated_at: new Date().toISOString(),
+                      stats,
+                      sections,
+                    }),
+                  });
+                  setRecapSaved(true);
+                } catch (e) {
+                  console.warn('[Recaps] Guardar RECAP falló:', e);
+                  setRecapError(e.message?.slice(0, 60) ?? 'Error al guardar');
+                } finally {
+                  setSavingRecap(false);
+                }
+              }}
+              disabled={savingRecap || recapSaved}
+              className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm"
+              style={{
+                color: recapSaved ? `${accent}44` : accent,
+                border: `1px solid ${recapSaved ? `${accent}22` : `${accent}44`}`,
+                background: recapSaved ? `${accent}04` : `${accent}08`,
+                fontFamily: FONT_MONO,
+                opacity: recapSaved ? 0.5 : 1,
+              }}
+            >
+              {savingRecap ? 'GUARDANDO...' : recapSaved ? '✓ GUARDADO EN VAULT' : '🌟 GUARDAR COMO ENTRADA'}
+            </motion.button>
+            {recapError && (
+              <p className="text-xs opacity-60" style={{ color: '#ff3b3b', fontFamily: FONT_MONO }}>
+                {recapError}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Prev / Next */}
         <div className="flex justify-between">

@@ -57,6 +57,12 @@ class WorkerClient {
     return res.json();
   }
 
+  async put(path, body) {
+    const res = await this._fetch("PUT", path, body);
+    if (!res.ok) throw new Error(`Worker PUT ${path}: ${res.status}`);
+    return res.json();
+  }
+
   async del(path) {
     const res = await this._fetch("DELETE", path);
     if (!res.ok) throw new Error(`Worker DELETE ${path}: ${res.status}`);

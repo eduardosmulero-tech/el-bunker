@@ -1,39 +1,32 @@
 // EL BUNKER - useMusicActions.js
-// Hook de mutaciones de DB para MusicLab — S111 FIX
+// Hook de mutaciones de DB para MusicLab — S111 FIX · S115-D3 WorkerClient
 // PATRÓN: Worker API (D1) primero → patchDb en success → throw en failure.
-// ANTES solo patchDb → refreshDb sobreescribía con D1 stale → ediciones "se perdían".
 import { useVault } from "../core/VaultContext";
 import { dropSent } from "../core/StatsEngine";
-
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+import { workerClient } from "../core/WorkerClient";
 
 export function useMusicActions() {
-  const { patchDb, jwtToken, user } = useVault();
+  // S115-D3: jwtToken ya no se necesita — WorkerClient maneja auth
+  const { patchDb, user } = useVault();
   const userId = user?.id ?? null;
 
   // ─── onAddTrack — POST /api/tracks ────────────────────────
   const onAddTrack = async (trackData) => {
-    if (!jwtToken) {
+    if (!workerClient.hasToken()) {
       console.warn("[Búnker] onAddTrack sin jwtToken — local-only");
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, tracks: [...(prev.music_lab?.tracks ?? []), trackData] } }));
       return trackData;
     }
     try {
-      const res = await fetch(`${API_BASE}/api/tracks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-        body: JSON.stringify({
-          id: trackData.id || crypto.randomUUID(),
-          title: trackData.title,
-          artist: trackData.artist ?? "",
-          note: trackData.note ?? "",
-          tag_id: trackData.tag ?? trackData.vibe ?? trackData.tag_id ?? null,
-          added_by: userId,
-          created_at: trackData.added_at || new Date().toISOString(),
-        }),
+      const created = await workerClient.post(`/api/tracks`, {
+        id: trackData.id || crypto.randomUUID(),
+        title: trackData.title,
+        artist: trackData.artist ?? "",
+        note: trackData.note ?? "",
+        tag_id: trackData.tag ?? trackData.vibe ?? trackData.tag_id ?? null,
+        added_by: userId,
+        created_at: trackData.added_at || new Date().toISOString(),
       });
-      if (!res.ok) throw new Error(`addTrack: ${res.status}`);
-      const created = await res.json();
       // CRÍTICO: D1 devuelve tag_id, frontend lee t.tag. Merge para que `tag` siempre exista.
       const normalized = {
         ...trackData,
@@ -50,7 +43,7 @@ export function useMusicActions() {
 
   // ─── onDeleteTrack — DELETE /api/tracks/:id (soft delete) ──
   const onDeleteTrack = async (trackId) => {
-    if (!jwtToken) {
+    if (!workerClient.hasToken()) {
       console.warn("[Búnker] onDeleteTrack sin jwtToken — local-only");
       await patchDb((prev) => ({
         ...prev,
@@ -64,13 +57,8 @@ export function useMusicActions() {
         },
       }));
       return { ok: true, id: trackId };
-    }
-    try {
-      const res = await fetch(`${API_BASE}/api/tracks/${trackId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${jwtToken}` },
-      });
-      if (!res.ok) throw new Error(`deleteTrack: ${res.status}`);
+    }      try {
+      await workerClient.del(`/api/tracks/${trackId}`);
       await patchDb((prev) => ({
         ...prev,
         music_lab: {
@@ -89,9 +77,9 @@ export function useMusicActions() {
     }
   };
 
-  // ─── onEditTrack — PATCH /api/tracks/:id (BUG REPORTED) ────
+  // ─── onEditTrack — PATCH /api/tracks/:id (S111 FIX + S115-D3) ────
   const onEditTrack = async (updatedTrack) => {
-    if (!jwtToken) {
+    if (!workerClient.hasToken()) {
       console.warn("[Búnker] onEditTrack sin jwtToken — local-only");
       await patchDb((prev) => ({
         ...prev,
@@ -118,12 +106,7 @@ export function useMusicActions() {
       for (const k of Object.keys(body)) {
         if (!ALLOWED.has(k)) delete body[k];
       }
-      const res = await fetch(`${API_BASE}/api/tracks/${updatedTrack.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error(`editTrack: ${res.status}`);
+      await workerClient.patch(`/api/tracks/${updatedTrack.id}`, body);
       await patchDb((prev) => ({
         ...prev,
         music_lab: {
@@ -144,28 +127,22 @@ export function useMusicActions() {
 
   // ─── onAddDrop — POST /api/drops ───────────────────────────
   const onAddDrop = async (dropData) => {
-    if (!jwtToken) {
+    if (!workerClient.hasToken()) {
       console.warn("[Búnker] onAddDrop sin jwtToken — local-only");
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, drops: [...(prev.music_lab?.drops ?? []), dropData] } }));
     } else {
       try {
-        const res = await fetch(`${API_BASE}/api/drops`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-          body: JSON.stringify({
-            id: dropData.id || crypto.randomUUID(),
-            track_id: dropData.track_id,
-            from_user: dropData.from || userId,
-            to_user: dropData.to,
-            memory: dropData.memory ?? "",
-            mood: dropData.mood ?? "",
-            era_id: dropData.era_id || null,
-            drop_date: dropData.drop_date || new Date().toISOString(),
-            created_at: dropData.created_at || new Date().toISOString(),
-          }),
+        const created = await workerClient.post(`/api/drops`, {
+          id: dropData.id || crypto.randomUUID(),
+          track_id: dropData.track_id,
+          from_user: dropData.from || userId,
+          to_user: dropData.to,
+          memory: dropData.memory ?? "",
+          mood: dropData.mood ?? "",
+          era_id: dropData.era_id || null,
+          drop_date: dropData.drop_date || new Date().toISOString(),
+          created_at: dropData.created_at || new Date().toISOString(),
         });
-        if (!res.ok) throw new Error(`addDrop: ${res.status}`);
-        const created = await res.json();
         const mapped = {
           ...created,
           from: created.from_user || created.from,
@@ -181,9 +158,9 @@ export function useMusicActions() {
     dropSent(dropData.track_id, toUser);
   };
 
-  // ─── onMarkDropSeen — PATCH /api/drops/:id (NEW ENDPOINT) ──
+  // ─── onMarkDropSeen — PATCH /api/drops/:id ──
   const onMarkDropSeen = async (dropId) => {
-    if (!jwtToken) {
+    if (!workerClient.hasToken()) {
       console.warn("[Búnker] onMarkDropSeen sin jwtToken — local-only");
       await patchDb((prev) => ({
         ...prev,
@@ -197,12 +174,7 @@ export function useMusicActions() {
       return { ok: true, id: dropId };
     }
     try {
-      const res = await fetch(`${API_BASE}/api/drops/${dropId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-        body: JSON.stringify({ seen: 1 }),
-      });
-      if (!res.ok) throw new Error(`markDropSeen: ${res.status}`);
+      await workerClient.patch(`/api/drops/${dropId}`, { seen: 1 });
       await patchDb((prev) => ({
         ...prev,
         music_lab: {

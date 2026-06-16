@@ -1,48 +1,32 @@
-# SESION.md — el_bunker
-> Dispatcher único. Leer PRIMERO en cada arranque de sesión.
-> Actualizar al CERRAR cada sesión antes de cualquier otra cosa.
-> Límite: 40 líneas. Sin historial aquí — eso va a docs/legacy/SESIONES.md.
+# SESION.md — El Búnker
 
----
+> Dispatcher del sistema. Leer primero.
+> Actualizar al cerrar cada sesión.
 
-## ROADMAP EJECUCIÓN COMPLETA (S112) ✅
+## S116-L2 — SPLIT APP.JSX MONOLÍTICO (16 Junio 2026)
 
-### FASE 0 — ESTABILIZACIÓN CORE (S112-A/B/C/D)
-- **B1**: loopMode="track" + skip(-1) respeta ADR-009 (3s rule) — `PlayerContext.jsx`
-- **B2**: Eliminado `setActiveVibe(null)` del else branch (efecto loop) — `PlayerContext.jsx`
-- **B3**: `removeFromQueue` usa `activeTrackRef` + `_pendingTrackChangeRef` (race fix) — `PlayerContext.jsx`
-- **B4**: `addToQueue(force=true)` elimina duplicado antes de añadir — `PlayerContext.jsx`
-- **B5**: Eliminado setTimeout 3s de softDeletedIds (permanente hasta UNDO) — `PlayerContext.jsx`
-- **B6**: Shuffle regenera si índice >= length ANTES de acceder — `PlayerContext.jsx`
-- **B7**: `handlePlDrop` valida bounds (from/i) — `MusicLab.jsx`
-- **Tests**: 12/12 audio regression tests (vitest + jsdom) — `src/core/__tests__/`
+### Extracciones
+- **BootScreen.jsx**: GlobalLoadingScreen + ErrorScreen + PageLoader. Tokens (ACID/BG/FONT) importados de `../tokens` en vez de redefinidos localmente.
+- **PageWrappers.jsx**: VaultPage, MusicPage (con lazy + tag handlers), CapsulesPage. Code splitting preservado.
+- **TabShell.jsx**: AuthenticatedApp (tab router + DropAlertModal + Layout + slide direccional) + UnauthorizedScreen.
+- **App.jsx**: 480→119 líneas. Solo providers + GlobalErrorBoundary + AppCore + App.
 
-### S113-W — WORKER SECURITY (10/11 vulns)
-- V1: JWT_SECRET obligatorio en producción
-- V2: Queue auth cross-user (queueUser === userId)
-- V3: Sanitización de filename (path traversal)
-- V4: Validación de r2_key prefix en upload PUT
-- V5: Capsule unlock_at > now server-side
-- V8: Validación era_id en entries POST
-- V9: Límite payload events 4KB
-- V10: Eras owner validation en POST
-- V11: Rate limiting 10 req/s por IP
-- V6/V7 diferidos (R2 signed URLs, schema constraint)
+### Validación
+- Build: ✅ 20.85s
+- Lint: ✅ 0 errores
+- Code review: ✅ sin regresiones
 
-### S115-D2 — WORKER CLIENT SINGLETON
-- `src/core/WorkerClient.js` — singleton con setToken/clearToken + get/post/patch/del
+### Archivos creados/modificados (4)
+- `src/layout/BootScreen.jsx` (nuevo, ~120 líneas)
+- `src/layout/PageWrappers.jsx` (nuevo, ~130 líneas)
+- `src/layout/TabShell.jsx` (nuevo, ~105 líneas)
+- `src/layout/App.jsx` (reescrito, 119 líneas)
 
-### S117 — TOKEN CONSISTENCY
-- LoginScreen, SmokeSession, Vault: importan PURPLE de tokens.js (sin redefinición local)
-- MusicLab, DropsManager: importan PURPLE_BG/PURPLE_BORDER de tokens (valores #d966ff)
+### Pendiente (manual)
+1. Commit + push: `git add -A && git commit -m "refactor: S116-L2 — split App.jsx 480→119 lines (BootScreen + PageWrappers + TabShell)"`
+2. `npx wrangler deploy` (worker refactorizado)
+3. Smoke test completo
 
----
-
-## VALIDACIÓN FINAL
-- Build: ✅ 17.61s (647 KB JS)
-- Tests: ✅ 12/12
-- Lint src/: 7 errores (todos pre-existentes — worker.js Cloudflare globals)
-
----
-
-## Próxima sesión: Deploy worker + smoke test manual + docs update
+### Lo que queda del roadmap
+- S117-T1/T2: Auditoría completa de tokens + migración (3h)
+- S118-P1-P4: Gallery premium modes (12h)

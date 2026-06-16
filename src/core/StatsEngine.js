@@ -2,16 +2,14 @@
 //  EL BÚNKER — StatsEngine.js
 //  Emisor de eventos al Worker (ADR-019)
 //  Todos los módulos emiten eventos aquí. Append-only.
-//  S57 · Fase 1 — Infraestructura Cloudflare
+//  S115-D3: migrado a WorkerClient (token via singleton)
 // ============================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+import { workerClient } from "./WorkerClient";
 
-let _token = null;
-
-/** Configurar el token JWT antes de emitir eventos. */
+/** @deprecated S115-D3: token ahora via workerClient singleton. Se mantiene por compatibilidad. */
 export function setStatsToken(token) {
-  _token = token;
+  workerClient.setToken(token);
 }
 
 /**
@@ -23,26 +21,18 @@ export function setStatsToken(token) {
  * @param {object} payload — datos específicos del evento (entity_type, entity_id, etc.)
  */
 export async function emit(type, payload = {}) {
-  if (!_token) {
+  if (!workerClient.hasToken()) {
     console.warn("[StatsEngine] Sin token JWT — evento no emitido:", type);
     return;
   }
   try {
-    await fetch(`${API_BASE}/api/events`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${_token}`,
-      },
-      body: JSON.stringify({
-        event_type: type,
-        entity_type: payload.entity_type || null,
-        entity_id: payload.entity_id || null,
-        payload: payload.payload || payload,
-      }),
+    await workerClient.post(`/api/events`, {
+      event_type: type,
+      entity_type: payload.entity_type || null,
+      entity_id: payload.entity_id || null,
+      payload: payload.payload || payload,
     });
   } catch (e) {
-    // Fire-and-forget: no interrumpir la UX por un evento fallido
     console.warn("[StatsEngine] Evento no emitido:", type, e.message);
   }
 }

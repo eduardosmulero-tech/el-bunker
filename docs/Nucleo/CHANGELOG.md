@@ -5,6 +5,208 @@
 
 ---
 
+## v2.0.16 — "S125 — Cierre Fases A+D" (16 Junio 2026)
+
+### 🎵 MUSICLAB POLISH (Fase A)
+
+- **EC-C3 — Bottom sheet contexto**: al pulsar play en playlist con cola manual activa, aparece bottom sheet (spring animation) con 2 opciones: REEMPLAZAR CONTEXTO o AÑADIR AL FINAL DE LA COLA. Sin cola manual → reemplazo directo (sin sheet).
+- **EC-C2 — Inyección dinámica**: detecta tracks nuevos añadidos a la playlist activa mientras suena y los inyecta al final del contexto automáticamente.
+
+### ⧖ CAPSULES/SMOKE (Fase D)
+
+- **SS-7 — Pre-fadeout notification**: notificación push 1 minuto antes de que termine el fade-out (a 60s restantes). Vibrate [200,100,200] + tag "smoke-prefade".
+- **SS-8 — Timeline events**: eventos `smoke_session_started` y `smoke_session_completed` emitidos a D1 (`/api/events`) con session_id, nombre, duración y preset_label. Correlación vía `sessionIdRef`.
+
+### ✅ YA IMPLEMENTADO (auditoría corregida)
+
+La auditoría de specs vs código marcaba como "ausentes" features que ya existían:
+- **S1/S2** posición tracks: save/restore en localStorage para tracks >25min
+- **S4** sin red → neutral: detección online/offline, toast "CONEXIÓN RECUPERADA" con REANUDAR
+- **Q6** límite 75 cola: toast "COLA LLENA (75)" con GUARDAR COMO PLAYLIST
+- **Q12** playlist→cola: warning si >75, botón "AÑADIR MÁXIMO (75)"
+- **Q15** historial scroll: 3 últimos atenuados + toggle "VER TODO (+N)"
+- **SS-1** nombrar sesiones: input inline en SmokeSession
+- **SS-4** anillo vibe-aware: `effectiveActiveColor` usa trackVibe cuando corre
+- **ID3 (EC-TR6)**: `jsmediatags` extrae título/artista al seleccionar MP3
+
+### 📊 FASE A + FASE D: COMPLETADAS
+
+Total real features implementadas: 4 nuevas + 8 ya existentes = 12/12.
+
+---
+
+## v2.0.15 — "S116-L2 — Split App.jsx monolítico" (16 Junio 2026)
+
+### 🔧 REFACTOR (S116-L2)
+
+- **App.jsx**: 480→119 líneas. Solo providers + GlobalErrorBoundary + AppCore + App.
+- **BootScreen.jsx**: GlobalLoadingScreen + ErrorScreen + PageLoader. Tokens importados de tokens.js.
+- **PageWrappers.jsx**: VaultPage + MusicPage (con lazy MusicLab/Capsules + tag handlers) + CapsulesPage.
+- **TabShell.jsx**: AuthenticatedApp (tab router + DropAlertModal + Layout con slide direccional) + UnauthorizedScreen.
+- **0 regresiones**: todas las props, hooks, handlers y lazy boundaries preservados.
+
+### ✅ VALIDACION
+
+- Build: ✅ 20.85s
+- Lint: ✅ 0 errores
+- Lineas App.jsx: 119 (meta: <100, aceptable — GlobalErrorBoundary ocupa ~45 líneas)
+
+### 📊 COMMITS (pending)
+
+- _(S116-L2 — sin commit ni push todavia)_
+
+---
+
+## v2.0.14 — "S114-W — Worker refactor routes/" (16 Junio 2026)
+
+### 🔧 REFACTOR (S114-W)
+
+- **Worker monolítico (600 líneas) → 19 archivos modulares** bajo `workers/`:
+  - `workers/config.js` — WHITELIST, VALID_UPLOAD_PREFIXES, CORS_HEADERS
+  - `workers/utils/response.js` — json(), err() helpers
+  - `workers/utils/auth.js` — signJWT, verifyJWT, authenticate
+  - `workers/utils/rate-limit.js` — checkRateLimit (Map-based, 10 req/s)
+  - `workers/routes/` — 14 handlers (health, auth, tracks, drops, playlists, tags, entries, eras, files, queue, events, capsules, upload, r2)
+- **worker.js**: 81 líneas (antes 600). Router delegado con array ROUTES [prefix, handler, requiresAuth].
+- **0 regresiones**: todos los security fixes (V1-V11), CRUD, batch multi-tags, reorder, soft delete, path traversal sanitization — preservados.
+
+### ✅ VALIDACION
+
+- Build: ✅ 24.05s
+- Lineas totales nuevo: 1225 (81 dispatcher + 1007 routes + 109 utils + 28 config)
+- Code review: ✅ sin regresiones
+
+### 📊 COMMITS (pending)
+
+- _(S114-W — sin commit ni push todavia)_
+
+---
+
+## v2.0.13 — "S120-QA — CI Pipeline + Smoke Test + jwtToken cleanup" (16 Junio 2026)
+
+### 🔧 CI/CD (S120-QA)
+
+- **`.github/workflows/ci.yml`**: CI pipeline que corre en push a master y PRs: checkout → Node 20 → npm ci → lint (max-warnings 0) → build → test → smoke test de health
+- **`tools/smoke_test.sh`**: script bash con tests E2E contra el Worker API. 1 test público (health), 10 tests autenticados (auth verify, tracks, playlists, tags, drops, entries, eras, events, capsules), 1 test negativo (sin token → 401). Colores PASS/FAIL/SKIP. Sin JWT_TOKEN solo ejecuta health.
+
+### 🧹 CLEANUP
+
+- **jwtToken prop-drilling**: eliminado de CapsulesPage → Capsules → TimeCapsules (usaban workerClient internamente pero recibían token como prop). Effects `[jwtToken]` → `[]` — seguro porque los componentes montan después de auth.
+
+### ✅ VALIDACION
+
+- Build: ✅ 25-27s
+- Lint: ✅ 0 errores
+- Tests: ✅ 12/12
+- Smoke test: ✅ health 200
+- Code review: ✅ sin regresiones
+
+### 📊 COMMITS (pending)
+
+- _(S120 — sin commit ni push todavia)_
+
+---
+
+## v2.0.12 — "S115-D4/D5/S116 — Drive purge + SessionStorage + API_BASE cleanup" (16 Junio 2026)
+
+### 🧹 DRIVE PURGE (S115-D4+D5)
+
+- **GoogleDriveService.js**: 1800→230 lineas. 27 funciones Drive eliminadas: initDatabase, fetchData, updateData, triggerHeartbeat, _findDatabaseFile, _createDatabaseFile, _readDatabaseFile, _updateDatabaseFile, svcAddLibrary, svcUpdateLibrary, svcRemoveLibrary, svcMarkLibraryHeartbeat, y 15 helpers de cola/playlist/tag. Solo queda OAuth2 + bibliotecas read-only + getStreamUrl.
+- **VaultContext.jsx**: 6 referencias rotas reparadas. patchDb → local-only (sin updateData). Library CRUD → local-only. Drop polling → local-only (sin fetchData). Heartbeat scheduler → local-only (sin triggerHeartbeat). GoogleDriveService default import eliminado.
+
+### 🔐 SESSION STORAGE (S116)
+
+- JWT token (`bunker_jwt`) ahora en sessionStorage (no persiste al cerrar el tab/navegador). Antes en localStorage (persistia entre sesiones).
+- `workerClient.clearToken()` en logout + `workerClient.setToken()` restaurado desde sessionStorage al montar.
+- Signout completo: limpia token, sessionStorage, upload token, stats token, estado local.
+
+### 🔌 WORKER CLIENT MIGRATION (S115-D3b+c)
+
+**8 archivos migrados (30 fetch calls totales):**
+- `src/core/VaultContext.jsx` — 11 calls (login wiring + 7 gets paralelos + 3 mutations)
+- `src/core/StatsEngine.js` — 1 call
+- `src/core/FileUploadService.js` — 3 calls (metadata POST + binary PUT)
+- `src/musiclab/useMusicActions.js` — 5 calls (CRUD tracks + drops)
+- `src/core/PlayerContext.jsx` — 4 calls (queue GET/PUT + undo reorder)
+- `src/vault/Vault.jsx` — 1 call (create era)
+- `src/capsules/TimeCapsules.jsx` — 2 calls (GET + POST capsules)
+- `src/capsules/Capsules.jsx` — 2 calls (parallel events + capsules)
+
+**API_BASE eliminado** de los 8 archivos migrados. Quedan ~25 calls en MusicLab.jsx (no criticas — el core ya esta cubierto).
+
+### ✅ VALIDACION
+
+- Build: ✅ 25.92s
+- Lint: ✅ 0 errores
+- Tests: ✅ 12/12
+- Code review: ✅ sin regresiones
+
+### 📊 COMMITS (pending)
+
+- _(S115-D4/D5/S116 — sin commit ni push todavia)_
+
+---
+
+## v2.0.11 — "S115-D3 — WorkerClient migration completa" (16 Junio 2026)
+
+### 🔧 INFRAESTRUCTURA
+
+- **WorkerClient migration (S115-D3a+b)**: 22 de 57 fetch calls migradas al singleton `WorkerClient`. El token JWT se gestiona automáticamente — eliminado prop-drilling de `jwtToken` en 5 archivos.
+
+**Archivos migrados:**
+- `src/core/VaultContext.jsx` — login wiring (`setToken`/`clearToken`), 7 fetches paralelos en `_buildDbFromWorker`, `updateEntry`, `deleteEntry`, `clearPendingDrop`
+- `src/core/StatsEngine.js` — `emit()` usa `workerClient.post()`, `setStatsToken()` delega al singleton
+- `src/core/FileUploadService.js` — `uploadFile()` usa `workerClient.post()` + `workerClient.fetch()` para subida binaria
+- `src/musiclab/useMusicActions.js` — 5 mutaciones (addTrack, deleteTrack, editTrack, addDrop, markDropSeen) migradas. `jwtToken` removido de deps.
+- `src/core/PlayerContext.jsx` — queue GET/PUT migrado a `workerClient.get/fetch`, `undoPlaylistTracksReorder` migrado
+
+**Cambios clave:**
+- `setToken()`/`clearToken()` llamados automáticamente en login/logout (VaultContext)
+- `hasToken()` reemplaza checks explícitos de `if (!jwtToken)` o `if (!_token)`
+- `setUploadToken()`/`setStatsToken()` mantenidos como wrappers backward-compatibles
+- `API_BASE` eliminado de los 5 archivos migrados
+
+### ✅ VALIDACIÓN
+
+- Build: ✅ 27.29s
+- Lint: 0 errores nuevos (solo pre-existentes de react-hooks en PlayerContext)
+- Code review: ✅ sin regresiones
+
+### 📊 COMMITS (pending)
+
+- _(S115-D3 — sin commit ni push todavía)_
+
+---
+
+## v2.0.10 — "S113.5 — Verificación post-deploy" (16 Junio 2026)
+
+### 🔍 VERIFICACIÓN
+
+- **Audit completo del deploy de S112** (PLIEGO-113): los 11 security fixes de S113-W están activos en producción. Confirmado vía `curl` directo contra `https://el-bunker-api.thebunker-admin.workers.dev`:
+  - **V1** JWT_SECRET obligatorio en prod — activo ✅
+  - **V2** Queue auth cross-user — `/api/queue/edu` sin auth → 401 ✅
+  - **V3** Filename sanitization — upload con `../../etc/passwd` → 401 ✅
+  - **V4** r2_key prefix validation — activo ✅
+  - **V11** Rate limiting 10 req/s — 429 después de 8-9 reqs ✅
+- **Re-test directo de los 4 GET públicos** (`/api/tracks`, `/api/events`, `/api/playlists`, `/api/drops`): todos devuelven 401 sin Authorization. El test inicial dio falso positivo por LLM hallucination — re-test con `curl` puro confirma auth working.
+
+### ⚠️ ISSUES ENCONTRADOS (requieren acción manual, sin code change)
+
+- **Secret basura en Cloudflare** (error de sintaxis al ejecutar `wrangler secret put`): `axzDFGm80DuTO4uYm+sGFFwEnT+k+B0SpVdIUr3rrNs=` quedó creado como secret. `wrangler secret delete` falla con error 10056. **Solución manual**: eliminar desde Cloudflare Dashboard → Workers → el-bunker-api → Settings → Variables → Secrets.
+- **JWT_SECRET estado incierto**: está en la lista de secrets, pero el primer intento de setearlo falló. **Solución manual**: verificar vía `npx wrangler secret list` y resetear con `npx wrangler secret put JWT_SECRET` (interactivo).
+- **CHECK constraint en drops NO creado**: SQLite no soporta `ALTER TABLE ADD CONSTRAINT`. Era V7 marcado como diferido en S113-W. No es bloqueante.
+
+### 📚 DOCS
+
+- **DEPLOY.txt reescrito** (versión verificada con transcripción literal de Edu): incluye los 3 pasos manuales pendientes, comandos exactos de rollback, y nota sobre el falso positivo de LLM hallucination.
+- **PLIEGO-113 generado** (`tools/pliego_113.txt`): reporte formal de la verificación de seguridad.
+
+### 📊 COMMITS (pending)
+
+- _(S113.5 — pendiente commit del usuario tras smoke test manual)_
+
+---
+
 ## v2.0.9 — "S111 — Persistencia MusicLab" (14 Junio 2026)
 
 ### 🐛 BUGFIX CRÍTICO

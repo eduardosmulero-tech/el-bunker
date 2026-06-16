@@ -6,8 +6,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
-
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+import { workerClient } from "../core/WorkerClient";
 
 // S74: Opening animation component for unlocked capsules
 const CapsuleReveal = ({ capsule, onClose }) => (
@@ -55,7 +54,7 @@ const CapsuleReveal = ({ capsule, onClose }) => (
   </motion.div>
 );
 
-export default function TimeCapsules({ token, capsules: initialCapsules = [], entries = [], playlists = [] }) {
+export default function TimeCapsules({ capsules: initialCapsules = [], entries = [], playlists = [] }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [unlockAt, setUnlockAt] = useState("");
@@ -76,19 +75,16 @@ export default function TimeCapsules({ token, capsules: initialCapsules = [], en
     return () => clearTimeout(t);
   }, [toast]);
 
+  // S115-D3: WorkerClient maneja auth — sin prop-drilling de token
   useEffect(() => {
-    if (!token) return;
-    fetch(`${API_BASE}/api/time_capsules`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    if (!workerClient.hasToken()) return;
+    workerClient.get('/api/time_capsules')
       .then(data => setCapsules(data))
       .catch(err => {
         console.warn("[TimeCapsules] fetch:", err);
-        // S85d: toast feedback para fetch error
         setToast("NO SE PUDIERON CARGAR CÁPSULAS");
       });
-  }, [token]);
+  }, []);
 
   const now = new Date();
   const locked = capsules.filter(c => !c.is_unlocked && new Date(c.unlock_at) > now);
@@ -121,13 +117,7 @@ export default function TimeCapsules({ token, capsules: initialCapsules = [], en
           sealed_at: new Date().toISOString(),
         }),
       };
-      const res = await fetch(`${API_BASE}/api/time_capsules`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Error al crear");
-      const created = await res.json();
+      const created = await workerClient.post('/api/time_capsules', body);
       setCapsules(prev => [created, ...prev]);
       setTitle(""); setDescription(""); setUnlockAt("");
       setSelectedEntryIds([]); setSelectedPlaylistIds([]);

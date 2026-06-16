@@ -358,7 +358,7 @@ const ZoomModal = ({ entry, era, onClose }) => {
 // ═══════════════════════════════════════════════════════════════
 //  VAULT GALLERY MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
-export default function VaultGallery({ entries = [], eras = [], jwtToken: _jwtToken = null, onOpenEntry: _onOpenEntry }) {
+export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _onOpenEntry }) {
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
   const [currentIdx, setCurrentIdx] = useState(0);

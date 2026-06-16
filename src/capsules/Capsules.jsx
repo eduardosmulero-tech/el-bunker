@@ -8,12 +8,11 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, FONT_MONO } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
+import { workerClient } from "../core/WorkerClient";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
 import Recaps from "./Recaps";
-
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
 const SUB_TABS = [
   { id: "timeline",      label: "TIMELINE",      icon: "◎" },
@@ -22,7 +21,7 @@ const SUB_TABS = [
   { id: "recap",         label: "RECAP",           icon: "📊" },
 ];
 
-export default function Capsules({ db: _db, userId: _userId, jwtToken = null, activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
+export default function Capsules({ db: _db, userId: _userId, activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
   const [subTab, setSubTab] = useState("timeline");
   const [events, setEvents] = useState([]);
   const [capsules, setCapsules] = useState([]);
@@ -40,33 +39,22 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
   const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   // Fetch real events y time_capsules desde Worker API cuando hay JWT
+  // S115-D3: WorkerClient maneja auth — sin prop-drilling de jwtToken
   useEffect(() => {
-    if (!jwtToken) return;
+    if (!workerClient.hasToken()) return;
     let cancelled = false;
 
     const fetchData = async () => {
       setLoadingEvents(true);
       setFetchError(null);
       try {
-        const [eventsRes, capsulesRes] = await Promise.all([
-          fetch(`${API_BASE}/api/events?limit=200`, {
-            headers: { Authorization: `Bearer ${jwtToken}` },
-          }),
-          fetch(`${API_BASE}/api/time_capsules`, {
-            headers: { Authorization: `Bearer ${jwtToken}` },
-          }),
+        const [eventsData, capsulesData] = await Promise.all([
+          workerClient.get('/api/events?limit=200').catch(e => { throw new Error(`Events: ${e.message}`); }),
+          workerClient.get('/api/time_capsules').catch(e => { throw new Error(`Capsules: ${e.message}`); }),
         ]);
         if (!cancelled) {
-          if (eventsRes.ok) {
-            const data = await eventsRes.json();
-            setEvents(data);
-          } else {
-            setFetchError(`Events API: ${eventsRes.status}`);
-          }
-          if (capsulesRes.ok) {
-            const data = await capsulesRes.json();
-            setCapsules(data);
-          }
+          setEvents(eventsData);
+          setCapsules(capsulesData);
         }
       } catch (e) {
         console.warn("[Capsules] fetch error:", e.message);
@@ -80,7 +68,7 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
     };
     fetchData();
     return () => { cancelled = true; };
-  }, [jwtToken]);
+  }, []);
 
   return (
     <div className="px-4 py-6 max-w-md mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
@@ -178,7 +166,7 @@ export default function Capsules({ db: _db, userId: _userId, jwtToken = null, ac
             </div>
           )}
           {subTab === "timecapsules" && (
-            <TimeCapsules token={jwtToken} capsules={capsules} accentColor={accent} entries={_db?.entries || []} playlists={_db?.music_lab?.playlists || []} />
+            <TimeCapsules capsules={capsules} accentColor={accent} entries={_db?.entries || []} playlists={_db?.music_lab?.playlists || []} />
           )}
           {subTab === "recap" && <Recaps events={events} accentColor={accent} />}
         </motion.div>

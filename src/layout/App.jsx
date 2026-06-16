@@ -1,421 +1,67 @@
 // ============================================================
 //  EL BÚNKER — App.jsx
-//  Orquestador Principal · Router · State Orchestration
+//  Orquestador Principal · Providers + Router (S116-L2 refactor)
 //  Stack: React 18 + Framer Motion
 // ============================================================
-import { useEffect, lazy, Suspense, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, Component } from "react";
 
 import { VaultProvider, useVault } from "../core/VaultContext";
-import { useMusicActions }               from "../musiclab/useMusicActions";
-import { PlayerProvider, usePlayer }     from "../core/PlayerContext";
-import Layout                            from "./Layout";
-import LoginScreen                       from "./LoginScreen";
-import Vault                             from "../vault/Vault";
-import { DropAlertModal }               from "../musiclab/DropsManager";
-import { ACID } from "../tokens";
-import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
+import { PlayerProvider } from "../core/PlayerContext";
+import LoginScreen from "./LoginScreen";
+import { ACID, BG, FONT_MONO as FONT } from "../tokens";
+import { GlobalLoadingScreen, ErrorScreen } from "./BootScreen";
+import { AuthenticatedApp, UnauthorizedScreen } from "./TabShell";
 
-// Code splitting: lazy-load los dos módulos más pesados
-const MusicLab = lazy(() => import("../musiclab/MusicLab"));
-const Capsules = lazy(() => import("../capsules/Capsules"));
+// ─── S117: GLOBAL ERROR BOUNDARY ────────────────────────────
+class GlobalErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null, errorInfo: null };
+  }
 
-// Suspense fallback compartido
-const PageLoader = () => (
-  <div className="flex items-center justify-center py-12" style={{ fontFamily: FONT }}>
-    <motion.p
-      animate={{ opacity: [0.3, 0.7, 0.3] }}
-      transition={{ duration: 1.5, repeat: Infinity }}
-      className="text-xs tracking-[0.3em] uppercase"
-      style={{ color: ACID }}
-    >
-      CARGANDO...
-    </motion.p>
-  </div>
-);
-// ─── DESIGN TOKENS (mirrored for this file) ──────────────────
-const BG     = "#050505";
-const FONT   = "'JetBrains Mono', 'Courier New', monospace";
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
 
-// ─── GLOBAL LOADING SCREEN ───────────────────────────────────
-/**
- * Shown during INIT_SERVICES and INIT_DB boot phases.
- * The heartbeat pulses faster when syncing DB.
- */
-const GlobalLoadingScreen = ({ phase }) => {
-  const isSyncing = phase === "init_db";
+  componentDidCatch(error, errorInfo) {
+    console.error("[Búnker] Unhandled error:", error, errorInfo);
+    this.setState({ errorInfo });
+  }
 
-  return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center z-[200]"
-      style={{ background: BG, fontFamily: FONT }}
-    >
-      {/* Scanlines */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px)",
-          mixBlendMode: "overlay",
-        }}
-      />
-
-      {/* Heartbeat that SYNCS with data load state */}
-      <motion.div
-        animate={{
-          scale:  isSyncing ? [1, 1.4, 1, 1.3, 1] : [1, 1.18, 1],
-          filter: isSyncing
-            ? [`drop-shadow(0 0 4px ${ACID}44)`, `drop-shadow(0 0 24px ${ACID})`, `drop-shadow(0 0 4px ${ACID}44)`]
-            : [`drop-shadow(0 0 4px ${ACID}44)`, `drop-shadow(0 0 12px ${ACID})`, `drop-shadow(0 0 4px ${ACID}44)`],
-        }}
-        transition={{
-          duration: isSyncing ? 0.6 : 1.8,
-          repeat: Infinity,
-          ease: isSyncing ? "easeInOut" : "easeOut",
-          times: isSyncing ? [0, 0.25, 0.45, 0.65, 1] : [0, 0.3, 1],
-        }}
-        className="mb-8"
-      >
-        <svg width="48" height="44" viewBox="0 0 36 32" fill="none">
-          <path
-            d="M18 30C18 30 2 20 2 10C2 5.58172 5.58172 2 10 2C13.1379 2 15.8938 3.73517 17.4 6.30556C17.5882 6.62685 17.7657 6.92685 18 7.20556C18.2343 6.92685 18.4118 6.62685 18.6 6.30556C20.1062 3.73517 22.8621 2 26 2C30.4183 2 34 5.58172 34 10C34 20 18 30 18 30Z"
-            fill={ACID}
-            opacity="0.9"
-          />
-        </svg>
-      </motion.div>
-
-      <motion.p
-        animate={{ opacity: [0.4, 1, 0.4] }}
-        transition={{ duration: 1.2, repeat: Infinity }}
-        className="text-xs tracking-[0.4em] uppercase"
-        style={{ color: ACID, textShadow: `0 0 12px ${ACID}` }}
-      >
-        {phase === "init_services" ? "CARGANDO SERVICIOS..." : "SINCRONIZANDO VAULT..."}
-      </motion.p>
-
-      {/* Progress bar */}
-      <div
-        className="mt-6 w-48 h-px overflow-hidden"
-        style={{ background: `${ACID}22` }}
-      >
-        <motion.div
-          className="h-full"
-          style={{ background: ACID, boxShadow: `0 0 8px ${ACID}` }}
-          animate={{ x: ["-100%", "200%"] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// ─── BOOT ERROR SCREEN ───────────────────────────────────────
-const ErrorScreen = ({ message, onRetry }) => (
-  <div
-    className="fixed inset-0 flex flex-col items-center justify-center z-[200] px-8"
-    style={{ background: BG, fontFamily: FONT }}
-  >
-    <motion.div
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="flex flex-col items-center gap-6 text-center max-w-sm"
-    >
-      <motion.p
-        animate={{ opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 1.4, repeat: Infinity }}
-        className="text-4xl"
-      >
-        ⚠
-      </motion.p>
-      <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#ff3b3b", textShadow: "0 0 12px #ff3b3b" }}>
-        ERROR DE SISTEMA
-      </p>
-      <p className="text-xs leading-relaxed opacity-60" style={{ color: ACID }}>
-        {message ?? "No se pudo conectar al Búnker."}
-      </p>
-      <motion.button
-        whileTap={{ scale: 0.95 }}
-        onClick={onRetry}
-        className="text-xs tracking-[0.3em] uppercase px-6 py-3"
-        style={{
-          color: ACID,
-          border: `1px solid ${ACID}44`,
-          background: `${ACID}08`,
-          fontFamily: FONT,
-        }}
-      >
-        REINTENTAR →
-      </motion.button>
-    </motion.div>
-  </div>
-);
-
-// ─── PAGE COMPONENTS ─────────────────────────────────────────
-
-/** Wrapper para la pestaña VAULT */
-const VaultPage = () => {
-  const { db, jwtToken, patchDb } = useVault();
-  return (
-    <Vault
-      db={db}
-      jwtToken={jwtToken}
-      onAddEra={async (_created) => {
-        // G2: refresh db from Worker API tras crear era, para que aparezca sin F5
-        if (!jwtToken) return;
-        try {
-          const res = await fetch(`${API_BASE}/api/eras`, {
-            headers: { Authorization: `Bearer ${jwtToken}` },
-          });
-          if (res.ok) {
-            const freshEras = await res.json();
-            // Merge: actualizar eras en el db local sin perder entries ni otros datos
-            patchDb((prev) => ({ ...prev, eras: freshEras }));
-          }
-        } catch (e) {
-          console.warn("[App] onAddEra refresh failed:", e);
-        }
-      }}
-      onOpenEra={(era) => {
-        console.log("[App] Opening era:", era.name);
-      }}
-    />
-  );
-};
-
-/** Wrapper para la pestaña MUSIC LAB */
-const MusicPage = () => {
-  const { db, user, setMasterVolume, patchDb, jwtToken } = useVault();
-  const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
-
-  // S66 (W3): tags sincronizados con Worker API (D1) + Drive JSON
-  const handleAddTag = async (tagData) => {
-    const newTag = {
-      ...tagData,
-      id: crypto.randomUUID(),
-      created_by: user?.id ?? "user",
-      created_at: new Date().toISOString(),
-    };
-    // Drive JSON (backward compat)
-    await patchDb((prev) => ({
-      ...prev,
-      music_lab: {
-        ...prev.music_lab,
-        tags: [...(prev.music_lab?.tags ?? []), newTag],
-      },
-    }));
-    // Worker API → D1
-    if (jwtToken) {
-      try {
-        await fetch(`${API_BASE}/api/tags`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-          body: JSON.stringify({ label: tagData.label, icon: tagData.icon, color: tagData.color, namespace: tagData.namespace || "music", id: newTag.id }),
-        });
-      } catch (e) {
-        console.warn("[App] tag D1 sync (create) failed:", e);
-      }
-    }
-  };
-
-  const handleUpdateTag = async (tagId, updates) => {
-    // Drive JSON (backward compat)
-    await patchDb((prev) => ({
-      ...prev,
-      music_lab: {
-        ...prev.music_lab,
-        tags: (prev.music_lab?.tags ?? []).map((t) =>
-          t.id === tagId ? { ...t, ...updates } : t
-        ),
-      },
-    }));
-    // Worker API → D1
-    if (jwtToken) {
-      try {
-        await fetch(`${API_BASE}/api/tags/${tagId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-          body: JSON.stringify(updates),
-        });
-      } catch (e) {
-        console.warn("[App] tag D1 sync (update) failed:", e);
-      }
-    }
-  };
-
-  const handleDeleteTag = async (tagId) => {
-    // Drive JSON (backward compat)
-    await patchDb((prev) => ({
-      ...prev,
-      music_lab: {
-        ...prev.music_lab,
-        tags: (prev.music_lab?.tags ?? []).filter((t) => t.id !== tagId),
-      },
-    }));
-    // Worker API → D1
-    if (jwtToken) {
-      try {
-        await fetch(`${API_BASE}/api/tags/${tagId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${jwtToken}` },
-        });
-      } catch (e) {
-        console.warn("[App] tag D1 sync (delete) failed:", e);
-      }
-    }
-  };
-
-  return (
-    <ChunkErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
-        <MusicLab
-          db={db}
-          userId={user?.id ?? null}
-          jwtToken={jwtToken}
-          onAddTrack={onAddTrack}
-          onAddDrop={onAddDrop}
-          onDeleteTrack={onDeleteTrack}
-          onEditTrack={onEditTrack}
-          onMasterVolumeChange={setMasterVolume}
-          onMarkDropSeen={onMarkDropSeen}
-          patchDb={patchDb}
-          onAddTag={handleAddTag}
-          onUpdateTag={handleUpdateTag}
-          onDeleteTag={handleDeleteTag}
-        />
-      </Suspense>
-    </ChunkErrorBoundary>
-  );
-};
-
-// Placeholder eliminado — Timeline fusionada en CAPSULES (ADR-017, ADR-020)
-
-/** Wrapper para CAPSULES con SmokeSession flotante */
-const CapsulesPage = () => {
-  const { db, user, masterVolume, setMasterVolume, jwtToken } = useVault();
-  const { activeTrack } = usePlayer();
-  return (
-    <ChunkErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
-        <Capsules
-          db={db}
-          userId={user?.id ?? null}
-          jwtToken={jwtToken}
-          activeTrack={activeTrack}
-          masterVolume={masterVolume}
-          onVolumeChange={setMasterVolume}
-        />
-      </Suspense>
-    </ChunkErrorBoundary>
-  );
-};
-
-// ─── TAB ROUTER ──────────────────────────────────────────────
-const TAB_MAP = { vault: VaultPage, music: MusicPage, capsules: CapsulesPage };
-
-// ─── AUTHENTICATED APP ───────────────────────────────────────
-// S101 — Orden de tabs para slide direccional: vault(0) → music(1) → capsules(2)
-const TAB_ORDER = { vault: 0, music: 1, capsules: 2 };
-
-const AuthenticatedApp = () => {
-  const {
-      user: _user, db, dbStatus, lastHeartbeat,
-      activeTab, setActiveTab,
-      masterVolume: _masterVolume,
-      logout,
-      pendingDrop, clearPendingDrop,
-    } = useVault();
-  const { playTrack } = usePlayer();
-
-  const ActivePage = TAB_MAP[activeTab] ?? VaultPage;
-
-  // S101 — Trackear tab anterior para slide direccional
-  const { current: prevTab } = useRef({ prev: activeTab });
-  useEffect(() => { prevTab.prev = activeTab; }, [activeTab, prevTab]);
-
-  // S101 — Dirección del slide: derecha→izquierda si avanzamos (vault→music→capsules)
-  const direction = (TAB_ORDER[activeTab] ?? 0) >= (TAB_ORDER[prevTab.prev] ?? 0) ? 1 : -1;
-
-  const slideVariants = {
-    initial: { opacity: 0, x: 24 * direction },
-    animate: { opacity: 1, x: 0 },
-    exit:    { opacity: 0, x: -24 * direction },
-  };
-
-  const handleDropPlay = (track) => {
-    if (track) playTrack(track);
-    clearPendingDrop(pendingDrop?.id);
-    setActiveTab("music");
-  };
-
-  const handleDropDismiss = () => {
-    clearPendingDrop(pendingDrop?.id);
-  };
-
-  return (
-    <>
-      <DropAlertModal
-        drop={pendingDrop}
-        tracks={db?.music_lab?.tracks ?? []}
-        onPlay={handleDropPlay}
-        onDismiss={handleDropDismiss}
-      />
-      <Layout
-          isAuthenticated
-          dbStatus={dbStatus}
-          lastHeartbeat={lastHeartbeat}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onSignOut={logout}
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={slideVariants.initial}
-            animate={slideVariants.animate}
-            exit={slideVariants.exit}
-            transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <ActivePage />
-          </motion.div>
-        </AnimatePresence>
-      </Layout>
-    </>
-  );
-};
-
-const UnauthorizedScreen = ({ userEmail }) => {
-  return (
-    <div 
-      className="fixed inset-0 flex flex-col items-center justify-center z-[300] px-6 text-center"
-      style={{ background: "#0a0000", fontFamily: FONT }}
-    >
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="p-8 border-2 border-[#ff3b3b] bg-[#1a0000] relative"
-        style={{ boxShadow: "0 0 30px rgba(255, 59, 59, 0.2)" }}
-      >
-        <h1 className="text-3xl font-black mb-4 tracking-tighter" style={{ color: "#ff3b3b" }}>
-          [!] ACCESO NO AUTORIZADO
-        </h1>
-        <p className="text-sm mb-6 leading-relaxed" style={{ color: "#ff8080" }}>
-          La identidad <span className="underline">{userEmail}</span> no tiene privilegios 
-          de lectura en este búnker. Los protocolos de seguridad han sido activados.
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-6 py-2 text-xs font-bold tracking-[0.3em] uppercase transition-all"
-          style={{ border: "1px solid #ff3b3b", color: "#ff3b3b" }}
+  render() {
+    if (this.state.error) {
+      return (
+        <div
+          className="fixed inset-0 flex flex-col items-center justify-center z-[300] px-8"
+          style={{ background: BG, fontFamily: FONT }}
         >
-          REINTENTAR IDENTIFICACIÓN
-        </button>
-      </motion.div>
-    </div>
-  );
-};
+          <div className="flex flex-col items-center gap-6 text-center max-w-sm">
+            <p className="text-4xl">⚠</p>
+            <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#ff3b3b", textShadow: "0 0 12px #ff3b3b" }}>
+              ERROR INESPERADO
+            </p>
+            <p className="text-xs leading-relaxed opacity-40" style={{ color: ACID }}>
+              {this.state.error?.message?.slice(0, 120) ?? "Algo salió mal."}
+            </p>
+            <button
+              onClick={() => { this.setState({ error: null, errorInfo: null }); window.location.reload(); }}
+              className="text-xs tracking-[0.3em] uppercase px-6 py-3"
+              style={{
+                color: ACID,
+                border: `1px solid ${ACID}44`,
+                background: `${ACID}08`,
+                fontFamily: FONT,
+              }}
+            >
+              REINICIAR APP →
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // ─── APP CORE (consumes VaultContext) ────────────────────────
 const AppCore = () => {
@@ -423,7 +69,6 @@ const AppCore = () => {
 
   if (isLoading) return <GlobalLoadingScreen phase={bootPhase} />;
 
-  // NUEVO: Manejo explícito de usuario no autorizado
   if (authStatus === "unauthorized") {
     return <UnauthorizedScreen userEmail={user?.email} />;
   }
@@ -447,7 +92,6 @@ const AppCore = () => {
 
 // ─── ROOT EXPORT ─────────────────────────────────────────────
 export default function App() {
-  // Register service worker for PWA
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
@@ -455,7 +99,6 @@ export default function App() {
         .then((reg) => console.info("[Búnker] SW registered:", reg.scope))
         .catch((err) => console.warn("[Búnker] SW registration failed:", err));
 
-      // Fase 2.4 M8: Escuchar mensajes del SW para navegación de tabs
       const handleSWMessage = (event) => {
         if (event.data?.type === "BUNKER_NAVIGATE" && event.data?.tab) {
           window.dispatchEvent(new CustomEvent("bunker_navigate", { detail: { tab: event.data.tab } }));
@@ -468,7 +111,9 @@ export default function App() {
 
   return (
     <VaultProvider>
-      <AppCore />
+      <GlobalErrorBoundary>
+        <AppCore />
+      </GlobalErrorBoundary>
     </VaultProvider>
   );
 }

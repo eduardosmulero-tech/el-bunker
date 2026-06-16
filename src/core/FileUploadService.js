@@ -1,17 +1,14 @@
 // ============================================================
 //  EL BÚNKER — FileUploadService.js
 //  Subida de archivos a R2 vía Worker (ADR-022)
-//  Prefixes: music, vault/photos, vault/videos, vault/docs, vault/audio
-//  S57 · Fase 1 — Infraestructura Cloudflare
+//  S115-D3: migrado a WorkerClient (token via singleton)
 // ============================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+import { workerClient } from "./WorkerClient";
 
-/** @type {string|null} */
-let _token = null;
-
+/** @deprecated S115-D3: token ahora via workerClient singleton. Se mantiene por compatibilidad. */
 export function setUploadToken(token) {
-  _token = token;
+  workerClient.setToken(token);
 }
 
 /**
@@ -26,43 +23,26 @@ export function setUploadToken(token) {
  * @returns {Promise<{r2_key: string, file_id: string}>}
  */
 export async function uploadFile(file, prefix, metadata = {}) {
-  if (!_token) throw new Error("FileUploadService: token JWT no configurado");
+  if (!workerClient.hasToken()) throw new Error("FileUploadService: token JWT no configurado");
 
-  // S102 — Detección offline: mensaje amigable en vez de error genérico
   if (!navigator.onLine) {
     throw new Error("Sin conexión — el archivo se subirá cuando vuelvas a estar online.");
   }
 
-  // Paso 1: obtener r2_key
-  const res = await fetch(`${API_BASE}/api/upload`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${_token}`,
-    },
-    body: JSON.stringify({
-      prefix,
-      filename: file.name,
-      mime_type: file.type || null,
-      size_bytes: file.size,
-      ...metadata,
-    }),
+  // Paso 1: obtener r2_key via WorkerClient
+  const { r2_key, file_id } = await workerClient.post(`/api/upload`, {
+    prefix,
+    filename: file.name,
+    mime_type: file.type || null,
+    size_bytes: file.size,
+    ...metadata,
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(`Upload error: ${err.error || res.status}`);
-  }
-
-  const { r2_key, file_id } = await res.json();
-
-  // Paso 2: subir el binario directamente al Worker
-  const uploadRes = await fetch(`${API_BASE}/api/upload/${encodeURIComponent(r2_key)}`, {
+  // Paso 2: subir el binario directamente via fetch (necesita PUT sin Content-Type: application/json)
+  const uploadRes = await workerClient.fetch(`/api/upload/${encodeURIComponent(r2_key)}`, {
     method: "PUT",
-    headers: { Authorization: `Bearer ${_token}` },
     body: file,
   });
-
   if (!uploadRes.ok) {
     throw new Error(`Binary upload failed: ${uploadRes.status}`);
   }
@@ -78,7 +58,8 @@ export async function uploadFile(file, prefix, metadata = {}) {
  */
 export function getStreamUrl(r2_key) {
   if (!r2_key) return null;
-  return `${API_BASE}/${r2_key}`;
+  // S115-D3: usa el mismo API_BASE que WorkerClient
+  return `${import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev"}/${r2_key}`;
 }
 
 /**

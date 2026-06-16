@@ -1,149 +1,147 @@
 ╔══════════════════════════════════════════════════════════════════╗
-║  EL BÚNKER — DEPLOY DE PRODUCCIÓN (post-S112)                   ║
+║  EL BÚNKER — DEPLOY DE PRODUCCIÓN (post-S112 + verificación S113.5)║
 ║  Última actualización: Junio 2026                               ║
 ╚══════════════════════════════════════════════════════════════════╝
 
 ═══════════════════════════════════════════════════════════════════
- PASO 1 — SETUP (solo una vez)
+ ✅ ESTADO ACTUAL VERIFICADO (16 Junio 2026)
 ═══════════════════════════════════════════════════════════════════
 
-  # Verificar que wrangler está logueado en Cloudflare
-  npx wrangler login
-
-  # Verificar que estás en la raíz del proyecto y en master
-  cd /mnt/c/proyectos/el-bunker
-  git status
-  git branch                     # debe mostrar *master
-
-  # Si tienes cambios sin commitear, haz commit primero:
-  git add -A
-  git commit -m "chore: S112 — deploy ready (security fixes + token consistency + tests)"
-
-═══════════════════════════════════════════════════════════════════
- PASO 2 — SNAPSHOT D1 (backup antes de deploy)
-═══════════════════════════════════════════════════════════════════
-
-  bash tools/snapshot_d1.sh
-
-  # Verificar que el snapshot se creó:
-  ls -la tools/snapshots/
+  Worker desplegado:        bd3b0af8-4e5d-4fa6-9a71-23b8d2051f2e
+  URL:                      https://el-bunker-api.thebunker-admin.workers.dev
+  Health check:             ✅ {"status":"ok","db":true,"auth":false}
+  Secrets en Cloudflare:    ENVIRONMENT, JWT_SECRET
+                            + 1 BASURA: axzDFGm80DuTO4uYm+sGFFwEnT+k+B0SpVdIUr3rrNs=
+                            (delete vía UI de Cloudflare — wrangler secret delete falla con error 10056)
+  D1 (remote):              el-bunker-db, 14 tablas, 2217 filas
+                            ❌ CHECK constraint en drops NO creado (SQLite no soporta ADD CONSTRAINT)
+  Vercel (frontend):        ✅ auto-deploy vía git push origin master (commit cc491af)
+  Tests vitest:             ✅ 12/12
+  Build:                    ✅ 17.03s
+  Lint src/:                7 errores (todos pre-existentes en worker.js — Cloudflare globals)
 
 ═══════════════════════════════════════════════════════════════════
- PASO 3 — DEPLOY WORKER (Cloudflare Workers + D1 + R2)
+ ✅ VERIFICACIÓN DE ENDPOINTS (auth check funcionando)
 ═══════════════════════════════════════════════════════════════════
 
-  # Subir el worker con los security fixes (V1-V11)
-  npx wrangler deploy
+  Todos los endpoints sensibles devuelven 401 sin Authorization Bearer:
+    GET    /api/tracks       → 401 ✅
+    GET    /api/events       → 401 ✅
+    GET    /api/playlists    → 401 ✅
+    GET    /api/drops        → 401 ✅
+    GET    /api/entries      → 401 ✅
+    GET    /api/eras         → 401 ✅
+    GET    /api/queue/edu    → 401 ✅
+    POST   /api/tracks       → 401 ✅
+    PATCH  /api/tracks/:id   → 401 ✅
+    DELETE /api/tracks/:id   → 401 ✅
+    OPTIONS (CORS preflight) → 200 ✅
 
-  # Salida esperada:
-  #   ✅ Deployed el-bunker-api (xx.xxs)
-  #   https://el-bunker-api.thebunker-admin.workers.dev
-
-  # Verificar que responde:
-  curl https://el-bunker-api.thebunker-admin.workers.dev/api/health
-
-  # Debe devolver: {"status":"ok","db":true,"auth":false,...}
-
-═══════════════════════════════════════════════════════════════════
- PASO 4 — SET JWT_SECRET EN PRODUCCIÓN (CRÍTICO — V1 fix)
-═══════════════════════════════════════════════════════════════════
-
-  # ⚠️  Sin esto, el worker rechazará todos los logins en producción
-  #     (V1 fix exige JWT_SECRET en env.ENVIRONMENT === 'production')
-
-  # Generar un secret aleatorio:
-  openssl rand -base64 48
-
-  # Ponerlo como secret en Cloudflare:
-  npx wrangler secret put JWT_SECRET
-  # (pegar el valor generado arriba y pulsar Enter)
-
-  # Configurar ENVIRONMENT=production:
-  # Editar wrangler.toml y añadir en [vars]:
-  #   ENVIRONMENT = "production"
-  # O usar:
-  npx wrangler secret put ENVIRONMENT
-  # (escribir "production" y pulsar Enter)
+  (El test inicial dio un falso positivo de "200 con data" por un
+  resumen alucinado del LLM. Re-test directo con curl confirma 401
+  en TODOS los casos: sin header, con token basura, con cookie falsa.)
 
 ═══════════════════════════════════════════════════════════════════
- PASO 5 — MIGRACIÓN D1 (opcional — V7 schema constraint)
+ 🚨 ACCIONES MANUALES PENDIENTES (3 cosas)
 ═══════════════════════════════════════════════════════════════════
 
-  npx wrangler d1 execute el-bunker-db --command "
-    ALTER TABLE drops ADD CHECK(seen_at <= favorited_at OR seen_at IS NULL OR favorited_at IS NULL);
-  "
+──── PASO A — ELIMINAR SECRET BASURA (manual, vía UI) ────────────
 
-  # Verificar que el constraint se creó:
-  npx wrangler d1 execute el-bunker-db --command "
-    SELECT sql FROM sqlite_master WHERE type='table' AND name='drops';
-  "
+  El comando wrangler falla con error 10056. Hacerlo desde el dashboard:
 
-═══════════════════════════════════════════════════════════════════
- PASO 6 — DEPLOY FRONTEND (Vercel — automático con git push)
-═══════════════════════════════════════════════════════════════════
+  1. Ir a: https://dash.cloudflare.com → Workers & Pages → el-bunker-api
+  2. Settings → Variables → Secrets
+  3. Localizar el secret llamado: axzDFGm80DuTO4uYm+sGFFwEnT+k+B0SpVdIUr3rrNs=
+  4. Click en "Delete" → confirmar
+  5. Verificar que solo quedan 2: ENVIRONMENT y JWT_SECRET
 
-  git push origin master
+──── PASO B — VERIFICAR/RESETEAR JWT_SECRET ─────────────────────
 
-  # Vercel detecta el push y deploya automáticamente.
-  # Verificar en: https://vercel.com/tu-dashboard
+  El primer intento de setear JWT_SECRET falló con "Unknown argument"
+  (el usuario pasó el valor como argumento posicional en vez de
+  interactivamente). Verificar estado actual:
 
-  # URL de producción: https://el-bunker-beige.vercel.app
+    npx wrangler secret list   # debe mostrar JWT_SECRET
 
-═══════════════════════════════════════════════════════════════════
- PASO 7 — SMOKE TEST MANUAL (verificar en el navegador)
-═══════════════════════════════════════════════════════════════════
+  Si JWT_SECRET está VACÍO o no aparece, resetear:
+
+    npx wrangler secret put JWT_SECRET
+    # Pegar valor (generar nuevo con: openssl rand -base64 48)
+    # Pulsar Enter
+
+  ⚠️  Sin JWT_SECRET válido, el login con Google falla en producción
+  (V1 fix S113-W lo exige en env.ENVIRONMENT === 'production').
+
+──── PASO C — SMOKE TEST MANUAL (necesita navegador + cuenta Google) ──
+
+  ⚠️  Yo no tengo Chrome instalado en este entorno.
+  ⚠️  Tienes que hacerlo TÚ en el navegador.
 
   Abrir https://el-bunker-beige.vercel.app y verificar:
 
-  [ ] Login con Google (edu o david) — debe funcionar
-  [ ] MusicLab: reproducir un track — debe sonar desde R2
-  [ ] VAULT: crear una entrada — debe persistir en D1
-  [ ] COLA: añadir/quitar tracks — sin errores
-  [ ] CAPSULES: navegar Timeline + Smoke + TimeCapsules + RECAP
-  [ ] Mini-player visible en VAULT y CAPSULES (G7)
-  [ ] Signout → cierra sesión limpio
-  [ ] Login como el otro usuario → ve sus propios datos (no mezcla)
+  [ ] 1. Login con Google (edu o david) — debe funcionar
+  [ ] 2. MusicLab: click en un track → empieza a sonar desde R2
+  [ ] 3. VAULT: crear una entrada (nota/foto) → debe persistir en D1
+  [ ] 4. COLA: añadir track → quitar track → sin errores en console
+  [ ] 5. CAPSULES: navegar por Timeline + Smoke + TimeCapsules + RECAP
+  [ ] 6. Mini-player visible en VAULT y CAPSULES (overlay inferior)
+  [ ] 7. Signout → cierra sesión limpio (vuelve a LoginScreen)
+  [ ] 8. Login como el otro usuario (si tienes acceso) → ve sus datos
 
-  Abrir Chrome DevTools → Console y verificar:
-  [ ] Sin errores en rojo
-  [ ] Sin warnings de React keys ("Encountered two children with same key")
+  Abrir Chrome DevTools → Console durante el smoke test:
+  [ ] 9. Sin errores en rojo (warnings sobre CORS o React keys son OK si no rompen UX)
+  [ ] 10. Network tab: las llamadas a /api/* devuelven 200 (no 401)
 
-═══════════════════════════════════════════════════════════════════
- PASO 8 — VERIFICACIÓN DE SEGURIDAD (S113-W)
-═══════════════════════════════════════════════════════════════════
-
-  # V2: Queue cross-user protection
-  # Intentar leer la cola de otro usuario sin autenticación:
-  curl -i https://el-bunker-api.thebunker-admin.workers.dev/api/queue/edu
-  # Debe devolver: 401 Unauthorized
-
-  # V11: Rate limiting
-  # Lanzar 15 requests rápidos:
-  for i in $(seq 1 15); do
-    curl -s -o /dev/null -w "%{http_code}\n" \
-      https://el-bunker-api.thebunker-admin.workers.dev/api/health
-  done
-  # Los últimos ~5 deben devolver: 429 Too Many Requests
-
-  # V3/V4: Path traversal y upload prefix validation
-  curl -X POST https://el-bunker-api.thebunker-admin.workers.dev/api/upload \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer TOKEN_VALIDO" \
-    -d '{"prefix":"malicioso","filename":"../../etc/passwd"}'
-  # Debe devolver: 400 Invalid prefix
+  Si algo falla:
+  - Auth: revisar Paso B (JWT_SECRET)
+  - R2 streaming: revisar Cloudflare → R2 → bucket el-bunker-music
+  - Vercel: revisar https://vercel.com/dashboard → Deployments
 
 ═══════════════════════════════════════════════════════════════════
- ROLLBACK (si algo falla)
+ CUANDO TERMINES LOS 3 PASOS MANUALES
+═══════════════════════════════════════════════════════════════════
+
+  Si todo va bien, hacer commit + push del estado actual:
+
+    git add -A
+    git commit -m "chore: S113.5 — verification + DEPLOY.txt updates (no code changes)"
+    git push origin master
+
+  Si encuentras bugs en el smoke test, abrirlos como issues separados
+  y NO commitear hasta resolverlos.
+
+═══════════════════════════════════════════════════════════════════
+ ROLLBACK (si algo crítico falla)
 ═══════════════════════════════════════════════════════════════════
 
   # Revertir worker al despliegue anterior:
   npx wrangler rollback
+  # (o desde Cloudflare Dashboard → Workers → el-bunker-api → Deployments → Rollback)
 
   # Revertir frontend (Vercel):
   # Ir a Vercel Dashboard → Deployments → ... → "Redeploy"
-  # Seleccionar el deployment anterior
+  # Seleccionar el deployment anterior al commit cc491af
 
   # Restaurar D1 desde snapshot:
   bash tools/NUKE_schema.sh     # DROP + CREATE fresh schema
-  cat tools/snapshots/d1_<fecha>.json | \
+  cat tools/snapshots/d1_20260616_051225.json | \
     npx wrangler d1 execute el-bunker-db --command "..."   # re-insertar datos
+
+
+═══════════════════════════════════════════════════════════════════
+ HISTORIAL DE EJECUCIÓN (transcripción literal de Edu)
+═══════════════════════════════════════════════════════════════════
+
+  # wrangler login: cancelado (^C) y segundo intento OK
+  # git add -A + commit cc491af: ✅ 60 files changed, 25572 insertions, 12107 deletions
+  # bash tools/snapshot_d1.sh: ✅ 2217 rows saved
+  # npx wrangler deploy: ✅ 13.69s, Version bd3b0af8-4e5d-4fa6-9a71-23b8d2051f2e
+  # curl /api/health: ⚠️ no se capturó output
+  # npx wrangler secret put JWT_SECRET <valor>: ❌ "Unknown argument"
+  # npx wrangler secret put axzDFGm80DuTO4uYm+sGFFwEnT+k+B0SpVdIUr3rrNs=:
+  #   ✅ Se creó el secret BASURA (valor usado como nombre)
+  # npx wrangler secret put ENVIRONMENT: ✅ "production"
+  # npx wrangler d1 execute ... ALTER TABLE drops ADD CHECK: ❌ SQLITE_ERROR
+  #   (SQLite no soporta ADD CONSTRAINT — paso 5 falló silenciosamente)
+  # npx wrangler d1 execute ... SELECT sql: ✅ (sin CHECK, confirma que no se creó)
+  # git push origin master: ✅ (hecho desde PowerShell, no desde WSL)

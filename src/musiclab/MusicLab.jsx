@@ -9,6 +9,7 @@ import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./Playlis
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, PURPLE_BG, PURPLE_BORDER, stringToColor } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
+import { workerClient } from "../core/WorkerClient";
 
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
@@ -45,7 +46,6 @@ const uuid = () =>
 export default function MusicLab({
   db = null,
   userId = null,
-  jwtToken: _jwtToken = null,
   onAddTrack,
   onEditTrack,
   _onDeleteTrack,
@@ -285,6 +285,8 @@ export default function MusicLab({
   const [queueSearch,     setQueueSearch]     = useState("");
   const [showQueueSearch, setShowQueueSearch] = useState(false);
   const [confirmClearQueue, setConfirmClearQueue] = useState(false);
+  // EC-C3: Bottom sheet para reemplazar vs añadir contexto cuando hay cola manual activa
+  const [contextSheet, setContextSheet] = useState(null); // { plTracks, plName } | null
   // PLIEGO-237: dropdown de sort (antes era un row de 5 botones inline)
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortMenuRef = useRef(null);
@@ -312,16 +314,7 @@ export default function MusicLab({
   const handleDeletePlaylist = async (playlistId) => {
     if (!playlistId) return;
     try {
-      // P0 fix (DEL-PLAYLIST regression): route through Worker API (D1) so
-      // refreshDb no restaure la playlist. Antes solo se llamaba patchDb
-      // (Drive) — D1 seguía teniendo la fila, así que el próximo refreshDb
-      // sobreescribía el estado local con datos stale.
-      // PLIEGO: ver docs/legacy/PLIEGOS_HISTORIAL.md (S83).
-      const res = await fetch(`${API_BASE_ML}/api/playlists/${playlistId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${_jwtToken}` },
-      });
-      if (!res.ok) throw new Error(`deletePlaylist: ${res.status}`);
+      await workerClient.del(`/api/playlists/${playlistId}`);
       // Sincronizar estado local para que coincida con D1.
       await patchDb((prev) => ({
         ...prev,
@@ -338,18 +331,11 @@ export default function MusicLab({
     showToast({ msg: "PLAYLIST ELIMINADA" }, 2500);
   };
 
-  const API_BASE_ML = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
-
-  // S76: Añadir track a playlist vía Worker API (D1) en lugar de Drive
+  // S115-D3: WorkerClient maneja auth — sin API_BASE_ML ni _jwtToken
   const handleSelectPlaylist = async (playlistId) => {
-    if (!pendingTrack || !_jwtToken) return;
+    if (!pendingTrack || !workerClient.hasToken()) return;
     try {
-      const res = await fetch(`${API_BASE_ML}/api/playlists/${playlistId}/tracks`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-        body: JSON.stringify({ track_id: pendingTrack.id }),
-      });
-      if (!res.ok) throw new Error(`addTrack: ${res.status}`);
+      await workerClient.post(`/api/playlists/${playlistId}/tracks`, { track_id: pendingTrack.id });
       // Actualizar estado local inmediatamente
       patchDb((prev) => ({
         ...prev,
@@ -367,17 +353,11 @@ export default function MusicLab({
     finally { setShowPlaylistModal(false); setPendingTrack(null); setShowCreatePlaylist(false); }
   };
 
-  // S76: Crear playlist vía Worker API (D1) en lugar de Drive
+  // S76: Crear playlist vía WorkerClient (D1)
   const handleCreatePlaylist = async (name) => {
-    if (!name?.trim() || !userId || !_jwtToken) return;
+    if (!name?.trim() || !userId || !workerClient.hasToken()) return;
     try {
-      const res = await fetch(`${API_BASE_ML}/api/playlists`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-        body: JSON.stringify({ name: name.trim(), created_by: userId }),
-      });
-      if (!res.ok) throw new Error(`createPlaylist: ${res.status}`);
-      const newPl = await res.json();
+      const newPl = await workerClient.post('/api/playlists', { name: name.trim(), created_by: userId });
       // Actualizar estado local inmediatamente (sin esperar refreshDb)
       patchDb((prev) => ({
         ...prev,
@@ -387,11 +367,7 @@ export default function MusicLab({
         },
       })).catch(() => {});
       if (pendingTrack) {
-        await fetch(`${API_BASE_ML}/api/playlists/${newPl.id}/tracks`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-          body: JSON.stringify({ track_id: pendingTrack.id }),
-        });
+        await workerClient.post(`/api/playlists/${newPl.id}/tracks`, { track_id: pendingTrack.id });
         // Actualizar estado local: track añadido a la nueva playlist
         patchDb((prev) => ({
           ...prev,
@@ -501,15 +477,11 @@ export default function MusicLab({
     }
   };
 
-  // S90: soft delete vía Worker API (deleted_at + deleted_by en D1)
+  // S90: soft delete via WorkerClient
   const handleDeleteTrack = async (trackId) => {
-    if (_jwtToken) {
+    if (workerClient.hasToken()) {
       try {
-        const res = await fetch(`${API_BASE_ML}/api/tracks/${trackId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${_jwtToken}` },
-        });
-        if (!res.ok) throw new Error(`deleteTrack: ${res.status}`);
+        await workerClient.del(`/api/tracks/${trackId}`);
       } catch (e) {
         console.warn("[Búnker] soft-delete track falló:", e);
         showToast({ msg: "NO SE PUDO ELIMINAR" }, 2500);
@@ -613,7 +585,7 @@ export default function MusicLab({
     const from = dragPlIdx.current;
     if (dragInFlight.current) return;
     if (from === null || from === i) return;
-    if (!_jwtToken) return;
+    if (!workerClient.hasToken()) return;
     // B7 fix (S112-B): validar bounds para evitar insertar undefined
     if (from < 0 || from >= dbPlaylists.length || i < 0 || i >= dbPlaylists.length) return;
     dragInFlight.current = true;
@@ -622,12 +594,7 @@ export default function MusicLab({
     const [moved] = next.splice(from, 1);
     next.splice(i, 0, moved);
     try {
-      const res = await fetch(`${API_BASE_ML}/api/playlists/reorder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-        body: JSON.stringify({ playlist_ids: next.map((pl) => pl.id) }),
-      });
-      if (!res.ok) throw new Error(`reorderPlaylists: ${res.status}`);
+      await workerClient.post('/api/playlists/reorder', { playlist_ids: next.map((pl) => pl.id) });
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: next } })).catch(() => {});
     } catch (err) {
       console.warn("[Búnker] reorderPlaylists falló:", err);
@@ -642,21 +609,12 @@ export default function MusicLab({
   const [renamingPlId, setRenamingPlId] = useState(null);
   const [renameVal,    setRenameVal]    = useState("");
   const handleRenamePlaylist = async (plId) => {
-    if (!plId || !_jwtToken) return;
+    if (!plId || !workerClient.hasToken()) return;
     const newName = renameVal.trim();
     if (!newName) { setRenamingPlId(null); return; }
     setRenamingPlId(null);
     try {
-      // RENAME-PLAYLIST regression fix: route through Worker API (D1) so
-      // refreshDb no restaure el nombre viejo. Antes solo se llamaba patchDb
-      // (Drive) — D1 seguía con el nombre anterior. Mirror del patrón
-      // handleDeletePlaylist (S82) / handleDeleteDrop (S83).
-      const res = await fetch(`${API_BASE_ML}/api/playlists/${plId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-        body: JSON.stringify({ name: newName }),
-      });
-      if (!res.ok) throw new Error(`renamePlaylist: ${res.status}`);
+      await workerClient.patch(`/api/playlists/${plId}`, { name: newName });
       // Sincronizar estado local para que coincida con D1.
       await patchDb((prev) => ({
         ...prev,
@@ -679,6 +637,48 @@ export default function MusicLab({
   const handleQueueAdvance = (track) => {
     playTrack(track);
   };
+
+  // EC-C3: Mostrar bottom sheet si hay cola manual activa al pulsar play en playlist.
+  // Si no hay tracks manuales, reemplaza el contexto directamente.
+  const handlePlayPlaylistContext = (plTracks, plName) => {
+    if (!plTracks?.length) return;
+    const hasManual = localQueue.some((t) => t._manual && t.id !== activeTrack?.id);
+    if (hasManual) {
+      setContextSheet({ plTracks, plName });
+    } else {
+      setPlaybackContext(plTracks, plName);
+      setActiveTrack(plTracks[0]);
+      setAutoPlaySignal((n) => n + 1);
+    }
+  };
+
+  // EC-C2: Inyección dinámica — detecta cambios en la playlist activa y añade tracks nuevos.
+  // Corre solo cuando dbPlaylists cambia y hay un queueContextName activo.
+  useEffect(() => {
+    if (!queueContextName) return;
+    const matchingPl = dbPlaylists.find((p) => p.name === queueContextName);
+    if (!matchingPl?.track_ids?.length) return;
+    const currentContextIds = new Set(
+      localQueue.filter((t) => !t._manual).map((t) => t.id)
+    );
+    const newTrackIds = matchingPl.track_ids.filter((id) => !currentContextIds.has(id));
+    if (!newTrackIds.length) return;
+    const newTracks = newTrackIds
+      .map((id) => rawTracks.find((t) => t.id === id))
+      .filter(Boolean);
+    if (!newTracks.length) return;
+    // Inyectar tracks nuevos al final del contexto, después de los existentes
+    setLocalQueue((q) => {
+      const manual = q.filter((t) => t._manual);
+      const context = q.filter((t) => !t._manual);
+      const injected = [...context, ...newTracks.map((t) => ({ ...t, _manual: false }))];
+      return [...manual, ...injected];
+    });
+    console.info(
+      `[Búnker] EC-C2: Inyectados ${newTracks.length} tracks nuevos de "${queueContextName}"`
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbPlaylists, queueContextName]);
 
   // ── Handlers Drops ───────────────────────────────────────
   const handleDropSend = async (dropData) => {
@@ -1001,13 +1001,8 @@ export default function MusicLab({
                                 const insertAt = activeIdxInPl >= 0 ? activeIdxInPl + 1 + queuePos : newIds.length;
                                 newIds.splice(insertAt, 0, track.id);
                                 try {
-                                  if (_jwtToken) {
-                                    const res = await fetch(`${API_BASE_ML}/api/playlists/${activePl.id}/tracks`, {
-                                      method: "PUT",
-                                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-                                      body: JSON.stringify({ track_ids: newIds }),
-                                    });
-                                    if (!res.ok) throw new Error(`insertTrackAt: ${res.status}`);
+                                  if (workerClient.hasToken()) {
+                                    await workerClient.put(`/api/playlists/${activePl.id}/tracks`, { track_ids: newIds });
                                   }
                                   const updated = dbPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
                                   await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
@@ -1480,7 +1475,7 @@ export default function MusicLab({
                             <>
                               {!isEmpty && (
                                 <motion.button whileTap={{ scale: 0.88 }}
-                                  onClick={(e) => { e.stopPropagation(); if (!plTracks.length) return; setPlaybackContext(plTracks, pl.name); setActiveTrack(plTracks[0]); setAutoPlaySignal((n) => n + 1); }}
+                                  onClick={(e) => { e.stopPropagation(); handlePlayPlaylistContext(plTracks, pl.name); }}
                                   style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                   ▶
                                 </motion.button>
@@ -1547,16 +1542,9 @@ export default function MusicLab({
                     onMarkDropSeen?.(dropId, trackMeta);
                   }}
                 onDeleteDrop={async (dropId) => {
-                  if (!dropId || !_jwtToken) return;
+                  if (!dropId || !workerClient.hasToken()) return;
                   try {
-                    // DEL-DROP regression fix (S83): route through Worker API (D1)
-                    // so refreshDb no restaure el drop. Antes solo patchDb (Drive).
-                    // Mirror exacto del patrón de handleDeletePlaylist (S82).
-                    const res = await fetch(`${API_BASE_ML}/api/drops/${dropId}`, {
-                      method: "DELETE",
-                      headers: { Authorization: `Bearer ${_jwtToken}` },
-                    });
-                    if (!res.ok) throw new Error(`deleteDrop: ${res.status}`);
+                    await workerClient.del(`/api/drops/${dropId}`);
                     await patchDb((prev) => ({
                       ...prev,
                       music_lab: {
@@ -1613,18 +1601,9 @@ export default function MusicLab({
                   }
                 }}
                 onRemoveTrack={async (plId, trackId) => {
-                  if (!plId || !trackId || !_jwtToken) return;
+                  if (!plId || !trackId || !workerClient.hasToken()) return;
                   try {
-                    // REMOVE-TRACK-FROM-PLAYLIST fix (S84): mirror exacto del
-                    // DEL-PLAYLIST (S82) y DEL-DROP (S83). Antes solo
-                    // handleEditPlaylist → patchDb (Drive) filtrando el
-                    // track_id — D1 mantenía la fila. Si D1 rechaza, no se
-                    // ejecuta patchDb — estado local intacto.
-                    const res = await fetch(`${API_BASE_ML}/api/playlists/${plId}/tracks/${trackId}`, {
-                      method: "DELETE",
-                      headers: { Authorization: `Bearer ${_jwtToken}` },
-                    });
-                    if (!res.ok) throw new Error(`removeTrackFromPlaylist: ${res.status}`);
+                    await workerClient.del(`/api/playlists/${plId}/tracks/${trackId}`);
                     await patchDb((prev) => ({
                       ...prev,
                       music_lab: {
@@ -1645,7 +1624,7 @@ export default function MusicLab({
                   if (reorderingRef.current) return;
                   reorderingRef.current = true;
                   try {
-                  if (!plId || !_jwtToken) return;
+                  if (!plId || !workerClient.hasToken()) return;
                   // S85d Q17-playlist: capturar previousIds ANTES del PUT
                   // para que el UNDO del toast pueda restaurar el orden
                   // original en D1 (server) y local (patchDb).
@@ -1655,12 +1634,7 @@ export default function MusicLab({
                     // REORDER-TRACKS fix (S84): mismo patrón. Antes solo
                     // patchDb (Drive) — D1 mantenía el orden viejo. PUT
                     // reemplaza todas las posiciones atómicamente.
-                    const res = await fetch(`${API_BASE_ML}/api/playlists/${plId}/tracks`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
-                      body: JSON.stringify({ track_ids: newIds }),
-                    });
-                    if (!res.ok) throw new Error(`reorderPlaylistTracks: ${res.status}`);
+                    await workerClient.put(`/api/playlists/${plId}/tracks`, { track_ids: newIds });
                     await patchDb((prev) => ({
                       ...prev,
                       music_lab: {
@@ -1705,6 +1679,98 @@ export default function MusicLab({
           </motion.span>
         </motion.footer>
       </div>
+
+      {/* EC-C3: Bottom Sheet — Reemplazar vs Añadir contexto */}
+      <AnimatePresence>
+        {contextSheet && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[10000] flex items-end justify-center"
+            style={{ background: "rgba(0,0,0,0.6)" }}
+            onClick={() => setContextSheet(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-md rounded-t-lg pb-6"
+              style={{
+                background: "#0a0a0a",
+                border: `1px solid ${accentColor}33`,
+                borderBottom: "none",
+                fontFamily: FONT_MONO,
+              }}
+            >
+              {/* Swipe handle */}
+              <div className="flex justify-center pt-3 pb-2">
+                <div className="w-10 h-1 rounded-full" style={{ background: `${accentColor}33` }} />
+              </div>
+
+              <div className="flex flex-col gap-3 px-5 pt-3">
+                <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: accentColor, opacity: 0.5 }}>
+                  {contextSheet.plName?.toUpperCase() || "PLAYLIST"}
+                </p>
+                <p className="text-[10px] tracking-widest text-center leading-relaxed" style={{ color: accentColor, opacity: 0.3 }}>
+                  Tienes tracks manuales en la cola. ¿Qué quieres hacer?
+                </p>
+
+                {/* Replace context */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    setPlaybackContext(contextSheet.plTracks, contextSheet.plName);
+                    setActiveTrack(contextSheet.plTracks[0]);
+                    setAutoPlaySignal((n) => n + 1);
+                    setContextSheet(null);
+                  }}
+                  className="w-full py-3 text-xs tracking-[0.35em] uppercase font-bold rounded-sm"
+                  style={{
+                    color: "#0a0a0a",
+                    background: accentColor,
+                    fontFamily: FONT_MONO,
+                    boxShadow: `0 0 16px ${accentColor}33`,
+                  }}
+                >
+                  REEMPLAZAR CONTEXTO
+                </motion.button>
+
+                {/* Append to end */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => {
+                    contextSheet.plTracks.forEach((t) => addToQueue(t));
+                    showToast({ msg: `AÑADIDOS ${contextSheet.plTracks.length} TRACKS A COLA` }, 2500);
+                    setContextSheet(null);
+                  }}
+                  className="w-full py-3 text-xs tracking-[0.35em] uppercase font-bold rounded-sm"
+                  style={{
+                    color: accentColor,
+                    background: `${accentColor}0d`,
+                    border: `1px solid ${accentColor}44`,
+                    fontFamily: FONT_MONO,
+                  }}
+                >
+                  AÑADIR AL FINAL DE LA COLA
+                </motion.button>
+
+                {/* Cancel */}
+                <button
+                  onClick={() => setContextSheet(null)}
+                  className="w-full py-2 text-xs tracking-widest uppercase opacity-40 hover:opacity-70 transition-opacity"
+                  style={{ color: accentColor, fontFamily: FONT_MONO }}
+                >
+                  CANCELAR
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

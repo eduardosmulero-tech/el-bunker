@@ -7,6 +7,7 @@
 import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
+import { workerClient } from "../core/WorkerClient";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
 import { ColorPicker } from "../core/ColorPicker";
@@ -566,9 +567,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
  *   onAddEra         — () => void
  *   onOpenEra        — (era) => void
  */
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
-
-export default function Vault({ db = null, jwtToken = null, onAddEra = () => {}, onOpenEra = () => {} }) {
+export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -616,16 +615,10 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
 
   // G2: crear era vía Worker API
   const handleAddEra = async () => {
-    if (!newEraName.trim() || !jwtToken) return;
+    if (!newEraName.trim() || !workerClient.hasToken()) return;
     setAddingEra(true);
     try {
-      const res = await fetch(`${API_BASE}/api/eras`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-        body: JSON.stringify({ name: newEraName.trim(), color: newEraColor }),
-      });
-      if (!res.ok) throw new Error(`create era: ${res.status}`);
-      const created = await res.json();
+      const created = await workerClient.post('/api/eras', { name: newEraName.trim(), color: newEraColor });
       // Optimistic: añadir al state local
       setNewEraName("");
       setShowAddEra(false);
@@ -1008,8 +1001,7 @@ export default function Vault({ db = null, jwtToken = null, onAddEra = () => {},
             }>
               <VaultGallery
                 entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
-                eras={displayEras}
-                jwtToken={jwtToken}                />
+                eras={displayEras}                />
               </Suspense>
             </ChunkErrorBoundary>
           </div>

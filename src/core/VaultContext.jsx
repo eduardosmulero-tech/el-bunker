@@ -18,31 +18,23 @@ import {
   useRef,
   useMemo,
 } from "react";
-import GoogleDriveService, {
+import {
   initGoogleServices,
   requestAccessToken,
-  restoreToken,  
+  restoreToken,
   signOut,
   isAuthenticated,
   onAuthChange,
-  initDatabase,
-  fetchData,
-  updateData,
-  triggerHeartbeat,
-  // Control de acceso
   resolveUser,
   isAuthorizedEmail,
-  // Bibliotecas
-  addLibrary   as svcAddLibrary,
-  updateLibrary as svcUpdateLibrary,
-  removeLibrary as svcRemoveLibrary,
-  markLibraryHeartbeat as svcMarkLibraryHeartbeat,
   listLibraryContents,
   checkLibraryCapacity,
   _calcLibraryStatus,
+  EMPTY_DB,
 } from "./GoogleDriveService";
 import { setUploadToken } from "./FileUploadService";
 import { setStatsToken } from "./StatsEngine";
+import { workerClient } from "./WorkerClient";
 
 // ─── WORKER API URL ─────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
@@ -124,7 +116,7 @@ export function VaultProvider({ children }) {
   const [pendingDrop,   setPendingDrop]   = useState(null);
   // JWT para Worker API (ADR-024) — persistido en localStorage
   const [jwtToken,      setJwtToken]      = useState(() => {
-    try { return localStorage.getItem("bunker_jwt") || null; }
+    try { return sessionStorage.getItem("bunker_jwt") || null; }
     catch { return null; }
   });
 
@@ -259,7 +251,8 @@ export function VaultProvider({ children }) {
       const { token } = await res.json();
       if (token) {
         setJwtToken(token);
-        localStorage.setItem("bunker_jwt", token);
+        sessionStorage.setItem("bunker_jwt", token);   // S116: sessionStorage (no persiste al cerrar tab)
+        workerClient.setToken(token);
         setUploadToken(token);
         setStatsToken(token);
         console.info("[Búnker] JWT obtenido ✓");
@@ -280,23 +273,19 @@ export function VaultProvider({ children }) {
    * Fetch en paralelo de entries, eras, tracks, tags, playlists, drops.
    * Retorna null si falla (el caller usa Drive JSON como fallback).
    */
-  const _buildDbFromWorker = useCallback(async (token) => {
-    if (!token) return null;
-    const headers = { Authorization: `Bearer ${token}` };
+  // S115-D3: usa workerClient singleton (token via setToken en _fetchJwt)
+  const _buildDbFromWorker = useCallback(async (_token) => {
+    if (!workerClient.hasToken()) return null;
     try {
+      // S115-D3: migrar 7 fetches paralelos a WorkerClient.get()
       const [entries, eras, tracks, tags, playlists, drops, files] = await Promise.all([
-        fetch(`${API_BASE}/api/entries`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`entries ${r.status}`)),
-        fetch(`${API_BASE}/api/eras`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`eras ${r.status}`)),
-        fetch(`${API_BASE}/api/tracks`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`tracks ${r.status}`)),
-        fetch(`${API_BASE}/api/tags`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`tags ${r.status}`)),
-        fetch(`${API_BASE}/api/playlists`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`playlists ${r.status}`)),
-        fetch(`${API_BASE}/api/drops`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`drops ${r.status}`)),
-        // S64 audit: añadir /api/files al export — antes faltaba en el JSON
-        // de backup, así que los file metadata de R2 nunca se capturaban.
-        // S64c: .catch silencia la falla para no tumbar los otros 6 endpoints,
-        // deja warn en consola (breadcrumb de debugging) y files=[] como fallback
-        // hasta el próximo refresh.
-        fetch(`${API_BASE}/api/files`, { headers }).then(r => r.ok ? r.json() : Promise.reject(`files ${r.status}`)).catch((e) => { console.warn("[Búnker] /api/files failed (non-fatal):", e); return []; }),
+        workerClient.get('/api/entries').catch(e => Promise.reject(`entries: ${e.message}`)),
+        workerClient.get('/api/eras').catch(e => Promise.reject(`eras: ${e.message}`)),
+        workerClient.get('/api/tracks').catch(e => Promise.reject(`tracks: ${e.message}`)),
+        workerClient.get('/api/tags').catch(e => Promise.reject(`tags: ${e.message}`)),
+        workerClient.get('/api/playlists').catch(e => Promise.reject(`playlists: ${e.message}`)),
+        workerClient.get('/api/drops').catch(e => Promise.reject(`drops: ${e.message}`)),
+        workerClient.get('/api/files').catch((e) => { console.warn("[Búnker] /api/files failed (non-fatal):", e); return []; }),
       ]);
       const safeParse = (v) => {
         if (typeof v !== "string") return v;
@@ -340,29 +329,17 @@ export function VaultProvider({ children }) {
    * libraries, heartbeat, adventures_start_date.
    * Modifica el objeto db in-place. No lanza — si falla, usa defaults.
    */
-  const _loadDriveComplement = useCallback(async (db) => {
-    try {
-      const driveData = await fetchData();
-      if (driveData) {
-        db.libraries = driveData.libraries ?? [];
-        db.heartbeat = driveData.heartbeat ?? db.heartbeat;
-        db.adventures_start_date = driveData.adventures_start_date ?? db.adventures_start_date;
-        db.schema_version = driveData.schema_version ?? db.schema_version;
-        console.info("[Búnker] Drive complement loaded:", { libraries: db.libraries.length });
-      }
-    } catch (e) {
-      console.warn("[Búnker] Drive complement failed, using defaults:", e.message);
-    }
-    return db;
-  }, []);
+  // _loadDriveComplement ELIMINADO (S115-D5) — D1 es source of truth única.
 
-  // ── Restaurar JWT de localStorage al montar ───────────────
+  // ── S116: Restaurar JWT de sessionStorage al montar ───────
   useEffect(() => {
     const saved = (() => {
-      try { return localStorage.getItem("bunker_jwt") || null; }
+      try { return sessionStorage.getItem("bunker_jwt") || null; }
       catch { return null; }
     })();
     if (saved) {
+      // También inicializar WorkerClient si hay token previo
+      workerClient.setToken(saved);
       setUploadToken(saved);
       setStatsToken(saved);
     }
@@ -408,14 +385,15 @@ export function VaultProvider({ children }) {
       }
 
       if (data) {
-        // Worker OK — cargar complemento de Drive (libraries, heartbeat)
-        await _loadDriveComplement(data);
-        console.info("[Búnker] DB cargada desde Worker API (D1) + Drive complement ✓");
+        // S115-D5: sin _loadDriveComplement — D1 es source of truth única
+        data.libraries = [];
+        data.heartbeat = new Date().toISOString();
+        data.adventures_start_date = new Date().toISOString();
+        console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
       } else {
-        // Worker falló — usar Drive JSON como fallback completo
-        console.info("[Búnker] Worker no disponible, usando Drive JSON como fallback...");
-        data = await initDatabase();
-        console.info("[Búnker] DB cargada desde Drive JSON (fallback) ✓");
+        console.info("[Búnker] Worker no disponible, usando DB vacía como fallback...");
+        data = EMPTY_DB();
+        console.info("[Búnker] DB vacía creada (fallback) ✓");
       }
 
       setDb(data);
@@ -441,7 +419,8 @@ export function VaultProvider({ children }) {
     setUser(null);
     setDb(null);
     setJwtToken(null);
-    localStorage.removeItem("bunker_jwt");
+    sessionStorage.removeItem("bunker_jwt");   // S116: sessionStorage
+    workerClient.clearToken();
     setUploadToken(null);
     setStatsToken(null);
     setDbStatus("OFFLINE");
@@ -476,16 +455,11 @@ export function VaultProvider({ children }) {
     }
   };
 
-  // ── Heartbeat scheduler ───────────────────────────────────
+  // ── Heartbeat scheduler (S115-D5: local-only, no Drive) ──
   const _scheduleHeartbeat = useCallback(() => {
     _clearHeartbeat();
-    hbTimerRef.current = setInterval(async () => {
-      try {
-        await triggerHeartbeat();
-        setLastHeartbeat(new Date().toISOString());
-      } catch (e) {
-        console.warn("[Búnker] Scheduled heartbeat failed:", e);
-      }
+    hbTimerRef.current = setInterval(() => {
+      setLastHeartbeat(new Date().toISOString());
     }, 20 * 60 * 1000);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -499,28 +473,14 @@ export function VaultProvider({ children }) {
 
   useEffect(() => () => _clearHeartbeat(), [_clearHeartbeat]);
 
-  // ── Drop polling global (ERROR 33) ────────────────────────
-  // Detecta drops entrantes independientemente de la ruta activa.
+  // ── Drop polling (S115-D5: local-only, sin Drive) ────────
+  // Detecta drops entrantes del estado local.
   useEffect(() => {
     if (!user || !db) return;
-    const checkDrops = () => {
-      const drops = db?.music_lab?.drops ?? [];
-      const unseen = drops.find((d) => !d.seen && d.to === user.id);
-      if (unseen) setPendingDrop(unseen);
-    };
-    checkDrops();
-    const interval = setInterval(async () => {
-      try {
-        const fresh = await fetchData();
-        const unseen = (fresh?.music_lab?.drops ?? []).find(
-          (d) => !d.seen && d.to === user.id
-        );
-        if (unseen) setPendingDrop(unseen);
-      } catch (e) {
-        console.warn("[Búnker] Drop polling falló silenciosamente:", e);
-      }
-    }, 30 * 1000);
-    return () => clearInterval(interval);
+    const drops = db?.music_lab?.drops ?? [];
+    const unseen = drops.find((d) => !d.seen && d.to === user.id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (unseen) setPendingDrop(unseen);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, db?.music_lab?.drops]);
 
@@ -551,38 +511,25 @@ export function VaultProvider({ children }) {
     if (!isAuthenticated()) return;
     setDbStatus("SYNCING");
     try {
-      // S64: Worker primero, Drive fallback
       let data = null;
       if (jwtToken) {
         data = await _buildDbFromWorker(jwtToken);
       }
-      if (data) {
-        await _loadDriveComplement(data);
-      } else {
-        // Fallback a Drive JSON
-        data = await fetchData();
-        if (jwtToken) {
-          // Intentar mergear Worker data sobre Drive (backward compat)
-          try {
-            const wData = await _buildDbFromWorker(jwtToken);
-            if (wData) {
-              data = { ...data, entries: wData.entries, eras: wData.eras, files: wData.files || [], music_lab: { ...data.music_lab, tracks: wData.music_lab?.tracks, tags: wData.music_lab?.tags, playlists: wData.music_lab?.playlists, drops: wData.music_lab?.drops } };
-            }
-          } catch { /* keep Drive data */ }
-        }
-      }
+      if (!data) data = EMPTY_DB();
+      data.libraries = data.libraries ?? [];
+      data.heartbeat = data.heartbeat ?? new Date().toISOString();
       setDb(data);
-      setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
+      setLastHeartbeat(data.heartbeat);
       setDbStatus("ONLINE");
     } catch (err) {
       console.error("[Búnker] refreshDb failed:", err);
       setDbStatus("ERROR");
     }
-  }, [jwtToken, _buildDbFromWorker, _loadDriveComplement]);
+  }, [jwtToken, _buildDbFromWorker]);
 
   /**
    * patchDb(updater)
-   * Actualización optimista local + persistencia en Drive.
+   * Actualización optimista local-only (S115-D5: sin Drive).
    * updater = (currentDb) => newDb
    */
   const patchDb = useCallback(async (updater) => {
@@ -590,39 +537,15 @@ export function VaultProvider({ children }) {
     setDbStatus("SYNCING");
     try {
       setDb((prev) => updater(prev));
-      // P2.5: Solo escribir campos de Drive (libraries, heartbeat, adventures).
-      // Entries, eras, music_lab.* están en D1 (Worker API) — no contaminar Drive JSON.
-      await updateData((prev) => {
-        const full = updater(prev);
-        return {
-          libraries: full.libraries ?? prev?.libraries ?? [],
-          heartbeat: full.heartbeat ?? prev?.heartbeat ?? new Date().toISOString(),
-          adventures_start_date: full.adventures_start_date ?? prev?.adventures_start_date ?? new Date().toISOString(),
-          schema_version: full.schema_version ?? prev?.schema_version ?? "5.0.0",
-        };
-      });
       setDbStatus("ONLINE");
     } catch (err) {
       console.error("[Búnker] patchDb failed:", err);
-      // S102 — Si es error de red, mantener el estado optimista local
-      // y no forzar refreshDb (que también fallaría offline).
-      if (!navigator.onLine || err?.message?.includes("NetworkError") || err?.message?.includes("Failed to fetch")) {
-        console.warn("[Búnker] Offline — manteniendo estado optimista local");
-        setDbStatus("OFFLINE");
-      } else {
-        setDbStatus("ERROR");
-        await refreshDb();
-      }
+      setDbStatus("ERROR");
     }
-  }, [refreshDb]);
+  }, []);
 
   const heartbeat = useCallback(async () => {
-    try {
-      await triggerHeartbeat();
-      setLastHeartbeat(new Date().toISOString());
-    } catch (e) {
-      console.warn("[Búnker] Manual heartbeat failed:", e);
-    }
+    setLastHeartbeat(new Date().toISOString());
   }, []);
 
   // ── Page Visibility: heartbeat al volver de background ────
@@ -642,13 +565,14 @@ export function VaultProvider({ children }) {
    * addLibrary(data)
    * Añade una biblioteca y actualiza el estado local optimistamente.
    */
+  // S115-D5: local-only, sin Drive
   const addLibrary = useCallback(async (data) => {
-    const newLib = await svcAddLibrary(data);
+    const newLib = { ...data, id: crypto.randomUUID(), created_at: new Date().toISOString(), last_heartbeat_check: new Date().toISOString() };
     setDb((prev) => ({
       ...prev,
       libraries: [...(prev?.libraries ?? []), newLib],
     }));
-    // L1: refrescar capacidad de la nueva biblioteca
+    // L1: refrescar capacidad de la nueva biblioteca (Drive read-only)
     try {
       const info = await checkLibraryCapacity(newLib);
       setLibraryCapacity((prev) => ({ ...prev, [newLib.id]: info }));
@@ -662,11 +586,12 @@ export function VaultProvider({ children }) {
    * updateLibrary(id, patch)
    * Actualiza una biblioteca y sincroniza el estado local.
    */
+  // S115-D5: local-only
   const updateLibrary = useCallback(async (id, patch) => {
-    const updated = await svcUpdateLibrary(id, patch);
+    const updated = { ...patch, id, updated_at: new Date().toISOString() };
     setDb((prev) => ({
       ...prev,
-      libraries: (prev?.libraries ?? []).map((l) => (l.id === id ? updated : l)),
+      libraries: (prev?.libraries ?? []).map((l) => (l.id === id ? { ...l, ...patch, updated_at: new Date().toISOString() } : l)),
     }));
     return updated;
   }, []);
@@ -675,8 +600,8 @@ export function VaultProvider({ children }) {
    * removeLibrary(id)
    * Elimina una biblioteca y limpia su cache de capacidad.
    */
+  // S115-D5: local-only
   const removeLibrary = useCallback(async (id) => {
-    await svcRemoveLibrary(id);
     setDb((prev) => ({
       ...prev,
       libraries: (prev?.libraries ?? []).filter((l) => l.id !== id),
@@ -692,13 +617,14 @@ export function VaultProvider({ children }) {
    * markLibraryHeartbeat(id)
    * El admin confirma que acaba de entrar a la cuenta biblioteca.
    */
+  // S115-D5: local-only — actualiza last_heartbeat_check
   const markLibraryHeartbeat = useCallback(async (id) => {
-    const updated = await svcMarkLibraryHeartbeat(id);
+    const now = new Date().toISOString();
     setDb((prev) => ({
       ...prev,
-      libraries: (prev?.libraries ?? []).map((l) => (l.id === id ? updated : l)),
+      libraries: (prev?.libraries ?? []).map((l) => (l.id === id ? { ...l, last_heartbeat_check: now } : l)),
     }));
-    return updated;
+    return { id, last_heartbeat_check: now };
   }, []);
 
   /**
@@ -722,9 +648,8 @@ export function VaultProvider({ children }) {
     const info = await checkLibraryCapacity(library);
     setLibraryCapacity((prev) => ({ ...prev, [library.id]: info }));
 
-    // Si la biblioteca está casi llena, actualizamos su status a "full" en la DB
+    // Si la biblioteca está casi llena, actualizamos su status a "full" localmente
     if (info.used_pct >= 100) {
-      await svcUpdateLibrary(library.id, { status: "full" });
       setDb((prev) => ({
         ...prev,
         libraries: (prev?.libraries ?? []).map((l) =>
@@ -743,16 +668,9 @@ export function VaultProvider({ children }) {
    * Actualiza una entrada vía Worker API (PATCH /api/entries/:id).
    * Actualiza el estado local optimistamente.
    */
+  // S115-D3: migrado a WorkerClient (sin dependencia de jwtToken explícito)
   const updateEntry = useCallback(async (entryId, patch) => {
-    if (!jwtToken) throw new Error("No JWT token");
-    const res = await fetch(`${API_BASE}/api/entries/${entryId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-      body: JSON.stringify(patch),
-    });
-    if (!res.ok) throw new Error(`updateEntry failed: ${res.status}`);
-    const updated = await res.json();
-    // Actualizar estado local optimistamente
+    const updated = await workerClient.patch(`/api/entries/${entryId}`, patch);
     setDb((prev) => ({
       ...prev,
       entries: (prev?.entries ?? []).map((e) =>
@@ -760,21 +678,16 @@ export function VaultProvider({ children }) {
       ),
     }));
     return updated;
-  }, [jwtToken]);
+  }, []);
 
   /**
    * deleteEntry(entryId)
    * Soft-delete de una entrada vía Worker API (DELETE /api/entries/:id).
    * Actualiza el estado local optimistamente (marca is_deleted).
    */
+  // S115-D3: migrado a WorkerClient
   const deleteEntry = useCallback(async (entryId) => {
-    if (!jwtToken) throw new Error("No JWT token");
-    const res = await fetch(`${API_BASE}/api/entries/${entryId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${jwtToken}` },
-    });
-    if (!res.ok) throw new Error(`deleteEntry failed: ${res.status}`);
-    // Actualizar estado local — marcar como eliminada
+    await workerClient.del(`/api/entries/${entryId}`);
     setDb((prev) => ({
       ...prev,
       entries: (prev?.entries ?? []).map((e) =>
@@ -782,7 +695,7 @@ export function VaultProvider({ children }) {
       ),
     }));
     return { ok: true, id: entryId };
-  }, [jwtToken]);
+  }, []);
 
   // ── Context Value ─────────────────────────────────────────
   const value = {
@@ -856,22 +769,16 @@ export function VaultProvider({ children }) {
           ),
         },
       }));
-      // Persistir en D1 (best-effort, no bloqueante)
-      if (jwtToken) {
-        try {
-          await fetch(`${API_BASE}/api/drops/${dropId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
-            body: JSON.stringify({ seen: 1 }),
-          });
-        } catch (e) {
-          console.warn("[Búnker] clearPendingDrop D1 sync falló:", e);
-        }
+      // S115-D3: persistir en D1 via WorkerClient (best-effort, no bloqueante)
+      try {
+        await workerClient.patch(`/api/drops/${dropId}`, { seen: 1 });
+      } catch (e) {
+        console.warn("[Búnker] clearPendingDrop D1 sync falló:", e);
       }
-    }, [patchDb, jwtToken]),
+    }, [patchDb]),
 
     // Servicio raw para usos avanzados
-    driveService: GoogleDriveService,
+    // S115-D4: GoogleDriveService reducido a solo OAuth + bibliotecas
   };
 
   return (

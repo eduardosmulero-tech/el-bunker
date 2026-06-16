@@ -1,0 +1,52 @@
+# ============================================================
+#  EL BÚNKER — CI Pipeline (S120-QA)
+#  Build + Lint + Test en cada push a master y PR
+# ============================================================
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build & Lint & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint src/ --max-warnings 0
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      - name: Smoke test (Worker health)
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://el-bunker-api.thebunker-admin.workers.dev/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Worker health check failed: HTTP $STATUS"
+            exit 1
+          fi
+          echo "Worker health: OK (HTTP $STATUS)"

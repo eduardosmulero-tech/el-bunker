@@ -33,6 +33,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import { getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
+import { workerClient } from "./WorkerClient";
 const PlayerContext = createContext(null);
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -47,8 +48,6 @@ const MAX_QUEUE_SIZE = 75;
 
 // S78: localStorage keys
 const SESSION_KEY = (uid) => `el_bunker_session_${uid}`;
-
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
 export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtToken = null }) {
   // Resolver acento desde tags de DB primero, fallback a canonicos de tokens.js
@@ -192,14 +191,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // S106 — Gapless: trackea la URL del siguiente track ya precargado para evitar refetch
   const _nextTrackUrlRef = useRef(null);
 
-  // ── Persistencia cola en Drive ────────────────────────────
-  // S76: Fetch queue from Worker API (D1) instead of Drive
+  // ── Persistencia cola en D1 ───────────────────────────────
+  // S115-D3: migrado a WorkerClient
   useEffect(() => {
-    if (!userId || !jwtToken) return;
-    fetch(`${API_BASE}/api/queue/${userId}`, {
-      headers: { Authorization: `Bearer ${jwtToken}` },
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+    if (!userId || !workerClient.hasToken()) return;
+    workerClient.get(`/api/queue/${userId}`)
       .then((items) => {
         if (!Array.isArray(items) || !items.length) return;
         const qt = items
@@ -216,9 +212,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, jwtToken]);
 
-  // S76: Save queue to Worker API (D1) instead of Drive
+  // S76: Save queue to Worker API (D1)
+  // S115-D3: migrado a WorkerClient
   useEffect(() => {
-    if (!userId || !jwtToken) return;
+    if (!userId || !workerClient.hasToken()) return;
     const items = localQueue.map((t) => ({
       track_id: t.id,
       is_manual: t._manual ? 1 : 0,
@@ -228,9 +225,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
      
     setSyncStatus("syncing");
     const timer = setTimeout(() => {
-      fetch(`${API_BASE}/api/queue/${userId}`, {
+      workerClient.fetch(`/api/queue/${userId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items }),
       })
         .then((res) => {
@@ -527,11 +524,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // (que tiene acceso a patchDb). Retorna Promise<boolean> para que el
   // toast pueda mostrar confirmación "ORDEN RESTAURADO" tras éxito.
   const undoPlaylistTracksReorder = useCallback(async (plId, originalTrackIds) => {
-    if (!plId || !Array.isArray(originalTrackIds) || !jwtToken) return false;
+    if (!plId || !Array.isArray(originalTrackIds) || !workerClient.hasToken()) return false;
     try {
-      const res = await fetch(`${API_BASE}/api/playlists/${plId}/tracks`, {
+      const res = await workerClient.fetch(`/api/playlists/${plId}/tracks`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ track_ids: originalTrackIds }),
       });
       if (!res.ok) throw new Error(`undoPlaylistReorder: ${res.status}`);
@@ -540,7 +537,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       console.warn("[Búnker] undoPlaylistReorder falló:", err);
       return false;
     }
-  }, [jwtToken]);
+  }, []);
 
   const playTrack = useCallback((track) => {
     if (!track) return;
@@ -701,7 +698,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     const vibeAccent = resolveVibeAccent(activeTrack.tag);
     // S110: Defender MediaSession contra R2 keys sin resolver (thumbnail → URL absoluta)
     const _msThumb = activeTrack.thumbnail
-      ? (activeTrack.thumbnail.startsWith("http") ? activeTrack.thumbnail : `${API_BASE}/${activeTrack.thumbnail}`)
+      ? (activeTrack.thumbnail.startsWith("http") ? activeTrack.thumbnail : `${import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev"}/${activeTrack.thumbnail}`)
       : null;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: activeTrack.title || "Sin título",

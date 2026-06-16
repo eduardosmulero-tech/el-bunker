@@ -9,6 +9,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../tokens";
+import { workerClient } from "../core/WorkerClient";
 
 const SMOKE_HISTORY_KEY = "el_bunker_smoke_history";
 
@@ -183,6 +184,10 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
   // S73: Session name, history, streaks, vibe-aware
   const [sessionName, setSessionName] = useState("");
   const sessionNameRef = useRef(""); // S73 fix: avoid stale closure in timer callback
+  const sessionIdRef = useRef(null);  // SS-8: correlate start + complete Timeline events
+  const fadeoutNotifiedRef = useRef(false); // SS-7: prevent duplicate pre-fadeout notifications
+  const presetLabelRef = useRef(selectedPreset?.label); // SS-8: capture preset at session start
+  useEffect(() => { presetLabelRef.current = selectedPreset?.label; }, [selectedPreset]);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem(SMOKE_HISTORY_KEY) || "[]"); }
@@ -230,6 +235,17 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     });
   }, []);
 
+  // SS-7: Pre-fadeout notification — 1 minuto antes de que termine el fade-out
+  const notifyPreFadeout = useCallback((name) => {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    new Notification("Smoke Session · 1 minuto restante", {
+      body: `${name || "Sesión sin nombre"} · El volumen empezará a fundirse`,
+      icon: "/manifest-icon-192.png",
+      tag: "smoke-prefade",
+      vibrate: [200, 100, 200],
+    });
+  }, []);
+
   // S73: Notification when session completes
   const notifyComplete = useCallback((name, durationSecs) => {
     if (!("Notification" in window)) return;
@@ -242,6 +258,21 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     } else if (Notification.permission === "default") {
       Notification.requestPermission();
     }
+  }, []);
+
+  // SS-8: Emit event to Timeline (D1 events table)
+  const emitTimelineEvent = useCallback((eventType, name, durationSecs) => {
+    if (!workerClient.hasToken() || !sessionIdRef.current) return;
+    workerClient.post('/api/events', {
+      event_type: eventType,
+      entity_type: 'smoke_session',
+      entity_id: sessionIdRef.current,
+      payload: {
+        name: name || "Sin nombre",
+        duration_secs: durationSecs,
+        preset_label: presetLabelRef.current || "custom",
+      },
+    }).catch((err) => console.debug("[Smoke] Timeline event falló:", err));
   }, []);
 
   const intervalRef   = useRef(null);
@@ -323,7 +354,14 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           // S73: Save to history + notify (use ref for correct name at completion)
           saveToHistory(true, totalSeconds, sessionNameRef.current);
           notifyComplete(sessionNameRef.current, totalSeconds);
+          // SS-8: Emit completed event to Timeline
+          emitTimelineEvent('smoke_session_completed', sessionNameRef.current, totalSeconds);
           return 0;
+        }
+        // SS-7: Pre-fadeout notification at 60s remaining (1 minuto antes del fade-out)
+        if (prev === 60 && !fadeoutNotifiedRef.current) {
+          fadeoutNotifiedRef.current = true;
+          notifyPreFadeout(sessionNameRef.current);
         }
         return prev - 1;
       });
@@ -355,13 +393,18 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
   // ── Reset fade ref when session starts ────────────────────
   const startSession = useCallback(() => {
     fadeStartRef.current = null;
+    fadeoutNotifiedRef.current = false; // SS-7: reset pre-fadeout notification guard
     setOriginalVolume(masterVolume);
     setFadedVolume(masterVolume);
     setIsDone(false);
     setIsRunning(true);
     sessionNameRef.current = sessionName; // S73: capture name at session start
+    presetLabelRef.current = selectedPreset?.label; // SS-8: capture preset at session start
     endTimeRef.current = Date.now() + remaining * 1000;
-  }, [masterVolume, remaining, sessionName]);
+    // SS-8: Generate session ID + emit started event to Timeline
+    sessionIdRef.current = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    emitTimelineEvent('smoke_session_started', sessionName, totalSeconds);
+  }, [masterVolume, remaining, sessionName, totalSeconds, selectedPreset, emitTimelineEvent]);
 
   const pauseSession = useCallback(() => {
     setIsRunning(false);
