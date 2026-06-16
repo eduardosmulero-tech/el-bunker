@@ -355,9 +355,412 @@ const ZoomModal = ({ entry, era, onClose }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════
-//  VAULT GALLERY MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════
+// ─── CINEMA VIEW (S122-A: full-bleed + swipe + Ken Burns + overlay emocional) ──
+const CinemaView = ({ entries, eras, onZoom }) => {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const pauseTimerRef = useRef(null);
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+
+  const safeIdx = ((currentIdx % entries.length) + entries.length) % entries.length;
+  const entry = entries[safeIdx];
+  const era = eras.find(e => e.id === entry.era_id);
+  const imgUrl = getImageUrl(entry);
+  const eraColor = era?.color ?? ACID;
+  const eraName = era?.name ?? "";
+  const dateStr = entry.created_at
+    ? new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
+    : "";
+
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current);
+    setIsPaused(false);
+  };
+
+  const onTouchEnd = (e) => {
+    const dx = (e.changedTouches[0].clientX - (touchStartX.current ?? 0));
+    const dy = (e.changedTouches[0].clientY - (touchStartY.current ?? 0));
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (absDx > 50 && absDx > absDy) {
+      if (dx < -30) setCurrentIdx(i => (i + 1) % entries.length);
+      else if (dx > 30) setCurrentIdx(i => (i - 1 + entries.length) % entries.length);
+    }
+    pauseTimerRef.current = setTimeout(() => setIsPaused(true), 3000);
+  };
+
+  // S122-A fix: hooks deben ejecutarse siempre — guard dentro del effect
+  useEffect(() => {
+    if (!entries.length) return;
+    setIsPaused(false);
+    pauseTimerRef.current = setTimeout(() => setIsPaused(true), 3000);
+    return () => { if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current); };
+  }, [currentIdx, entries.length]);
+
+  return (
+    <div className="flex flex-col items-center gap-3" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {/* Full-bleed image container */}
+      <div className="relative w-full overflow-hidden rounded-sm"
+        style={{ aspectRatio: "4/3", background: `${eraColor}10`, border: `1px solid ${eraColor}33` }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentIdx}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, scale: isPaused ? 1.06 : 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ opacity: { duration: 0.6, ease: "easeInOut" }, scale: { duration: isPaused ? 8 : 0.3, ease: "linear" } }}
+            className="absolute inset-0 flex items-center justify-center">
+            {imgUrl ? (
+              getMediaType(entry) === "video" ? (
+                <video src={imgUrl} controls className="w-full h-full object-contain" />
+              ) : getMediaType(entry) === "audio" ? (
+                <div className="flex flex-col items-center gap-4 p-8">
+                  <span className="text-6xl" style={{ color: eraColor }}>🎵</span>
+                  <audio src={imgUrl} controls className="w-full max-w-sm" />
+                </div>
+              ) : (
+                <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" />
+              )
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <span className="text-6xl opacity-30" style={{ color: eraColor }}>📷</span>
+                {entry.content?.text && (
+                  <p className="text-sm max-w-md text-center px-8 leading-relaxed"
+                    style={{ color: eraColor, fontFamily: FONT_MONO, opacity: 0.7 }}>
+                    {entry.content.text.slice(0, 200)}
+                  </p>
+                )}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+        {isPaused && imgUrl && getMediaType(entry) !== "video" && getMediaType(entry) !== "audio" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="absolute top-3 left-3 text-[9px] px-2 py-0.5 rounded-sm"
+            style={{ background: "rgba(0,0,0,0.5)", color: eraColor, fontFamily: FONT_MONO }}>
+            ◉ CONTEMPLAR
+          </motion.div>
+        )}
+        {currentIdx === 0 && entries.length > 1 && (
+          <motion.div initial={{ opacity: 0.6 }} animate={{ opacity: [0.2, 0.5, 0.2] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+            className="absolute bottom-3 right-3 text-[9px] px-2 py-0.5 rounded-sm"
+            style={{ background: "rgba(0,0,0,0.5)", color: eraColor, fontFamily: FONT_MONO }}>
+            ← DESLIZA →
+          </motion.div>
+        )}
+      </div>
+
+      {/* Emotional overlay */}
+      <motion.div key={`meta-${currentIdx}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        className="w-full px-2 py-3 rounded-sm"
+        style={{ background: `${eraColor}08`, borderTop: `1px solid ${eraColor}22`, fontFamily: FONT_MONO }}>
+        {entry.title && <p className="text-sm font-bold tracking-wide" style={{ color: eraColor }}>"{entry.title}"</p>}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+          <span className="text-[10px] opacity-60" style={{ color: eraColor }}>
+            {entry.from_user === "edu" ? "Edu" : entry.from_user === "david" ? "David" : ""}
+          </span>
+          {dateStr && <span className="text-[10px] opacity-40" style={{ color: eraColor }}>{dateStr}</span>}
+          {eraName && (
+            <span className="text-[9px] px-2 py-0.5 rounded-sm"
+              style={{ background: `${eraColor}18`, color: eraColor, border: `1px solid ${eraColor}33` }}>{eraName}</span>
+          )}
+        </div>
+        {entry.content?.text && (
+          <p className="text-xs mt-2 opacity-50 leading-relaxed line-clamp-2" style={{ color: eraColor }}>{entry.content.text}</p>
+        )}
+        <div className="flex items-center gap-1 mt-2">
+          <span className="text-[9px] opacity-40" style={{ color: eraColor, fontFamily: FONT_MONO }}>
+            {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+          </span>
+        </div>
+      </motion.div>
+
+      {/* Navigation */}
+      <div className="flex items-center gap-4">
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i - 1 + entries.length) % entries.length)}
+          className="text-xl w-10 h-10 flex items-center justify-center rounded-full"
+          style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>
+          ◀
+        </motion.button>
+        <span className="text-xs tabular-nums opacity-50" style={{ color: eraColor, fontFamily: FONT_MONO }}>
+          {safeIdx + 1} / {entries.length}
+        </span>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i + 1) % entries.length)}
+          className="text-xl w-10 h-10 flex items-center justify-center rounded-full"
+          style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>
+          ▶
+        </motion.button>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => onZoom?.(entry)}
+          className="text-sm w-8 h-8 flex items-center justify-center rounded-full"
+          style={{ color: eraColor, border: `1px solid ${eraColor}22`, background: `${eraColor}05` }} title="Ampliar">
+          ⊞
+        </motion.button>
+      </div>
+
+      {era && (
+        <p className="text-[9px] opacity-25 tracking-widest uppercase" style={{ color: eraColor, fontFamily: FONT_MONO }}>
+          ERA {eraName} · CINEMA MODE
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ─── ORIGINAL RENDERS ────────────────────────────────────────
+
+// ─── DIALOGUE VIEW (S122-B: emparejamiento temporal + hilos conectores + asimetría) ──
+const DialogueView = ({ entries, eras }) => {
+  const [filterMode, setFilterMode] = useState("all"); // "all" | "conversations"
+
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+
+  // S122-B: Emparejamiento temporal — fotos tomadas <5min de diferencia
+  const pairs = useMemo(() => {
+    const eduEntries = entries.filter(e => e.from_user === "edu");
+    const davidEntries = entries.filter(e => e.from_user === "david");
+    const result = [];
+    const usedDavid = new Set();
+    for (const edu of eduEntries) {
+      const eduTime = new Date(edu.created_at).getTime();
+      const close = davidEntries.find(d => {
+        if (usedDavid.has(d.id)) return false;
+        const davidTime = new Date(d.created_at).getTime();
+        return Math.abs(eduTime - davidTime) < 5 * 60 * 1000;
+      });
+      if (close) {
+        usedDavid.add(close.id);
+        result.push({ edu, david: close, paired: true });
+      } else {
+        result.push({ edu, david: null, paired: false });
+      }
+    }
+    // Añadir fotos de David sin pareja
+    for (const david of davidEntries) {
+      if (!usedDavid.has(david.id)) {
+        result.push({ edu: null, david, paired: false });
+      }
+    }
+    return { pairs: result, eduCount: eduEntries.length, davidCount: davidEntries.length };
+  }, [entries]);
+
+  const displayPairs = filterMode === "conversations"
+    ? pairs.pairs.filter(p => p.paired)
+    : pairs.pairs;
+
+  // Asimetría
+  const onlyEdu = pairs.eduCount > 0 && pairs.davidCount === 0;
+  const onlyDavid = pairs.davidCount > 0 && pairs.eduCount === 0;
+
+  return (
+    <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span style={{ color: PURPLE }}>♥</span>
+          <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>DIALOGUE</span>
+        </div>
+        <div className="flex gap-1">
+          <button onClick={() => setFilterMode("all")}
+            className="text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest"
+            style={{
+              color: filterMode === "all" ? PURPLE : `${PURPLE}44`,
+              borderBottom: filterMode === "all" ? `1px solid ${PURPLE}` : "1px solid transparent",
+            }}>
+            TODO
+          </button>
+          <button onClick={() => setFilterMode("conversations")}
+            className="text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest"
+            style={{
+              color: filterMode === "conversations" ? PURPLE : `${PURPLE}44`,
+              borderBottom: filterMode === "conversations" ? `1px solid ${PURPLE}` : "1px solid transparent",
+            }}>
+            CONVERSACIONES
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="flex gap-2">
+        <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${ACID}08`, border: `1px solid ${ACID}22` }}>
+          <span className="text-lg block" style={{ color: ACID }}>👤</span>
+          <p className="text-[10px] font-bold mt-1" style={{ color: ACID }}>EDU</p>
+          <p className="text-[9px] opacity-40" style={{ color: ACID }}>{pairs.eduCount} momentos</p>
+        </div>
+        <div className="flex items-center text-lg opacity-30" style={{ color: PURPLE }}>↔</div>
+        <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${PURPLE}08`, border: `1px solid ${PURPLE}22` }}>
+          <span className="text-lg block" style={{ color: PURPLE }}>👤</span>
+          <p className="text-[10px] font-bold mt-1" style={{ color: PURPLE }}>DAVID</p>
+          <p className="text-[9px] opacity-40" style={{ color: PURPLE }}>{pairs.davidCount} momentos</p>
+        </div>
+      </div>
+      <p className="text-[9px] text-center opacity-30" style={{ color: PURPLE }}>
+        {pairs.pairs.filter(p => p.paired).length} conversaciones sincronizadas
+      </p>
+
+      {/* Asimetría poética */}
+      {onlyEdu && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="p-6 rounded-sm text-center" style={{ background: `${ACID}05`, border: `1px dashed ${ACID}22` }}>
+          <span className="text-3xl block mb-3 opacity-50" style={{ color: ACID }}>🎭</span>
+          <p className="text-xs leading-relaxed opacity-40" style={{ color: ACID }}>
+            Solo un eco en la sala — David no capturó este momento.
+          </p>
+        </motion.div>
+      )}
+      {onlyDavid && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="p-6 rounded-sm text-center" style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
+          <span className="text-3xl block mb-3 opacity-50" style={{ color: PURPLE }}>🎭</span>
+          <p className="text-xs leading-relaxed opacity-40" style={{ color: PURPLE }}>
+            Solo un eco en la sala — Edu no capturó este momento.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Paired entries — chat layout */}
+      {!onlyEdu && !onlyDavid && (
+        <div className="flex flex-col gap-4">
+          {displayPairs.map((pair, idx) => {
+            const eraEdu = pair.edu ? eras.find(e => e.id === pair.edu.era_id) : null;
+            const eraDavid = pair.david ? eras.find(e => e.id === pair.david.era_id) : null;
+            const eduImg = pair.edu ? getImageUrl(pair.edu) : null;
+            const davidImg = pair.david ? getImageUrl(pair.david) : null;
+            const sameEra = eraEdu && eraDavid && eraEdu.id === eraDavid.id;
+
+            return (
+              <motion.div key={idx} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                className="flex flex-col gap-2">
+
+                {/* Connecting thread for paired entries */}
+                {pair.paired && (
+                  <div className="flex justify-center">
+                    <motion.div
+                      className="h-8 w-px"
+                      style={{ background: `linear-gradient(${ACID}44, ${PURPLE}44)` }}
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
+                      transition={{ duration: 0.6, delay: idx * 0.05 }}
+                    />
+                    <span className="text-[8px] px-2 opacity-30 self-center" style={{ color: PURPLE }}>
+                      {sameEra ? eraEdu?.name : "—"} · &lt;5min
+                    </span>
+                    <motion.div
+                      className="h-8 w-px"
+                      style={{ background: `linear-gradient(${ACID}44, ${PURPLE}44)` }}
+                      initial={{ scaleY: 0 }}
+                      animate={{ scaleY: 1 }}
+                      transition={{ duration: 0.6, delay: idx * 0.05 }}
+                    />
+                  </div>
+                )}
+
+                {/* Edu bubble (left) */}
+                {pair.edu && (
+                  <div className="flex gap-3 items-start">
+                    <div className="flex-1 flex gap-2 items-start">
+                      <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
+                        style={{ border: `1px solid ${ACID}33` }}>
+                        {eduImg ? (
+                          <img src={eduImg} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}>📷</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="text-[10px] font-bold" style={{ color: ACID }}>EDU</span>
+                          <span className="text-[8px] opacity-30" style={{ color: ACID }}>
+                            {pair.edu.created_at ? new Date(pair.edu.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}
+                          </span>
+                        </div>
+                        {pair.edu.title && (
+                          <p className="text-xs italic opacity-60 line-clamp-2" style={{ color: ACID }}>
+                            "{pair.edu.title}"
+                          </p>
+                        )}
+                        {eraEdu && (
+                          <span className="text-[7px] px-1.5 py-0.5 rounded-sm mt-1 inline-block"
+                            style={{ background: `${eraEdu.color}15`, color: eraEdu.color }}>
+                            {eraEdu.name}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Empty right side for balance */}
+                    <div className="w-12 flex-shrink-0" />
+                  </div>
+                )}
+
+                {/* David bubble (right) */}
+                {pair.david && (
+                  <div className="flex gap-3 items-start justify-end">
+                    <div className="w-12 flex-shrink-0" />
+                    <div className="flex-1 flex gap-2 items-start justify-end">
+                      <div className="flex-1 min-w-0 text-right">
+                        <div className="flex items-center gap-2 justify-end mb-0.5">
+                          <span className="text-[8px] opacity-30" style={{ color: PURPLE }}>
+                            {pair.david.created_at ? new Date(pair.david.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}
+                          </span>
+                          <span className="text-[10px] font-bold" style={{ color: PURPLE }}>DAVID</span>
+                        </div>
+                        {pair.david.title && (
+                          <p className="text-xs italic opacity-60 line-clamp-2" style={{ color: PURPLE }}>
+                            "{pair.david.title}"
+                          </p>
+                        )}
+                        {eraDavid && (
+                          <span className="text-[7px] px-1.5 py-0.5 rounded-sm mt-1 inline-block"
+                            style={{ background: `${eraDavid.color}15`, color: eraDavid.color }}>
+                            {eraDavid.name}
+                          </span>
+                        )}
+                      </div>
+                      <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
+                        style={{ border: `1px solid ${PURPLE}33` }}>
+                        {davidImg ? (
+                          <img src={davidImg} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}>📷</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Solo entry — centered without pair */}
+                {!pair.paired && pair.edu && !pair.david && (
+                  <div className="flex justify-center">
+                    <span className="text-[8px] opacity-15" style={{ color: ACID }}>— sin eco —</span>
+                  </div>
+                )}
+                {!pair.paired && !pair.edu && pair.david && (
+                  <div className="flex justify-center">
+                    <span className="text-[8px] opacity-15" style={{ color: PURPLE }}>— sin eco —</span>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {!displayPairs.length && (
+        <p className="text-xs opacity-20 text-center py-8" style={{ color: PURPLE }}>
+          {filterMode === "conversations" ? "Sin conversaciones sincronizadas" : "Sin momentos aún"}
+        </p>
+      )}
+    </div>
+  );
+};
+
+// ─── ORIGINAL RENDERS ────────────────────────────────────────
 export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _onOpenEntry }) {
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
@@ -442,83 +845,15 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
     </div>
   );
 
-  const renderCinema = () => {
-    if (!filteredEntries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
-    const entry = filteredEntries[currentIdx % filteredEntries.length];
-    const imgUrl = getImageUrl(entry);
-    return (
-      <div className="flex flex-col items-center gap-3">
-        <motion.div key={currentIdx} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-          className="w-full aspect-video flex items-center justify-center overflow-hidden rounded-sm"
-          style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
-          {imgUrl ? (
-            getMediaType(entry) === "video" ? (
-              <video src={imgUrl} controls className="w-full h-full object-contain" />
-            ) : getMediaType(entry) === "audio" ? (
-              <audio src={imgUrl} controls className="w-full" />
-            ) : (
-              <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" />
-            )
-          ) : (
-            <span className="text-6xl opacity-30" style={{ color: ACID }}>📷</span>
-          )}
-        </motion.div>
-        <p className="text-xs tracking-[0.2em] uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>{entry.title || "Sin título"}</p>
-        <p className="text-xs opacity-40" style={{ color: ACID, fontFamily: FONT_MONO }}>{entry.content?.text || ""}</p>
-        <div className="flex gap-4">
-          <button onClick={() => setCurrentIdx(i => Math.max(0, i - 1))} className="text-xl" style={{ color: ACID }}>◀</button>
-          <span className="text-xs flex items-center opacity-40" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            {currentIdx + 1}/{filteredEntries.length}
-          </span>
-          <button onClick={() => setCurrentIdx(i => i + 1)} className="text-xl" style={{ color: ACID }}>▶</button>
-        </div>
-      </div>
-    );
-  };
+  // S122-A: CINEMA delegado a componente separado CinemaView (hooks propios, swipe + Ken Burns)
+  const renderCinema = () => (
+    <CinemaView entries={filteredEntries} eras={eras} onZoom={setZoomEntry} />
+  );
 
-  const renderDialogue = () => {
-    const eduPhotos = filteredEntries.filter(e => e.from_user === "edu");
-    const davidPhotos = filteredEntries.filter(e => e.from_user === "david");
-    return (
-      <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
-        <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>♥ DIALOGUE · Perspectiva dual</p>
-        <div className="flex gap-1">
-          <div className="flex-1 p-4 text-center text-xs" style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, color: ACID }}>
-            EDU<br /><span className="opacity-30">{eduPhotos.length} fotos</span>
-          </div>
-          <div className="text-2xl flex items-center opacity-30" style={{ color: ACID }}>↔</div>
-          <div className="flex-1 p-4 text-center text-xs" style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, color: ACID }}>
-            DAVID<br /><span className="opacity-30">{davidPhotos.length} fotos</span>
-          </div>
-        </div>
-        {/* Miniaturas intercaladas */}
-        <div className="flex flex-col gap-2">
-          {eduPhotos.slice(0, 3).map(e => (
-            <div key={e.id} className="flex items-center gap-2 p-2" style={{ background: `${ACID}08`, border: `1px solid ${GLASS_BORDER}` }}>
-              <span className="text-xs font-bold" style={{ color: ACID }}>EDU</span>
-              {getImageUrl(e) ? (
-                <img src={getImageUrl(e)} alt="" className="w-10 h-10 object-cover rounded-sm" />
-              ) : (
-                <span className="text-lg opacity-30">📷</span>
-              )}
-              <span className="text-xs truncate opacity-50" style={{ color: ACID }}>{e.title}</span>
-            </div>
-          ))}
-          {davidPhotos.slice(0, 3).map(e => (
-            <div key={e.id} className="flex items-center gap-2 p-2" style={{ background: `${PURPLE}08`, border: `1px solid ${PURPLE}33` }}>
-              <span className="text-xs font-bold" style={{ color: PURPLE }}>DAVID</span>
-              {getImageUrl(e) ? (
-                <img src={getImageUrl(e)} alt="" className="w-10 h-10 object-cover rounded-sm" />
-              ) : (
-                <span className="text-lg opacity-30">📷</span>
-              )}
-              <span className="text-xs truncate opacity-50" style={{ color: PURPLE }}>{e.title}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  // S122-B: DIALOGUE delegado a componente con emparejamiento temporal + chat layout
+  const renderDialogue = () => (
+    <DialogueView entries={filteredEntries} eras={eras} />
+  );
 
   const renderExhibition = () => (
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
