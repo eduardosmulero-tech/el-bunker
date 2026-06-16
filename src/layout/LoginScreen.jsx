@@ -7,10 +7,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID } from "../tokens";
+import { ACID, PURPLE } from "../tokens";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const PURPLE  = "#d966ff";
 const RED     = "#ff3b3b";
 const BG      = "#050505";
 const FONT    = "'JetBrains Mono', 'Courier New', monospace";

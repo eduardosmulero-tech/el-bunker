@@ -54,6 +54,8 @@ snapshot = {
     "data": {},
 }
 
+failed = 0
+
 for t in tables:
     print(f"  Querying {t}...", flush=True)
     try:
@@ -70,6 +72,7 @@ for t in tables:
         print(f"    WARN: {t} failed: {e}", file=sys.stderr)
         snapshot["data"][t] = []
         snapshot["counts"][t] = None
+        failed += 1
 
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(snapshot, f, indent=2, ensure_ascii=False)

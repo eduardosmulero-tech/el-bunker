@@ -1,0 +1,268 @@
+╔══════════════════════════════════════════════════════════════╗
+║  EL BÚNKER — PASOS MANUALES PENDIENTES                      ║
+║  Generado: 14 Junio 2026 · Post-Fase 9 (S101-S105)          ║
+╚══════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════
+  0. SNAPSHOT PRE-DEPLOY (rollback point)
+═══════════════════════════════════════════════════════════════
+Hacer siempre primero. Si algo rompe, restaurar snapshot.
+
+  cd /mnt/c/Proyectos/el-bunker
+  bash tools/snapshot_d1.sh
+
+Output esperado: tools/snapshots/d1_YYYYMMDD_HHMMSS.json (~3-5 MB)
+Si falla → ABORTAR. No proceder sin rollback.
+
+
+═══════════════════════════════════════════════════════════════
+  1. D1 MIGRATION (sort_order + index — S84)
+═══════════════════════════════════════════════════════════════
+Estos 2 comandos son idempotentes (no rompen si ya existen).
+
+  npx wrangler d1 execute el-bunker-db --remote --command="ALTER TABLE playlists ADD COLUMN sort_order INTEGER DEFAULT 0;"
+
+  npx wrangler d1 execute el-bunker-db --remote --command="CREATE INDEX IF NOT EXISTS idx_playlists_order ON playlists(sort_order, created_at);"
+
+Verificar:
+  npx wrangler d1 execute el-bunker-db --remote --command="PRAGMA table_info(playlists);" | grep sort_order
+  npx wrangler d1 execute el-bunker-db --remote --command="PRAGMA index_list(playlists);" | grep idx_playlists_order
+
+═══════════════════════════════════════════════════════════════
+  2. WORKER DEPLOY
+═══════════════════════════════════════════════════════════════
+El worker.js tiene cambios acumulados de varias sesiones.
+Desplegar desde la raíz del proyecto:
+
+  npx wrangler deploy
+
+Tiempo: 30-60s (propagación Cloudflare global).
+Output esperado: "Published el-bunker-api (X.XX sec)" + URL preview.
+
+═══════════════════════════════════════════════════════════════
+  3. VERIFICAR JWT_SECRET
+═══════════════════════════════════════════════════════════════
+Si nunca has creado el secret, hacerlo ahora:
+
+  npx wrangler secret put JWT_SECRET
+  # (pegar un valor aleatorio largo, ej: openssl rand -base64 32)
+
+Verificar que existe:
+  npx wrangler secret list
+
+═══════════════════════════════════════════════════════════════
+  4. VERIFICACIÓN POST-DEPLOY
+═══════════════════════════════════════════════════════════════
+
+4a. Health check:
+  curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/health
+
+4b. Endpoints nuevos deben devolver 401 (no 404):
+  curl -sS -X POST https://el-bunker-api.thebunker-admin.workers.dev/api/playlists/reorder \
+    -H "Content-Type: application/json" -d '{"playlist_ids":[]}'
+
+  curl -sS -X PATCH https://el-bunker-api.thebunker-admin.workers.dev/api/playlists/test \
+    -H "Content-Type: application/json" -d '{"name":"test"}'
+
+4c. Endpoints de tracks CRUD (S55):
+  curl -sS -X PATCH https://el-bunker-api.thebunker-admin.workers.dev/api/tracks/test \
+    -H "Content-Type: application/json" -d '{"title":"test"}'
+
+  curl -sS -X DELETE https://el-bunker-api.thebunker-admin.workers.dev/api/tracks/test
+
+4d. PUT tracks en playlist (S84):
+  curl -sS -X PUT https://el-bunker-api.thebunker-admin.workers.dev/api/playlists/test/tracks \
+    -H "Content-Type: application/json" -d '{"track_ids":[]}'
+
+4e. DELETE track de playlist (S84):
+  curl -sS -X DELETE https://el-bunker-api.thebunker-admin.workers.dev/api/playlists/test/tracks/test
+
+4f. Entries + eras + files + upload + time_capsules (S55-S68):
+  curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/entries
+  curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/eras
+  curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/files
+  curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/time_capsules
+  curl -sS -X POST https://el-bunker-api.thebunker-admin.workers.dev/api/upload \
+    -H "Content-Type: application/json" -d '{}'
+
+═══════════════════════════════════════════════════════════════
+  5. VERIFICACIÓN EN PRODUCCIÓN (frontend)
+═══════════════════════════════════════════════════════════════
+Abrir https://el-bunker-beige.vercel.app con DevTools abierto:
+
+- Console: sin errores rojos
+- Network: /api/playlists/reorder → 200 (con JWT) o 401 (sin JWT)
+- UI: drag&drop de playlists en LISTS tab persiste tras F5
+- UI: eliminar/renombrar playlist persiste tras F5
+- UI: reordenar tracks dentro de playlist persiste tras F5
+- UI: transiciones de tabs (slide direccional) funcionan
+- UI: mini-player visible entre tabs con z-index correcto
+- UI: colores vibe-aware en VAULT y CAPSULES
+
+═══════════════════════════════════════════════════════════════
+  6. ROLLBACK (si algo falla)
+═══════════════════════════════════════════════════════════════
+
+Rollback Worker (Cloudflare Dashboard):
+  Workers & Pages > el-bunker-api > Deployments >
+  "Rollback to this deployment" en la versión anterior
+
+Rollback D1 (Cloudflare Dashboard):
+  D1 > el-bunker-db > Settings > Restore (Time Travel 7d free)
+
+Alternativa manual:
+  git log --oneline -5 workers/worker.js
+  git checkout <commit-anterior> -- workers/worker.js
+  npx wrangler deploy
+  git checkout HEAD -- workers/worker.js
+
+═══════════════════════════════════════════════════════════════
+  REFERENCIAS RÁPIDAS
+═══════════════════════════════════════════════════════════════
+
+Worker URL:    https://el-bunker-api.thebunker-admin.workers.dev
+Frontend URL:  https://el-bunker-beige.vercel.app
+D1 database:   el-bunker-db (795e5e88-6fab-4aa2-a294-d24640a0de05)
+R2 bucket:     el-bunker-music
+Worker name:   el-bunker-api
+Config:        wrangler.toml
+Schema:        workers/schema.sql
+Worker entry:  workers/worker.js (24 endpoints)
+
+Secrets requeridos:
+  JWT_SECRET  —  definir con: npx wrangler secret put JWT_SECRET
+
+Comandos útiles:
+  npx wrangler d1 execute el-bunker-db --remote --command="SELECT COUNT(*) FROM tracks;"
+  npx wrangler d1 execute el-bunker-db --remote --command="SELECT COUNT(*) FROM playlists;"
+  npx wrangler tail el-bunker-api --format=pretty
+  npx wrangler whoami
+
+═══════════════════════════════════════════════════════════════
+  QUÉ CAMBIÓ EN EL WORKER (necesita redeploy)
+═══════════════════════════════════════════════════════════════
+
+S84 — 4 endpoints nuevos:
+  POST /api/playlists/reorder
+  PUT  /api/playlists/:id/tracks
+  DELETE /api/playlists/:id/tracks/:trackId
+  PATCH /api/playlists/:id  (RENAME)
+
+S55 — CRUD tracks + playlists + JWT real (HMAC-SHA256):
+  PATCH  /api/tracks/:id
+  DELETE /api/tracks/:id
+  PATCH  /api/playlists/:id
+  DELETE /api/playlists/:id
+  POST   /api/playlists/:id/tracks
+  POST   /api/auth/login
+
+S56 — CRUD entries + tags:
+  GET/POST/PATCH/DELETE /api/entries
+  PATCH/DELETE /api/tags/:id
+  GET /api/entries?era_id=&type=&from_user=
+
+S57 — Upload R2:
+  POST /api/upload
+  PUT  /api/upload/:key
+
+S62-S63 — VAULT mejorado:
+  GET    /api/entries/:id
+  GET/POST/PATCH/DELETE /api/eras
+  GET    /api/eras/:id
+  GET    /api/files
+
+S68 — Time Capsules:
+  GET/POST /api/time_capsules
+  PATCH    /api/time_capsules/:id
+
+S83 — DEL-DROP fix:
+  DELETE /api/drops/:id
+
+S90 — Soft delete tracks:
+  DELETE /api/tracks/:id (ahora guarda deleted_at + deleted_by)
+
+═══════════════════════════════════════════════════════════════
+
+Tiempo estimado total: ~10 minutos
+  Snapshot: 1 min
+  D1 migration: 1 min
+  Worker deploy: 1 min
+  Verificación: 5 min
+  Smoke test frontend: 2 min
+
+
+-----------
+
+== RESULTADO CONSOLA DE EDU — 14 Junio 2026 18:06 UTC ==
+
+Paso 0 — SNAPSHOT:
+  ✅ 565 rows (3 users, 0 eras, 4 tags, 0 entries, 0 drops, 558 tracks, 0 playlists)
+  Saved: tools/snapshots/d1_20260614_180620.json
+
+Paso 1 — D1 MIGRATION:
+  ALTER TABLE sort_order → ⚠️ duplicate column (ya existía, safe)
+  CREATE INDEX idx_playlists_order → ✅ 0.25ms
+  PRAGMA verify → ✅ sort_order + idx_playlists_order confirmados
+
+Paso 2 — WORKER DEPLOY:
+  ✅ Published el-bunker-api (10.45 sec) — v e0e030a9
+  URL: https://el-bunker-api.thebunker-admin.workers.dev
+
+Paso 3 — JWT_SECRET:
+  ✅ Success! Uploaded secret JWT_SECRET
+
+Paso 4a — HEALTH:
+  ✅ {"status":"ok","db":true,"auth":false}
+
+Paso 4b — Playlist reorder:
+  ✅ 401 Unauthorized (endpoint existe)
+
+Paso 4b — PATCH playlist:
+  ✅ 401 Unauthorized (endpoint existe)
+
+Paso 4c — PATCH track:
+  ✅ 401 Unauthorized (endpoint existe)
+
+Paso 4c — DELETE track:
+  ✅ 401 Unauthorized (endpoint existe)
+
+Paso 4d — PUT tracks en playlist:
+  ✅ 401 Unauthorized (endpoint existe)
+
+Paso 4e — DELETE track de playlist:
+  ⚠️ Sin output — RE-EJECUTAR
+
+Paso 4f — entries/eras/files/time_capsules/upload:
+  🔴 PENDIENTE
+
+Paso 5 — Frontend smoke test:
+  🔴 PENDIENTE
+
+---
+
+PARA TERMINAR (copy-paste):
+
+# 4e — RE-EJECUTAR
+curl -sS -X DELETE https://el-bunker-api.thebunker-admin.workers.dev/api/playlists/test/tracks/test
+
+# 4f — Verificar endpoints restantes (deben devolver 200 o 401, NUNCA 404)
+curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/entries
+curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/eras
+curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/files
+curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/time_capsules
+curl -sS -X POST https://el-bunker-api.thebunker-admin.workers.dev/api/upload -H "Content-Type: application/json" -d '{}'
+
+# 5 — Abrir frontend y verificar
+# https://el-bunker-beige.vercel.app
+# - Console: sin errores rojos
+# - LISTS tab: drag&drop playlists persiste tras F5
+# - Transiciones tabs: slide direccional funciona
+# - Mini-player: visible entre tabs con z-index correcto
+
+edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$ curl -sS -X DELETE https://el-bunker-api.thebunker-admin.workers.dev/api/playlists/test/tracks/test
+{"error":"Unauthorized"}edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$ curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/entries
+[]edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$ curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/eras
+[]edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$ curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/files
+[]edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$ curl -sS https://el-bunker-api.thebunker-admin.workers.dev/api/time_capsules
+[]edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$ curl -sS -X POST https://el-bunker-api.thebunker-admin.workers.dev/api/upload -H "Content-Type: application/json" -d '{}'
+{"error":"Unauthorized"}edu@DESKTOP-8K3U9LA:/mnt/c/Proyectos/el-bunker$

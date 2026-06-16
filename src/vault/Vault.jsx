@@ -11,18 +11,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
 import { ColorPicker } from "../core/ColorPicker";
 import { entryCreated } from "../core/StatsEngine";
-import { ACID } from "../tokens";
+import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 
 // Code splitting: VaultGallery (el componente más pesado, incluye leaflet) se carga lazy
 const VaultGallery = lazy(() => import("./VaultGallery"));
-
-// ─── DESIGN TOKENS ───────────────────────────────────────────
-// ⚠️  Definir antes de DEMO_ERAS — se usa en el array (TDZ)
-const PURPLE      = "#d966ff";
-const GLASS_BG    = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.12)";
-const FONT_MONO   = "'JetBrains Mono', 'Courier New', monospace";
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();

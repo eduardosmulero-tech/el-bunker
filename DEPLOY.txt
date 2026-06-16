@@ -1,0 +1,149 @@
+╔══════════════════════════════════════════════════════════════════╗
+║  EL BÚNKER — DEPLOY DE PRODUCCIÓN (post-S112)                   ║
+║  Última actualización: Junio 2026                               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+ PASO 1 — SETUP (solo una vez)
+═══════════════════════════════════════════════════════════════════
+
+  # Verificar que wrangler está logueado en Cloudflare
+  npx wrangler login
+
+  # Verificar que estás en la raíz del proyecto y en master
+  cd /mnt/c/proyectos/el-bunker
+  git status
+  git branch                     # debe mostrar *master
+
+  # Si tienes cambios sin commitear, haz commit primero:
+  git add -A
+  git commit -m "chore: S112 — deploy ready (security fixes + token consistency + tests)"
+
+═══════════════════════════════════════════════════════════════════
+ PASO 2 — SNAPSHOT D1 (backup antes de deploy)
+═══════════════════════════════════════════════════════════════════
+
+  bash tools/snapshot_d1.sh
+
+  # Verificar que el snapshot se creó:
+  ls -la tools/snapshots/
+
+═══════════════════════════════════════════════════════════════════
+ PASO 3 — DEPLOY WORKER (Cloudflare Workers + D1 + R2)
+═══════════════════════════════════════════════════════════════════
+
+  # Subir el worker con los security fixes (V1-V11)
+  npx wrangler deploy
+
+  # Salida esperada:
+  #   ✅ Deployed el-bunker-api (xx.xxs)
+  #   https://el-bunker-api.thebunker-admin.workers.dev
+
+  # Verificar que responde:
+  curl https://el-bunker-api.thebunker-admin.workers.dev/api/health
+
+  # Debe devolver: {"status":"ok","db":true,"auth":false,...}
+
+═══════════════════════════════════════════════════════════════════
+ PASO 4 — SET JWT_SECRET EN PRODUCCIÓN (CRÍTICO — V1 fix)
+═══════════════════════════════════════════════════════════════════
+
+  # ⚠️  Sin esto, el worker rechazará todos los logins en producción
+  #     (V1 fix exige JWT_SECRET en env.ENVIRONMENT === 'production')
+
+  # Generar un secret aleatorio:
+  openssl rand -base64 48
+
+  # Ponerlo como secret en Cloudflare:
+  npx wrangler secret put JWT_SECRET
+  # (pegar el valor generado arriba y pulsar Enter)
+
+  # Configurar ENVIRONMENT=production:
+  # Editar wrangler.toml y añadir en [vars]:
+  #   ENVIRONMENT = "production"
+  # O usar:
+  npx wrangler secret put ENVIRONMENT
+  # (escribir "production" y pulsar Enter)
+
+═══════════════════════════════════════════════════════════════════
+ PASO 5 — MIGRACIÓN D1 (opcional — V7 schema constraint)
+═══════════════════════════════════════════════════════════════════
+
+  npx wrangler d1 execute el-bunker-db --command "
+    ALTER TABLE drops ADD CHECK(seen_at <= favorited_at OR seen_at IS NULL OR favorited_at IS NULL);
+  "
+
+  # Verificar que el constraint se creó:
+  npx wrangler d1 execute el-bunker-db --command "
+    SELECT sql FROM sqlite_master WHERE type='table' AND name='drops';
+  "
+
+═══════════════════════════════════════════════════════════════════
+ PASO 6 — DEPLOY FRONTEND (Vercel — automático con git push)
+═══════════════════════════════════════════════════════════════════
+
+  git push origin master
+
+  # Vercel detecta el push y deploya automáticamente.
+  # Verificar en: https://vercel.com/tu-dashboard
+
+  # URL de producción: https://el-bunker-beige.vercel.app
+
+═══════════════════════════════════════════════════════════════════
+ PASO 7 — SMOKE TEST MANUAL (verificar en el navegador)
+═══════════════════════════════════════════════════════════════════
+
+  Abrir https://el-bunker-beige.vercel.app y verificar:
+
+  [ ] Login con Google (edu o david) — debe funcionar
+  [ ] MusicLab: reproducir un track — debe sonar desde R2
+  [ ] VAULT: crear una entrada — debe persistir en D1
+  [ ] COLA: añadir/quitar tracks — sin errores
+  [ ] CAPSULES: navegar Timeline + Smoke + TimeCapsules + RECAP
+  [ ] Mini-player visible en VAULT y CAPSULES (G7)
+  [ ] Signout → cierra sesión limpio
+  [ ] Login como el otro usuario → ve sus propios datos (no mezcla)
+
+  Abrir Chrome DevTools → Console y verificar:
+  [ ] Sin errores en rojo
+  [ ] Sin warnings de React keys ("Encountered two children with same key")
+
+═══════════════════════════════════════════════════════════════════
+ PASO 8 — VERIFICACIÓN DE SEGURIDAD (S113-W)
+═══════════════════════════════════════════════════════════════════
+
+  # V2: Queue cross-user protection
+  # Intentar leer la cola de otro usuario sin autenticación:
+  curl -i https://el-bunker-api.thebunker-admin.workers.dev/api/queue/edu
+  # Debe devolver: 401 Unauthorized
+
+  # V11: Rate limiting
+  # Lanzar 15 requests rápidos:
+  for i in $(seq 1 15); do
+    curl -s -o /dev/null -w "%{http_code}\n" \
+      https://el-bunker-api.thebunker-admin.workers.dev/api/health
+  done
+  # Los últimos ~5 deben devolver: 429 Too Many Requests
+
+  # V3/V4: Path traversal y upload prefix validation
+  curl -X POST https://el-bunker-api.thebunker-admin.workers.dev/api/upload \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer TOKEN_VALIDO" \
+    -d '{"prefix":"malicioso","filename":"../../etc/passwd"}'
+  # Debe devolver: 400 Invalid prefix
+
+═══════════════════════════════════════════════════════════════════
+ ROLLBACK (si algo falla)
+═══════════════════════════════════════════════════════════════════
+
+  # Revertir worker al despliegue anterior:
+  npx wrangler rollback
+
+  # Revertir frontend (Vercel):
+  # Ir a Vercel Dashboard → Deployments → ... → "Redeploy"
+  # Seleccionar el deployment anterior
+
+  # Restaurar D1 desde snapshot:
+  bash tools/NUKE_schema.sh     # DROP + CREATE fresh schema
+  cat tools/snapshots/d1_<fecha>.json | \
+    npx wrangler d1 execute el-bunker-db --command "..."   # re-insertar datos

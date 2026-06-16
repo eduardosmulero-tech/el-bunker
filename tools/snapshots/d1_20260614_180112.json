@@ -1,0 +1,55 @@
+{
+  "_meta": {
+    "snapshot_at": "2026-06-14T16:01:12.643800+00:00",
+    "db_name": "el-bunker-db",
+    "tool": "tools/snapshot_d1.sh",
+    "tables": [
+      "users",
+      "eras",
+      "tags",
+      "entries",
+      "drops",
+      "tracks",
+      "playlists",
+      "files",
+      "entry_tags",
+      "track_tags",
+      "playlist_tracks",
+      "queue_items",
+      "capsule_items",
+      "time_capsules"
+    ]
+  },
+  "counts": {
+    "users": null,
+    "eras": null,
+    "tags": null,
+    "entries": null,
+    "drops": null,
+    "tracks": null,
+    "playlists": null,
+    "files": null,
+    "entry_tags": null,
+    "track_tags": null,
+    "playlist_tracks": null,
+    "queue_items": null,
+    "capsule_items": null,
+    "time_capsules": null
+  },
+  "data": {
+    "users": [],
+    "eras": [],
+    "tags": [],
+    "entries": [],
+    "drops": [],
+    "tracks": [],
+    "playlists": [],
+    "files": [],
+    "entry_tags": [],
+    "track_tags": [],
+    "playlist_tracks": [],
+    "queue_items": [],
+    "capsule_items": [],
+    "time_capsules": []
+  }
+}

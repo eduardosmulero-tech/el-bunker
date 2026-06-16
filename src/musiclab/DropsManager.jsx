@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE } from "../tokens";
-
-const PURPLE_BG     = "rgba(191,0,255,0.04)";
-const PURPLE_BORDER = "rgba(191,0,255,0.2)";
+import { ACID, PURPLE, PURPLE_BG, PURPLE_BORDER } from "../tokens";
 const FONT_MONO     = "'JetBrains Mono', 'Courier New', monospace";
 
 export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, trackDuration = 0 }) => {

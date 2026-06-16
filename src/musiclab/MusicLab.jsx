@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, stringToColor } from "../tokens";
+import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, PURPLE_BG, PURPLE_BORDER, stringToColor } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
 
 import { AudioVisualizer } from "./AudioVisualizer";
@@ -18,10 +18,6 @@ import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const GLASS_BG     = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.12)";
-const PURPLE_BG    = "rgba(191,0,255,0.04)";
-const PURPLE_BORDER= "rgba(191,0,255,0.2)";
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
 // "all" es filtro de UI, nunca en DB (VB2)
@@ -469,10 +465,16 @@ export default function MusicLab({
     return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
   });
 
-  const handleAddTrack = (trackData) => {
-    onAddTrack?.(trackData);
-    setShowAdd(false);
-    showToast({ msg: "TRACK AÑADIDO" }, 2500);
+  const handleAddTrack = async (trackData) => {
+    try {
+      await onAddTrack?.(trackData);
+      showToast({ msg: "TRACK AÑADIDO" }, 2500);
+    } catch (err) {
+      console.warn("[Búnker] handleAddTrack error:", err);
+      showToast({ msg: "NO SE PUDO AÑADIR" }, 2500);
+    } finally {
+      setShowAdd(false);
+    }
   };
 
   const handleEditTrack = (trackId) => {
@@ -484,11 +486,19 @@ export default function MusicLab({
     setShowAdd(false);
   };
 
-  const handleSaveEdit = (updatedData) => {
-    onEditTrack?.({ ...editingTrack, ...updatedData });
-    if (activeTrack?.id === editingTrack.id) setActiveTrack((t) => ({ ...t, ...updatedData }));
-    showToast({ msg: "TRACK ACTUALIZADO" }, 2500);
-    setEditingTrack(null);
+  const handleSaveEdit = async (updatedData) => {
+    try {
+      await onEditTrack?.({ ...editingTrack, ...updatedData });
+      if (activeTrack?.id === editingTrack.id) {
+        setActiveTrack((t) => ({ ...t, ...updatedData }));
+      }
+      showToast({ msg: "TRACK ACTUALIZADO" }, 2500);
+    } catch (err) {
+      console.warn("[Búnker] handleSaveEdit error:", err);
+      showToast({ msg: "NO SE PUDO GUARDAR" }, 2500);
+    } finally {
+      setEditingTrack(null);
+    }
   };
 
   // S90: soft delete vía Worker API (deleted_at + deleted_by en D1)
@@ -604,6 +614,8 @@ export default function MusicLab({
     if (dragInFlight.current) return;
     if (from === null || from === i) return;
     if (!_jwtToken) return;
+    // B7 fix (S112-B): validar bounds para evitar insertar undefined
+    if (from < 0 || from >= dbPlaylists.length || i < 0 || i >= dbPlaylists.length) return;
     dragInFlight.current = true;
     dragPlIdx.current = null;
     const next = [...dbPlaylists];
@@ -669,11 +681,17 @@ export default function MusicLab({
   };
 
   // ── Handlers Drops ───────────────────────────────────────
-  const handleDropSend = (dropData) => {
+  const handleDropSend = async (dropData) => {
     const RECIPIENTS = ["edu", "david"];
     const toUserId = RECIPIENTS.find(r => r !== userId) || RECIPIENTS[0];
     const newDrop  = { ...dropData, id: uuid(), from: userId, to: toUserId, seen: false, created_at: new Date().toISOString() };
-    onAddDrop?.(newDrop);
+    try {
+      await onAddDrop?.(newDrop);
+      showToast({ msg: "DROP LANZADO" }, 2500);
+    } catch (err) {
+      console.warn("[Búnker] handleDropSend error:", err);
+      showToast({ msg: "NO SE PUDO ENVIAR DROP" }, 2500);
+    }
   };
 
   // ── Render ───────────────────────────────────────────────
@@ -975,14 +993,29 @@ export default function MusicLab({
                           {activePl && (
                             <motion.button whileTap={{ scale: 0.9 }}
                               title={`Añadir a ${activePl.name} en esta posición`}
+                              // S111: route via PUT /api/playlists/:id/tracks (atomic replace)
+                              // para que refreshDb no restaure el orden viejo de D1.
                               onClick={async () => {
                                 const newIds = [...activePl.track_ids];
                                 const activeIdxInPl = newIds.indexOf(activeTrack?.id);
                                 const insertAt = activeIdxInPl >= 0 ? activeIdxInPl + 1 + queuePos : newIds.length;
                                 newIds.splice(insertAt, 0, track.id);
-                                const updated = dbPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
-                                await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
-                                showToast({ msg: `AÑADIDO A ${activePl.name.toUpperCase()}` }, 2500);
+                                try {
+                                  if (_jwtToken) {
+                                    const res = await fetch(`${API_BASE_ML}/api/playlists/${activePl.id}/tracks`, {
+                                      method: "PUT",
+                                      headers: { "Content-Type": "application/json", Authorization: `Bearer ${_jwtToken}` },
+                                      body: JSON.stringify({ track_ids: newIds }),
+                                    });
+                                    if (!res.ok) throw new Error(`insertTrackAt: ${res.status}`);
+                                  }
+                                  const updated = dbPlaylists.map((p) => p.id === activePl.id ? { ...p, track_ids: newIds } : p);
+                                  await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, playlists: updated } })).catch(() => {});
+                                  showToast({ msg: `AÑADIDO A ${activePl.name.toUpperCase()}` }, 2500);
+                                } catch (err) {
+                                  console.warn("[Búnker] insertTrackAt playlist falló:", err);
+                                  showToast({ msg: "NO SE PUDO AÑADIR" }, 2500);
+                                }
                               }}
                               className="flex-shrink-0 text-xs px-2 py-1 rounded-sm"
                               style={{ color: accentColor, border: `1px solid ${accentColor}44`, background: `${accentColor}12` }}>

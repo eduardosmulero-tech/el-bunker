@@ -8,12 +8,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID } from "../tokens";
+import { ACID, PURPLE } from "../tokens";
 
 const SMOKE_HISTORY_KEY = "el_bunker_smoke_history";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
-const PURPLE  = "#d966ff";
 const RED     = "#ff3b3b";
 const ORANGE  = "#ff6b35";
 const BG      = "#050505";

@@ -841,20 +841,34 @@ export function VaultProvider({ children }) {
 
     // Drops globales (ERROR 33)
     pendingDrop,
-    clearPendingDrop: (dropId) => {
+    // S111: route via PATCH /api/drops/:id so refreshDb no resetea seen=0
+    // y el modal de drop no vuelve a salir. Mismo patrón que onMarkDropSeen.
+    clearPendingDrop: useCallback(async (dropId) => {
       setPendingDrop(null);
-      if (dropId) {
-        patchDb((db) => ({
-          ...db,
-          music_lab: {
-            ...db.music_lab,
-            drops: (db.music_lab?.drops ?? []).map((d) =>
-              d.id === dropId ? { ...d, seen: true } : d
-            ),
-          },
-        }));
+      if (!dropId) return;
+      // Optimistic local update para respuesta UI inmediata
+      patchDb((db) => ({
+        ...db,
+        music_lab: {
+          ...db.music_lab,
+          drops: (db.music_lab?.drops ?? []).map((d) =>
+            d.id === dropId ? { ...d, seen: true } : d
+          ),
+        },
+      }));
+      // Persistir en D1 (best-effort, no bloqueante)
+      if (jwtToken) {
+        try {
+          await fetch(`${API_BASE}/api/drops/${dropId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${jwtToken}` },
+            body: JSON.stringify({ seen: 1 }),
+          });
+        } catch (e) {
+          console.warn("[Búnker] clearPendingDrop D1 sync falló:", e);
+        }
       }
-    },
+    }, [patchDb, jwtToken]),
 
     // Servicio raw para usos avanzados
     driveService: GoogleDriveService,

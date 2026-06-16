@@ -5,6 +5,68 @@
 
 ---
 
+## v2.0.9 — "S111 — Persistencia MusicLab" (14 Junio 2026)
+
+### 🐛 BUGFIX CRÍTICO
+
+- **Track edit no guardaba cambios** (S111 — REPORTADO). `useMusicActions.onEditTrack` solo llamaba `patchDb` (estado local). `refreshDb()` sobreescribía con datos stale de D1 → ediciones "se perdían" al refrescar. Mismo patrón que DEL-PLAYLIST (S82).
+- **4 mutaciones con el mismo bug** auditadas y arregladas de un golpe:
+  - `onAddTrack` → POST /api/tracks (D1 source of truth)
+  - `onEditTrack` → PATCH /api/tracks/:id
+  - `onAddDrop` → POST /api/drops
+  - `onMarkDropSeen` → PATCH /api/drops/:id (endpoint nuevo)
+- **Nuevo endpoint**: `PATCH /api/drops/:id` en worker.js — soporta `seen` (0/1), `favorited` (0/1), `favorited_by`, `memory`, `mood`. Valida existencia con 404.
+
+### 🔧 PATRÓN APLICADO
+
+Mirror exacto de DEL-PLAYLIST/DEL-DROP/RENAME-PLAYLIST (S82-S84):
+1. Worker API call (D1 source of truth)
+2. Si D1 acepta → `patchDb` local
+3. Si D1 rechaza → throw → caller muestra toast "NO SE PUDO..." y deja estado local intacto
+
+### 🛡️ DEFENSIVE
+
+- Fallback offline: si no hay `jwtToken`, persiste local-only con warning en consola
+- UUID generation defensivo (Web Crypto con fallback a `Date.now+random`)
+- Tag/vibe → tag_id mapping para el worker
+
+### 📊 COMMITS (pending)
+
+- _(S111 — pending commit)_
+
+---
+
+## v2.0.8 — "Fase 10 — Playback Premium" (14 Junio 2026)
+
+### 🎵 PLAYBACK
+
+- **Gapless playback** (S106): precarga inmediata (1s) + threshold 50% con safety net. `_nextTrackUrlRef` evita refetch redundante del siguiente track.
+- **7 edge cases corregidos** (S110): null guard en playTrack (P0 crash), state desync en play() rejection, MediaSession artwork resuelve R2 key → URL absoluta, infinite skip loop protegido (max 5 consecutivos), MediaSession play handler con .catch(), restorePosition bounds check, localStorage failures ahora loguean.
+
+### 🎨 VISUALIZADOR
+
+- **Visualizador avanzado por vibe** (S108): 4 presets — gaming→48 barras rápidas, dnb→waveform reactivo, romantiqueo→radial suave, 420_chill→wave lento. Beat detection con flash ring. `fftSize`/`smoothing`/`particleCount`/`speed` por preset.
+
+### 📺 CHROMECAST
+
+- **Chromecast SDK sender** (S109): botón CAST en WinampPlayer. Init con `DEFAULT_MEDIA_RECEIVER_APP_ID`. `startCasting`/`stopCasting`/`castTrackToDevice`. Estado visual: disponible/conectando/conectado.
+
+### 🤖 ANDROID
+
+- **A1 OOM recovery verificado** (S107): estado guardado en localStorage cada 5s con restauración automática. ✅ Sólido.
+- **A4 lockscreen MediaSession verificado** (S107): metadata + artwork + 6 action handlers. ✅
+
+### 🔧 INFRAESTRUCTURA
+
+- **D1 migration:** columnas `deleted_at` + `deleted_by` añadidas a `tracks` en producción.
+- **Worker DELETE /api/tracks/:id:** ahora registra `deleted_at` y `deleted_by` (S110).
+
+### 📊 COMMITS (pending)
+
+- _(S107-S110 — pending commit)_
+
+---
+
 ## v2.0.7 — "Fase 9 — Pulido + UX" (14 Junio 2026)
 
 ### 🎨 UI/UX

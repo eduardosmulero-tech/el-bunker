@@ -14,6 +14,7 @@
 //   shuffle). Son patrones establecidos y funcionales del motor
 //   de reproducción. No refactorizar sin tests.
 
+/* global cast, chrome */
 /* eslint-disable react-hooks/immutability, react-hooks/set-state-in-effect */
 // Las 3 reglas arriba son del react-hooks plugin v6+. En PlayerContext tenemos
 // patrones intencionales y bien documentados que las disparan:
@@ -132,7 +133,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (dur && dur > DURATION_THRESHOLD && pos != null) {
         trackPositionRef.current = { ...trackPositionRef.current, [activeTrack.id]: pos };
         try { localStorage.setItem(SESSION_KEY(userId), JSON.stringify(trackPositionRef.current)); }
-        catch { /* noop */ }
+        catch { console.debug("[Búnker] ⚠ localStorage position save failed (quota?)"); }
       }
     }, 5000);
     return () => clearInterval(interval);
@@ -143,7 +144,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!track?.id) return;
     const savedPos = trackPositionRef.current[track.id];
     if (savedPos && savedPos > 5 && audioRef.current) {
-      audioRef.current.currentTime = savedPos;
+      if (savedPos < (audioRef.current.duration || Infinity)) {
+        audioRef.current.currentTime = savedPos;
+      }
     }
   }, []);
 
@@ -180,6 +183,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const wakeLockRef     = useRef(null);
   // Fase 1.4 — P2: estado de reintentos por error de red
   const _retryRef = useRef({ trackId: null, attempt: 0, timer: null });
+  const _consecutiveSkipRef = useRef(0);  // S110: stop infinite skip loop on corrupt libraries
   // Fase 1.5 — EC-P2: detección de desconexión de red
   const [networkStatus, setNetworkStatus] = useState(() => navigator.onLine ? "online" : "offline");
   const _wasPlayingBeforeOffline = useRef(false);
@@ -244,13 +248,17 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // No hay bifurcación queue/context. Shuffle aleatoriza solo
   // cuando la cola está vacía — nunca reordena posiciones existentes (Q1/Q8/Q9).
   const skip = useCallback((dir, filteredTracks) => {
-    // L1: loop track absoluto — siguiente/anterior → seek inicio del track actual.
-    // La única salida es reproducir otra canción explícitamente.
+    // B1 fix (S112-A): loop track + skip(-1) respeta ADR-009 (3s rule).
+    // Si currentTime >= 3s → seek a 0 (reiniciar track).
+    // Si currentTime < 3s → ir al track anterior vía playHistory.
     if (loopModeRef.current === "track" && activeTrack && audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
-      return;
+      if (dir === 1 || audioRef.current.currentTime >= 3) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => { setIsPlaying(false); });
+        setIsPlaying(true);
+        return;
+      }
+      // dir === -1 && currentTime < 3: fall through to playHistory navigation below
     }
 
     // skip(-1) — navega por historial (Q2)
@@ -328,8 +336,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
     // SH1: shuffle usa orden pre-generado, no random cada vez
     if (shuffle) {
-      // Regenerar orden aleatorio si está vacío
-      if (shuffledListRefStable.current.length === 0) {
+      // B6 fix (S112-B): validar índice antes de acceder.
+      // Si el índice ya sobrepasó la longitud, regenerar orden primero.
+      if (shuffledListRefStable.current.length === 0 || shuffleIndexRefStable.current >= shuffledListRefStable.current.length) {
         // Q3: shuffle solo tracks no escuchados (excluir playHistory)
         const historyIds = new Set(playHistory.map((t) => t.id));
         let remaining = list.filter((t) => t.id !== activeTrack?.id && !historyIds.has(t.id));
@@ -360,7 +369,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     setAutoPlaySignal((n) => n + 1);
   }, [tracks, localQueue, activeTrack, shuffle, playHistory]);
 
-  // refs para evitar stale closures en callbacks de audio nativo
+  // ══ Refs para evitar stale closures en callbacks de audio nativo ══
+  // activeTrackRef: usado por Chromecast + removeFromQueue (B3 fix S112-A)
+  const activeTrackRef = useRef(activeTrack);
+  useEffect(() => { activeTrackRef.current = activeTrack; }, [activeTrack]);
+
   const skipRef     = useRef(null);
   const loopModeRef = useRef("off");
   useEffect(() => { skipRef.current     = skip;     }, [skip]);
@@ -372,6 +385,18 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   useEffect(() => { shuffleIndexRefStable.current = shuffleIndexRef.current; }, [shuffle]);
 
   // ── Handlers cola ─────────────────────────────────────────
+
+  // B3 fix (S112-A): ref para posponer cambio de activeTrack
+  // tras la mutación de cola (setLocalQueue).
+  const _pendingTrackChangeRef = useRef(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- patrón post-commit intencional: corre en cada render, solo actúa si el ref tiene valor
+  useEffect(() => {
+    const next = _pendingTrackChangeRef.current;
+    if (!next) return;
+    _pendingTrackChangeRef.current = null;
+    setActiveTrack(next.track);
+    if (next.autoPlay) setAutoPlaySignal((n) => n + 1);
+  });
 
   // S77 Q6: enforce MAX_QUEUE_SIZE in queue operations
   const enforceQueueLimit = useCallback((q) => {
@@ -386,6 +411,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
   // addToQueue — C4-B: añade al final, _manual:true
   // Returns: "added" | "duplicate" | "limit_reached" (S85c Q6: para toast con sugerencia)
+  // B4 fix (S112-B): force=true con duplicado → eliminar existente antes de añadir
   const addToQueue = useCallback((track, force = false) => {
     if (!track) return "added";
     const isDup = localQueue.some((t) => t.id === track.id);
@@ -394,12 +420,17 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     // pueda mostrar toast con sugerencia de guardar como playlist
     if (localQueue.length >= MAX_QUEUE_SIZE && !force) return "limit_reached";
     setLocalQueue((q) => {
-      const next = enforceQueueLimit([...q, { ...track, _manual: true }]);
+      const base = force ? q.filter((t) => t.id !== track.id) : q;
+      const next = enforceQueueLimit([...base, { ...track, _manual: true }]);
       if (next.length >= MAX_QUEUE_SIZE && q.length < MAX_QUEUE_SIZE) {
         console.warn("[Búnker] ⚠ Cola llena (75 tracks). Considera guardar como playlist.");
       }
       return next;
     });
+    // B5 follow-up (S112-B): limpiar softDeletedIds al re-añadir con force
+    if (force) {
+      setSoftDeletedIds(prev => { const n = new Set(prev); n.delete(track.id); return n; });
+    }
     return "added";
   }, [localQueue, enforceQueueLimit]);
 
@@ -446,36 +477,30 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const [softDeletedIds, setSoftDeletedIds] = useState(() => new Set());
 
   const removeFromQueue = useCallback((trackId, softDelete = true) => {
+    // B3 fix (S112-A): usar activeTrackRef para evitar stale closure.
+    // setActiveTrack ya no se llama dentro del updater de setLocalQueue —
+    // se pospone vía _pendingTrackChangeRef + useEffect post-commit.
     setLocalQueue((q) => {
       if (softDelete) {
         setSoftDeletedIds(prev => new Set([...prev, trackId]));
-        // S85d Q16: Emitir evento para que MusicLab muestre toast persistente
-        // con acción DESHACER. El undoRemoveFromQueue del contexto restaura
-        // el track del soft-delete (no requiere re-fetch de D1).
         try {
           window.dispatchEvent(new CustomEvent("bunker_track_removed_from_queue", {
             detail: { trackId }
           }));
         } catch { /* SSR / no window */ }
-        // Don't skip if active — just mark for UI dimming
         return q;
       }
-      const isActive = activeTrack?.id === trackId;
+      const isActive = activeTrackRef.current?.id === trackId;
       const filtered = q.filter((t) => t.id !== trackId);
       if (isActive) {
         const next = filtered[0] ?? null;
-        if (next) { setActiveTrack(next); setAutoPlaySignal((n) => n + 1); }
-        else setActiveTrack(tracks[0] ?? null);
+        _pendingTrackChangeRef.current = { track: next ?? tracks[0] ?? null, autoPlay: !!next };
       }
       return filtered;
     });
-    // Auto-clear soft delete after 3s
-    setTimeout(() => setSoftDeletedIds(prev => {
-      const next = new Set(prev);
-      next.delete(trackId);
-      return next;
-    }), 3000);
-  }, [activeTrack?.id, tracks]);
+    // B5 fix (S112-B): no auto-limpiar softDeletedIds tras 3s.
+    // La eliminación soft es permanente hasta que el usuario haga UNDO explícito.
+  }, [tracks]);
 
   // S77 Q17: undo soft delete
   const undoRemoveFromQueue = useCallback((trackId) => {
@@ -518,13 +543,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, [jwtToken]);
 
   const playTrack = useCallback((track) => {
+    if (!track) return;
     if (activeTrack?.id === track.id) {
       // BUG-11: tap en track activo → toggle play/pause
       if (isPlaying) {
         audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current?.play().catch(() => {});
+        audioRef.current?.play().catch(() => { setIsPlaying(false); });
         setIsPlaying(true);
       }
       return;
@@ -566,6 +592,93 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // Fase 4.6 T8: pulso sutil cuando el mismo tag suena otra vez
   const [vibePulse, setVibePulse] = useState(0);
 
+  // S109 — Chromecast sender
+  const [castState, setCastState] = useState("unavailable"); // unavailable→available→connecting→connected
+  const [castDeviceName, setCastDeviceName] = useState(null);
+  const castSessionRef = useRef(null);
+
+  // S109 — Init Chromecast SDK (se dispara cuando el SDK llama a __onGCastApiAvailable)
+  useEffect(() => {
+    window.__onGCastApiAvailable = (isAvailable) => {
+      if (!isAvailable) return;
+      try {
+        const ctx = cast.framework.CastContext.getInstance();
+        ctx.setOptions({
+          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+        });
+        setCastState("available");
+        console.info("[Búnker] ▶ Chromecast disponible");
+
+        // Listener de cambios de sesión
+        ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (e) => {
+          switch (e.sessionState) {
+            case cast.framework.SessionState.SESSION_STARTED:
+            case cast.framework.SessionState.SESSION_RESUMED:
+              castSessionRef.current = ctx.getCurrentSession();
+              setCastState("connected");
+              setCastDeviceName(castSessionRef.current?.getCastDevice()?.friendlyName ?? null);
+              // Pausar audio local al conectar
+              audioRef.current?.pause();
+              setIsPlaying(false);
+              // Castear el track activo si hay
+              if (activeTrackRef?.current) castTrackToDevice(activeTrackRef.current);
+              console.info("[Búnker] ▶ Cast conectado:", castSessionRef.current?.getCastDevice()?.friendlyName);
+              break;
+            case cast.framework.SessionState.SESSION_ENDED:
+              castSessionRef.current = null;
+              setCastState("available");
+              setCastDeviceName(null);
+              console.info("[Búnker] ◼ Cast desconectado");
+              break;
+          }
+        });
+      } catch (e) {
+        console.warn("[Búnker] Chromecast init error:", e);
+      }
+    };
+    return () => { delete window.__onGCastApiAvailable; };
+  }, []);
+
+  // S109 — Castear un track al dispositivo conectado
+  const castTrackToDevice = useCallback((track) => {
+    const session = castSessionRef.current;
+    if (!session || !track) return;
+    const url = getStreamUrl(track);
+    if (!url) return;
+    const mediaInfo = new chrome.cast.media.MediaInfo(url, "audio/mpeg");
+    if (track.title) {
+      mediaInfo.metadata = new chrome.cast.media.MusicTrackMediaMetadata();
+      mediaInfo.metadata.title = track.title;
+    }
+    if (track.artist && mediaInfo.metadata) mediaInfo.metadata.artist = track.artist;
+    if (track.thumbnail && mediaInfo.metadata) mediaInfo.metadata.images = [{ url: track.thumbnail }];
+    session.loadMedia(new chrome.cast.media.LoadRequest(mediaInfo)).catch((e) =>
+      console.warn("[Búnker] Cast loadMedia error:", e)
+    );
+  }, []);
+
+  // S109 — Iniciar sesión Cast (abre el picker de dispositivos)
+  const startCasting = useCallback(() => {
+    if (castState !== "available") return;
+    setCastState("connecting");
+    cast.framework.CastContext.getInstance()
+      .requestSession()
+      .catch(() => {
+        setCastState("available"); // usuario canceló o error
+      });
+  }, [castState]);
+
+  // S109 — Finalizar sesión Cast
+  const stopCasting = useCallback(() => {
+    castSessionRef.current?.endSession(true);
+    castSessionRef.current = null;
+    setCastState("available");
+    setCastDeviceName(null);
+  }, []);
+
+  const isCasting = castState === "connected";
+
   // ── Fase 4.5 — VB19: Restaurar vibe al volver de background ──
   const _activeVibeRef = useRef(activeVibe);
   useEffect(() => { _activeVibeRef.current = activeVibe; }, [activeVibe]);
@@ -586,17 +699,21 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!activeTrack) { navigator.mediaSession.metadata = null; return; }
     // Fase 2.1 — M2, M6, M7, M9: Artwork + color de vibe en notificación lockscreen
     const vibeAccent = resolveVibeAccent(activeTrack.tag);
+    // S110: Defender MediaSession contra R2 keys sin resolver (thumbnail → URL absoluta)
+    const _msThumb = activeTrack.thumbnail
+      ? (activeTrack.thumbnail.startsWith("http") ? activeTrack.thumbnail : `${API_BASE}/${activeTrack.thumbnail}`)
+      : null;
     navigator.mediaSession.metadata = new MediaMetadata({
       title: activeTrack.title || "Sin título",
       artist: activeTrack.artist || "El Búnker",
       album: activeTrack.era_id ? `Era ${activeTrack.era_id}` : "Music Lab",
-      artwork: activeTrack.thumbnail
-        ? [{ src: activeTrack.thumbnail, sizes: "512x512", type: "image/jpeg" }]
+      artwork: _msThumb
+        ? [{ src: _msThumb, sizes: "512x512", type: "image/jpeg" }]
         : vibeAccent
           ? [{ src: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="${vibeAccent}"/></svg>`)}`, sizes: "512x512", type: "image/svg+xml" }]
           : [],
     });
-    navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play(); setIsPlaying(true); });
+    navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play()?.catch(() => {}); setIsPlaying(true); });
     navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
     navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
     navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));
@@ -676,9 +793,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         document.body.style.setProperty("--vibe-accent", accent);
       }
     } else {
+      // B2 fix (S112-A): no llamar setActiveVibe(null) aquí — ya es null.
+      // Llamarlo re-dispara el efecto (deps incluyen activeVibe).
+      // La limpieza del vibe en body la maneja el else sin tocar estado.
       document.body.style.transition = "--vibe-accent 1s ease";
       document.body.style.removeProperty("--vibe-accent");
-        setActiveVibe(null);
     }
   }, [activeVibe, resolveVibeAccent]);
 
@@ -758,6 +877,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (_retryRef.current.attempt > MAX_RETRIES) {
       console.warn(`[Búnker] ❌ Fallo de red tras ${MAX_RETRIES} reintentos — saltando:`, activeTrack.title);
       _retryRef.current.attempt = 0;
+      _consecutiveSkipRef.current++;
+      if (_consecutiveSkipRef.current > 5) {
+        console.error("[Búnker] ⛔ Demasiados errores consecutivos — pausando reproducción");
+        setIsPlaying(false);
+        _consecutiveSkipRef.current = 0;
+        return;
+      }
       skipRef.current?.(1);
       return;
     }
@@ -782,6 +908,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
     _retryRef.current.attempt = 0;
     _retryRef.current.trackId = activeTrack?.id ?? null;
+    _consecutiveSkipRef.current = 0;  // S110: resetear contador de skips consecutivos
   }, [activeTrack?.id]);
 
   // Cancelar reintentos pendientes al cambiar de track
@@ -1023,7 +1150,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           savedAt: Date.now(),
         };
         localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-      } catch { /* noop */ }
+      } catch { console.debug("[Búnker] ⚠ localStorage OOM recovery save failed (quota?)"); }
     }, 5000);
     return () => clearInterval(interval);
   }, [userId, activeTrack, localQueue, loopMode, shuffle]);
@@ -1100,6 +1227,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       networkStatus,
       // Fase 4.1 — VB5/4.6-T8: pulso sutil cuando mismo tag suena otra vez
       vibePulse,
+      // S109 — Chromecast
+      castState, startCasting, stopCasting, isCasting, castDeviceName,
       // Shared listening (S82)
       sharedListening: false, setSharedListening: () => {},
     }}>

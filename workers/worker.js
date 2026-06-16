@@ -12,6 +12,21 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+// ═══ S113-W: Rate limiting simple (10 req/s por IP) ════════
+const RATE_LIMIT = new Map(); // IP → { count, resetAt }
+function checkRateLimit(request) {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  const now = Date.now();
+  const entry = RATE_LIMIT.get(ip);
+  if (!entry || now > entry.resetAt) {
+    RATE_LIMIT.set(ip, { count: 1, resetAt: now + 1000 });
+    return true;
+  }
+  if (entry.count >= 10) return false;
+  entry.count++;
+  return true;
+}
+
 function json(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
@@ -68,10 +83,22 @@ const WHITELIST = {
   "dcgdozt@gmail.com": "david",
 };
 
+// V4 fix (S113-W): valid prefixes for upload (module scope — usado por POST y PUT)
+const VALID_UPLOAD_PREFIXES = ["music", "vault/photos", "vault/videos", "vault/docs", "vault/audio"];
+
 async function authenticate(request, env) {
   const auth = request.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;
-  return verifyJWT(auth.slice(7), env.JWT_SECRET || "dev-secret-change-me");
+  // V1 fix (S113-W): exigir JWT_SECRET en producción
+  const secret = env.JWT_SECRET;
+  if (!secret) {
+    if (env.ENVIRONMENT === 'production') {
+      console.error("[Búnker] ⛔ JWT_SECRET no configurado en producción");
+      return null;
+    }
+    return verifyJWT(auth.slice(7), "dev-secret-change-me");
+  }
+  return verifyJWT(auth.slice(7), secret);
 }
 
 // ═══ ROUTER ══════════════════════════════════════════════════
@@ -86,13 +113,16 @@ export default {
     const userId = await authenticate(request, env);
 
     try {
+      // V11 fix (S113-W): rate limiting
+      if (!checkRateLimit(request)) return err("Too many requests", 429);
+
       // ── Health ───────────────────────────────────────────
       if (path === "/api/health") {
         const dbOk = await env.DB.prepare("SELECT 1 as ok").first();
         return json({ status: "ok", db: !!dbOk, auth: !!userId, timestamp: new Date().toISOString() });
       }
 
-      // ── Auth: Login (S55) ────────────────────────────────
+      // V1 fix (S113-W): JWT_SECRET obligatorio en producción
       if (path === "/api/auth/login" && request.method === "POST") {
         const body = await request.json().catch(() => null);
         if (!body?.email || !body?.google_token) return err("email and google_token required", 400);
@@ -102,7 +132,9 @@ export default {
         const gData = await gRes.json();
         const verifiedEmail = gData.email?.toLowerCase();
         if (!WHITELIST[verifiedEmail]) return err("Email not authorized", 403);
-        const token = await signJWT({ sub: WHITELIST[verifiedEmail], email: verifiedEmail }, env.JWT_SECRET || "dev-secret-change-me");
+        const secret = env.JWT_SECRET;
+        if (!secret && env.ENVIRONMENT === 'production') return err("JWT_SECRET not configured", 500);
+        const token = await signJWT({ sub: WHITELIST[verifiedEmail], email: verifiedEmail }, secret || "dev-secret-change-me");
         return json({ token, user: { id: WHITELIST[verifiedEmail], email: verifiedEmail } });
       }
 
@@ -204,8 +236,8 @@ export default {
         const trackId = path.split("/")[3];
         const now = new Date().toISOString();
         await env.DB.prepare(
-          "UPDATE tracks SET is_deleted = 1, updated_at = ?1 WHERE id = ?2"
-        ).bind(now, trackId).run();
+          "UPDATE tracks SET is_deleted = 1, deleted_at = ?1, deleted_by = ?2, updated_at = ?1 WHERE id = ?3"
+        ).bind(now, userId, trackId).run();
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'track',?3)"
         ).bind("track_deleted", userId, trackId).run();
@@ -239,6 +271,47 @@ export default {
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'drop',?3,?4)"
         ).bind("drop_sent", userId, id, JSON.stringify({ to_user: body.to_user||userId, track_id: body.track_id })).run();
         return json({ id, ...body, from_user: userId }, 201);
+      }
+
+      // PATCH /api/drops/:id — S111: mark seen / favorited
+      // El flag `seen` antes era solo local (patchDb sin D1), pero refreshDb
+      // reseteaba seen=0 y el modal de drop volvía a salir. Ahora persiste en D1.
+      // Campos aceptados: seen, favorited, favorited_by, memory, mood.
+      // seen/favorited se normalizan a 0/1 (INTEGER en schema).
+      if (path.startsWith("/api/drops/") && request.method === "PATCH") {
+        if (!userId) return err("Unauthorized", 401);
+        const dropId = path.split("/")[3];
+        if (!dropId) return err("drop id required", 400);
+        const DROP_FIELDS = new Set(["seen", "favorited", "favorited_by", "memory", "mood"]);
+        const body = await request.json().catch(() => ({}));
+        const sets = []; const binds = [];
+        for (const [k, v] of Object.entries(body)) {
+          if (!DROP_FIELDS.has(k)) continue;
+          if (k === "seen" || k === "favorited") {
+            sets.push(`${k} = ?${sets.length + 1}`);
+            binds.push(v ? 1 : 0);
+          } else {
+            sets.push(`${k} = ?${sets.length + 1}`);
+            binds.push(v);
+          }
+        }
+        if (!sets.length) return err("No fields to update", 400);
+        // Validar existencia (404 si el drop no existe)
+        const exists = await env.DB.prepare(
+          "SELECT id FROM drops WHERE id = ?1"
+        ).bind(dropId).first();
+        if (!exists) return err("Drop not found", 404);
+        binds.push(dropId);
+        await env.DB.prepare(
+          `UPDATE drops SET ${sets.join(", ")} WHERE id = ?${binds.length}`
+        ).bind(...binds).run();
+        // Si se está marcando como favorito, fijar favorited_by
+        if (body.favorited && !body.favorited_by) {
+          await env.DB.prepare(
+            "UPDATE drops SET favorited_by = ?1 WHERE id = ?2"
+          ).bind(userId, dropId).run();
+        }
+        return json({ ok: true, id: dropId });
       }
 
       // DELETE /api/drops/:id — DEL-DROP regression fix (S83)
@@ -579,6 +652,11 @@ export default {
       if (path === "/api/entries" && request.method === "POST") {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
+        // V8 fix (S113-W): validar que era_id existe si se proporciona
+        if (body.era_id) {
+          const era = await env.DB.prepare("SELECT id FROM eras WHERE id = ?1").bind(body.era_id).first();
+          if (!era) return err(`Era ${body.era_id} not found`, 400);
+        }
         // S64 audit: aceptar id y timestamps del cliente; respetar from_user si viene
         const id = body.id || crypto.randomUUID();
         const now = body.created_at || new Date().toISOString();
@@ -702,6 +780,8 @@ export default {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json();
         if (!body.name) return err("name required", 400);
+        // V10 fix (S113-W): propietario debe coincidir con el JWT
+        if (body.owner_id && body.owner_id !== userId) return err("Forbidden — owner mismatch", 403);
         // S64 audit: aceptar id y timestamps del cliente
         const id = body.id || crypto.randomUUID();
         const now = body.created_at || new Date().toISOString();
@@ -780,18 +860,21 @@ export default {
       }
 
       // ═══ QUEUE ════════════════════════════════════════════
+      // V2 fix (S113-W): validar queueUser === userId del JWT
       if (path.startsWith("/api/queue/") && request.method === "GET") {
+        if (!userId) return err("Unauthorized", 401);
         const queueUser = path.split("/")[3];
+        if (queueUser !== userId) return err("Forbidden — can only read own queue", 403);
         const { results } = await env.DB.prepare(
           "SELECT * FROM queue_items WHERE user_id = ?1 ORDER BY position"
         ).bind(queueUser).all();
-        // Transformar is_manual (0/1) → _manual (boolean) para frontend
         return json(results.map(r => ({ ...r, _manual: !!r.is_manual })));
       }
 
       if (path.startsWith("/api/queue/") && request.method === "PUT") {
         if (!userId) return err("Unauthorized", 401);
         const queueUser = path.split("/")[3];
+        if (queueUser !== userId) return err("Forbidden — can only write own queue", 403);
         const body = await request.json().catch(() => null);
         if (!body) return err("Invalid JSON body", 400);
         const items = body.items || (body.track_ids || []).map(tid => ({ track_id: tid, is_manual: 1 }));
@@ -812,9 +895,12 @@ export default {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json().catch(() => null);
         if (!body) return err("Invalid JSON body", 400);
+        // V9 fix (S113-W): limitar payload a 4KB
+        const payload = JSON.stringify(body.payload || {});
+        if (payload.length > 4096) return err("Payload too large (max 4KB)", 413);
         await env.DB.prepare(
           "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,?3,?4,?5)"
-        ).bind(body.event_type, userId, body.entity_type||null, body.entity_id||null, JSON.stringify(body.payload||{})).run();
+        ).bind(body.event_type, userId, body.entity_type||null, body.entity_id||null, payload).run();
         return json({ ok: true, event_type: body.event_type }, 201);
       }
 
@@ -846,6 +932,8 @@ export default {
         if (!userId) return err("Unauthorized", 401);
         const body = await request.json().catch(() => null);
         if (!body?.title || !body?.unlock_at) return err("title and unlock_at required", 400);
+        // V5 fix (S113-W): validar que unlock_at sea futuro
+        if (new Date(body.unlock_at) <= new Date()) return err("unlock_at must be in the future", 400);
         const id = crypto.randomUUID();
         await env.DB.prepare(
           `INSERT INTO time_capsules (id, title, description, unlock_at, created_by)
@@ -877,16 +965,17 @@ export default {
         const body = await request.json().catch(() => null);
         if (!body?.prefix || !body?.filename) return err("prefix and filename required", 400);
         // Validar prefix
-        const VALID_PREFIXES = ["music", "vault/photos", "vault/videos", "vault/docs", "vault/audio"];
-        if (!VALID_PREFIXES.includes(body.prefix)) return err(`Invalid prefix. Valid: ${VALID_PREFIXES.join(", ")}`, 400);
-        const r2_key = `${body.prefix}/${crypto.randomUUID()}_${body.filename}`;
+        if (!VALID_UPLOAD_PREFIXES.includes(body.prefix)) return err(`Invalid prefix. Valid: ${VALID_UPLOAD_PREFIXES.join(", ")}`, 400);
+        // V3 fix (S113-W): sanitizar filename contra path traversal
+        const safeFilename = body.filename.replace(/[^a-zA-Z0-9._-]/g, "_").replace(/\.{2,}/g, ".").slice(0, 200);
+        const r2_key = `${body.prefix}/${crypto.randomUUID()}_${safeFilename}`;
         // Guardar referencia en files y devolver r2_key para upload directo
         const fileId = crypto.randomUUID();
         await env.DB.prepare(
           `INSERT INTO files (id, entry_id, track_id, r2_key, r2_bucket, prefix, filename, mime_type, size_bytes, uploaded_by)
            VALUES (?1,?2,?3,?4,'el-bunker-music',?5,?6,?7,?8,?9)`
         ).bind(fileId, body.entry_id||null, body.track_id||null, r2_key,
-               body.prefix, body.filename, body.mime_type||null, body.size_bytes||null, userId).run();
+               body.prefix, safeFilename, body.mime_type||null, body.size_bytes||null, userId).run();
         return json({ r2_key, file_id: fileId }, 201);
       }
 
@@ -895,6 +984,10 @@ export default {
         if (!userId) return err("Unauthorized", 401);
         const r2_key = decodeURIComponent(path.split("/api/upload/")[1]);
         if (!r2_key) return err("r2_key required", 400);
+        // V4 fix (S113-W): validar que r2_key empieza con prefix válido
+        if (!VALID_UPLOAD_PREFIXES.some(p => r2_key.startsWith(p + "/"))) {
+          return err("Forbidden — invalid r2_key prefix", 403);
+        }
         const data = await request.arrayBuffer();
         await env.BUNKER.put(r2_key, data, {
           httpMetadata: { contentType: request.headers.get("Content-Type") || "application/octet-stream" },

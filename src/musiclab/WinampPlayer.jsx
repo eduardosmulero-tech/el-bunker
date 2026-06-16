@@ -56,6 +56,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     masterVolume, setMasterVolume,
     trackVibe,
     vibrate, softDeletedIds, undoRemoveFromQueue,
+    castState, startCasting, stopCasting, isCasting, castDeviceName,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
   // Se resetea al cambiar de track para que el corazón no quede "pegado".
@@ -408,6 +409,30 @@ return () => cancelAnimationFrame(raf);
           )}
         </div>
         <div className="flex gap-2">
+          {/* S109 — Chromecast button */}
+          {castState !== "unavailable" && (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={isCasting ? stopCasting : startCasting}
+              disabled={castState === "connecting"}
+              title={isCasting ? `Cast: ${castDeviceName || "conectado"} — tocar para desconectar` : "Conectar a Chromecast"}
+              aria-label={isCasting ? "Desconectar Chromecast" : "Conectar a Chromecast"}
+              className="text-xs tracking-widest uppercase px-2 py-0.5 rounded-sm flex items-center gap-1.5"
+              style={{
+                color: isCasting ? "#fff" : accentColor,
+                background: isCasting ? "#4285f4" : withAlpha(accentColor, 0.08),
+                border: `1px solid ${isCasting ? "#4285f4" : withAlpha(accentColor, 0.2)}`,
+                fontFamily: FONT_MONO,
+              }}
+            >
+              {castState === "connecting" ? (
+                <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>◌</motion.span>
+              ) : (
+                <span>{isCasting ? "◼" : "◉"}</span>
+              )}
+              <span>{isCasting ? (castDeviceName ?? "CAST") : "CAST"}</span>
+            </motion.button>
+          )}
           <span className="text-xs tracking-widest uppercase px-2 py-0.5 rounded-sm"
             style={{ color: accentColor, background: withAlpha(accentColor, 0.08), border: `1px solid ${withAlpha(accentColor, 0.2)}` }}>
             {vibeConf?.icon} {vibeConf?.label}
@@ -433,7 +458,7 @@ return () => cancelAnimationFrame(raf);
 
       {/* PLIEGO-230: Visualizer opaco — antes rgba(0,0,0,0.4) dejaba ver contenido de abajo */}
       <div className="px-3 pt-3 pb-1" style={{ background: "#0a0a0a" }}>
-        <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} />
+        <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
       </div>
 
       {/* PLIEGO-230: Track info opaco — antes rgba(0,0,0,0.3) colapsaba el texto sobre el fondo */}
