@@ -12,10 +12,15 @@
 ### P1
 ninguno
 
-### Fix reciente (16 Junio)
-| Bug | Fix | Archivo |
-|---|---|---|
-| App stuck en "CARGANDO SERVICIOS..." | CSP frame-src no permitía content.googleapis.com → gapi.client.load() colgaba | index.html |
+### Fix reciente (16 Junio) — 4 bugs CSP/rate-limit encadenados
+| # | Bug | Causa | Fix | Archivo |
+|---|-----|-------|-----|---------|
+| 1 | App clavada en "CARGANDO SERVICIOS..." | CSP `frame-src` no permitía `content.googleapis.com` → `gapi.client.load()` colgaba | +`apis.google.com` + `*.googleapis.com` | index.html |
+| 2 | 0 portadas visibles | CSP `img-src` no incluía `el-bunker-api` | +`el-bunker-api` | index.html |
+| 3 | Algunas portadas sí, otras no | `R2_PUBLIC_BASE` apuntaba a `el-bunker-r2-proxy` (Worker sin binding R2) vs `el-bunker-api` | Unificar a `el-bunker-api` | tokens.js, AddEntryForm.jsx, FileUploadService.js |
+| 4 | Solo las primeras portadas cargaban | Rate limiter (10 req/s) bloqueaba thumbnails más allá de las primeras | R2 serving ANTES del rate limit + `loading="lazy"` en TrackCard | worker.js, TrackCard.jsx |
+| — | `/api/health` 500 | `handleHealth(env, userId)` no coincidía con dispatch `handler(request, env, url, userId)` | Alinear firma a `(_request, env, _url, userId)` | health.js |
+| — | Worker obsoleto | `el-bunker-r2-proxy` sin binding R2 verificado, ya sin referencias | **Eliminado del dashboard** + limpieza CSP/SW/tokens | index.html, sw.js, tokens.js |
 
 ### P2/resto
 
@@ -35,7 +40,7 @@ ninguno
 ✅ 12/12 (vitest + jsdom)
 
 ## Build
-✅ 17.61s · 647 KB JS · 0 errores
+✅ ~2.6s · 0 errores
 
 ---
 
@@ -97,7 +102,6 @@ ninguno
 - **Fase E** (4h): Cierre — smoke test completo + fixes
 
 ## Próximos pasos
-1. **Manual**: commit + push (todo el trabajo acumulado de S114-S120)
-2. **Manual Dashboard**: eliminar secret basura en Cloudflare Workers
-3. **Manual**: `npx wrangler deploy` — desplegar el worker refactorizado
-4. **S121-A**: S1/S2 posición tracks + S4 sin red → estado neutral
+1. `npx vite build` + `npx wrangler deploy` — build + deploy rutinario
+2. **S121-A**: S1/S2 posición tracks + S4 sin red → estado neutral
+3. **S121-B**: Gallery premium — CINEMA, DIALOGUE, EXHIBITION, REEL, MAP
