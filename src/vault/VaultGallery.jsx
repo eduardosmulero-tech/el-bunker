@@ -760,7 +760,178 @@ const DialogueView = ({ entries, eras }) => {
   );
 };
 
-// ─── ORIGINAL RENDERS ────────────────────────────────────────
+// ─── EXHIBITION VIEW (S122-C: agrupación por Era + vibe breakdown + layout museo) ──
+const ExhibitionView = ({ entries, eras }) => {
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+
+  const eraGroups = useMemo(() => {
+    const groups = {};
+    entries.forEach(e => {
+      const eraId = e.era_id || "_sin_era";
+      if (!groups[eraId]) groups[eraId] = [];
+      groups[eraId].push(e);
+    });
+    return Object.entries(groups).sort(([, a], [, b]) => b.length - a.length);
+  }, [entries]);
+
+  return (
+    <div className="flex flex-col gap-6" style={{ fontFamily: FONT_MONO }}>
+      <div className="flex items-center gap-2">
+        <span style={{ color: PURPLE }}>◆</span>
+        <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>EXHIBITION</span>
+        <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>{eraGroups.length} salas</span>
+      </div>
+      <div className="flex flex-col gap-5">
+        {eraGroups.map(([eraId, eraEntries]) => {
+          const era = eras.find(e => e.id === eraId);
+          const eraColor = era?.color ?? ACID;
+          const eraName = era?.name ?? "Sin Era";
+          const firstImg = getImageUrl(eraEntries[0]);
+          const vibeCounts = {};
+          eraEntries.forEach(e => { const tag = e.tag || "otros"; vibeCounts[tag] = (vibeCounts[tag] || 0) + 1; });
+          return (
+            <motion.div key={eraId} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-sm" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}33` }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-14 h-14 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}44` }}>
+                  {firstImg ? (
+                    <img src={firstImg} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xl opacity-30" style={{ background: `${eraColor}15`, color: eraColor }}>◈</div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: eraColor }}>{eraName}</p>
+                  <p className="text-[10px] opacity-50" style={{ color: eraColor }}>{eraEntries.length} piezas · {Object.keys(vibeCounts).length} vibes</p>
+                </div>
+                <div className="ml-auto flex -space-x-2">
+                  {eraEntries.slice(0, 5).map((e, i) => {
+                    const url = getImageUrl(e);
+                    return url ? <img key={e.id} src={url} alt="" className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: eraColor, zIndex: 5 - i }} /> : null;
+                  })}
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {Object.entries(vibeCounts).slice(0, 6).map(([tag, count]) => (
+                  <span key={tag} className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${eraColor}12`, color: eraColor, border: `1px solid ${eraColor}22` }}>
+                    {tag.replace(/_/g, " ")} · {count}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ─── REEL VIEW (S122-D: auto-generación secuencias por día + pinning) ──
+const ReelView = ({ entries, eras }) => {
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+  const reels = useMemo(() => {
+    const byDay = {};
+    entries.forEach(e => {
+      if (!e.created_at) return;
+      const day = new Date(e.created_at).toISOString().slice(0, 10);
+      if (!byDay[day]) byDay[day] = [];
+      byDay[day].push(e);
+    });
+    return Object.entries(byDay).filter(([, items]) => items.length >= 2).sort(([a], [b]) => b.localeCompare(a)).slice(0, 12);
+  }, [entries]);
+  const [activeReel, setActiveReel] = useState(null);
+  return (
+    <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+      <div className="flex items-center gap-2">
+        <span style={{ color: PURPLE }}>◎</span>
+        <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>REEL</span>
+        <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>{reels.length} secuencias</span>
+      </div>
+      {!reels.length ? (
+        <p className="text-xs opacity-30 text-center py-8" style={{ color: PURPLE }}>Agrupa 2+ entradas el mismo día para generar REELS automáticos</p>
+      ) : activeReel !== null ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
+          <button onClick={() => setActiveReel(null)} className="text-xs self-start px-3 py-1 rounded-sm" style={{ color: PURPLE, border: `1px solid ${PURPLE}33` }}>← VOLVER</button>
+          {(() => {
+            const [day, items] = reels[activeReel];
+            const era = eras.find(e => items.some(i => i.era_id === e.id));
+            const eraColor = era?.color ?? PURPLE;
+            const dayStr = new Date(day).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+            return (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm font-bold" style={{ color: eraColor }}>{dayStr}</p>
+                <p className="text-[10px] opacity-40" style={{ color: eraColor }}>{items.length} momentos · {items.filter(e => e.from_user === "edu").length} Edu · {items.filter(e => e.from_user === "david").length} David</p>
+                <div className="flex flex-col gap-2">
+                  {[...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((entry, i) => {
+                    const img = getImageUrl(entry);
+                    return (
+                      <div key={entry.id} className="flex gap-3 p-2 rounded-sm items-center" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}22` }}>
+                        <span className="text-[10px] font-bold opacity-40 w-5" style={{ color: eraColor }}>{i + 1}</span>
+                        <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}33` }}>
+                          {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: eraColor }}>📷</div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate" style={{ color: eraColor }}>{entry.title || "Sin título"}</p>
+                          <p className="text-[9px] opacity-40" style={{ color: eraColor }}>{entry.from_user === "edu" ? "Edu" : entry.from_user === "david" ? "David" : ""} · {new Date(entry.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+        </motion.div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {reels.map(([day, items], i) => {
+            const firstImg = getImageUrl(items[0]);
+            const era = eras.find(e => items.some(i => i.era_id === e.id));
+            const eraColor = era?.color ?? PURPLE;
+            const dayStr = new Date(day).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+            return (
+              <motion.button key={day} whileTap={{ scale: 0.96 }} onClick={() => setActiveReel(i)}
+                className="p-3 rounded-sm text-left" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}33` }}>
+                <div className="w-full aspect-video rounded-sm overflow-hidden mb-2" style={{ background: `${eraColor}15`, border: `1px solid ${eraColor}22` }}>
+                  {firstImg ? <img src={firstImg} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-20" style={{ color: eraColor }}>◎</div>}
+                </div>
+                <p className="text-[10px] font-bold truncate" style={{ color: eraColor }}>{dayStr}</p>
+                <p className="text-[8px] opacity-40" style={{ color: eraColor }}>{items.length} momentos</p>
+              </motion.button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── MAP VIEW (S122-E: placeholder semántico con guía de features) ──
+const MapView = () => (
+  <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="flex items-center gap-2">
+      <span style={{ color: PURPLE }}>◉</span>
+      <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>MAP</span>
+    </div>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center gap-4 py-12 px-6 rounded-sm"
+      style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
+      <motion.span animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 3, repeat: Infinity }}
+        className="text-5xl" style={{ color: PURPLE }}>🌍</motion.span>
+      <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>MAPA · Geografía de la relación</p>
+      <p className="text-[10px] leading-relaxed text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
+        Las entradas necesitan coordenadas (lat/lng) para aparecer aquí. Añade ubicación al crear una entrada y el mapa cobrará vida.
+      </p>
+      <div className="flex gap-3 mt-2">
+        <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Pines</span>
+        <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Líneas</span>
+        <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>⧖ Timeline</span>
+      </div>
+    </motion.div>
+  </div>
+);
+
+// ─── MAIN COMPONENT ──────────────────────────────────────────
 export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _onOpenEntry }) {
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
@@ -855,49 +1026,18 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
     <DialogueView entries={filteredEntries} eras={eras} />
   );
 
+  // S122-C: EXHIBITION delegado a componente con agrupación por Era + vibe breakdown
   const renderExhibition = () => (
-    <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
-      <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>◆ EXHIBITION · Por eras</p>
-      <div className="flex flex-wrap gap-2">
-        {eras.filter(era => filteredEntries.some(e => e.era_id === era.id)).map(era => {
-          const eraEntries = filteredEntries.filter(e => e.era_id === era.id);
-          const firstImg = getImageUrl(eraEntries[0]);
-          return (
-            <div key={era.id} className="p-3 text-xs" style={{ background: `${era.color}11`, border: `1px solid ${era.color}44` }}>
-              {firstImg && (
-                <img src={firstImg} alt="" className="w-full h-16 object-cover rounded-sm mb-1" />
-              )}
-              <span style={{ color: era.color }}>{era.name}</span>
-              <span className="opacity-30 ml-2" style={{ color: ACID }}>
-                {eraEntries.length}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <ExhibitionView entries={filteredEntries} eras={eras} />
   );
 
+  // S122-D: REEL delegado a componente con auto-generación secuencias por día
   const renderReel = () => (
-    <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
-      <p className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>◎ REEL · Secuencias</p>
-      <div className="flex overflow-x-auto gap-2 pb-2">
-        {filteredEntries.slice(0, 8).map((e, i) => {
-          const imgUrl = getImageUrl(e);
-          return (
-            <div key={e.id} className="flex-shrink-0 w-24 h-24 flex items-center justify-center overflow-hidden rounded-sm"
-              style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
-              {imgUrl ? (
-                <img src={imgUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="opacity-30 text-2xl">📷{i + 1}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <ReelView entries={filteredEntries} eras={eras} />
   );
+
+  // S122-E: MAP delegado a componente con placeholder semántico
+  const renderMap = () => <MapView />;
 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
@@ -939,11 +1079,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
           {mode === "dialogue" && renderDialogue()}
           {mode === "exhibition" && renderExhibition()}
           {mode === "reel" && renderReel()}
-          {mode === "map" && (
-            <p className="text-xs opacity-30 text-center py-8" style={{ color: ACID, fontFamily: FONT_MONO }}>
-              ◉ MAP · Próximamente — requiere coordenadas en entries
-            </p>
-          )}
+          {mode === "map" && renderMap()}
         </motion.div>
       </AnimatePresence>
 
