@@ -12,21 +12,28 @@ function withAlpha(color, alpha) {
   return color + hex;
 }
 
-// S108 — Presets de visualizador por vibe
+// ─── VISUALIZER MODES (cycle in fullscreen) ──────────────────
+const ALL_MODES = ["bars", "oscilloscope", "wave", "radial", "vinyl", "tunnel"];
+
+// S108 — Presets de visualizador por vibe (ampliado con modos 2000s)
 const VIBE_PRESETS = {
-  default:   { mode: "bars",   barCount: 32, fftSize: 128, smoothing: 0.82, particleCount: 20, speed: 1.0 },
-  gaming:    { mode: "bars",   barCount: 48, fftSize: 256, smoothing: 0.70, particleCount: 35, speed: 1.4 },
-  dnb:       { mode: "wave",   barCount: 28, fftSize: 256, smoothing: 0.60, particleCount: 40, speed: 1.5 },
-  romantiqueo:{ mode: "radial",barCount: 24, fftSize: 128, smoothing: 0.88, particleCount: 15, speed: 0.7 },
-  "420_chill":{ mode: "wave",  barCount: 20, fftSize: 128, smoothing: 0.90, particleCount: 12, speed: 0.6 },
+  default:     { mode: "bars",         barCount: 32, fftSize: 128, smoothing: 0.82, particleCount: 20, speed: 1.0 },
+  gaming:      { mode: "tunnel",       barCount: 48, fftSize: 256, smoothing: 0.70, particleCount: 35, speed: 1.4 },
+  dnb:         { mode: "oscilloscope", barCount: 28, fftSize: 256, smoothing: 0.60, particleCount: 40, speed: 1.5 },
+  romantiqueo: { mode: "vinyl",        barCount: 24, fftSize: 128, smoothing: 0.88, particleCount: 15, speed: 0.7 },
+  "420_chill": { mode: "wave",         barCount: 20, fftSize: 128, smoothing: 0.90, particleCount: 12, speed: 0.6 },
+};
+
+const MODE_LABELS = {
+  bars: "BARRAS", oscilloscope: "OSCILOSCOPIO", wave: "ONDA",
+  radial: "RADIAL", vinyl: "VINILO", tunnel: "TUNEL",
 };
 
 function getPreset(vibeId) {
   return VIBE_PRESETS[vibeId] ?? VIBE_PRESETS.default;
 }
 
-// S108 — Beat detection: compara energía actual con promedio reciente
-function detectBeat(freqData, history, threshold = 1.4) {
+function detectBeat(freqData, history, threshold) {
   if (!freqData?.length) return false;
   let sum = 0;
   for (let i = 0; i < freqData.length; i++) sum += freqData[i];
@@ -35,44 +42,92 @@ function detectBeat(freqData, history, threshold = 1.4) {
   if (history.length > 20) history.shift();
   if (history.length < 10) return false;
   const histAvg = history.reduce((a, b) => a + b, 0) / history.length;
-  return histAvg > 0 && avg > histAvg * threshold;
+  return histAvg > 0 && avg > histAvg * (threshold || 1.4);
 }
 
 export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen }) => {
+  const ac = accentColor || ACID;
   const canvasRef    = useRef(null);
   const analyserRef  = useRef(null);
   const sourceRef    = useRef(null);
   const animFrameRef = useRef(null);
   const audioCtxRef  = useRef(null);
-  const dataArrayRef = useRef(null);
-  const beatHistoryRef = useRef([]);  // S108 — historial de energía para beat detection
-  const beatFlashRef  = useRef(0);    // timestamp del último beat
-  // Fase 4.7 — VIZ1: Fullscreen expandido
+  const freqArrayRef = useRef(null);
+  const timeArrayRef = useRef(null);
+  const beatHistoryRef = useRef([]);
+  const beatFlashRef  = useRef(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenMode, setFullscreenMode] = useState(null);
+  const [showControls, setShowControls] = useState(true);
+  const hideTimerRef = useRef(null);
+  const vinylStateRef = useRef({ angle: 0, speed: 0 });
+  const tunnelTimeRef = useRef(0);
 
-  // S108 — Resolver preset desde vibeId
   const preset = useMemo(() => getPreset(vibeId), [vibeId]);
+  const effectiveMode = isFullscreen && fullscreenMode ? fullscreenMode : preset.mode;
 
-  // Pre-generar partículas estables (evita Math.random en render)
   const particles = useMemo(() =>
     Array.from({ length: preset.particleCount }, (_, i) => ({
-      id: i,
-      x: 10 + (i * 37 + 13) % 80,
-      y: 10 + (i * 53 + 7) % 80,
-      size: 0.5 + (i % 3) * 0.3,
-      driftY: -30 - (i * 17) % 50,
+      id: i, x: 10 + (i * 37 + 13) % 80, y: 10 + (i * 53 + 7) % 80,
+      size: 0.5 + (i % 3) * 0.3, driftY: -30 - (i * 17) % 50,
       duration: (1.5 + (i * 0.7) % 2) / preset.speed,
       delay: (i * 0.7) % 3,
     })), [preset.particleCount, preset.speed]
   );
 
-  const handleTap = () => {
-    if (onRequestFullscreen) {
-      onRequestFullscreen();
-    } else {
-      setIsFullscreen((p) => !p);
+  // ── Auto-hide controls after 3s inactivity ────────────────
+  const resetHideTimer = useCallback(() => {
+    if (!isFullscreen) return;
+    setShowControls(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (isFullscreen) { resetHideTimer(); setFullscreenMode(preset.mode); }
+    else {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      setShowControls(true); setFullscreenMode(null);
     }
-  };
+    return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
+  }, [isFullscreen, preset.mode, resetHideTimer]);
+
+  // ── Cycle through visualizer modes ─────────────────────────
+  const cycleMode = useCallback(() => {
+    setFullscreenMode((prev) => {
+      const current = prev || preset.mode;
+      const idx = ALL_MODES.indexOf(current);
+      return ALL_MODES[(idx + 1) % ALL_MODES.length];
+    });
+    resetHideTimer();
+  }, [preset.mode, resetHideTimer]);
+
+  // ── Tap: fullscreen API + mode cycling ────────────────────
+  const handleTap = useCallback(() => {
+    if (isFullscreen) {
+      if (!showControls) resetHideTimer(); else cycleMode();
+    } else {
+      setIsFullscreen(true);
+      try {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } catch { /* noop */ }
+    }
+  }, [isFullscreen, showControls, resetHideTimer, cycleMode]);
+
+  // Listen for browser fullscreen exit (back button, ESC)
+  useEffect(() => {
+    const onFSChange = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) setIsFullscreen(false);
+    };
+    document.addEventListener("fullscreenchange", onFSChange);
+    document.addEventListener("webkitfullscreenchange", onFSChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFSChange);
+      document.removeEventListener("webkitfullscreenchange", onFSChange);
+    };
+  }, []);
 
   const setupAudio = useCallback(() => {
     if (!audioRef?.current || audioCtxRef.current) return;
@@ -117,97 +172,170 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
     // Fix 2 — flag cancelled: evita doble loop en React 18 / skips rápidos
     let cancelled = false;
 
-    const drawBars = (dataArray, W, H) => {
-      const barW = (W / BAR_COUNT) - 1.5;
+    const drawBars = (data, W, H) => {
+      const barW = (W / BAR_COUNT) - 1.5, midH = H / 2;
       for (let i = 0; i < BAR_COUNT; i++) {
-        const idx  = dataArray ? Math.floor((i / BAR_COUNT) * dataArray.length) : -1;
-        const barH = dataArray ? (dataArray[idx] / 255) * H * 0.9 : H * 0.05;
+        const idx  = data ? Math.floor((i / BAR_COUNT) * data.length) : -1;
+        const barH = data ? (data[idx] / 255) * H * 0.45 : H * 0.05;
         const x = i * (barW + 1.5);
-        const y = H - barH;
-        const grad = ctx.createLinearGradient(x, y, x, H);
-        grad.addColorStop(0,   withAlpha(accentColor, 1));
-        grad.addColorStop(0.5, withAlpha(accentColor, 0.67));
-        grad.addColorStop(1,   withAlpha(accentColor, 0.13));
+        const grad = ctx.createLinearGradient(x, midH, x, midH - barH);
+        grad.addColorStop(0,   withAlpha(ac, 0.1));
+        grad.addColorStop(0.6, withAlpha(ac, 0.8));
+        grad.addColorStop(1,   withAlpha(ac, 1));
         ctx.fillStyle = grad;
-        ctx.shadowBlur = barH > H * 0.5 ? 18 : 6;
-        ctx.shadowColor = withAlpha(accentColor, 0.53);
+        ctx.shadowBlur = barH > H * 0.2 ? 14 : 4;
+        ctx.shadowColor = withAlpha(ac, 0.6);
         const radius = Math.min(3, barW / 2);
         ctx.beginPath();
-        ctx.moveTo(x + radius, y);
-        ctx.lineTo(x + barW - radius, y);
-        ctx.quadraticCurveTo(x + barW, y, x + barW, y + radius);
-        ctx.lineTo(x + barW, H);
-        ctx.lineTo(x, H);
-        ctx.lineTo(x, y + radius);
-        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.moveTo(x + radius, midH - barH);
+        ctx.lineTo(x + barW - radius, midH - barH);
+        ctx.quadraticCurveTo(x + barW, midH - barH, x + barW, midH - barH + radius);
+        ctx.lineTo(x + barW, midH);
+        ctx.lineTo(x, midH);
+        ctx.lineTo(x, midH - barH + radius);
+        ctx.quadraticCurveTo(x, midH - barH, x + radius, midH - barH);
         ctx.fill();
-        if (barH > H * 0.3) {
+        ctx.globalAlpha = 0.25;
+        ctx.beginPath();
+        ctx.moveTo(x + radius, midH + barH);
+        ctx.lineTo(x + barW - radius, midH + barH);
+        ctx.quadraticCurveTo(x + barW, midH + barH, x + barW, midH + barH - radius);
+        ctx.lineTo(x + barW, midH);
+        ctx.lineTo(x, midH);
+        ctx.lineTo(x, midH + barH - radius);
+        ctx.quadraticCurveTo(x, midH + barH, x + radius, midH + barH);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        if (barH > H * 0.15) {
           ctx.fillStyle = "#ffffff88";
           ctx.shadowBlur = 12;
-          ctx.shadowColor = accentColor;
-          ctx.fillRect(x, y - 3, barW, 2);
+          ctx.shadowColor = ac;
+          ctx.fillRect(x, midH - barH - 2, barW, 2);
         }
         ctx.shadowBlur = 0;
       }
     };
 
-    const drawWave = (dataArray, W, H) => {
-      ctx.beginPath();
-      const step = dataArray ? dataArray.length / W : 0;
+    // ═══ OSCILOSCOPIO (CRT time-domain) ═════════════════════
+    const drawOscilloscope = (timeData, W, H) => {
+      if (!timeData?.length) return;
       const midY = H / 2;
-      for (let x = 0; x < W; x++) {
-        const idx = Math.floor(x * step);
-        const val = dataArray ? dataArray[idx % dataArray.length] / 255 : 0;
-        const y = midY + (val - 0.5) * H * 0.9;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = accentColor;
-      ctx.lineWidth = 2;
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = accentColor;
-      ctx.stroke();
-      // Mirror wave (eco)
-      ctx.globalAlpha = 0.25;
-      ctx.strokeStyle = accentColor;
-      ctx.lineWidth = 1;
-      ctx.shadowBlur = 6;
+      ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = `${ac}11`; ctx.lineWidth = 1; ctx.setLineDash([4, 8]);
+      ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(W, midY); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = ac; ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 14; ctx.shadowColor = ac;
       ctx.beginPath();
+      const step = timeData.length / W;
       for (let x = 0; x < W; x++) {
-        const idx = Math.floor(x * step);
-        const val = dataArray ? dataArray[idx % dataArray.length] / 255 : 0;
-        const y = midY + (val - 0.5) * H * 0.9 + 2;
-        if (x === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        const val = timeData[Math.floor(x * step) % timeData.length] / 128 - 1;
+        if (x === 0) ctx.moveTo(x, midY + val * H * 0.45);
+        else ctx.lineTo(x, midY + val * H * 0.45);
       }
       ctx.stroke();
-      ctx.globalAlpha = 1;
-      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 0.2; ctx.beginPath();
+      for (let x = 0; x < W; x++) {
+        const val = timeData[Math.floor((x + 8) * step) % timeData.length] / 128 - 1;
+        if (x === 0) ctx.moveTo(x, midY + val * H * 0.45);
+        else ctx.lineTo(x, midY + val * H * 0.45);
+      }
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+      for (let y = 0; y < H; y += 3) {
+        ctx.fillStyle = "rgba(0,0,0,0.06)"; ctx.fillRect(0, y, W, 1);
+      }
     };
 
-    const drawRadial = (dataArray, W, H) => {
-      const cx = W / 2, cy = H / 2;
-      const maxR = Math.min(W, H) * 0.42;
+    const drawWave = (data, W, H) => {
+      const step = data ? data.length / W : 0, midY = H / 2;
+      ctx.beginPath();
+      for (let x = 0; x < W; x++) {
+        const val = data ? data[Math.floor(x * step) % data.length] / 255 : 0;
+        if (x === 0) ctx.moveTo(x, midY + (val - 0.5) * H * 0.9);
+        else ctx.lineTo(x, midY + (val - 0.5) * H * 0.9);
+      }
+      ctx.strokeStyle = ac; ctx.lineWidth = 2;
+      ctx.shadowBlur = 12; ctx.shadowColor = ac; ctx.stroke();
+      ctx.globalAlpha = 0.25; ctx.beginPath();
+      for (let x = 0; x < W; x++) {
+        const val = data ? data[Math.floor(x * step) % data.length] / 255 : 0;
+        if (x === 0) ctx.moveTo(x, midY + (val - 0.5) * H * 0.9 + 2);
+        else ctx.lineTo(x, midY + (val - 0.5) * H * 0.9 + 2);
+      }
+      ctx.stroke(); ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    };
+
+    const drawRadial = (data, W, H) => {
+      const cx = W / 2, cy = H / 2, maxR = Math.min(W, H) * 0.42;
       const step = (2 * Math.PI) / BAR_COUNT;
       for (let i = 0; i < BAR_COUNT; i++) {
-        const idx = dataArray ? Math.floor((i / BAR_COUNT) * dataArray.length) : -1;
-        const val = dataArray ? dataArray[idx] / 255 : 0;
-        const angle = i * step - Math.PI / 2;
-        const r = maxR * val;
+        const val = data ? data[Math.floor((i / BAR_COUNT) * data.length)] / 255 : 0;
+        const angle = i * step - Math.PI / 2, r = maxR * val;
         const grad = ctx.createLinearGradient(
           cx + Math.cos(angle) * r * 0.3, cy + Math.sin(angle) * r * 0.3,
           cx + Math.cos(angle) * r, cy + Math.sin(angle) * r
         );
-        grad.addColorStop(0, withAlpha(accentColor, 0.4));
-        grad.addColorStop(1, withAlpha(accentColor, 1));
-        ctx.fillStyle = grad;
-        ctx.shadowBlur = val > 0.5 ? 14 : 4;
-        ctx.shadowColor = accentColor;
+        grad.addColorStop(0, withAlpha(ac, 0.4)); grad.addColorStop(1, withAlpha(ac, 1));
+        ctx.fillStyle = grad; ctx.shadowBlur = val > 0.5 ? 14 : 4; ctx.shadowColor = ac;
         ctx.beginPath();
         ctx.arc(cx + Math.cos(angle) * r * 0.5, cy + Math.sin(angle) * r * 0.5, 3 + val * 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.fill(); ctx.shadowBlur = 0;
       }
+    };
+
+    const drawVinyl = (data, W, H) => {
+      if (!data?.length) return;
+      const cx = W / 2, cy = H / 2, radius = Math.min(W, H) * 0.35;
+      let energy = 0;
+      const ss = Math.floor(data.length / 8);
+      for (let i = 0; i < 8; i++) energy += data[i * ss] / 255;
+      energy /= 8;
+      const vs = vinylStateRef.current;
+      vs.speed += ((1.5 + energy * 4) - vs.speed) * 0.1;
+      vs.angle += vs.speed * 0.02;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(vs.angle);
+      ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2);
+      const dg = ctx.createRadialGradient(0, 0, radius * 0.1, 0, 0, radius);
+      dg.addColorStop(0, "#111"); dg.addColorStop(0.7, "#0a0a0a"); dg.addColorStop(1, "#000");
+      ctx.fillStyle = dg; ctx.fill();
+      for (let r = radius * 0.15; r < radius * 0.95; r += radius * 0.04) {
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${0.03 + energy * 0.04})`; ctx.lineWidth = 0.5; ctx.stroke();
+      }
+      ctx.beginPath(); ctx.arc(0, 0, radius * 0.12, 0, Math.PI * 2); ctx.fillStyle = ac; ctx.fill();
+      ctx.beginPath(); ctx.arc(0, 0, radius * 0.03, 0, Math.PI * 2); ctx.fillStyle = "#0a0a0a"; ctx.fill();
+      ctx.beginPath(); ctx.arc(-radius * 0.3, -radius * 0.3, radius * 0.5, -Math.PI * 0.3, Math.PI * 0.1);
+      ctx.strokeStyle = `rgba(255,255,255,${0.04 + energy * 0.03})`; ctx.lineWidth = radius * 0.15; ctx.stroke();
+      ctx.restore();
+      const aa = -Math.PI / 4;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(aa) * radius * 1.1, cy + Math.sin(aa) * radius * 1.1);
+      ctx.lineTo(cx + Math.cos(aa) * radius * 0.75, cy + Math.sin(aa) * radius * 0.75);
+      ctx.strokeStyle = "#444"; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx + Math.cos(aa) * radius * 0.75, cy + Math.sin(aa) * radius * 0.75, 3, 0, Math.PI * 2);
+      ctx.fillStyle = "#888"; ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, radius + 6, 0, Math.PI * 2);
+      ctx.strokeStyle = `${ac}${Math.round(energy * 40).toString(16).padStart(2, "0")}`;
+      ctx.lineWidth = 2; ctx.shadowBlur = 20; ctx.shadowColor = ac; ctx.stroke(); ctx.shadowBlur = 0;
+    };
+
+    // ═══ TUNNEL (hypnotic expanding rings) ═══════════════════
+    const drawTunnel = (data, W, H) => {
+      if (!data?.length) return;
+      tunnelTimeRef.current += 0.03;
+      const cx = W / 2, cy = H / 2, maxR = Math.min(W, H) * 0.7;
+      ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 12; i++) {
+        const t = (i / 12 + tunnelTimeRef.current * 0.3) % 1, baseR = t * maxR;
+        const fi = Math.floor((i / 12) * (data.length / 3)), energy = data[fi] / 255;
+        const r = baseR + energy * 15, alpha = 0.15 + energy * 0.3 * (1 - t);
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = withAlpha(ac, alpha * 0.7); ctx.lineWidth = 1 + energy * 3;
+        ctx.shadowBlur = energy * 12; ctx.shadowColor = ac; ctx.stroke(); ctx.shadowBlur = 0;
+      }
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR * 0.1);
+      cg.addColorStop(0, withAlpha(ac, 0.4)); cg.addColorStop(1, "transparent");
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, maxR * 0.1, 0, Math.PI * 2); ctx.fill();
     };
 
     const draw = () => {
@@ -221,34 +349,38 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
       ctx.clearRect(0, 0, W, H);
 
       const bufferLen = analyserRef.current?.frequencyBinCount ?? 0;
-      if (bufferLen && !dataArrayRef.current) dataArrayRef.current = new Uint8Array(bufferLen);
-      const dataArray = dataArrayRef.current;
-      if (dataArray && analyserRef.current) analyserRef.current.getByteFrequencyData(dataArray);
+      if (bufferLen && !freqArrayRef.current) freqArrayRef.current = new Uint8Array(bufferLen);
+      if (bufferLen && !timeArrayRef.current) timeArrayRef.current = new Uint8Array(bufferLen);
+      const fArr = freqArrayRef.current, tArr = timeArrayRef.current;
+      if (fArr && analyserRef.current) analyserRef.current.getByteFrequencyData(fArr);
+      if (tArr && analyserRef.current) analyserRef.current.getByteTimeDomainData(tArr);
 
-      // S108 — Beat detection + flash visual
-      const onBeat = dataArray && detectBeat(dataArray, beatHistoryRef.current);
+      const onBeat = fArr && detectBeat(fArr, beatHistoryRef.current);
       if (onBeat) beatFlashRef.current = performance.now();
       const beatGlow = onBeat || (performance.now() - beatFlashRef.current < 150);
-      if (beatGlow) {
-        ctx.shadowBlur = 30;
-        ctx.shadowColor = accentColor;
-      }
+      if (beatGlow) { ctx.shadowBlur = 30; ctx.shadowColor = ac; }
 
-      // S108 — Render según modo del preset
-      if (preset.mode === "wave" || preset.mode === "radial") {
-        // Fondo sutil para wave/radial modes
+      // ── Background fill for wave/radial ─────────────────────
+      if (mode === "wave" || mode === "radial") {
         ctx.fillStyle = "rgba(0,0,0,0.15)";
         ctx.fillRect(0, 0, W, H);
       }
-      if (preset.mode === "bars") drawBars(dataArray, W, H);
-      else if (preset.mode === "wave") drawWave(dataArray, W, H);
-      else if (preset.mode === "radial") drawRadial(dataArray, W, H);
+      // ── Inline small canvas fallback: vinyl/tunnel → bars ─
+      const isSmall = !isFullscreen && H < 100;
+      const renderMode = (mode === "vinyl" || mode === "tunnel") && isSmall ? "bars" : mode;
 
-      // Beat flash ring
-      if (beatGlow) {
+      if (renderMode === "bars") drawBars(fArr, W, H);
+      else if (renderMode === "oscilloscope") drawOscilloscope(tArr, W, H);
+      else if (renderMode === "wave") drawWave(fArr, W, H);
+      else if (renderMode === "radial") drawRadial(fArr, W, H);
+      else if (renderMode === "vinyl") drawVinyl(fArr, W, H);
+      else if (renderMode === "tunnel") drawTunnel(fArr, W, H);
+      else drawBars(fArr, W, H);
+
+      if (beatGlow && renderMode !== "vinyl" && renderMode !== "tunnel") {
         ctx.beginPath();
         ctx.arc(W / 2, H / 2, Math.min(W, H) * 0.45, 0, Math.PI * 2);
-        ctx.strokeStyle = `${accentColor}44`;
+        ctx.strokeStyle = `${ac}44`;
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.shadowBlur = 0;
@@ -299,10 +431,10 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [isPlaying, accentColor]);
+  }, [isPlaying, ac, effectiveMode]);
 
-  // Reset beat history on vibe change
   useEffect(() => { beatHistoryRef.current = []; }, [vibeId]);
+
   useEffect(() => {
     if (!isFullscreen) return;
     const canvas = canvasRef.current;
@@ -322,13 +454,8 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
   }, [isFullscreen]);
 
   useEffect(() => {
-    if (isPlaying) {
-      setupAudio();
-      audioCtxRef.current?.resume();
-    }
+    if (isPlaying) { setupAudio(); audioCtxRef.current?.resume(); }
   }, [isPlaying, setupAudio]);
-
-  const fullscreenCanvasHeight = isFullscreen ? "70vh" : 72;
 
   return (
     <>
@@ -336,74 +463,48 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
         ref={canvasRef}
         className={`w-full cursor-pointer ${isFullscreen ? "fixed inset-0 z-50" : ""}`}
         style={{
-          height: fullscreenCanvasHeight,
+          height: isFullscreen ? "100vh" : 72,
           display: "block",
-          background: isFullscreen ? "rgba(0,0,0,0.95)" : "transparent",
+          background: isFullscreen ? "#000000" : "transparent",
+          touchAction: "none",
         }}
         onClick={handleTap}
-        title={isFullscreen ? "Tap para cerrar visualizador" : "Tap para visualizador a pantalla completa"}
+        title={isFullscreen ? "Tap: ver controles / ciclar modo · ESC para salir" : "Tap para visualizador a pantalla completa"}
       />
 
-      {/* Fase 4.7 — VIZ1-VIZ5: Fullscreen inmersivo (overlay sobre el canvas expandido) */}
+      {/* Fullscreen immersive overlay */}
       <AnimatePresence>
         {isFullscreen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 pointer-events-none"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[45] pointer-events-none"
           >
-            {/* VIZ5: Fondo plasma/humo */}
-            <div
-              className="absolute inset-0 opacity-[0.04]"
-              style={{
-                background: `radial-gradient(ellipse at center, ${accentColor}44 0%, transparent 70%)`,
-              }}
-            />
-
-            {/* VIZ3: Partículas reactivas (estables, pre-generadas) */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{
+              background: `radial-gradient(ellipse at center, ${ac}44 0%, transparent 70%)`
+            }} />
             {isPlaying && particles.map((p) => (
-              <motion.div
-                key={p.id}
-                className="absolute rounded-full"
+              <motion.div key={p.id} className="absolute rounded-full"
                 style={{
-                  background: accentColor,
-                  width: `${p.size * 4}px`,
-                  height: `${p.size * 4}px`,
-                  left: `${p.x}%`,
-                  top: `${p.y}%`,
-                  boxShadow: `0 0 6px ${accentColor}`,
+                  background: ac, width: `${p.size * 4}px`, height: `${p.size * 4}px`,
+                  left: `${p.x}%`, top: `${p.y}%`, boxShadow: `0 0 6px ${ac}`,
                 }}
-                animate={{
-                  opacity: [0, 0.8, 0],
-                  scale: [0, 1.5, 0],
-                  y: [0, p.driftY],
-                }}
-                transition={{
-                  duration: p.duration,
-                  repeat: Infinity,
-                  delay: p.delay,
-                  ease: "easeOut",
-                }}
+                animate={{ opacity: [0, 0.8, 0], scale: [0, 1.5, 0], y: [0, p.driftY] }}
+                transition={{ duration: p.duration, repeat: Infinity, delay: p.delay, ease: "easeOut" }}
               />
             ))}
-
-            {/* VIZ4: VU Meters laterales */}
             <div className="absolute left-4 top-[15%] bottom-[15%] w-1 rounded-full overflow-hidden"
-              style={{ background: `${accentColor}22` }}>
-              <motion.div
-                className="w-full rounded-full"
-                style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
-                animate={{ height: isPlaying ? ["10%", "70%", "30%", "80%", "10%"] : "10%" }}
+              style={{ background: `${ac}22` }}>
+              <motion.div className="w-full rounded-full"
+                style={{ background: ac, boxShadow: `0 0 8px ${ac}` }}
+                animate={{ height: isPlaying ? ["10%","70%","30%","80%","10%"] : "10%" }}
                 transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut" }}
               />
             </div>
             <div className="absolute right-4 top-[15%] bottom-[15%] w-1 rounded-full overflow-hidden"
-              style={{ background: `${accentColor}22` }}>
-              <motion.div
-                className="w-full rounded-full"
-                style={{ background: accentColor, boxShadow: `0 0 8px ${accentColor}` }}
-                animate={{ height: isPlaying ? ["20%", "90%", "40%", "85%", "20%"] : "20%" }}
+              style={{ background: `${ac}22` }}>
+              <motion.div className="w-full rounded-full"
+                style={{ background: ac, boxShadow: `0 0 8px ${ac}` }}
+                animate={{ height: isPlaying ? ["20%","90%","40%","85%","20%"] : "20%" }}
                 transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
               />
             </div>
@@ -411,34 +512,46 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
         )}
       </AnimatePresence>
 
-      {/* Cerrar fullscreen */}
+      {/* Fullscreen controls + mode cycling */}
       <AnimatePresence>
         {isFullscreen && (
           <>
             <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsFullscreen(false)}
-              className="fixed top-6 right-6 z-[60] w-10 h-10 flex items-center justify-center rounded-sm text-sm"
-              style={{
-                color: accentColor,
-                border: `1px solid ${accentColor}44`,
-                background: `${accentColor}0d`,
+              initial={{ opacity: 0 }} animate={{ opacity: showControls ? 1 : 0 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }} whileTap={{ scale: 0.9 }}
+              onClick={() => {
+                setIsFullscreen(false);
+                try { document.exitFullscreen?.(); } catch { /* noop */ }
               }}
+              className="fixed top-6 right-6 z-[60] w-10 h-10 flex items-center justify-center rounded-sm text-sm"
+              style={{ color: ac, border: `1px solid ${ac}44`, background: `${ac}0d` }}
             >
               ✕
             </motion.button>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.4 }}
-              exit={{ opacity: 0 }}
-              className="fixed bottom-8 left-0 right-0 text-center text-xs tracking-[0.3em] uppercase z-[60]"
-              style={{ color: accentColor, fontFamily: "'JetBrains Mono', monospace" }}
+
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: showControls ? 1 : 0 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed bottom-12 left-0 right-0 flex flex-col items-center gap-2 z-[60]"
+              style={{ fontFamily: "'JetBrains Mono', monospace" }}
             >
-              VISUALIZADOR {preset.mode?.toUpperCase()}
-            </motion.p>
+              <p className="text-xs tracking-[0.3em] uppercase" style={{ color: ac, opacity: 0.5 }}>
+                {MODE_LABELS[effectiveMode] || effectiveMode.toUpperCase()}
+              </p>
+              <div className="flex gap-2">
+                {ALL_MODES.map((m) => (
+                  <span key={m} className="w-1.5 h-1.5 rounded-full transition-all"
+                    style={{
+                      background: m === effectiveMode ? ac : `${ac}33`,
+                      boxShadow: m === effectiveMode ? `0 0 6px ${ac}` : "none",
+                    }}
+                  />
+                ))}
+              </div>
+              <p className="text-[9px] tracking-[0.2em] uppercase opacity-25" style={{ color: ac }}>
+                TAP PARA CAMBIAR MODO
+              </p>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
