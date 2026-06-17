@@ -361,13 +361,13 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
       if (beatGlow) { ctx.shadowBlur = 30; ctx.shadowColor = ac; }
 
       // ── Background fill for wave/radial ─────────────────────
-      if (mode === "wave" || mode === "radial") {
+      if (effectiveMode === "wave" || effectiveMode === "radial") {
         ctx.fillStyle = "rgba(0,0,0,0.15)";
         ctx.fillRect(0, 0, W, H);
       }
       // ── Inline small canvas fallback: vinyl/tunnel → bars ─
       const isSmall = !isFullscreen && H < 100;
-      const renderMode = (mode === "vinyl" || mode === "tunnel") && isSmall ? "bars" : mode;
+      const renderMode = (effectiveMode === "vinyl" || effectiveMode === "tunnel") && isSmall ? "bars" : effectiveMode;
 
       if (renderMode === "bars") drawBars(fArr, W, H);
       else if (renderMode === "oscilloscope") drawOscilloscope(tArr, W, H);

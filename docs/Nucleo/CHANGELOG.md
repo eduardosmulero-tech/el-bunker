@@ -5,6 +5,25 @@
 
 ---
 
+## v2.0.19 — "S124 — Bugfix 'mode is not defined' en playback" (17 Junio 2026)
+
+### 🐛 CORREGIDO — P0: pantalla de error al reproducir en MUSIC LAB
+
+Reproducir una canción con el tab MUSIC LAB activo lanzaba `ReferenceError: mode is not defined` y crash con pantalla de error inesperado. El mini-player en otras tabs no se veía afectado porque nunca monta `AudioVisualizer`.
+
+**Causa raíz:** en `src/musiclab/AudioVisualizer.jsx`, dentro de la closure `draw()` del `useEffect`, dos líneas quedaban con un rename incompleto: usaban `mode` (no declarada) en lugar de `effectiveMode` (declarada en scope de componente como `isFullscreen && fullscreenMode ? fullscreenMode : preset.mode`). Cada frame del visualizador lanzaba el error.
+
+**Fix (5 referencias reemplazadas):** `mode` → `effectiveMode` en las líneas de fallback background-fill y `renderMode` dentro de `draw()`. `effectiveMode` ya está en el array de dependencias del `useEffect` (`[isPlaying, ac, effectiveMode]`), así que la closure captura el valor actualizado en cada cambio de modo.
+
+**Archivos:** `src/musiclab/AudioVisualizer.jsx` (fix de 5 líneas)
+
+### ✅ VALIDACIÓN
+
+- **Build:** ✅ 2.26s
+- **Code review:** ✅ sin objeciones, fix completo y aislado
+
+---
+
 ## v2.0.18 — "Fase B+C: Gallery Premium + Escucha Compartida" (16 Junio 2026)
 
 ### 🎨 FASE B — VAULT GALLERY PREMIUM (S122)

@@ -3,6 +3,28 @@
 > Dispatcher del sistema. Leer primero.
 > Actualizar al cerrar cada sesión.
 
+## S124 — BUGFIX MODE NOT DEFINED EN PLAYBACK (17 Junio 2026)
+
+### Síntoma
+Reproducir canción en tab MUSIC LAB → "MODE IS NO DEFINED" + pantalla error inesperado.
+Mini player en otras tabs no afectado.
+
+### Causa raíz
+`src/musiclab/AudioVisualizer.jsx`: dentro del `draw()` (closure de `useEffect`) se referenciaba `mode` standalone — variable nunca declarada. El scope del componente expone `effectiveMode` (definido L67 como `isFullscreen && fullscreenMode ? fullscreenMode : preset.mode`), pero las dos líneas internas del `draw()` quedaron rezagadas tras un rename incompleto introducido en el commit de los 6 modos del visualizador.
+
+### Fix
+Reemplazar `mode` por `effectiveMode` en las 5 referencias dentro del `draw()` (L364 y L370 antes del fix):
+- `if (mode === "wave" || mode === "radial")` → `effectiveMode`
+- `const renderMode = (mode === "vinyl" || mode === "tunnel") && isSmall ? "bars" : mode` → usando `effectiveMode`
+
+`effectiveMode` ya está en el array de dependencias del `useEffect` (`[isPlaying, ac, effectiveMode]`) → la closure siempre ve el valor actualizado.
+
+### Validación
+- Build: ✅ 2.26s, 0 errores
+- Code review: ✅ sin objeciones, fix completo y aislado
+
+---
+
 ## S116-L2 — SPLIT APP.JSX MONOLÍTICO (16 Junio 2026)
 
 ### Extracciones

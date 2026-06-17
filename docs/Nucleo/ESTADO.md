@@ -42,6 +42,7 @@ ninguno
 | V7 schema constraint | 🟡 DIFERIDO |
 | A6 No Molestar | 🟡 DIFERIDO (Chromium-only) |
 | TRACKS-SORT verificar | 🟡 PENDIENTE |
+| ~~VISUALIZER-MODE-NOT-DEFINED~~ | ✅ RESUELTO S124 (17 Junio) |
 
 ---
 
