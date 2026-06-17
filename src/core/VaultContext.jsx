@@ -39,9 +39,9 @@ import { workerClient } from "./WorkerClient";
 // ─── WORKER API URL ─────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
-// ─── S125: Default para aventuras — 500 días atrás (consistente con Vault.jsx) ───
-// Antes se inicializaba a `new Date()` en cada load de DB, lo que daba totalDays=0.
-// Ahora este default se usa cuando el DB no trae adventures_start_date.
+// ─── S130-B: Fallback solo cuando D1 no tiene adventures_start_date ───
+// La fuente primaria es GET /api/config → app_config.adventures_start_date.
+// Este default solo se usa si la tabla app_config está vacía o el worker no responde.
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
 
 // ─── CONTEXT SHAPE ───────────────────────────────────────────
@@ -303,6 +303,10 @@ export function VaultProvider({ children }) {
         from: e.from_user || e.from,
         to: e.to_user || e.to,
       }));
+      // S130-B: fetch app_config desde D1 para adventures_start_date real
+      const appConfig = await workerClient.get('/api/config').catch(() => null);
+      const realAdventureDate = appConfig?.adventures_start_date || DEFAULT_ADVENTURE_DATE;
+
       console.info("[Búnker] Worker DB built:", { entries: entries.length, eras: eras.length, tracks: tracks.length, tags: tags.length, playlists: playlists.length, drops: drops.length, files: files.length });
       return {
         entries: parsedEntries,
@@ -320,8 +324,8 @@ export function VaultProvider({ children }) {
         libraries: [],
         schema_version: "5.0.0",
         heartbeat: new Date().toISOString(),
-        // S125: usar el default de 500 días — antes se pisaba con NOW() y daba totalDays=0.
-        adventures_start_date: DEFAULT_ADVENTURE_DATE,
+        // S130-B: usar fecha real desde D1 en vez del hardcoded 500d
+        adventures_start_date: realAdventureDate,
       };
     } catch (e) {
       console.warn("[Búnker] Worker DB build failed:", e);
@@ -394,7 +398,8 @@ export function VaultProvider({ children }) {
         // S115-D5: sin _loadDriveComplement — D1 es source of truth única
         data.libraries = [];
         data.heartbeat = new Date().toISOString();
-        // S125: usar el default, no NOW. Antes el contador quedaba en 0000 días.
+        // S130-B: adventures_start_date ya viene de D1 via _buildDbFromWorker.
+        // Este ?? solo cubre el caso teórico de que el worker devuelva null.
         data.adventures_start_date = data.adventures_start_date ?? DEFAULT_ADVENTURE_DATE;
         console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
       } else {

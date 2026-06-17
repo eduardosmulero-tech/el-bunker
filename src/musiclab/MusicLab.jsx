@@ -387,6 +387,7 @@ export default function MusicLab({
   // ── Handlers Tracks ──────────────────────────────────────
   const filteredTracks = useMemo(() => {
     let result = rawTracks
+      .filter((t) => !t.is_deleted)
       .filter((t) => libraryFilter === "all" || (t.tag ?? t.vibe) === libraryFilter)
       .filter((t) => {
         if (!trackSearch.trim()) return true;

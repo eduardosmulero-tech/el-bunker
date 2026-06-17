@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
 
 // S130-A — MAP mode: Leaflet real + clustering + CartoDB Dark tiles (Sub-fase 1)
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
@@ -954,11 +954,75 @@ const FitBoundsToMarkers = ({ positions }) => {
   return null;
 };
 
+// S130-B: Polylines animados entre entries de la misma Era (viaje visual)
+const JourneyPolylines = ({ geocoded }) => {
+  const eraRoutes = useMemo(() => {
+    const groups = {};
+    geocoded.forEach((e) => {
+      const key = e.era_id ?? "none";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(e);
+    });
+    return Object.values(groups)
+      .filter((g) => g.length >= 2)
+      .map((g) => g.sort((a, b) => new Date(a.date) - new Date(b.date)));
+  }, [geocoded]);
+
+  if (!eraRoutes.length) return null;
+
+  return (
+    <>
+      <style>{`
+        @keyframes bunkerDashMove { to { stroke-dashoffset: -16; } }
+        .bunker-polyline { animation: bunkerDashMove 1.5s linear infinite; }
+      `}</style>
+      {eraRoutes.map((group) => {
+        const positions = group.map((e) => [e.lat, e.lng]);
+        const color = group[0].color ?? PURPLE;
+        return (
+          <Polyline
+            key={`route-${group[0].era_id ?? "none"}`}
+            positions={positions}
+            pathOptions={{
+              color,
+              opacity: 0.6,
+              weight: 2,
+              dashArray: "8, 8",
+              className: "bunker-polyline",
+            }}
+          />
+        );
+      })}
+    </>
+  );
+};
+
+// S130-C: formatear fecha para slider compacto
+const fmtSliderDate = (ts) => {
+  const d = new Date(ts);
+  return d.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "2-digit" });
+};
+
+// S130-D: normaliza entries desde formato legacy (flat lat/lng) y nuevo (content.lat/lng)
+const normalizeEntry = (e, eras) => {
+  const era = eras.find((er) => er.id === e.era_id);
+  return {
+    ...e,
+    lat: e.lat ?? e.content?.lat,
+    lng: e.lng ?? e.content?.lng,
+    era_name: e.era_name ?? era?.name ?? "—",
+    color: e.color ?? era?.color ?? PURPLE,
+    date: e.date ?? e.content?.event_date ?? e.created_at,
+    from_user: e.from_user ?? e.from ?? "—",
+  };
+};
+
 // S130-A: MapView real. Si `entries` prop viene vacío, usa DEMO_ENTRIES_GEO hardcoded.
-const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
+const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
+  const normalized = useMemo(() => entries.map((e) => normalizeEntry(e, eras)), [entries, eras]);
   const geocoded = useMemo(
-    () => entries.filter((e) => typeof e.lat === "number" && typeof e.lng === "number"),
-    [entries]
+    () => normalized.filter((e) => typeof e.lat === "number" && typeof e.lng === "number"),
+    [normalized]
   );
   const positions = useMemo(() => geocoded.map((e) => [e.lat, e.lng]), [geocoded]);
   // S130-A: era breakdown memoizado (evita recompute cada render del MapView)
@@ -966,6 +1030,28 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
     () => Object.values(geocoded.reduce((acc, e) => { acc[e.era_name ?? "—"] = (acc[e.era_name ?? "—"] || 0) + 1; return acc; }, {})),
     [geocoded]
   );
+  // S130-C: rango de fechas para slider temporal
+  const dateRange = useMemo(() => {
+    const dates = geocoded.map((e) => new Date(e.date).getTime()).filter((t) => !isNaN(t));
+    if (!dates.length) return null;
+    return { min: Math.min(...dates), max: Math.max(...dates) };
+  }, [geocoded]);
+  const [dateMin, setDateMin] = useState(null);
+  const [dateMax, setDateMax] = useState(null);
+  useEffect(() => {
+    if (dateRange) {
+      setDateMin((p) => p ?? dateRange.min);
+      setDateMax((p) => p ?? dateRange.max);
+    }
+  }, [dateRange]);
+  const filteredByDate = useMemo(() => {
+    if (!dateRange || !dateMin || !dateMax) return geocoded;
+    return geocoded.filter((e) => {
+      const t = new Date(e.date).getTime();
+      return t >= dateMin && t <= dateMax;
+    });
+  }, [geocoded, dateMin, dateMax, dateRange]);
+  const filteredPositions = useMemo(() => filteredByDate.map((e) => [e.lat, e.lng]), [filteredByDate]);
 
   return (
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
@@ -973,12 +1059,43 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
         <span style={{ color: PURPLE }}>◉</span>
         <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>MAP</span>
         <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>
-          {geocoded.length} {geocoded.length === 1 ? "pin" : "pines"} · {eraBreakdown.length} eras
+          {filteredByDate.length}/{geocoded.length} pines · {eraBreakdown.length} eras
         </span>
         <span className="text-[9px] opacity-20 ml-auto" style={{ color: PURPLE }}>
           CARTO DARK · OSM
         </span>
       </div>
+
+      {/* S130-C: slider temporal dual-range */}
+      {dateRange && dateMin !== null && dateMax !== null && (
+        <div className="flex items-center gap-2 px-1 pb-1">
+          <span className="text-[7px] opacity-40 w-[52px] text-right shrink-0 leading-tight" style={{ color: PURPLE }}>
+            {fmtSliderDate(dateMin)}
+          </span>
+          <div className="relative flex-1 h-5">
+            <input type="range" min={dateRange.min} max={dateRange.max} value={dateMin}
+              onChange={(e) => setDateMin(Math.min(Number(e.target.value), dateMax))}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-auto"
+              style={{ accentColor: PURPLE, margin: 0 }} />
+            <input type="range" min={dateRange.min} max={dateRange.max} value={dateMax}
+              onChange={(e) => setDateMax(Math.max(Number(e.target.value), dateMin))}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-auto"
+              style={{ accentColor: PURPLE, margin: 0 }} />
+            {/* Track visual personalizado */}
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full" style={{ background: `${PURPLE}15` }}>
+              <div className="absolute h-full rounded-full" style={{
+                left: `${((dateMin - dateRange.min) / (dateRange.max - dateRange.min)) * 100}%`,
+                right: `${100 - ((dateMax - dateRange.min) / (dateRange.max - dateRange.min)) * 100}%`,
+                background: PURPLE,
+                opacity: 0.5,
+              }} />
+            </div>
+          </div>
+          <span className="text-[7px] opacity-40 w-[52px] shrink-0 leading-tight" style={{ color: PURPLE }}>
+            {fmtSliderDate(dateMax)}
+          </span>
+        </div>
+      )}
 
       {geocoded.length === 0 ? (
         // Fallback elegante (idéntico al placeholder S122-E, preservado para entries sin coords)
@@ -989,13 +1106,23 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
             className="text-5xl" style={{ color: PURPLE }}>🌍</motion.span>
           <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>MAPA · Geografía de la relación</p>
           <p className="text-[10px] leading-relaxed text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
-            Las entradas necesitan coordenadas (lat/lng) para aparecer aquí. Añade ubicación al crear una entrada y el mapa cobrará vida.
+            Las entradas necesitan coordenadas para aparecer aquí. Usa el buscador de ubicaciones al crear o editar una entrada, o introduce lat/lng manualmente.
           </p>
           <div className="flex gap-3 mt-2">
-            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Pines</span>
-            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Líneas</span>
-            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>⧖ Timeline</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Geocoder</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Polylines</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>⧖ Slider temp.</span>
           </div>
+        </motion.div>
+      ) : filteredByDate.length === 0 ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sm"
+          style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
+          <span className="text-3xl" style={{ color: PURPLE, opacity: 0.4 }}>⧖</span>
+          <p className="text-xs tracking-[0.2em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>Sin pines en este rango</p>
+          <p className="text-[9px] text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
+            Ajusta el slider temporal para ver más entradas en el mapa.
+          </p>
         </motion.div>
       ) : (
         <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PURPLE}33`, height: "70vh", minHeight: 480 }}>
@@ -1011,9 +1138,10 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
               subdomains={["a", "b", "c", "d"]}
               maxZoom={20}
             />
-            <FitBoundsToMarkers positions={positions} />
+            <FitBoundsToMarkers positions={filteredPositions} />
+            <JourneyPolylines geocoded={filteredByDate} />
             <MarkerClusterGroup chunkedLoading>
-              {geocoded.map((e) => (
+              {filteredByDate.map((e) => (
                 <Marker key={e.id} position={[e.lat, e.lng]} icon={makePinIcon(e.color ?? PURPLE)}>
                   <Popup>
                     <div style={{ fontFamily: FONT_MONO, minWidth: 180 }}>
@@ -1047,7 +1175,7 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
 
       {geocoded.length > 0 && (
         <p className="text-[9px] text-center opacity-25 mt-1" style={{ color: PURPLE }}>
-          S130-A · Sub-fase 1 demo · click pin para metadata · zoom para desclusterizar
+          S130-D · Sub-fase 4 · geocoder + entries reales · slider temporal · polylines · {filteredByDate.length}/{geocoded.length} pines
         </p>
       )}
     </div>
@@ -1159,8 +1287,8 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
     <ReelView entries={filteredEntries} eras={eras} />
   );
 
-  // S130-A: MAP delegado a MapView real. Sin props → MapView usa DEMO_ENTRIES_GEO hardcoded (Sub-fase 1). Sub-fase 4 sustituirá por entries reales con coords via geocoder.
-  const renderMap = () => <MapView />;
+  // S130-D: MAP con entries reales. MapView normaliza lat/lng desde content.* (backward compat con DEMO_ENTRIES_GEO).
+  const renderMap = () => <MapView entries={filteredEntries} eras={eras} />;
 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>

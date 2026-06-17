@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
+import LocationSearch from "./LocationSearch";
 
 // Fase 8.3 — Taxonomía completa 14 categorías (docs/spec/taxonomia_vault.md)
 // Cada tipo: { id, category, icon, label, accept?, capture? }
@@ -254,6 +255,10 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
     return null;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // S130-D: coordenadas de ubicación (geocoder + manual)
+  const [locationLat, setLocationLat] = useState(entry?.content?.lat ?? null);
+  const [locationLng, setLocationLng] = useState(entry?.content?.lng ?? null);
+  const [locationName, setLocationName] = useState(entry?.content?.place_name ?? entry?.content?.location ?? "");
   const fileInputRef = useRef(null);
     // Fase 8.1 — Meta del tipo actual (evita 4× O(n) lookups en el render)
   const currentMeta = ENTRY_TYPES.find((t) => t.id === type);
@@ -304,6 +309,12 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       for (const f of extraFields) {
         const val = extraValues[f.key];
         if (val !== "" && val !== "—") extraContent[f.key] = val;
+      }
+      // S130-D: incluir coordenadas y nombre del lugar en content
+      if (locationLat != null && locationLng != null) {
+        extraContent.lat = locationLat;
+        extraContent.lng = locationLng;
+        if (locationName) extraContent.place_name = locationName;
       }
       const entryData = {
         type,
@@ -457,6 +468,24 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <option value="david" style={{ background: "#050505" }}>PARA DAVID</option>
         </select>
       </div>
+
+      {/* S130-D: ubicación con geocoder */}
+      <LocationSearch
+        value={locationName}
+        lat={locationLat}
+        lng={locationLng}
+        onSelect={({ place_name, lat, lng }) => {
+          setLocationName(place_name);
+          setLocationLat(lat);
+          setLocationLng(lng);
+          setExtraValue("location", place_name);
+        }}
+        onClear={() => {
+          setLocationName("");
+          setLocationLat(null);
+          setLocationLng(null);
+        }}
+      />
 
       {/* Tags */}
       <div className="flex flex-wrap gap-1">

@@ -8,13 +8,13 @@
 ## TABLA DE STALENESS
 
 | Doc | sincronizado_con | stale_si_pliego_toca | Estado |
-|---|---|---|---|
-| architecture.md | S64 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
-| data-flow.md | S64 | PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js | ✅ OK |
-| event-lifecycle.md | S64 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx | ✅ OK |
-| ownership-map.md | S64 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
-| rendering-flow.md | S64 | App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
-| state-map.md | S64 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx | ✅ OK |
+|---|---|---|---|---|
+| architecture.md | S64 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx | ⚠️ STALE (S130-B toca VaultContext) |
+| data-flow.md | S64 | PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js | ⚠️ STALE (S130-B toca VaultContext + worker.js) |
+| event-lifecycle.md | S64 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx | ⚠️ STALE (S130-B toca VaultContext) |
+| ownership-map.md | S64 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx | ⚠️ STALE (S130-B toca VaultContext) |
+| rendering-flow.md | S64 | App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx | ⚠️ STALE (S130-B toca VaultContext) |
+| state-map.md | S64 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx | ⚠️ STALE (S130-B toca VaultContext) |
 | technical-debt.md | S64 | cualquier refactor estructural | ✅ OK |
 
 ---

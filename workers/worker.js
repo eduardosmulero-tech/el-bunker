@@ -24,6 +24,7 @@ import handleCapsules from "./routes/capsules.js";
 import handleUpload from "./routes/upload.js";
 import handleR2 from "./routes/r2.js";
 import handleSync from "./routes/sync.js";
+import handleConfig from "./routes/config.js";
 
 // Mapa de rutas: [prefix, handler, requiresAuth]
 const ROUTES = [
@@ -41,6 +42,7 @@ const ROUTES = [
   ["/api/time_capsules",   handleCapsules,   true],
   ["/api/upload",          handleUpload,     true],
   ["/api/sync",            handleSync,       true],
+  ["/api/config",          handleConfig,     false],
 ];
 
 export default {
