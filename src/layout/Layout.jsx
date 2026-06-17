@@ -114,7 +114,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
                 {sessionId ? "♥" : "◉"}
               </motion.span>
               <span className="truncate max-w-[120px]">
-                {partnerName || "Alguien"}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
+                {partnerName}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
               </span>
             </motion.div>
           );

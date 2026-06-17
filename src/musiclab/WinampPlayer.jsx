@@ -431,7 +431,7 @@ return () => cancelAnimationFrame(raf);
             title={sessionId
               ? `Sesión compartida activa · tocar para salir`
               : partnerListening
-                ? `${partnerName || "Alguien"} está escuchando — tocar para unirte`
+                ? `${partnerName} está escuchando — tocar para unirte`
                 : "Nadie escuchando"}
             aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
             className="relative flex items-center justify-center gap-1 text-xs font-bold h-6"
