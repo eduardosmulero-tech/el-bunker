@@ -39,6 +39,11 @@ import { workerClient } from "./WorkerClient";
 // ─── WORKER API URL ─────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
+// ─── S125: Default para aventuras — 500 días atrás (consistente con Vault.jsx) ───
+// Antes se inicializaba a `new Date()` en cada load de DB, lo que daba totalDays=0.
+// Ahora este default se usa cuando el DB no trae adventures_start_date.
+const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
+
 // ─── CONTEXT SHAPE ───────────────────────────────────────────
 /**
  * VaultContextValue
@@ -315,7 +320,8 @@ export function VaultProvider({ children }) {
         libraries: [],
         schema_version: "5.0.0",
         heartbeat: new Date().toISOString(),
-        adventures_start_date: new Date().toISOString(),
+        // S125: usar el default de 500 días — antes se pisaba con NOW() y daba totalDays=0.
+        adventures_start_date: DEFAULT_ADVENTURE_DATE,
       };
     } catch (e) {
       console.warn("[Búnker] Worker DB build failed:", e);
@@ -388,7 +394,8 @@ export function VaultProvider({ children }) {
         // S115-D5: sin _loadDriveComplement — D1 es source of truth única
         data.libraries = [];
         data.heartbeat = new Date().toISOString();
-        data.adventures_start_date = new Date().toISOString();
+        // S125: usar el default, no NOW. Antes el contador quedaba en 0000 días.
+        data.adventures_start_date = data.adventures_start_date ?? DEFAULT_ADVENTURE_DATE;
         console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
       } else {
         console.info("[Búnker] Worker no disponible, usando DB vacía como fallback...");

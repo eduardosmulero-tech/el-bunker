@@ -59,7 +59,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     castState, startCasting, stopCasting, isCasting, castDeviceName,
     // Fase C — Escucha Compartida (S123)
     sessionId, isHost, partnerListening, partnerTrack,
-    createSession, joinSession, leaveSession,
+    createSession, _joinSession, leaveSession,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
   // Se resetea al cambiar de track para que el corazón no quede "pegado".
@@ -501,9 +501,11 @@ return () => cancelAnimationFrame(raf);
       </div>
 
       {/* Controls — Phase 2.1: bg opaco, botones más grandes, ♥ (like) y ⊕ (add to queue) */}
-      <div className="flex items-center justify-between px-3 pb-3"
+      {/* S125: restructurado a 3 clusters con flex-1 en el central — el play queda realmente centrado */}
+      <div className="flex items-center gap-2 px-3 pb-3"
         style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
-        <div className="flex gap-2 min-w-0">
+        {/* Cluster izquierdo: loop + shuffle + corazón */}
+        <div className="flex gap-2 flex-none">
           <WinampBtn
             label={loopMode === "track" ? "⟳¹" : "⟳"}
             active={loopMode !== "off"}
@@ -534,7 +536,7 @@ return () => cancelAnimationFrame(raf);
                 ? `${partnerTrack?.title || "El otro"} está escuchando — tocar para unirte`
                 : "Iniciar escucha compartida"}
             aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
-            className="rounded-sm flex items-center justify-center text-xs font-bold transition-all w-10 h-10 relative"
+            className="rounded-sm flex items-center justify-center text-xs font-bold transition-all w-10 h-10 relative flex-none"
             style={{
               background: sessionId
                 ? withAlpha("#ff2d55", 0.18)
@@ -582,7 +584,9 @@ return () => cancelAnimationFrame(raf);
             )}
           </motion.button>
         </div>
-        <div className="flex items-center gap-2.5">
+
+        {/* Cluster central: prev + play + next + ⚡ + ⊕ (flex-1 ocupa el espacio, justify-center centra el play) */}
+        <div className="flex-1 flex items-center justify-center gap-1.5">
           <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" size="sm" />
           <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
@@ -614,13 +618,15 @@ return () => cancelAnimationFrame(raf);
             />
           )}
         </div>
-        <div className="flex items-center gap-2 min-w-0">
+
+        {/* Cluster derecho: 🔊 + slider */}
+        <div className="flex items-center gap-1.5 flex-none">
           <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>
-          {/* PLIEGO-230: vol slider más grande (w-16 h-1.5) — mejor touch target en mobile */}
+          {/* S125: vol slider más grande (w-20 h-1.5) + alpha un-filled 22→10 (~6%, más limpio) */}
           <input type="range" min={0} max={100} value={volume}
             onChange={(e) => changeVolume(Number(e.target.value))}
-            className="w-16 h-1.5 appearance-none cursor-pointer rounded-full"
-            style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}22 ${volume}%)`, accentColor }} />
+            className="w-20 h-1.5 appearance-none cursor-pointer rounded-full"
+            style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}10 ${volume}%)`, accentColor }} />
         </div>
       </div>
 

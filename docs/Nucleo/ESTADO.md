@@ -2,7 +2,7 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** S130-A — Fase 1: MAP (Leaflet pines + líneas viaje + slider temporal)
-**Última sesión:** Auditoría REAL specs vs código — porcentaje honesto ~68% (no 92%)
+**Última sesión:** S125 — 5 quick-fixes UI (counter aventura 0, sliders visibles, corner brackets smoke, mini player, winamp descentrado) → RESUELTOS
 **Rama activa:** `master`
 **Roadmap:** 4 fases, ~52h → docs/operacional/ROADMAP_COMPLETO.md
 

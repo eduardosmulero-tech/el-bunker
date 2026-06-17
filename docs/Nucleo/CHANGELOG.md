@@ -5,6 +5,38 @@
 
 ---
 
+## v2.0.20 — "S125 — 5 quick-fixes UI" (17 Junio 2026)
+
+### 🐛 CORREGIDO — Contador aventura "0000 días"
+
+`VaultContext.jsx` pisaba `adventures_start_date: new Date().toISOString()` en cada load de DB. `timeSince(today)` ⇒ `{years:0, months:0, days:0, totalDays:0}` ⇒ contador mostraba "0000 días". Fix: const `DEFAULT_ADVENTURE_DATE = now - 500 días` consistente con `Vault.jsx:25`, usado como fallback en 2 sitios. Bonus: lint cleanup `joinSession`→`_joinSession` en WinampPlayer.
+
+### 🎨 PULIDO
+
+- **Sliders menos dominantes** — alpha un-filled reducido en 3 sitios: SmokeSession `ACID15→ACID08` (8%→3%), WinampPlayer `accentColor22→accentColor10` (13%→6%) + ancho `w-16→w-20` (mejor touch target mobile).
+- **SmokeSession sin corner brackets redundantes** — eliminados los 4 `<span>` absolutos que duplicaban el border del div contenedor.
+- **MiniPlayer reorganizado** — time visible siempre (antes `hidden sm:block`), prev/skip agrupados en cluster `flex gap-1` en lugar de separados.
+- **WinampPlayer controls centrados** — cambiada estructura de `flex justify-between` (3 sub-grupos) a `flex gap-2` con `flex-1 justify-center` en el cluster central. El play button queda realmente centrado.
+
+### ⚠️ OBSERVACIONES DE CODE REVIEW (no bloquean, mejoras futuras)
+
+1. `DEFAULT_ADVENTURE_DATE` duplicado en `VaultContext.jsx` y `Vault.jsx:25` — DRY violation menor, refactor a `tokens.js` o similar.
+2. MiniPlayer: en 320-360px wide, el time + track-info + cluster prev/skip podría causar overflow. Smoke test pendiente.
+3. WinampPlayer clusters asimétricos: izquierdo ~104px (loop+shuffle+♡) vs derecho ~88px (🔊+slider w-20). Diferencia 16px visualmente aceptable pero no perfecto.
+
+### Archivos (4)
+- `src/core/VaultContext.jsx` (+const +2 línea fixes + comment)
+- `src/layout/Layout.jsx` (MiniPlayer reescrito)
+- `src/smoke/SmokeSession.jsx` (corner brackets + slider alpha)
+- `src/musiclab/WinampPlayer.jsx` (slider + controls layout + lint fix)
+
+### Validación
+- Build: ✅ 2.58s
+- Lint: ✅ 0 errores
+- Code review: ✅ sin nuevas objeciones
+
+---
+
 ## v2.0.19 — "S124 — Bugfix 'mode is not defined' en playback" (17 Junio 2026)
 
 ### 🐛 CORREGIDO — P0: pantalla de error al reproducir en MUSIC LAB

@@ -458,19 +458,8 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
         transition: "box-shadow 0.5s ease, border-color 0.5s ease",
       }}
     >
-      {/* Corner brackets */}
-      {[
-        { top: 0, left: 0, borderTop: "solid", borderLeft: "solid" },
-        { top: 0, right: 0, borderTop: "solid", borderRight: "solid" },
-        { bottom: 0, left: 0, borderBottom: "solid", borderLeft: "solid" },
-        { bottom: 0, right: 0, borderBottom: "solid", borderRight: "solid" },
-      ].map((s, i) => (
-        <span
-          key={i}
-          className="absolute w-4 h-4"
-          style={{ ...s, borderColor: `${activeColor}60`, borderWidth: 1.5 }}
-        />
-      ))}
+      {/* S125: Eliminados los corner-brackets redundantes — el border del div contenedor ya marca los límites.
+          Antes había 4 spans absolutos que duplicaban el efecto visual y ensuciaban el layout. */}
 
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex flex-col gap-2">
@@ -733,7 +722,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           volume={isFading ? fadedVolume : masterVolume}
           isFading={isFading}
         />
-        {/* G6: Slider de volumen interactivo */}
+        {/* ── G6: Slider de volumen interactivo ── */}
         <input
           type="range"
           min={0}
@@ -744,8 +733,9 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             if (!isFading && onVolumeChange) onVolumeChange(v);
           }}
           className="w-full h-1.5 appearance-none cursor-pointer rounded-full"
+          // S125: alpha del un-filled reducido de 15 (~8%) a 08 (~3%) — la barra se ve más limpia
           style={{
-            background: `linear-gradient(90deg, ${isFading ? RED : ACID} ${isFading ? fadedVolume : masterVolume}%, ${ACID}15 ${isFading ? fadedVolume : masterVolume}%)`,
+            background: `linear-gradient(90deg, ${isFading ? RED : ACID} ${isFading ? fadedVolume : masterVolume}%, ${ACID}08 ${isFading ? fadedVolume : masterVolume}%)`,
             accentColor: isFading ? RED : ACID,
             opacity: isFading ? 0.5 : 1,
           }}

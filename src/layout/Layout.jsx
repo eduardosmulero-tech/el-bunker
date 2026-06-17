@@ -255,7 +255,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
       className="fixed bottom-16 left-0 right-0 z-[25] mx-2"
     >
       <div
-        className="flex items-center gap-2.5 px-3 py-2.5 rounded-sm cursor-pointer select-none"
+        className="flex items-center gap-2 px-3 py-2.5 rounded-sm cursor-pointer select-none"
         style={{
           background: `linear-gradient(135deg, rgba(5,5,5,0.97) 0%, rgba(12,12,12,0.97) 100%)`,
           border: `1px solid ${accentColor}44`,
@@ -296,32 +296,35 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           </p>
         </div>
 
-        {/* Time */}
-        <span className="text-[9px] opacity-35 tabular-nums flex-shrink-0 hidden sm:block" style={{ color: accentColor }}>
-          {fmtTime(currentT)} / {fmtTime(duration)}
+        {/* S125: time visible en mobile (antes hidden sm:block) */}
+        <span className="text-[9px] opacity-35 tabular-nums flex-shrink-0" style={{ color: accentColor }}>
+          {fmtTime(currentT)}/{fmtTime(duration)}
         </span>
 
-        {/* Prev */}
-        <motion.div
-          whileTap={{ scale: 0.85 }}
-          onClick={(e) => { e.stopPropagation(); skip(-1); }}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm"
-          style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
-          title="Anterior"
-        >
-          <span className="text-xs opacity-60" style={{ color: accentColor }}>◀◀</span>
-        </motion.div>
+        {/* S125: cluster prev/skip agrupado (gap-1) en lugar de separados */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Prev */}
+          <motion.div
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => { e.stopPropagation(); skip(-1); }}
+            className="w-8 h-8 flex items-center justify-center rounded-sm"
+            style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
+            title="Anterior"
+          >
+            <span className="text-xs opacity-60" style={{ color: accentColor }}>◀◀</span>
+          </motion.div>
 
-        {/* Skip */}
-        <motion.div
-          whileTap={{ scale: 0.85 }}
-          onClick={(e) => { e.stopPropagation(); skip(1); }}
-          className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-sm"
-          style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
-          title="Siguiente"
-        >
-          <span className="text-xs opacity-60" style={{ color: accentColor }}>▶▶</span>
-        </motion.div>
+          {/* Skip */}
+          <motion.div
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => { e.stopPropagation(); skip(1); }}
+            className="w-8 h-8 flex items-center justify-center rounded-sm"
+            style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
+            title="Siguiente"
+          >
+            <span className="text-xs opacity-60" style={{ color: accentColor }}>▶▶</span>
+          </motion.div>
+        </div>
       </div>
 
       {/* Progress bar */}
