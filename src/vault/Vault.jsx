@@ -14,6 +14,7 @@ import { ColorPicker } from "../core/ColorPicker";
 import { entryCreated } from "../core/StatsEngine";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
+import { Button } from "../core/ui";
 
 // Code splitting: VaultGallery (el componente más pesado, incluye leaflet) se carga lazy
 const VaultGallery = lazy(() => import("./VaultGallery"));
@@ -838,20 +839,15 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
                 {/* Phase 2.2: ColorPicker unificado con el de tags — paleta 12 colores + custom hex + preview */}
                 <ColorPicker value={newEraColor} onChange={setNewEraColor} accentColor={accent} />
                 <div className="flex items-center justify-end">
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                  <Button
                     onClick={handleAddEra}
                     disabled={addingEra || !newEraName.trim()}
-                    className="text-xs tracking-widest uppercase px-3 py-1.5 rounded-sm"
-                    style={{
-                      color: accent,
-                      border: `1px solid ${accent}44`,
-                      fontFamily: FONT_MONO,
-                      opacity: (addingEra || !newEraName.trim()) ? 0.4 : 1,
-                    }}
+                    loading={addingEra}
+                    accentColor={accent}
+                    size="sm"
                   >
-                    {addingEra ? "CREANDO..." : "CREAR ERA"}
-                  </motion.button>
+                    CREAR ERA
+                  </Button>
                 </div>
               </div>
             </motion.div>

@@ -1,10 +1,10 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** Fase 0.3 — Design system: Button/Card/Input reutilizables.
-**Última sesión:** PLIEGO-234-S0.1 + S0.2. PRECACHE funcional + offline fallback + safe-area-inset-* en StatusBar/BottomNav/MiniPlayer.
+**Próximo pliego:** Fase 0.4 — Touch targets ≥44px audit.
+**Última sesión:** PLIEGO-234-S0.3. Design system creado: `<Button>`, `<Card>`, `<Input>` en `src/core/ui/`.
 **Rama activa:** `master`
-**Commit:** `9db085d` → S0.1+S0.2 sin commitear aún
+**Commit:** `89363a5` → S0.2 (safe-area)
 
 ---
 

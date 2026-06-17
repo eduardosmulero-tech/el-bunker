@@ -54,12 +54,14 @@ Loop es triestado.
 | `src/vault/Vault.jsx` | Motor VAULT: Eras, widgets, entradas |
 | `src/smoke/SmokeSession.jsx` | Temporizador con fade-out (migrará a src/capsules/) |
 | `src/tokens.js` | Design tokens — colores, tipografía, paletas de vibe |
+| `src/core/ui/Button.jsx` | Design system — botón reutilizable (3 variants, 3 sizes) |
+| `src/core/ui/Card.jsx` | Design system — glassmorphism card con padding configurable |
+| `src/core/ui/Input.jsx` | Design system — input/textArea con label, error, accent |
 | `src/main.jsx` | Entry point Vite |
 
 ### Archivos futuros (no crear hasta que toque su pliego)
 | Archivo | Rol |
 |---------|-----|
-| `src/vault/VaultGallery.jsx` | Galería 6 modos (ADR-021) |
 | `src/capsules/Capsules.jsx` | Tab CAPSULES con 4 sub-tabs |
 | `src/capsules/Timeline.jsx` | Feed cronológico unificado |
 | `src/capsules/TimeCapsules.jsx` | Cápsulas del tiempo |
