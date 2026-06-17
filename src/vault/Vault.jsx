@@ -24,7 +24,6 @@ const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString
 // S96 — ENTRY_CATEGORY desde ENTRY_TYPES, CATEGORY_FILTERS importado de AddEntryForm
 const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
 // S97 — Lookup rápido de categoría → { icon, label } para badges en EraDetailPanel
-const CAT_LOOKUP = Object.fromEntries(CATEGORY_FILTERS.filter(c => c.id !== "all").map(c => [c.id, c]));
 const DEMO_ERAS = [
   { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
   { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
@@ -489,15 +488,9 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
               className="flex items-center gap-2 py-2 border-b opacity-60 hover:opacity-100 transition-opacity cursor-pointer group"
               style={{ borderColor: `${era.color ?? ACID}14` }}
             >
-              <span style={{ color: era.color ?? ACID }}>
-              {entry.type === "photo" || entry.content?.images?.length ? "◎" : "◉"}
-              </span>
-              {/* S97 — Badge de categoría */}
-              <span
-                className="text-[9px] opacity-50 flex-shrink-0"
-                title={CAT_LOOKUP[ENTRY_CATEGORY[entry.type]]?.label ?? entry.type}
-              >
-                {CAT_LOOKUP[ENTRY_CATEGORY[entry.type]]?.icon ?? "◈"}
+              {/* S126: badge categoría (S97) removido — el filtro activo arriba ya indica la categoría */}
+              <span className="text-xs opacity-70" style={{ color: era.color ?? ACID }}>
+                {entry.type === "photo" || entry.content?.images?.length ? "◎" : "◉"}
               </span>
               <div className="flex flex-col flex-1 min-w-0">
                 <span
@@ -507,17 +500,28 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                 >
                   {entry.title ?? entry.content?.body?.slice(0, 40) ?? "—"}
                 </span>
-                {/* S98 — Badges de campos extra (rating, location, date, etc.) */}
+                {/* S98/S126 — Badges limitados a 2 + indicador "+N" si hay más */}
                 {(() => {
                   const badges = getExtraBadges(entry);
                   if (!badges.length) return null;
+                  const visible = badges.slice(0, 2);
+                  const overflow = badges.length - visible.length;
                   return (
                     <span className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                      {badges.map((b) => (
+                      {visible.map((b) => (
                         <span key={b.key} className="text-[8px] opacity-40 whitespace-nowrap" style={{ color: era.color ?? ACID }}>
                           {b.icon && <span className="mr-0.5">{b.icon}</span>}{b.label}
                         </span>
                       ))}
+                      {overflow > 0 && (
+                        <span
+                          className="text-[8px] opacity-25 whitespace-nowrap"
+                          style={{ color: era.color ?? ACID }}
+                          title={badges.slice(2).map(b => (b.icon ? b.icon + " " : "") + b.label).join(" · ")}
+                        >
+                          +{overflow}
+                        </span>
+                      )}
                     </span>
                   );
                 })()}
@@ -525,8 +529,8 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
               <span className="text-xs opacity-40 flex-shrink-0" style={{ color: era.color ?? ACID }}>
                 {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}
               </span>
-              {/* S65: Botones editar/eliminar */}
-              <span className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+              {/* S65/S126 — mobile siempre visibles (opacity-40 base, hover → 100); desktop solo en group-hover */}
+              <span className="flex gap-1 opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-1">
                 <button
                   onClick={(e) => { e.stopPropagation(); onEditEntry?.(entry); }}
                   className="text-xs px-1 hover:scale-110 transition-transform"

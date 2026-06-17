@@ -126,37 +126,8 @@ const CircularRing = ({ progress, color, radius = 90, stroke = 5, children }) =>
   );
 };
 
-// ─── VOLUME FADE INDICATOR ────────────────────────────────────
-const VolumeFadeBar = ({ volume, isFading }) => (
-  <div
-    className="relative w-full rounded-sm overflow-hidden"
-    style={{
-      height: 6,
-      background: `${ACID}15`,
-      border: `1px solid ${ACID}20`,
-    }}
-  >
-    <motion.div
-      className="absolute inset-y-0 left-0 rounded-sm"
-      style={{
-        width: `${volume}%`,
-        background: isFading
-          ? `linear-gradient(90deg, ${RED}, ${ORANGE})`
-          : `linear-gradient(90deg, ${ACID}88, ${ACID})`,
-        boxShadow: `0 0 8px ${isFading ? RED : ACID}`,
-        transition: "width 0.5s ease, background 0.5s ease",
-      }}
-    />
-    {isFading && (
-      <motion.div
-        className="absolute inset-0 rounded-sm"
-        animate={{ opacity: [0, 0.3, 0] }}
-        transition={{ duration: 0.8, repeat: Infinity }}
-        style={{ background: RED }}
-      />
-    )}
-  </div>
-);
+// ─── VOLUME FADE INDICATOR ──────────────────────────────────────────
+// S126: VolumeFadeBar (decorativo) eliminado. Única representación visual es el input range.
 
 // ─── SMOKE SESSION MAIN COMPONENT ────────────────────────────
 /**
@@ -678,19 +649,24 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           ↺ RESET
         </motion.button>
 
-        {/* Play / Pause */}
+        {/* Play / Pause — S126: outlined cuando !running, primario cuando isRunning/isDone */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={isRunning ? pauseSession : startSession}
-          className="relative px-6 py-2.5 rounded-sm text-sm tracking-[0.3em] uppercase font-bold overflow-hidden"
+          className={isRunning || isDone
+            ? "relative px-6 py-2.5 rounded-sm text-sm tracking-[0.3em] uppercase font-bold overflow-hidden"
+            : "relative px-5 py-2 rounded-sm text-xs tracking-[0.3em] uppercase font-medium overflow-hidden"}
           style={{
-            color: BG,
+            color: isRunning || isDone ? BG : activeColor,
             background: isRunning
               ? `linear-gradient(135deg, ${ORANGE}, ${RED})`
-              : `linear-gradient(135deg, ${activeColor}, ${activeColor}cc)`,
+              : isDone
+                ? `linear-gradient(135deg, ${PURPLE}, ${PURPLE}cc)`
+                : "transparent",
+            border: isRunning || isDone ? "none" : `1px solid ${activeColor}55`,
             fontFamily: FONT,
-            boxShadow: `0 0 20px ${isRunning ? RED : activeColor}44`,
-            transition: "background 0.3s ease, box-shadow 0.3s ease",
+            boxShadow: isRunning ? `0 0 20px ${RED}44` : "none",
+            transition: "background 0.3s ease, box-shadow 0.3s ease, color 0.2s ease",
           }}
         >
           {isRunning ? "⏸ PAUSAR" : isDone ? "◈ NUEVO" : "▶ ACTIVAR"}
@@ -718,10 +694,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             {Math.round(isFading ? fadedVolume : masterVolume)}%
           </span>
         </div>
-        <VolumeFadeBar
-          volume={isFading ? fadedVolume : masterVolume}
-          isFading={isFading}
-        />
+        {/* S126: VolumeFadeBar eliminado — el input range debajo es la única representación */}
         {/* ── G6: Slider de volumen interactivo ── */}
         <input
           type="range"
