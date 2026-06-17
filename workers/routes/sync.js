@@ -215,21 +215,33 @@ export default async function handleSync(request, env, url, userId) {
 
     // SYNC: play/pause/skip/seek events
     if (session_id) {
-      await env.DB.prepare(
-        `UPDATE shared_sessions SET active_track_id = COALESCE(?, active_track_id),
-         position = COALESCE(?, position), is_playing = COALESCE(?, is_playing),
-         queue_json = COALESCE(?, queue_json),
-         last_action = ?, last_action_by = ?, updated_at = datetime('now')
-         WHERE id = ?`
-      ).bind(
-        track_id || null,
-        position != null ? position : null,
-        is_playing != null ? (is_playing ? 1 : 0) : null,
-        queue ? JSON.stringify(queue) : null,
-        action,
-        userId,
-        session_id
-      ).run();
+      if (action === "sync") {
+        // Position heartbeat — NO tocar last_action ni updated_at para no solapar acciones reales
+        await env.DB.prepare(
+          `UPDATE shared_sessions SET position = COALESCE(?, position),
+           is_playing = COALESCE(?, is_playing) WHERE id = ?`
+        ).bind(
+          position != null ? position : null,
+          is_playing != null ? (is_playing ? 1 : 0) : null,
+          session_id
+        ).run();
+      } else {
+        await env.DB.prepare(
+          `UPDATE shared_sessions SET active_track_id = COALESCE(?, active_track_id),
+           position = COALESCE(?, position), is_playing = COALESCE(?, is_playing),
+           queue_json = COALESCE(?, queue_json),
+           last_action = ?, last_action_by = ?, updated_at = datetime('now')
+           WHERE id = ?`
+        ).bind(
+          track_id || null,
+          position != null ? position : null,
+          is_playing != null ? (is_playing ? 1 : 0) : null,
+          queue ? JSON.stringify(queue) : null,
+          action,
+          userId,
+          session_id
+        ).run();
+      }
 
       return json({ ok: true });
     }

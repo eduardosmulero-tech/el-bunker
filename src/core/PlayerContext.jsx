@@ -191,6 +191,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const _lastSyncTsRef          = useRef(0);          // Último timestamp recibido del server
   const _isRemoteActionRef      = useRef(false);       // Previene bucles: ignora cambios locales durante sync remoto
   const _wasDisconnectedRef     = useRef(false);       // SC8: se perdió conexión durante sesión
+  const _pendingSessionIdRef    = useRef(null);       // Último pending_session_id detectado
 
   const partnerName = partnerId === "edu" ? "Edu" : partnerId === "david" ? "David" : partnerId || null;
 
@@ -260,7 +261,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     console.info("[Búnker] 🔗 Sesión finalizada");
   }, [sessionId]);
 
-  // SC5: Chequear presencia del partner + auto-join si hay sesión pendiente
+  // SC5: Chequear presencia del partner + guardar pending_session_id
   const checkPresence = useCallback(async () => {
     if (!workerClient.hasToken() || !userId) return;
     try {
@@ -270,7 +271,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setPartnerTrack(res.active_track || null);
         const otherUserId = userId === "edu" ? "david" : "edu";
         setPartnerId(otherUserId);
-        // Auto-join si el otro ya creó sesión (SC5)
+        _pendingSessionIdRef.current = res.pending_session_id || null;
+        // Auto-join: si el otro ya creó sesión, unirse automáticamente
         if (res.pending_session_id && !sessionId) {
           console.info("[Búnker] 🔗 Auto-join a sesión de", otherUserId);
           await joinSession(res.pending_session_id);
@@ -279,9 +281,25 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setPartnerListening(false);
         setPartnerTrack(null);
         setPartnerId(null);
+        _pendingSessionIdRef.current = null;
       }
     } catch { /* noop */ }
   }, [userId, sessionId, joinSession]);
+
+  // Unirse a la sesión pendiente del partner (1 click desde el corazón)
+  const joinPendingSession = useCallback(async () => {
+    const sid = _pendingSessionIdRef.current;
+    if (!sid) return;
+    await joinSession(sid);
+  }, [joinSession]);
+
+  // Auto-crear sesión propia al empezar a reproducir o al recuperarse de leave
+  useEffect(() => {
+    if (!userId || !isPlaying || sessionId || !activeTrack) return;
+    console.info("[Búnker] 🔗 Auto-create sesión propia al reproducir");
+    createSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPlaying, userId, sessionId]);
 
   // Poll loop: chequear presencia cada 15s (SC5)
   useEffect(() => {
@@ -457,19 +475,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id, sessionId]);
-
-  // SC4 premium: periodic position sync cada 500ms durante sesión activa (§13.3)
-  useEffect(() => {
-    if (!sessionId || !isPlaying) return;
-    const interval = setInterval(() => {
-      syncAction("sync", {
-        position: audioRef.current?.currentTime ?? null,
-        isPlaying: true,
-      });
-    }, 500);
-    return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId, isPlaying]);
 
   // SC5: Heartbeat de presencia mientras se está reproduciendo
   useEffect(() => {
@@ -1569,7 +1574,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       castState, startCasting, stopCasting, isCasting, castDeviceName,
       // Fase C — Escucha Compartida (S123)
       userId, sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName, partnerTrackVibe,
-      createSession, joinSession, leaveSession, syncAction, checkPresence,
+      createSession, joinSession, joinPendingSession, leaveSession, syncAction, checkPresence,
       sessionToast, setSessionToast,
       sharedListening: !!sessionId, setSharedListening: () => {},
     }}>
