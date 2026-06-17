@@ -1,0 +1,114 @@
+[Búnker] SW registered: https://el-bunker-beige.vercel.app/
+(index):1 Loading the image 'https://csi.gstatic.com/csi?v=3&s=gapi_global&action=global&it=blt.0&srt=48&tbsrt=148&tran=16&p=s&e=abc_l0,abc_m0,abc_u0&rt=' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.googleusercontent.com https://el-bunker-api.thebunker-admin.workers.dev https://*.r2.cloudflarestorage.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org". The action has been blocked.
+(index):1 Loading the image 'https://csi.gstatic.com/csi?v=3&s=gapi_module&action=client&it=mli.13,mei.8&tran=16&p=s&e=abc_l0,abc_m0,abc_pclient,abc_u0&rt=' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.googleusercontent.com https://el-bunker-api.thebunker-admin.workers.dev https://*.r2.cloudflarestorage.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org". The action has been blocked.
+index-UHf50Kvb.js:2 [Búnker] Google Services inicializados ✓
+index-UHf50Kvb.js:2 [Búnker] Token restaurado desde localStorage ✓
+index-UHf50Kvb.js:2 [Búnker] JWT obtenido ✓
+index-UHf50Kvb.js:2 [Búnker] Worker DB built: {entries: 0, eras: 0, tracks: 559, tags: 7, playlists: 4, …}
+index-UHf50Kvb.js:2 [Búnker] DB cargada desde Worker API (D1) ✓
+index-UHf50Kvb.js:2 [Búnker] ♻ Sesión restaurada tras OOM kill
+index-UHf50Kvb.js:2 [Búnker] ♻ Audio desde caché local: 723d3b68-9a0d-475e-8a17-561596f63c3c.mp3
+WorkerClient-7-aaahuJ.js:1  GET https://el-bunker-api.thebunker-admin.workers.dev/api/queue/edu 429 (Too Many Requests)
+_fetch @ WorkerClient-7-aaahuJ.js:1
+get @ WorkerClient-7-aaahuJ.js:1
+(anonymous) @ index-UHf50Kvb.js:2
+Kc @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Wu @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+ae @ vendor-react-2HmFm5DM.js:1
+postMessage
+oe @ vendor-react-2HmFm5DM.js:1
+ae @ vendor-react-2HmFm5DM.js:1
+postMessage
+oe @ vendor-react-2HmFm5DM.js:1
+e.unstable_scheduleCallback @ vendor-react-2HmFm5DM.js:1
+cd @ vendor-react-2HmFm5DM.js:8
+sd @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+index-UHf50Kvb.js:2 [Búnker] fetchQueue (Worker): Error: Worker GET /api/queue/edu: 429
+    at Object.get (WorkerClient-7-aaahuJ.js:1:1788)
+(anonymous) @ index-UHf50Kvb.js:2
+Promise.catch
+(anonymous) @ index-UHf50Kvb.js:2
+Kc @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Ol @ vendor-react-2HmFm5DM.js:8
+kl @ vendor-react-2HmFm5DM.js:8
+Wu @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+ae @ vendor-react-2HmFm5DM.js:1
+postMessage
+oe @ vendor-react-2HmFm5DM.js:1
+ae @ vendor-react-2HmFm5DM.js:1
+postMessage
+oe @ vendor-react-2HmFm5DM.js:1
+e.unstable_scheduleCallback @ vendor-react-2HmFm5DM.js:1
+cd @ vendor-react-2HmFm5DM.js:8
+sd @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+WorkerClient-7-aaahuJ.js:1  POST https://el-bunker-api.thebunker-admin.workers.dev/api/sync 500 (Internal Server Error)
+_fetch @ WorkerClient-7-aaahuJ.js:1
+post @ WorkerClient-7-aaahuJ.js:1
+(anonymous) @ index-UHf50Kvb.js:2
+onClick @ MusicLab-DnX5guqs.js:1
+bd @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+yn @ vendor-react-2HmFm5DM.js:8
+Td @ vendor-react-2HmFm5DM.js:8
+up @ vendor-react-2HmFm5DM.js:9
+cp @ vendor-react-2HmFm5DM.js:9
+index-UHf50Kvb.js:2 [Búnker] createSession error: Error: Worker POST /api/sync: 500
+    at Object.post (WorkerClient-7-aaahuJ.js:1:1909)
+    at async index-UHf50Kvb.js:2:19331
+    at async onClick (MusicLab-DnX5guqs.js:1:43971)
+(anonymous) @ index-UHf50Kvb.js:2
+await in (anonymous)
+onClick @ MusicLab-DnX5guqs.js:1
+bd @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+yn @ vendor-react-2HmFm5DM.js:8
+Td @ vendor-react-2HmFm5DM.js:8
+up @ vendor-react-2HmFm5DM.js:9
+cp @ vendor-react-2HmFm5DM.js:9
+WorkerClient-7-aaahuJ.js:1  POST https://el-bunker-api.thebunker-admin.workers.dev/api/sync 500 (Internal Server Error)
+_fetch @ WorkerClient-7-aaahuJ.js:1
+post @ WorkerClient-7-aaahuJ.js:1
+(anonymous) @ index-UHf50Kvb.js:2
+onClick @ MusicLab-DnX5guqs.js:1
+bd @ vendor-react-2HmFm5DM.js:8
+(anonymous) @ vendor-react-2HmFm5DM.js:8
+yn @ vendor-react-2HmFm5DM.js:8
+Td @ vendor-react-2HmFm5DM.js:8
+up @ vendor-react-2HmFm5DM.js:9
+cp @ vendor-react-2HmFm5DM.js:9
+index-UHf50Kvb.js:2 [Búnker] createSession error: Error: Worker POST /api/sync: 500
+    at Object.post (WorkerClient-7-aaahuJ.js:1:1909)
+    at async index-UHf50Kvb.js:2:19331
+    at async onClick (MusicLab-DnX5guqs.js:1:43971)

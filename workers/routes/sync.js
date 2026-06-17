@@ -117,7 +117,7 @@ export default async function handleSync(request, env, url, userId) {
         `INSERT INTO shared_sessions (id, host_user_id, guest_user_id, active_track_id, position,
          is_playing, last_action, last_action_by, queue_json, created_at, updated_at)
          VALUES (?, ?, NULL, NULL, 0, 0, 'created', ?, '[]', datetime('now'), datetime('now'))`
-      ).bind(sessionId, userId).run();
+      ).bind(sessionId, userId, userId).run();
       return json({ session_id: sessionId, active: true, host_id: userId });
     }
 
