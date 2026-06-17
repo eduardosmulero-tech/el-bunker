@@ -268,6 +268,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (res?.active) {
         setPartnerListening(true);
         setPartnerTrack(res.active_track || null);
+        const otherUserId = userId === "edu" ? "david" : "edu";
+        setPartnerId(otherUserId);
         // Auto-join si hay sesión pendiente creada por el otro (SC5)
         if (res.pending_session_id && !sessionId) {
           await joinSession(res.pending_session_id);
@@ -275,6 +277,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       } else {
         setPartnerListening(false);
         setPartnerTrack(null);
+        setPartnerId(null);
       }
     } catch { /* noop */ }
   }, [userId, sessionId, joinSession]);
@@ -293,7 +296,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     const body = {
       session_id: sessionId,
       action,
-      track_id: opts.trackId || activeTrack?.id || null,
+      track_id: action === "sync" ? null : (opts.trackId || activeTrack?.id || null),
       position: opts.position ?? (audioRef.current?.currentTime ?? null),
       is_playing: opts.isPlaying ?? isPlaying,
       queue: opts.queue || null,
