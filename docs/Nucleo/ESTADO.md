@@ -1,65 +1,59 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** PLIEGO-234 — Sub-fase 5 MAP (privacy mask + advanced manual coords). Tras: PLIEGO-235+ EXHIBITION/REEL/CINEMA premium.
-**Última sesión:** S130-D Sub-fase 1-4 completadas en sesión única. MAP al 100% funcional (polylines + slider temp + geocoder Photon/Nominatim + AddEntryForm con buscador de ubicaciones). 2 bugs corregidos (delete track + contador días).
+**Próximo pliego:** Fase 0.3 — Design system: Button/Card/Input reutilizables.
+**Última sesión:** PLIEGO-234-S0.1 + S0.2. PRECACHE funcional + offline fallback + safe-area-inset-* en StatusBar/BottomNav/MiniPlayer.
 **Rama activa:** `master`
-**Roadmap:** 4 fases, ~52h → docs/operacional/ROADMAP_COMPLETO.md
+**Commit:** `9db085d` → S0.1+S0.2 sin commitear aún
 
 ---
 
-## 📊 Auditoría real (17 Junio 2026)
+## 📊 Auditoría real (17 Junio 2026) — con factor premium
 
-| Área | % | Veredicto |
+| Módulo | % | Gap principal |
 |---|---|---|
-| Infraestructura | 95% | ✅ Sólida |
-| Cápsulas | 95% | ✅ Completa |
-| MusicLab | 90% | ✅ Base sólida |
-| Reproductor visual | 85% | 🟡 Sin auto-activación |
-| Escucha Compartida | 80% | 🟡 SC2 = 0% |
-| DROPS | 40% | 🔴 M20/M21 rotos |
-| **Galería VAULT** | **~65%** | 🟢 MAP Sub-fases 1-4 completas (85%); EXHIBITION/REEL/CINEMA placeholder |
-| VIZ/Otros | 33% | 🔴 0% implementado |
-| **GLOBAL** | **~72%** | |
-
-### Placeholders activos (texto hardcodeado)
-- **EXHIBITION** (VaultGallery.jsx): `<div className="flex flex-col gap-5">` — 5%
-- **REEL** (VaultGallery.jsx): lista flex sin Pin ni banda sonora — 15%
-- **CINEMA premium uplit**: swipe+Ken Burns+overlay hecho. Faltan audioguias + crossfade + musica Era — 40%→100% pendiente
-- **MAP** (VaultGallery.jsx): 🟢 Sub-fases 1-4 completadas (polylines animados + slider temporal ±7% + geocoder Photon+Nominatim + AddEntryForm con buscador + entries reales con lat/lng en content). 85%. Pendiente Sub-fase 5 (privacy mask).
-
----
+| Audio engine | 70% | Sin gapless/crossfade |
+| VAULT data model | 80% | UI de entrada básica |
+| WALL | 35% | Sin virtualización → OOM |
+| CINEMA | 18% | Sin música ambiente, audioguías, transiciones |
+| MAP | 30% | Sin carrusel, distancias, capas |
+| DIALOGUE | 60% | Sin Live Sync |
+| EXHIBITION | 6% | Es lista, spec pide canvas 2D |
+| REEL | 11% | Sin banda sonora, pinning, animaciones |
+| CAPSULES | 8% | Timeline y RECAP no existen |
+| Infraestructura | 6% | Offline roto (✅ FIXED S0.1), sin safe areas, sin skeletons |
+| **TOTAL** | **~32%** | |
 
 ## Bugs activos
 
 ### P1
-ninguno
+- ~~Offline = blank screen~~ ✅ RESUELTO S0.1 (PRECACHE + sw-assets.json)
+- Sin safe-area-inset-* en elementos fijos (PENDIENTE S0.2)
 
 ### P2/resto
-
 | Bug | Estado |
 |---|---|
 | V6 R2 signed URLs | 🟡 DIFERIDO |
 | V7 schema constraint | 🟡 DIFERIDO |
-| A6 No Molestar | 🟡 DIFERIDO (Chromium-only) |
+| A6 No Molestar | 🟡 DIFERIDO |
 | TRACKS-SORT verificar | 🟡 PENDIENTE |
-| ~~VISUALIZER-MODE-NOT-DEFINED~~ | ✅ RESUELTO S124 (17 Junio) |
-| ~~DOUBLE-VOLUME-BAR-SMOKE~~ | ✅ RESUELTO S126 (17 Junio, commit b7f3ff7) |
-| ~~PLAY-BUTTON-REDUNDANT~~ | ✅ RESUELTO S126 (outlined cuando !running) |
-| ~~VAULT-DETAIL-ROW-DENSE~~ | ✅ RESUELTO S126 (S97 quitado + slice 2 + mobile buttons) |
+| Sin paginación API | 🟡 PENDIENTE |
+| Sin token refresh JWT | 🟡 PENDIENTE |
 
 ---
 
 ## Build/Lint/Tests
-✅ Build ~2.6s · ESLint 7 warnings (pre-existentes: worker.js global) · Tests 12/12
+✅ Build ~2.3s · 22 assets en sw-assets.json
 
 ---
 
-## Roadmap rápido (detalle en ROADMAP_COMPLETO.md)
+## Roadmap premium (nuevo)
 
-| Fase | Nombre | Horas | Gap principal |
+| Fase | Nombre | Pliegos | Gap |
 |---|---|---|---|
-| **1** | 🏛️ La Galería que Prometimos | 22h | MAP+EXHIBITION+REEL+CINEMA |
-| **2** | 💞 Lo que Nos Conecta | 12h | DROPS+SC2+VIZ |
-| **3** | ✨ Brillo Premium | 10h | Pulido+Ambiental+Cápsulas |
-| **4** | 🚀 Entrega | 8h | Smoke test+Deploy+Docs |
+| **0** | Cimientos | ~5 | Offline, safe areas, design system, touch targets, skeletons |
+| **1** | UX Polish | ~5 | Error boundaries, toast unificado, micro-interacciones, teclado |
+| **2** | CAPSULES real | ~4 | Timeline, RECAP, Smoke migration, TimeCapsules DB |
+| **3** | Galería premium | ~8 | WALL virt + CINEMA full + MAP full + EXHIBITION canvas + REEL + DIALOGUE Live Sync |
+| **4** | Infraestructura | ~4 | Paginación, token refresh, FileUploadService, Stats |
+| **5** | Android edge | ~3 | Haptic, OOM, a11y |

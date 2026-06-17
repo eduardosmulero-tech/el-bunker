@@ -72,8 +72,10 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-2"
+      className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-6"
       style={{
+        paddingTop: "env(safe-area-inset-top, 8px)",
+        paddingBottom: "8px",
         background: `linear-gradient(180deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
       }}
     >
@@ -136,8 +138,10 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.3 }}
-      className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-4 py-3"
+      className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-4"
       style={{
+        paddingTop: "12px",
+        paddingBottom: "env(safe-area-inset-bottom, 12px)",
         background: `linear-gradient(0deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
       }}
     >
@@ -252,7 +256,8 @@ const MiniPlayer = ({ accentColor = ACID }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed bottom-16 left-0 right-0 z-[25] mx-2"
+      className="fixed left-0 right-0 z-[25] mx-2"
+      style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
     >
       <div
         className="flex items-center gap-2 px-3 py-2.5 rounded-sm cursor-pointer select-none"
