@@ -260,7 +260,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     console.info("[Búnker] 🔗 Sesión finalizada");
   }, [sessionId]);
 
-  // SC5: Chequear presencia del partner + auto-join si hay sesión pendiente
+  // SC5: Chequear presencia del partner + auto-join automático sin clics
   const checkPresence = useCallback(async () => {
     if (!workerClient.hasToken() || !userId) return;
     try {
@@ -270,9 +270,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setPartnerTrack(res.active_track || null);
         const otherUserId = userId === "edu" ? "david" : "edu";
         setPartnerId(otherUserId);
-        // Auto-join si hay sesión pendiente creada por el otro (SC5)
+        // Auto-join: si hay sesión pendiente del otro, unirse
         if (res.pending_session_id && !sessionId) {
+          console.info("[Búnker] 🔗 Auto-join a sesión de", otherUserId);
           await joinSession(res.pending_session_id);
+        } else if (!sessionId && isPlayingRef.current && !res.pending_session_id) {
+          // Sin sesión pendiente y ambos escuchando → crear sesión automática
+          console.info("[Búnker] 🔗 Auto-create sesión (partner detectado)");
+          await createSession();
         }
       } else {
         setPartnerListening(false);
@@ -280,7 +285,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setPartnerId(null);
       }
     } catch { /* noop */ }
-  }, [userId, sessionId, joinSession]);
+  }, [userId, sessionId, joinSession, createSession]);
 
   // Poll loop: chequear presencia cada 15s (SC5)
   useEffect(() => {
@@ -381,6 +386,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
             } else if (data.action === "skip" && data.active_track_id) {
               const track = tracks.find(t => t.id === data.active_track_id);
               if (track) {
+                console.info("[Búnker] 🔄 Remote skip from", data.action_by, "→", track.id, track.title);
                 setActiveTrack(track);
                 setAutoPlaySignal(n => n + 1);
                 if (data.position > 0) {
@@ -392,8 +398,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
             } else if (data.action === "seek" && data.position != null) {
               if (audioRef.current) audioRef.current.currentTime = data.position;
             } else if (data.action === "sync" && data.position != null) {
-              // SC4 premium: position drift correction (>2s gap)
-              if (audioRef.current && Math.abs(audioRef.current.currentTime - data.position) > 2) {
+              // SC4 premium: position drift correction (>1s gap)
+              if (audioRef.current && Math.abs(audioRef.current.currentTime - data.position) > 1) {
                 audioRef.current.currentTime = data.position;
               }
             } else if (data.action === "queue_remove" && data.active_track_id) {
@@ -448,6 +454,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // SC4: Sincronizar skip al partner
   useEffect(() => {
     if (!sessionId || _isRemoteActionRef.current || !activeTrack) return;
+    console.info("[Búnker] 🔄 Sync skip →", activeTrack.id, activeTrack.title);
     syncAction("skip", {
       trackId: activeTrack.id,
       position: 0,
@@ -455,7 +462,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id, sessionId]);
 
-  // SC4 premium: periodic position sync cada 1s durante sesión activa (§13.3)
+  // SC4 premium: periodic position sync cada 500ms durante sesión activa (§13.3)
   useEffect(() => {
     if (!sessionId || !isPlaying) return;
     const interval = setInterval(() => {
@@ -463,7 +470,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         position: audioRef.current?.currentTime ?? null,
         isPlaying: true,
       });
-    }, 1000);
+    }, 500);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isPlaying]);
@@ -1565,7 +1572,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // S109 — Chromecast
       castState, startCasting, stopCasting, isCasting, castDeviceName,
       // Fase C — Escucha Compartida (S123)
-      sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName, partnerTrackVibe,
+      userId, sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName, partnerTrackVibe,
       createSession, joinSession, leaveSession, syncAction, checkPresence,
       sessionToast, setSessionToast,
       sharedListening: !!sessionId, setSharedListening: () => {},

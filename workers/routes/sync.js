@@ -7,8 +7,8 @@
 
 import { json, err } from "../utils/response.js";
 
-const POLL_TIMEOUT = 25000;  // 25s max (Cloudflare free tier: 30s)
-const POLL_INTERVAL = 2000;  // Check every 2s
+const POLL_TIMEOUT = 20000;  // 20s max
+const POLL_INTERVAL = 1000;  // Check every 1s
 
 export default async function handleSync(request, env, url, userId) {
   if (!userId) return err("Unauthorized", 401);

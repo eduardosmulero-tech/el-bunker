@@ -58,7 +58,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
     // Fase C — Escucha Compartida (S123)
-    sessionId, isHost, partnerListening, partnerTrack, partnerName, partnerTrackVibe,
+    sessionId, isHost, partnerListening, partnerTrack, partnerName, partnerTrackVibe, userId,
     createSession, leaveSession,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
@@ -522,10 +522,10 @@ return () => cancelAnimationFrame(raf);
               </motion.span>
             )}
 
-            {/* HOST/LINK label — sesión activa */}
+            {/* Nombres de ambos en sesión activa */}
             {sessionId && (
               <span className="text-[9px] uppercase tracking-wider leading-none" style={{ color: withAlpha("#ff2d55", 0.7) }}>
-                {isHost ? "HOST" : "LINK"}
+                {userId === "edu" ? "Edu" : "David"} + {partnerName}
               </span>
             )}
           </motion.button>
