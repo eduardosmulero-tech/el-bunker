@@ -58,8 +58,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
     // Fase C — Escucha Compartida (S123)
-    sessionId, isHost, partnerListening, partnerTrack, partnerName, partnerTrackVibe, userId,
-    createSession, joinPendingSession, leaveSession,
+    sessionId, partnerListening, partnerTrack, partnerName, partnerTrackVibe, userId,
+    joinPendingSession, leaveSession,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
   // Se resetea al cambiar de track para que el corazón no quede "pegado".

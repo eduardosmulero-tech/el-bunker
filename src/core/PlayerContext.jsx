@@ -182,6 +182,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   //  Fase C — Escucha Compartida SC1-SC14 (S123)
   // ═══════════════════════════════════════════════════════════
   const [sessionId,        setSessionId]        = useState(null);
+  const [hasPersonalSession, setHasPersonalSession] = useState(false);
   const [isHost,           setIsHost]           = useState(false);
   const [partnerId,        setPartnerId]        = useState(null);
   const [partnerTrack,     setPartnerTrack]     = useState(null);  // SC14: track activo del otro
@@ -199,17 +200,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const partnerTrackVibe = partnerTrack?.vibe || partnerTrack?.tag ||
     (partnerTrack?.id ? tracks.find(t => t.id === partnerTrack.id)?.vibe || tracks.find(t => t.id === partnerTrack.id)?.tag : null) || null;
 
-  // Crear sesión (host)
+  // Crear sesión personal (server-side) para que el partner nos detecte via pending_session_id.
+  // NO setea sessionId local — esa variable solo refleja una sesión compartida activa.
   const createSession = useCallback(async () => {
     if (!workerClient.hasToken()) return;
     try {
-      const data = await workerClient.post("/api/sync", { action: "create" });
-      setSessionId(data.session_id);
-      setIsHost(true);
-      setPartnerId(null);
-      setPartnerListening(false);
-      console.info("[Búnker] 🔗 Sesión compartida creada:", data.session_id);
+      await workerClient.post("/api/sync", { action: "create" });
+      console.info("[Búnker] 🔗 Sesión personal creada (server)");
     } catch (e) { console.warn("[Búnker] createSession error:", e); }
+    finally { setHasPersonalSession(true); }
   }, []);
 
   // Unirse a sesión (guest) — solo desde joinPendingSession (1 click)
@@ -261,6 +260,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     } catch { /* noop */ }
     setSessionId(null);
     setIsHost(false);
+    setHasPersonalSession(false);  // permitir auto-crear nueva sesión personal si sigue reproduciendo
     setPartnerId(null);
     setPartnerTrack(null);
     _lastSyncTsRef.current = 0;
@@ -294,13 +294,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     await joinSession(sid);
   }, [joinSession]);
 
-  // Auto-crear sesión propia al empezar a reproducir o al recuperarse de leave
+  // Auto-crear sesión personal al empezar a reproducir o al recuperarse de leave.
+  // Solo se dispara una vez por sesión de reproducción (hasPersonalSession guard).
   useEffect(() => {
-    if (!userId || !isPlaying || sessionId || !activeTrack) return;
-    console.info("[Búnker] 🔗 Auto-create sesión propia al reproducir");
+    if (!userId || !isPlaying || !activeTrack || hasPersonalSession) return;
+    console.info("[Búnker] 🔗 Auto-create sesión personal");
     createSession();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, userId, sessionId]);
+  }, [isPlaying, userId, activeTrack?.id, hasPersonalSession]);
 
   // Poll loop: chequear presencia cada 15s (SC5)
   useEffect(() => {

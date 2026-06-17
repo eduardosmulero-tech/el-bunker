@@ -71,6 +71,12 @@ Esperando instruccion.
   No generar ediciones directas de codigo salvo instruccion explicita.
 - Al cerrar sesion: actualizar docs/SESION.md y docs/Nucleo/ESTADO.md
   antes de cualquier otra cosa.
+- 🔴 REGLA DE ORO: Antes de implementar, INVESTIGAR. Leer el código completo
+  del archivo a modificar, entender la arquitectura (todos los flujos, efectos,
+  dependencias), y SOLO entonces proponer cambios. Si hay dudas sobre el
+  comportamiento de un efecto o handler, preguntar antes de editar. No adivinar
+  ni asumir. No hacer cambios basados en lo que "debería" pasar — confirmar
+  leyendo el código actual.
 
 ## REGLAS INAMOVIBLES (S49)
 
