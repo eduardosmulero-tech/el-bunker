@@ -260,7 +260,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     console.info("[Búnker] 🔗 Sesión finalizada");
   }, [sessionId]);
 
-  // SC5: Chequear presencia del partner + auto-join automático sin clics
+  // SC5: Chequear presencia del partner + auto-join si hay sesión pendiente
   const checkPresence = useCallback(async () => {
     if (!workerClient.hasToken() || !userId) return;
     try {
@@ -270,14 +270,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setPartnerTrack(res.active_track || null);
         const otherUserId = userId === "edu" ? "david" : "edu";
         setPartnerId(otherUserId);
-        // Auto-join: si hay sesión pendiente del otro, unirse
+        // Auto-join si el otro ya creó sesión (SC5)
         if (res.pending_session_id && !sessionId) {
           console.info("[Búnker] 🔗 Auto-join a sesión de", otherUserId);
           await joinSession(res.pending_session_id);
-        } else if (!sessionId && isPlayingRef.current && !res.pending_session_id) {
-          // Sin sesión pendiente y ambos escuchando → crear sesión automática
-          console.info("[Búnker] 🔗 Auto-create sesión (partner detectado)");
-          await createSession();
         }
       } else {
         setPartnerListening(false);
@@ -285,7 +281,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setPartnerId(null);
       }
     } catch { /* noop */ }
-  }, [userId, sessionId, joinSession, createSession]);
+  }, [userId, sessionId, joinSession]);
 
   // Poll loop: chequear presencia cada 15s (SC5)
   useEffect(() => {
