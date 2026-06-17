@@ -4,13 +4,13 @@
 // ============================================================
 import { lazy, Suspense } from "react";
 
+import { Skeleton } from "../core/ui";
 import { useVault } from "../core/VaultContext";
 import { useMusicActions } from "../musiclab/useMusicActions";
 import { usePlayer } from "../core/PlayerContext";
 import Vault from "../vault/Vault";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 import { workerClient } from "../core/WorkerClient";
-import { PageLoader } from "./BootScreen";
 
 // Code splitting: lazy-load los dos módulos más pesados
 const MusicLab = lazy(() => import("../musiclab/MusicLab"));
@@ -95,7 +95,7 @@ export const MusicPage = () => {
 
   return (
     <ChunkErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<Skeleton.MusicLab />}>
         <MusicLab
           db={db}
           userId={user?.id ?? null}
@@ -121,7 +121,7 @@ export const CapsulesPage = () => {
   const { activeTrack } = usePlayer();
   return (
     <ChunkErrorBoundary>
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<Skeleton.Capsules />}>
         <Capsules
           db={db}
           userId={user?.id ?? null}

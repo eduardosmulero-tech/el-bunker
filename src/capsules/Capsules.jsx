@@ -6,6 +6,7 @@
 // ============================================================
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "../core/ui";
 import { ACID, FONT_MONO } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
@@ -123,17 +124,17 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
         <style>{`.capsules-subnav::-webkit-scrollbar { display: none; }`}</style>
       </nav>
 
-      {/* Loading indicator — G4: vibe-aware */}
+      {/* Loading indicator — G4: vibe-aware, S0.5: skeleton */}
       {loadingEvents && (
-        <div className="flex items-center justify-center gap-2 py-3">
-          <motion.span
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="text-xs tracking-[0.3em] uppercase"
-            style={{ color: accent }}
-          >
-            ◌ CARGANDO EVENTOS...
-          </motion.span>
+        <div className="flex flex-col gap-2" style={{ padding: "4px 0" }}>
+          <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton.Block key={i} width={60} height={24} />
+            ))}
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton.Block key={i} height={48} width="100%" />
+          ))}
         </div>
       )}
 

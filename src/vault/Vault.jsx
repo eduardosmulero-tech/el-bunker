@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
+import { Skeleton } from "../core/ui";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
@@ -991,14 +992,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
           {/* Galería de la Era activa — lazy loaded */}
           <div className="mt-4">
             <ChunkErrorBoundary>
-              <Suspense fallback={
-              <div className="flex items-center justify-center py-8" style={{ fontFamily: FONT_MONO }}>
-                <motion.span animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}
-                  className="text-xs tracking-[0.3em] uppercase" style={{ color: accent }}>
-                  CARGANDO GALERÍA...
-                </motion.span>
-              </div>
-            }>
+              <Suspense fallback={<Skeleton.VaultGallery />}>
               <VaultGallery
                 entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
                 eras={displayEras}                />
