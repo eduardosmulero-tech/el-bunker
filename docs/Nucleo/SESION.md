@@ -3,6 +3,46 @@
 > Dispatcher del sistema. Leer primero.
 > Actualizar al cerrar cada sesión.
 
+## S130-A — SUB-FASE 1: MAP MODE PREMIUM (17 Junio 2026)
+
+### Hallazgos
+1. **MAP placeholder semántico en VaultGallery** — S122-E dejó texto hardcodeado "Las entradas necesitan coordenadas..." sin integración Leaflet real. Auditoría real confirmó ~0% implementación, 0/9 features completas.
+
+### Implementación (Sub-fase 1)
+1. **react-leaflet-cluster instalado** — `react-leaflet-cluster@4.1.3` (peer-deps match exacto: react-leaflet 5.0.0 + leaflet 1.9.4 + React 19.2.6 + Vite 8) sin necesidad de `--legacy-peer-deps`.
+2. **3 CSS files en `public/vendor/`** — Leaflet 14.8 KB + MarkerCluster 997 B + MarkerCluster.Default 1.4 KB. Descargados localmente desde `unpkg.com/leaflet@1.9.4/dist/leaflet.css` + copiados desde `node_modules/react-leaflet-cluster/dist/assets/` — evita CORS/CSP issues con unpkg.
+3. **CSP actualizado en `index.html`** — `*.basemaps.cartocdn.com` y `*.openstreetmap.org` añadidos a `img-src`. +3 `<link rel="stylesheet">` en `<head>` apuntando a `/vendor/*`.
+4. **MapView real en VaultGallery.jsx** — `MapContainer` (center Madrid fallback zoom 4) + `TileLayer` CartoDB Dark Matter (sin API key, dark vibe matching Búnker, attribution OSM+CARTO) + `MarkerClusterGroup` con `chunkedLoading` (≥500 markers OK) + `divIcon` HTML coloreado por Era con doble glow (búnker aesthetic) + `FitBoundsToMarkers` (auto-fit bounds padding 40px maxZoom 6) + Popups nativos Leaflet con metadata completa (era · from_user · title · date · type · coords mini-bottom) + fallback elegante al placeholder S122-E cuando 0 coords.
+5. **DEMO_ENTRIES_GEO const** — 9 entries hardcoded con coords reales: Madrid (Atocha+Malasaña, RUTINA amarillo), BCN/GR/SV/VLC/LIS (VIAJE naranja), PAR/ROM (CELEBRACIÓN púrpura). Permite validar clustering visualmente sin esperar a Sub-fase 4 (geocoder real).
+6. **L.Icon.Default prototype fix** — workaround estándar para bundlers (`delete _getIconUrl + mergeOptions`). No afecta a otros componentes actualmente pero deja la puerta abierta para futuros.
+
+### Validación
+- **Build**: ✅ 2.06s
+- **Lint**: ✅ sección MapView clean. 7 errores pre-existentes en S122-A/B/C/D (hooks-conditional) + `currentIdx` sin usar en MAIN COMPONENT — NO introducidos por S130-A, P3 followup ortogonal.
+- **Code review**: ✅ aprobado (main + 4 micro-mejoras post-review).
+- **Browser smoke test**: pendiente manual. Mental screenshot esperado: mapa oscuro estilo Búnker, 9 pines circulares brillantes con colores de Era, 1-2 clusters automáticos donde hay pins cercanos (Madrid: 2 → 1 cluster), auto-fit bounds a Iberia+Europa Occidental, popup clickable con metadata emocional.
+
+### Archivos modificados (6)
+- `package.json` y `package-lock.json` — `react-leaflet-cluster@4.1.3` instalado.
+- `public/vendor/leaflet.css` (nuevo, 14.8 KB)
+- `public/vendor/MarkerCluster.css` (nuevo, 997 B)
+- `public/vendor/MarkerCluster.Default.css` (nuevo, 1.4 KB)
+- `index.html` — CSP ampliado + 3 link tags.
+- `src/vault/VaultGallery.jsx` — imports (MapContainer, TileLayer, Marker, Popup, useMap, MarkerClusterGroup, L) + helpers (makePinIcon, DEMO_ENTRIES_GEO, FitBoundsToMarkers) + MapView real con fallback elegante.
+
+### Pendiente (manual)
+1. Smoke test browser (especialmente mobile <400px para tap-on-pin UX).
+2. **PLIEGO-231** — Sub-fase 2: polylines de viaje entre entries same-Era (line color era, opacity 0.6, dashArray animado).
+3. **PLIEGO-232** — Sub-fase 3: slider temporal (range con min/max date, filtra pines visibles por rango).
+4. **PLIEGO-233** — Sub-fase 4: geocoder real Photon (primario) + Nominatim (fallback) + override manual, wired AddEntryForm, lat/lng añadidos a `entry.content`. Reemplaza DEMO_ENTRIES_GEO por `entries` prop con coords reales.
+5. **PLIEGO-234** — Sub-fase 5: privacy mask + advanced manual coords.
+6. **Fase 1 restantes (PLIEGO-235+)**: EXHIBITION canvas 2D, REEL auto-play+mapa+banda sonora, CINEMA audioguías+música Era — independiente de MAP.
+
+### Workflow note
+Pliego formal generado (`tools/pliego_230.txt`) por documentación del proc. Implementación aplicada vía Python regex con anclajes únicos (mismo bypass pragmático que S126 — unicode em-dash issue con `tools/pliego_apply.py`). Architectura aprobada previamente en conversación (3 turnos antes): Photon geocoder, CartoDB Dark tiles, clustering react-leaflet-cluster, Attrib OSM+CARTO incluido.
+
+---
+
 ## S126 — PLIEGO MEDIANO: 6 FIXES UI (17 Junio 2026)
 
 ### Hallazgos (3)

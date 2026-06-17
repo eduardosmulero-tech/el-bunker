@@ -1,9 +1,9 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** PLIEGO-229 → siguiente PLIEGO-230 (Fase 1: MAP/EXHIBITION/REEL/CINEMA premium restantes)
+**Próximo pliego:** PLIEGO-231 → Sub-fase 2 MAP (polylines viaje entre same-Era). Tras: PLIEGO-232/233/234其余 sub-fases MAP + PLIEGO-235+ EXHIBITION/REEL/CINEMA premium restantes.
 **Nota:** S128/S129 bajas a BACKLOG porque session atajo manualmente por bypass de pliego_apply.py.
-**Última sesión:** S126 — Pliego mediano (doble barra volumen smoke + botón play outlined + Vault detail row con S97 quitado + badges slice 2 + mobile buttons) commit b7f3ff7 → RESUELTOS
+**Última sesión:** S130-A Sub-fase 1 — MAP mode premium Leaflet real + CartoDB Dark + clustering + 9 demo entries (MAP 0%→25%). Commit 13e0c74.
 **Rama activa:** `master`
 **Roadmap:** 4 fases, ~52h → docs/operacional/ROADMAP_COMPLETO.md
 
@@ -19,14 +19,15 @@
 | Reproductor visual | 85% | 🟡 Sin auto-activación |
 | Escucha Compartida | 80% | 🟡 SC2 = 0% |
 | DROPS | 40% | 🔴 M20/M21 rotos |
-| **Galería VAULT** | **35%** | 🔴 4/6 modos placeholder |
+| **Galería VAULT** | **~50%** | 🟡 MAP Sub-fase 1 hecha (25%); EXHIBITION/REEL/CINEMA siguen placeholder |
 | VIZ/Otros | 33% | 🔴 0% implementado |
 | **GLOBAL** | **~68%** | (antes decía 92% — inflado) |
 
 ### Placeholders activos (texto hardcodeado)
-- **MAP** (VaultGallery.jsx L869-880): `<p>Las entradas necesitan coordenadas...</p>` — 0%
-- **EXHIBITION** (VaultGallery.jsx L765-802): `<div className="flex flex-col gap-5">` — 5%
-- **REEL** (VaultGallery.jsx L805-866): lista flex sin Pin ni banda sonora — 15%
+- **EXHIBITION** (VaultGallery.jsx ahora~L763-808): `<div className="flex flex-col gap-5">` — 5%
+- **REEL** (VaultGallery.jsx ahora~L828-928): lista flex sin Pin ni banda sonora — 15%
+- **CINEMA premium uplit**: swipe+Ken Burns+overlay hecho (~L427-575). Faltan audioguias + crossfade + musica Era — 40%→100% pendiente
+- **MAP** (VaultGallery.jsx ahora~L984-1100): 🟢 Sub-fase 1 demo entries. 25% implementación real (Leaflet real con 9 pines hardcoded). SUB-FASE 4 (geocoder real wired AddEntryForm) es lo que llevo MAP a 100%.
 
 ---
 

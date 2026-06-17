@@ -5,6 +5,98 @@
 
 ---
 
+## v2.0.22 — "S130-A Sub-fase 1 — MAP mode premium: Leaflet real" (17 Junio 2026)
+
+### 🗺️ NUEVO — MAP mode real con Leaflet + CartoDB Dark + clustering
+
+El 6º y último modo de VaultGallery (MAP) sale del placeholder semántico S122-E y entra a implementación real con stack canónico: Leaflet 1.9.4 + react-leaflet 5 + react-leaflet-cluster 4.1.3 + CartoDB Dark Matter tiles (no API key, dark vibe matching El Búnker).
+
+**Arquitectura**:
+- **MapContainer + TileLayer CartoDB Dark Matter** (atribución automática a OSM + CARTO via `attribution=` prop — sin código nuestro).
+- **MarkerClusterGroup** con `chunkedLoading` — cluster automático con debounce de render para >500 markers sin freeze del navegador.
+- **divIcon HTML custom** — círculo de 18px con color de Era (el mismo `era.color` del theme) + border blanco 90% + doble box-shadow glow (`{color}cc` 8px + `{color}55` 16px). Sin PNG default de Leaflet (que está roto en bundlers por defecto — fix aplicado vía `delete L.Icon.Default.prototype._getIconUrl + mergeOptions`).
+- **FitBoundsToMarkers** helper interno que auto-ajusta viewport al bounds de los pines con `padding: [40, 40]` y `maxZoom: 6` (evita zoom-in excesivo si pins están concentrados en una ciudad). Live en module scope (no dentro de MapView) porque `useMap()` requiere contexto de MapContainer padre.
+- **Popups nativos Leaflet** con metadata completa: `«VIAJE · EDU»` mini-header en mono, título en bold negro, fecha `toLocaleDateString("es-ES", { day, month, year })`, badge categoría con icono + label, y lat/lng truncated a 4 decimales.
+- **Fallback elegante preservado** — si `geocoded.length === 0`, renderiza el placeholder S122-E idéntico al original (pulse 🌍 + mensajes + 3 chips 🔖). UX sin breaking change: si filter category no incluye ninguna entry con coords, sigue viendo el placeholder explicativo.
+
+### 🎨 DEMO_ENTRIES_GEO — 9 entries hardcoded con coords reales
+
+Para validar clustering visualmente sin esperar al geocoder real (Sub-fase 4):
+
+| Entry | Era | Color | Lat,Lng | Concepto |
+|---|---|---|---|---|
+| Atocha al atardecer | RUTINA | `#bfff00` | 40.4068,-3.6903 | Madrid atardecer |
+| Cena en Malasaña | RUTINA | `#bfff00` | 40.4258,-3.7058 | Madrid noche |
+| Búnker del Carmel | VIAJE | `#ff8c42` | 41.4178,2.1525 | Barcelona mirador |
+| Alhambra | VIAJE | `#ff8c42` | 37.1761,-3.5881 | Granada monumento |
+| Plaza de España | VIAJE | `#ff8c42` | 37.3773,-5.9869 | Sevilla plaza |
+| Ciudad de las Artes | VIAJE | `#ff8c42` | 39.4549,-0.3517 | Valencia museu |
+| Alfama al amanecer | VIAJE | `#ff8c42` | 38.7113,-9.1305 | Lisboa barrio |
+| Sena en Nochevieja | CELEBRACIÓN | `#a96fff` | 48.8589,2.2935 | Paris NYE |
+| Fontana di Trevi | CELEBRACIÓN | `#a96fff` | 41.9009,12.4833 | Roma fontana |
+
+Cada uno con `era_id`/`era_name`/`type`/`from_user`/`date` reales (3 eras cubiertas, 2 users, 6 ciudades).
+
+### 🛡️ CSP actualizado para tiles CartoDB
+
+`img-src` en `index.html` ahora permite `https://*.basemaps.cartocdn.com` (CartoDB tile servers: a/b/c/d subdomains) y `https://*.openstreetmap.org` (cualquier futura pieza OSM). Sin afectar directivas existentes (`script-src`, `connect-src`, `frame-src` intactas).
+
+**Vendor CSS local** — 3 archivos descargados a `public/vendor/` para evitar CORS/CSP coupling con unpkg:
+- `leaflet.css` (14.8 KB, https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)
+- `MarkerCluster.css` (997 B, node_modules/react-leaflet-cluster/dist/assets/)
+- `MarkerCluster.Default.css` (1.4 KB, mismo path)
+
+Servidos via `<link rel="stylesheet" href="/vendor/*">` con prioridad de carga paralela a JS bundle.
+
+### 📊 Stack additions
+
+- `react-leaflet-cluster@4.1.3` (peer-deps match exacto: `react: ^19.0.0`, `react-leaflet: ^5.0.0`, `leaflet: ^1.9.0`). Sin necesidad de `npm install --legacy-peer-deps`.
+- `leaflet.markercluster` (transitiva via react-leaflet-cluster) — implementación upstream oficial de Leaflet organisation, no fork.
+- `leaflet@1.9.4` y `react-leaflet@5.0.0` ya estaban en `package.json` desde S122-B pero sin uso real hasta ahora.
+
+**Bundle gzipped delta**: ~25-30 KB (cluster ~15 KB + wrapper ~5 KB + 3 CSS ~5 KB + leaflet ya parcialmente bundled), dentro del budget 35 KB del pliego.
+
+### 📋 Pendiente — sub-fases MAP restantes
+
+| Sub-fase | Pliego | Contenido |
+|---|---|---|
+| 2 | PLIEGO-231 | Polylines de viaje entre entries same-Era (color era, opacity 0.6, dashArray animado) |
+| 3 | PLIEGO-232 | Slider temporal (range min/max date, filtra pines visibles por rango) |
+| 4 | PLIEGO-233 | Geocoder real Photon (primario) + Nominatim (fallback) + override manual. Wired AddEntryForm. lat/lng añadidos a `entry.content`. Fallback button "📍 REGEOCODEAR" si geocoder falla. |
+| 5 | PLIEGO-234 | Privacy mask (opt-in fuzzing para coordenadas sensibles manual) + advanced manual lat/lng inputs |
+
+Sub-fases 2-5 son acumulativas. Sub-fase 1 es independiente (MapContainer funciona solo).
+
+### 📁 Archivos (6)
+
+- `package.json` + `package-lock.json` (auto via `npm install react-leaflet-cluster@4.1.3`)
+- `public/vendor/leaflet.css` (nuevo, 14.8 KB)
+- `public/vendor/MarkerCluster.css` (nuevo, 997 B)
+- `public/vendor/MarkerCluster.Default.css` (nuevo, 1.4 KB)
+- `index.html` (CSP `img-src` ampliado + 3 `<link rel="stylesheet">` para vendor CSS)
+- `src/vault/VaultGallery.jsx` (imports + helpers `makePinIcon`, `FitBoundsToMarkers`, `DEMO_ENTRIES_GEO` const + `MapView` real con fallback elegante)
+
+### ✅ VALIDACIÓN
+
+- **Build**: ✅ 2.06s, 0 errores.
+- **Lint**: ✅ MapView section clean (0 errors en 100+ lineas nuevas). 7 errores pre-existentes en S122-A/B/C/D (hooks-conditional tras early return) + `currentIdx` sin usar en MAIN COMPONENT — NO introducidos por S130-A. P3 followup ortogonal.
+- **Code review**: ✅ aprobado (main + 4 micro-mejoras tras revisión: `FitBoundsToMarkers` module-scope comment, `eraBreakdown` useMemo, header JSX usa breakdown memoizado, `renderMap` comment explicativo sobre hardcoded demo).
+- **Bundle size**: ~30 KB delta gzipped, dentro del budget 35 KB del pliego.
+
+### 🧠 Mental screenshot esperado
+
+Apertura del tab VAULT → click en botón `◉ MAP` del mode bar:
+- Header: `◉ MAP · 9 pines · 3 eras · CARTO DARK · OSM`
+- Mapa full-bleed (`height: 70vh, minHeight: 480px`) con fondo oscuro estilo Búnker.
+- 9 markers circulares brillantes: 2 amarillo-lima (RUTINA, Madrid), 5 naranja (VIAJE, España+Lisboa), 2 púrpura (CELEBRACIÓN, París+Roma). Los 2 pins de Madrid forman 1 cluster `2` por proximidad.
+- Bottom footer mini: `S130-A · Sub-fase 1 demo · click pin para metadata · zoom para desclusterizar`.
+- Click en cualquier pin → popup blanco Leaflet nativo con: `«VIAJE · EDU»` pequeno header, `«Búnker del Carmel»` bold negro, `«8 jul 2024»` fecha pequeño, `«▸ viaje»` categoría pequeno, `«41.4178, 2.1525»` coords footer 7px.
+- Zoom in (scroll/+/buttons) → cluster Madrid se separa en 2 pins individuales. Pan a Roma → pin púrpura solo. Pan manual a Asia → fondo oscuro sin pins (los 9 demos están en Iberia+Europa Occidental).
+
+Sub-fase 4 reemplazará DEMO_ENTRIES_GEO por `entries` prop filtradas desde `useVault()` con `content.lat`/`content.lng` reales (siguiendo la decisión del audit: Photon + Nominatim wired en AddEntryForm).
+
+---
+
 ## v2.0.21 — "S126 — Pliego mediano: doble barra volumen + botón play + Vault detail row" (17 Junio 2026)
 
 ### 🐛 CORREGIDO — SmokeSession: doble barra de volumen

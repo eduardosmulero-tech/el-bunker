@@ -50,3 +50,9 @@
 | S126-D | S98 badges slice(0,2) + +N indicator con title discoverability | Vault.jsx | 2026-06-17 |
 | S126-E | edit/delete buttons mobile-friendly con sm:group-hover dual-class | Vault.jsx | 2026-06-17 |
 | S126-F | _CAT_LOOKUP dead code eliminado (era helper sin uso tras quitar S97) | Vault.jsx | 2026-06-17 |
+| S130-A1 | react-leaflet-cluster 4.1.3 instalado con peer-deps match (React 19 + react-leaflet 5 + leaflet 1.9.4) | package.json | 2026-06-17 |
+| S130-A2 | 3 CSS files vendor (Leaflet 14.8KB + MarkerCluster 997B + MarkerCluster.Default 1.4KB) en public/vendor/ | public/vendor/ | 2026-06-17 |
+| S130-A3 | CSP actualizado: +1 `*.basemaps.cartocdn.com` +1 `*.openstreetmap.org` en img-src + 3 `<link>` vendor CSS | index.html | 2026-06-17 |
+| S130-A4 | MapView real: MapContainer + TileLayer CartoDB Dark + MarkerClusterGroup chunkedLoading + divIcon Era glow + Popups | VaultGallery.jsx | 2026-06-17 |
+| S130-A5 | DEMO_ENTRIES_GEO: 9 entries hardcoded (Madrid×2 + BCN/GR/SV/VLC/LIS/PAR/ROM) con coords reales para validar clustering | VaultGallery.jsx | 2026-06-17 |
+| S130-A6 | FitBoundsToMarkers helper (auto-fit bounds + maxZoom 6 + padding 40px) + L.Icon.Default fix + fallback elegante preservado | VaultGallery.jsx | 2026-06-17 |
