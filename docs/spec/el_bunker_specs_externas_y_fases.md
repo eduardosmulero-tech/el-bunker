@@ -137,6 +137,8 @@ Individual por usuario. Independiente de la sesión compartida.
 
 **SC14:** Información de presencia visible → track activo del otro usuario. Sin posición exacta ni cola.
 
+**SC15:** Partner-vibe-follow. El indicador de presencia (status bar) y el corazón en el header siguen el vibe del track que el otro usuario está escuchando, no el vibe local del reproductor. El color del corazón y el badge track se iluminan con el acento cromático del tag del partner. Deriva de la presencia heartbeat que envía `track_vibe`.
+
 > 🔖 SC-M18: Revisar modelo de cola Drive para escrituras concurrentes sin colisión antes de implementar.
 > 🔖 SC-M19-ANIM: Animaciones avanzadas del corazón en sesión activa — pendientes de sesión de diseño. Fase C.
 

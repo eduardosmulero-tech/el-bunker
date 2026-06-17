@@ -58,7 +58,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
     // Fase C — Escucha Compartida (S123)
-    sessionId, isHost, partnerListening, partnerTrack, partnerName,
+    sessionId, isHost, partnerListening, partnerTrack, partnerName, partnerTrackVibe,
     createSession, leaveSession,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
@@ -97,6 +97,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   // vibeConfProp viene de MusicLab (resuelto desde DB, incluye tags custom)
   // fallback a getVibeConfig canónico solo si no se pasa prop
   const vibeConf = vibeConfProp ?? getVibeConfig(trackVibe ?? "gaming");
+  // Partner vibe color — para corazón y badge cuando partner escucha
+  const partnerColor = partnerTrackVibe ? getVibeConfig(partnerTrackVibe).palette.accent : "#ffcc00";
 
   // Funciones de control — declaradas ANTES de los useEffects que las consumen
   // para mantener el orden topológico de refs en deps (no-use-before-define).
@@ -412,7 +414,7 @@ return () => cancelAnimationFrame(raf);
           )}
         </div>
 
-        {/* Fase C — S123: Corazón centrado en el header (SC5) + SC-M19-ANIM */}
+        {/* S132: Heart centrado en header — 3 estados: idle ♡ / partner ♥!bocadillo / sesión ♥ HOST/LINK */}
         <div className="flex-1 flex items-center justify-center min-w-0 px-1">
           <motion.button
             layout
@@ -429,97 +431,119 @@ return () => cancelAnimationFrame(raf);
             title={sessionId
               ? `Sesión compartida activa · tocar para salir`
               : partnerListening
-                ? `${partnerName || "El otro"} está escuchando — tocar para unirte`
+                ? `${partnerName || "Alguien"} está escuchando — tocar para unirte`
                 : "Nadie escuchando"}
             aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
-            className="relative flex items-center justify-center gap-1 text-xs font-bold h-6 overflow-visible"
+            className="relative flex items-center justify-center gap-1 text-xs font-bold h-6"
             style={{
-              minWidth: sessionId ? 48 : 36,
+              minWidth: sessionId ? 52 : 48,
               paddingLeft: sessionId ? 8 : 6,
               paddingRight: sessionId ? 8 : 6,
               borderRadius: 2,
               background: sessionId
                 ? withAlpha("#ff2d55", 0.18)
                 : partnerListening
-                  ? withAlpha("#ffcc00", 0.15)
+                  ? withAlpha(partnerColor, 0.15)
                   : "transparent",
-              border: `1px solid ${sessionId ? withAlpha("#ff2d55", 0.5) : partnerListening ? withAlpha("#ffcc00", 0.5) : withAlpha(accentColor, 0.15)}`,
-              boxShadow: sessionId ? `0 0 12px ${withAlpha("#ff2d55", 0.4)}` : partnerListening ? `0 0 8px ${withAlpha("#ffcc00", 0.3)}` : "none",
+              border: `1px solid ${sessionId ? withAlpha("#ff2d55", 0.5) : partnerListening ? withAlpha(partnerColor, 0.5) : withAlpha(accentColor, 0.15)}`,
+              boxShadow: sessionId ? `0 0 12px ${withAlpha("#ff2d55", 0.4)}` : partnerListening ? `0 0 8px ${withAlpha(partnerColor, 0.3)}` : "none",
             }}
           >
-            {/* SC-M19-ANIM: ripple ring on active session */}
+            {/* Ripple ring — only active session */}
             {sessionId && (
               <motion.span
                 initial={{ scale: 0.8, opacity: 0.6 }}
                 animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }}
                 transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
                 className="absolute inset-0 rounded-sm pointer-events-none"
-                style={{
-                  border: `1px solid ${withAlpha("#ff2d55", 0.3)}`,
-                }}
+                style={{ border: `1px solid ${withAlpha("#ff2d55", 0.3)}` }}
               />
             )}
 
-            {/* Heart icon with smooth color transitions */}
+            {/* Heart — stable element (no key remount) */}
             <motion.span
-              key={sessionId ? "active" : partnerListening ? "partner" : "idle"}
-              initial={{ scale: 1.3, opacity: 0 }}
+              className="inline-block"
               animate={
                 sessionId
-                  ? { scale: [1, 1.25, 1], opacity: [1, 0.7, 1] }
+                  ? { scale: [1, 1.25, 1] }
                   : partnerListening
-                    ? { y: [0, -2, 0] }
-                    : { scale: 1, opacity: 1 }
+                    ? { y: [0, -3, 0] }
+                    : {}
               }
               transition={{
-                scale: sessionId ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 },
-                opacity: { duration: 0.3 },
-                y: partnerListening ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" } : undefined,
+                duration: sessionId ? 1.2 : 0.6,
+                repeat: Infinity,
+                ease: "easeInOut",
               }}
-              className="inline-block"
               style={{
-                fontSize: 14,
+                fontSize: 15,
                 lineHeight: 1,
-                color: sessionId ? "#ff2d55" : partnerListening ? "#ffcc00" : withAlpha(accentColor, 0.35),
+                color: sessionId ? "#ff2d55" : partnerListening ? partnerColor : withAlpha(accentColor, 0.35),
               }}
             >
               {sessionId || partnerListening ? "♥" : "♡"}
             </motion.span>
 
-            {/* Pokémon "!" exclamation when partner listening */}
+            {/* Bocadillo Pokémon "!" con boquilla — solo partner escuchando */}
             {partnerListening && !sessionId && (
               <motion.span
-                key="exclamation"
+                className="relative inline-flex items-center"
                 initial={{ scale: 2.5, opacity: 0 }}
-                animate={{
-                  scale: [2.5, 1, 1.3, 0.9, 1.1, 1],
-                  opacity: [1, 1, 0.8, 1, 0.9, 1],
-                }}
+                animate={{ scale: [2.5, 1, 1.3, 0.9, 1.1, 1], opacity: [1, 1, 0.8, 1, 0.9, 1] }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="font-bold leading-none"
-                style={{
-                  fontSize: 13,
-                  color: "#ff2d55",
-                  textShadow: `0 0 8px ${withAlpha("#ff2d55", 0.6)}`,
-                }}
               >
-                !
+                <span
+                  className="font-bold leading-none relative"
+                  style={{
+                    fontSize: 9,
+                    color: "#fff",
+                    background: "#ff2d55",
+                    borderRadius: 2,
+                    padding: "1px 4px 1px 4px",
+                    textShadow: "none",
+                  }}
+                >
+                  !
+                  {/* Boquilla (triángulo) */}
+                  <span
+                    className="absolute"
+                    style={{
+                      left: "50%",
+                      bottom: -3,
+                      marginLeft: -2,
+                      width: 0,
+                      height: 0,
+                      borderLeft: "3px solid transparent",
+                      borderRight: "3px solid transparent",
+                      borderTop: "3px solid #ff2d55",
+                    }}
+                  />
+                </span>
               </motion.span>
             )}
 
-            {/* "En sesión" label for active session */}
+            {/* HOST/LINK label — sesión activa */}
             {sessionId && (
-              <motion.span
-                key="status-label"
-                initial={{ opacity: 0, x: -4 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-[9px] uppercase tracking-wider leading-none"
-                style={{ color: withAlpha("#ff2d55", 0.7) }}
-              >
+              <span className="text-[9px] uppercase tracking-wider leading-none" style={{ color: withAlpha("#ff2d55", 0.7) }}>
                 {isHost ? "HOST" : "LINK"}
-              </motion.span>
+              </span>
             )}
           </motion.button>
+
+          {/* Badge partner track — mini badge flotante (solo partner, sin sesión) */}
+          {partnerListening && !sessionId && partnerTrack?.title && (
+            <motion.span
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="ml-1.5 text-[8px] truncate max-w-[60px] leading-none"
+              style={{
+                color: withAlpha(partnerColor, 0.6),
+                fontFamily: FONT_MONO,
+              }}
+            >
+              {partnerTrack.title.slice(0, 12)}
+            </motion.span>
+          )}
         </div>
 
         <div className="flex gap-2 flex-none">
@@ -615,7 +639,7 @@ return () => cancelAnimationFrame(raf);
       {/* S125: restructurado a 3 clusters con flex-1 en el central — el play queda realmente centrado */}
       <div className="flex items-center gap-2 px-3 pb-3"
         style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
-        {/* Cluster izquierdo: loop + shuffle */}
+        {/* Cluster izquierdo: loop + shuffle + ♡ like */}
         <div className="flex gap-2 flex-none">
           <WinampBtn
             label={loopMode === "track" ? "⟳¹" : "⟳"}
@@ -626,6 +650,14 @@ return () => cancelAnimationFrame(raf);
             aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
           />
           <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
+          <WinampBtn
+            label={liked ? "♥" : "♡"}
+            active={liked}
+            color={"#ff2d55"}
+            onClick={() => { const next = !liked; setLiked(next); setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS"); }}
+            title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
+            aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
+          />
         </div>
 
         {/* Cluster central: prev + play + next + ⚡ + ⊕ (flex-1 ocupa el espacio, justify-center centra el play) */}

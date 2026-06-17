@@ -30,7 +30,7 @@ export default async function handleSync(request, env, url, userId) {
           const data = JSON.parse(presence.value);
           const age = Date.now() - (data.updated_at || 0);
           if (age < 5 * 60 * 1000) {
-            response = { active: true, active_track: { id: data.track_id, title: data.track_title } };
+            response = { active: true, active_track: { id: data.track_id, title: data.track_title, vibe: data.track_vibe || null } };
           }
         } catch { /* valor corrupto */ }
       }
@@ -97,10 +97,11 @@ export default async function handleSync(request, env, url, userId) {
 
     // HEARTBEAT: actualizar presencia (SC5)
     if (action === "heartbeat") {
-      const { track_id, track_title } = body;
+      const { track_id, track_title, track_vibe } = body;
       const presence = JSON.stringify({
         track_id: track_id || null,
         track_title: track_title || null,
+        track_vibe: track_vibe || null,
         updated_at: Date.now(),
       });
       await env.DB.prepare(

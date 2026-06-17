@@ -7,7 +7,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePlayer } from "../core/PlayerContext";
-import { ACID, PURPLE, BG } from "../tokens";
+import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 
 // ─── SCANLINE OVERLAY ────────────────────────────────────────
 // CRT scanline effect via repeating linear gradient
@@ -53,7 +53,7 @@ const CornerBrackets = ({ color = ACID, thickness = 2 }) => {
 // ─── TOP STATUS BAR ──────────────────────────────────────────
 const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
   const [tick, setTick] = useState(new Date());
-  const { partnerListening, partnerTrack, partnerName, sessionId } = usePlayer();
+  const { partnerListening, partnerTrack, partnerName, partnerTrackVibe, sessionId } = usePlayer();
 
   useEffect(() => {
     const id = setInterval(() => setTick(new Date()), 1000);
@@ -95,27 +95,30 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
           EL BÚNKER
         </span>
 
-        {/* SC14: Presence indicator in status bar */}
-        {partnerListening && (
-          <motion.div
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-1.5 text-[9px] tracking-wider uppercase truncate"
-            style={{ color: sessionId ? "#ff2d55" : "#ffcc00", opacity: 0.8 }}
-          >
-            <motion.span
-              animate={sessionId
-                ? { scale: [1, 1.3, 1] }
-                : { opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 1.2, repeat: Infinity }}
+        {/* SC14: Presence indicator in status bar — sigue el vibe del partner */}
+        {partnerListening && (() => {
+          const partnerVibeColor = partnerTrackVibe ? getVibeConfig(partnerTrackVibe).palette.accent : "#ffcc00";
+          return (
+            <motion.div
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-center gap-1.5 text-[9px] tracking-wider uppercase truncate"
+              style={{ color: sessionId ? "#ff2d55" : partnerVibeColor, opacity: 0.8 }}
             >
-              {sessionId ? "♥" : "◉"}
-            </motion.span>
-            <span className="truncate max-w-[120px]">
-              {partnerName || "Otro"}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
-            </span>
-          </motion.div>
-        )}
+              <motion.span
+                animate={sessionId
+                  ? { scale: [1, 1.3, 1] }
+                  : { opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
+              >
+                {sessionId ? "♥" : "◉"}
+              </motion.span>
+              <span className="truncate max-w-[120px]">
+                {partnerName || "Alguien"}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
+              </span>
+            </motion.div>
+          );
+        })()}
       </div>
 
       {/* RIGHT: Clock */}

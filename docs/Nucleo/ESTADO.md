@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** Fase 0.4 — Touch targets ≥44px audit.
-**Última sesión:** S132 — Auditoría escucha compartida SC1-SC14. Score ~78%.
+**Última sesión:** S132 — Correcciones post-auditoría escucha compartida. Score ~82%.
 **Rama activa:** `master`
-**Commit:** S132 — heart→header, auto-join, queue sync, animations
+**Commit:** S132b — like restaurado, bocadillo Pokémon, partner-vibe-follow, heartbeat fix
 
 ---
 

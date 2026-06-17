@@ -66,19 +66,36 @@ Auditoría detallada de escucha compartida vs specs SC1-SC14. Score inicial ~38%
 | Heartbeat presence | `PlayerContext.jsx` | Broadcaster refresca presencia cada 30s |
 | Animaciones | `WinampPlayer.jsx` | layout transitions, ripple ring, key-based entrance |
 
+### Correcciones post-auditoría (2o pase)
+| Issue | Fix |
+|-------|-----|
+| Like button eliminado → restaurado en botonera controles | `WinampPlayer.jsx` — ♡/♥ like junto a loop+shuffle |
+| Corazón oculto con exclamación → key removido, siempre visible | `WinampPlayer.jsx` — heart span estable sin `key` |
+| "!" plano → bocadillo Pokémon con boquilla | `WinampPlayer.jsx` — span con fondo #ff2d55 + triángulo CSS |
+| Botonera descentrada → layout restaurado | `WinampPlayer.jsx` — left cluster loop+shuffle+like |
+| Animaciones perdidas → restauradas + mejoradas | `WinampPlayer.jsx` — pulso sesión, bounce partner |
+| "Otro" → nombres reales Edu/David | `Layout.jsx`, `WinampPlayer.jsx` — fallback a "Alguien" |
+| Heartbeat no se enviaba al pausar/reanudar → dep `isPlaying` | `PlayerContext.jsx` — efecto heartbeat escucha play state |
+| Partner vibe no visible → SC15 partner-vibe-follow | Server heartbeat envía `track_vibe`, cliente deriva color |
+
 ### Bugs resueltos
 - Heart en controls bar → movido a header centrado
 - `removeFromQueue` no hacía sync → añadido `syncAction`
 - Partner listening sin auto-join → `pending_session_id` en presence
 - Queue perdida al salir → `queue_json` en DELETE response
 - Sin badge de atribución → `_added_by` + color tags
+- Like button eliminado durante refactor → restaurado
+- Heartbeat no responsive al play/pause → dep `isPlaying` añadida
+- Corazón se ocultaba con exclamación → key removido, stable
+- "!" sin bocadillo → span con triángulo CSS (boquilla)
+- StatusBar y heart usaban #ffcc00 fijo → siguen vibe del partner
 
 ### Bugs activos
 - SC6/SC12 (stats credit): bloqueado en STAT-M9
 - SC-M19-ANIM (BPM particles): diferido a sesión de diseño
 
 ### Pendiente
-- Score actual ~78%. Gap principal: stats engine.
+- Score actual ~82%. Gap principal: stats engine.
 
 ## Pendiente Fase 0.4
 Touch targets ≥44px audit + fix en toda la app.

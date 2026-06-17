@@ -194,6 +194,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
   const partnerName = partnerId === "edu" ? "Edu" : partnerId === "david" ? "David" : partnerId || null;
 
+  // Partner vibe: del server (presence track_vibe) o lookup local
+  const partnerTrackVibe = partnerTrack?.vibe || partnerTrack?.tag ||
+    (partnerTrack?.id ? tracks.find(t => t.id === partnerTrack.id)?.vibe || tracks.find(t => t.id === partnerTrack.id)?.tag : null) || null;
+
   // Crear sesión (host)
   const createSession = useCallback(async () => {
     if (!workerClient.hasToken()) return;
@@ -461,21 +465,22 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, isPlaying]);
 
-  // SC5: Heartbeat de presencia cada 30s mientras se está reproduciendo
+  // SC5: Heartbeat de presencia mientras se está reproduciendo
   useEffect(() => {
-    if (!userId || !workerClient.hasToken() || !activeTrack) return;
+    if (!userId || !workerClient.hasToken() || !activeTrack || !isPlaying) return;
     const sendHeartbeat = () => {
-      if (!isPlayingRef.current) return;
+      const t = activeTrackRef.current;
       workerClient.post("/api/sync", {
         action: "heartbeat",
-        track_id: activeTrackRef.current?.id || null,
-        track_title: activeTrackRef.current?.title || null,
+        track_id: t?.id || null,
+        track_title: t?.title || null,
+        track_vibe: t?.vibe || t?.tag || null,
       }).catch(() => {});
     };
     sendHeartbeat();
     const interval = setInterval(sendHeartbeat, 30000);
     return () => clearInterval(interval);
-  }, [userId, activeTrack?.id]);
+  }, [userId, activeTrack?.id, isPlaying]);
 
   // Auto-clear session toast after 3s (only plain strings, not action toasts)
   useEffect(() => {
@@ -1557,7 +1562,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // S109 — Chromecast
       castState, startCasting, stopCasting, isCasting, castDeviceName,
       // Fase C — Escucha Compartida (S123)
-      sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName,
+      sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName, partnerTrackVibe,
       createSession, joinSession, leaveSession, syncAction, checkPresence,
       sessionToast, setSessionToast,
       sharedListening: !!sessionId, setSharedListening: () => {},
