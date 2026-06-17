@@ -414,29 +414,28 @@ return () => cancelAnimationFrame(raf);
           )}
         </div>
 
-        {/* S132: Heart centrado en header — 3 estados: idle ♡ / partner ♥!bocadillo / sesión ♥ HOST/LINK */}
+        {/* S132: Heart centrado en header — 3 estados: idle ♡ / partner ♥!bocadillo / sesión ♥ Edu+David */}
         <div className="flex-1 flex items-center justify-center min-w-0 px-1">
           <motion.button
-            layout
             whileTap={{ scale: 0.85 }}
             onClick={async () => {
               if (sessionId) {
                 await leaveSession();
               } else if (partnerListening) {
-                await createSession();
+                await joinPendingSession();
               } else {
                 setLikeToast("NADIE ESTÁ ESCUCHANDO");
               }
             }}
             title={sessionId
-              ? `Sesión compartida activa · tocar para salir`
+              ? `Sesión con ${partnerName} · tocar para salir`
               : partnerListening
                 ? `${partnerName} está escuchando — tocar para unirte`
                 : "Nadie escuchando"}
             aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
-            className="relative flex items-center justify-center gap-1 text-xs font-bold h-6"
+            className="relative flex items-center justify-center gap-1 text-xs font-bold h-6 overflow-visible"
             style={{
-              minWidth: sessionId ? 52 : 48,
+              minWidth: sessionId ? 56 : 48,
               paddingLeft: sessionId ? 8 : 6,
               paddingRight: sessionId ? 8 : 6,
               borderRadius: 2,
@@ -446,37 +445,38 @@ return () => cancelAnimationFrame(raf);
                   ? withAlpha(partnerColor, 0.15)
                   : "transparent",
               border: `1px solid ${sessionId ? withAlpha("#ff2d55", 0.5) : partnerListening ? withAlpha(partnerColor, 0.5) : withAlpha(accentColor, 0.15)}`,
-              boxShadow: sessionId ? `0 0 12px ${withAlpha("#ff2d55", 0.4)}` : partnerListening ? `0 0 8px ${withAlpha(partnerColor, 0.3)}` : "none",
+              boxShadow: sessionId ? `0 0 16px ${withAlpha("#ff2d55", 0.5)}` : partnerListening ? `0 0 10px ${withAlpha(partnerColor, 0.35)}` : "none",
+              transition: "min-width 0.2s, padding 0.2s",
             }}
           >
-            {/* Ripple ring — only active session */}
+            {/* Ripple ring — sesión activa */}
             {sessionId && (
               <motion.span
                 initial={{ scale: 0.8, opacity: 0.6 }}
-                animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
+                animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
                 className="absolute inset-0 rounded-sm pointer-events-none"
-                style={{ border: `1px solid ${withAlpha("#ff2d55", 0.3)}` }}
+                style={{ border: `1px solid ${withAlpha("#ff2d55", 0.35)}` }}
               />
             )}
 
-            {/* Heart — stable element (no key remount) */}
+            {/* Heart con animaciones visibles */}
             <motion.span
               className="inline-block"
               animate={
                 sessionId
-                  ? { scale: [1, 1.25, 1] }
+                  ? { scale: [1, 1.4, 1] }
                   : partnerListening
-                    ? { y: [0, -3, 0] }
+                    ? { y: [0, -5, 0] }
                     : {}
               }
               transition={{
-                duration: sessionId ? 1.2 : 0.6,
+                duration: sessionId ? 1 : 0.5,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
               style={{
-                fontSize: 15,
+                fontSize: 16,
                 lineHeight: 1,
                 color: sessionId ? "#ff2d55" : partnerListening ? partnerColor : withAlpha(accentColor, 0.35),
               }}
@@ -484,12 +484,12 @@ return () => cancelAnimationFrame(raf);
               {sessionId || partnerListening ? "♥" : "♡"}
             </motion.span>
 
-            {/* Bocadillo Pokémon "!" con boquilla — solo partner escuchando */}
+            {/* Bocadillo Pokémon "!" con boquilla */}
             {partnerListening && !sessionId && (
               <motion.span
                 className="relative inline-flex items-center"
                 initial={{ scale: 2.5, opacity: 0 }}
-                animate={{ scale: [2.5, 1, 1.3, 0.9, 1.1, 1], opacity: [1, 1, 0.8, 1, 0.9, 1] }}
+                animate={{ scale: [2.5, 1, 1.4, 0.9, 1.1, 1], opacity: [1, 1, 0.8, 1, 0.9, 1] }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
                 <span
@@ -500,11 +500,9 @@ return () => cancelAnimationFrame(raf);
                     background: "#ff2d55",
                     borderRadius: 2,
                     padding: "1px 4px 1px 4px",
-                    textShadow: "none",
                   }}
                 >
                   !
-                  {/* Boquilla (triángulo) */}
                   <span
                     className="absolute"
                     style={{
@@ -522,24 +520,26 @@ return () => cancelAnimationFrame(raf);
               </motion.span>
             )}
 
-            {/* Nombres de ambos en sesión activa */}
+            {/* Nombres en sesión activa */}
             {sessionId && (
-              <span className="text-[9px] uppercase tracking-wider leading-none" style={{ color: withAlpha("#ff2d55", 0.7) }}>
-                {userId === "edu" ? "Edu" : "David"} + {partnerName}
-              </span>
+              <motion.span
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-[9px] uppercase tracking-wider leading-none"
+                style={{ color: withAlpha("#ff2d55", 0.7) }}
+              >
+                {userId === "edu" ? "Edu" : "David"}+{partnerName}
+              </motion.span>
             )}
           </motion.button>
 
-          {/* Badge partner track — mini badge flotante (solo partner, sin sesión) */}
+          {/* Badge partner track flotante */}
           {partnerListening && !sessionId && partnerTrack?.title && (
             <motion.span
               initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0 }}
               className="ml-1.5 text-[8px] truncate max-w-[60px] leading-none"
-              style={{
-                color: withAlpha(partnerColor, 0.6),
-                fontFamily: FONT_MONO,
-              }}
+              style={{ color: withAlpha(partnerColor, 0.6), fontFamily: FONT_MONO }}
             >
               {partnerTrack.title.slice(0, 12)}
             </motion.span>
