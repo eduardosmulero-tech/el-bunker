@@ -120,7 +120,7 @@ export const ErrorScreen = ({ message, onRetry }) => (
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={onRetry}
-        className="text-xs tracking-[0.3em] uppercase px-6 py-3"
+        className="text-xs tracking-[0.3em] uppercase px-6 py-3 min-h-[44px]"
         style={{
           color: ACID,
           border: `1px solid ${ACID}44`,

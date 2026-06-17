@@ -136,17 +136,17 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       {/* Formulario */}
       <div className="flex flex-col gap-2 p-3" style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO DE LA CÁPSULA"
-          className="bg-transparent text-xs p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
         <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción"
-          className="bg-transparent text-xs p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
         <input type="datetime-local" value={unlockAt} onChange={e => setUnlockAt(e.target.value)}
-          className="bg-transparent text-xs p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
 
         {/* S74: Content picker toggle */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowContentPicker(p => !p)}
-          className="text-xs p-2 text-left"
+          className="text-xs p-3 min-h-[44px] text-left"
           style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO, background: showContentPicker ? `${ACID}08` : "transparent" }}
         >
           📦 {selectedEntryIds.length + selectedPlaylistIds.length > 0
@@ -172,7 +172,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
                         const sel = selectedEntryIds.includes(e.id);
                         return (
                           <button key={e.id} onClick={() => setSelectedEntryIds(prev => sel ? prev.filter(id => id !== e.id) : [...prev, e.id])}
-                            className="text-xs px-2 py-1 rounded-sm"
+                            className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm"
                             style={{ color: sel ? ACID : `${ACID}44`, border: `1px solid ${sel ? ACID : `${ACID}18`}`, background: sel ? `${ACID}0d` : "transparent" }}>
                             {sel ? "✓ " : ""}{e.title?.slice(0, 18) || e.id?.slice(0, 8)}
                           </button>
@@ -189,7 +189,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
                         const sel = selectedPlaylistIds.includes(p.id);
                         return (
                           <button key={p.id} onClick={() => setSelectedPlaylistIds(prev => sel ? prev.filter(id => id !== p.id) : [...prev, p.id])}
-                            className="text-xs px-2 py-1 rounded-sm"
+                            className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm"
                             style={{ color: sel ? PURPLE : `${PURPLE}44`, border: `1px solid ${sel ? PURPLE : `${PURPLE}18`}`, background: sel ? `${PURPLE}0d` : "transparent" }}>
                             {sel ? "✓ " : ""}{p.name?.slice(0, 18) || p.id?.slice(0, 8)}
                           </button>
@@ -204,7 +204,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
         </AnimatePresence>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreate} disabled={isCreating || !title || !unlockAt}
-          className="text-xs tracking-[0.2em] uppercase p-2" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO, opacity: isCreating ? 0.5 : 1 }}>
+          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px]" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO, opacity: isCreating ? 0.5 : 1 }}>
           {isCreating ? "SELLANDO..." : "SELLAR CÁPSULA 🔮"}
         </motion.button>
         {error && (

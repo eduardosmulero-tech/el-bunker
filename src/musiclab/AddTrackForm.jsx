@@ -34,7 +34,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
   const inputStyle = {
     background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, color: ACID,
     fontFamily: FONT_MONO, fontSize: 11, outline: "none", width: "100%",
-    padding: "6px 10px", borderRadius: 2, caretColor: ACID,
+    padding: "12px 12px", borderRadius: 2, caretColor: ACID,
   };
   const labelStyle = {
     color: `${ACID}55`, fontSize: 10, fontFamily: FONT_MONO,
@@ -72,7 +72,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs px-3 py-2 rounded-sm"
+                className="text-xs px-3 py-3 rounded-sm"
                 style={{
                   color: selectedFile ? ACID : `${ACID}55`,
                   border: `1px solid ${selectedFile ? ACID + "44" : ACID + "22"}`,
@@ -89,7 +89,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
                 <motion.button
                   whileTap={{ scale: 0.9 }}
                   onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                  className="text-xs px-2 py-2 rounded-sm"
+                  className="text-xs px-3 py-3 rounded-sm"
                   style={{ color: "#ff4444", border: "1px solid #ff444433", background: "#ff444408", fontFamily: FONT_MONO }}
                 >
                   ✕
@@ -133,7 +133,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
               <motion.button
                 key={vibe.id} whileTap={{ scale: 0.9 }}
                 onClick={() => setForm((p) => ({ ...p, tag: vibe.id }))}
-                className="text-xs px-2 py-1 rounded-sm tracking-wider uppercase"
+                className="text-xs px-3 py-2 rounded-sm tracking-wider uppercase"
                 style={{
                   color: vibe.color,
                   background: form.tag === vibe.id ? `${vibe.color}20` : "transparent",
@@ -152,7 +152,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           whileTap={form.tag ? { scale: 0.95 } : {}}
           onClick={form.tag ? submit : undefined}
           disabled={!form.tag}
-          className="flex-1 py-2 text-xs tracking-widest uppercase font-bold rounded-sm"
+          className="flex-1 py-3 text-xs tracking-widest uppercase font-bold rounded-sm"
           style={{
             background:  form.tag ? `${ACID}18` : "rgba(255,255,255,0.04)",
             border:      `1px solid ${form.tag ? ACID + "44" : "rgba(255,255,255,0.1)"}`,
@@ -165,7 +165,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }} onClick={onClose}
-          className="px-4 py-2 text-xs tracking-widest uppercase rounded-sm opacity-40 hover:opacity-70 transition-opacity"
+          className="px-4 py-3 text-xs tracking-widest uppercase rounded-sm opacity-40 hover:opacity-70 transition-opacity"
           style={{ color: ACID, border: `1px solid ${ACID}22` }}
         >
           CANCELAR

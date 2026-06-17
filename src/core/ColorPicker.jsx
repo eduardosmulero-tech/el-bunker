@@ -41,7 +41,7 @@ export const ColorPicker = ({ value, onChange, accentColor = ACID }) => {
             whileTap={{ scale: 0.85 }}
             onClick={() => { setCustom(c); onChange(c); }}
             style={{
-              width: 24, height: 24, borderRadius: 2, background: c, flexShrink: 0,
+              width: 44, height: 44, borderRadius: 2, background: c, flexShrink: 0,
               border: value === c ? `2px solid #fff` : `1px solid ${c}55`,
               boxShadow: value === c ? `0 0 8px ${c}` : "none",
             }}
@@ -62,7 +62,7 @@ export const ColorPicker = ({ value, onChange, accentColor = ACID }) => {
           maxLength={7}
           style={{
             flex: 1, background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
-            color: accentColor, fontSize: 11, padding: "5px 10px", fontFamily: FONT_MONO,
+            color: accentColor, fontSize: 13, padding: "12px 12px", fontFamily: FONT_MONO,
             letterSpacing: "0.15em", outline: "none",
           }}
         />

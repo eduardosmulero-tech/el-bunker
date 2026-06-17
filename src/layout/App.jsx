@@ -45,7 +45,7 @@ class GlobalErrorBoundary extends Component {
             </p>
             <button
               onClick={() => { this.setState({ error: null, errorInfo: null }); window.location.reload(); }}
-              className="text-xs tracking-[0.3em] uppercase px-6 py-3"
+              className="text-xs tracking-[0.3em] uppercase px-6 py-3 min-h-[44px]"
               style={{
                 color: ACID,
                 border: `1px solid ${ACID}44`,

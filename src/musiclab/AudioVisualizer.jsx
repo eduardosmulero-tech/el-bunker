@@ -523,7 +523,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
                 setIsFullscreen(false);
                 try { document.exitFullscreen?.(); } catch { /* noop */ }
               }}
-              className="fixed top-6 right-6 z-[60] w-10 h-10 flex items-center justify-center rounded-sm text-sm"
+              className="fixed top-6 right-6 z-[60] w-11 h-11 flex items-center justify-center rounded-sm text-sm"
               style={{ color: ac, border: `1px solid ${ac}44`, background: `${ac}0d` }}
             >
               ✕

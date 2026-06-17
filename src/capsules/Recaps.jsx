@@ -116,7 +116,7 @@ export default function Recaps({ events = [], accentColor = ACID }) {
       <div className="flex gap-1">
         {PERIODS.map(p => (
           <motion.button key={p.id} onClick={() => { setPeriod(p.id); setSection(0); }} whileTap={{ scale: 0.95 }}
-            className={`text-xs tracking-[0.2em] uppercase px-3 py-2 ${period === p.id ? "" : "opacity-30"}`}
+            className={`text-xs tracking-[0.2em] uppercase px-3 py-3 min-h-[44px] ${period === p.id ? "" : "opacity-30"}`}
             style={{ color: period === p.id ? accent : `${accent}88`, borderBottom: period === p.id ? `1px solid ${accent}` : "1px solid transparent", fontFamily: FONT_MONO }}>
             {p.icon} {p.label}
           </motion.button>
@@ -129,12 +129,16 @@ export default function Recaps({ events = [], accentColor = ACID }) {
         <div className="flex gap-1 justify-center">
           {sections.map((_, i) => (
             <button key={i} onClick={() => setSection(i)}
-              className="w-2 h-2 rounded-full transition-all"
-              style={{
-                background: section === i ? accent : `${accent}22`,
-                width: section === i ? 24 : 8,
-              }}
-            />
+              className="w-11 h-11 flex items-center justify-center"
+              style={{ background: 'transparent' }}
+            >
+              <span className="w-2 h-2 rounded-full transition-all"
+                style={{
+                  background: section === i ? accent : `${accent}22`,
+                  width: section === i ? 24 : 8,
+                }}
+              />
+            </button>
           ))}
         </div>
 
@@ -218,7 +222,7 @@ export default function Recaps({ events = [], accentColor = ACID }) {
                 }
               }}
               disabled={savingRecap || recapSaved}
-              className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm"
+              className="text-xs tracking-[0.2em] uppercase px-4 py-3 min-h-[44px] rounded-sm"
               style={{
                 color: recapSaved ? `${accent}44` : accent,
                 border: `1px solid ${recapSaved ? `${accent}22` : `${accent}44`}`,
@@ -241,7 +245,7 @@ export default function Recaps({ events = [], accentColor = ACID }) {
         <div className="flex justify-between">
           <button
             onClick={() => setSection(s => Math.max(0, s - 1))}
-            className="text-xs px-3 py-2 opacity-40 hover:opacity-100"
+            className="text-xs px-3 py-3 min-h-[44px] opacity-40 hover:opacity-100"
             style={{ color: accent, fontFamily: FONT_MONO }}
             disabled={section === 0}
           >
@@ -249,7 +253,7 @@ export default function Recaps({ events = [], accentColor = ACID }) {
           </button>
           <button
             onClick={() => setSection(s => Math.min(sections.length - 1, s + 1))}
-            className="text-xs px-3 py-2 opacity-40 hover:opacity-100"
+            className="text-xs px-3 py-3 min-h-[44px] opacity-40 hover:opacity-100"
             style={{ color: accent, fontFamily: FONT_MONO }}
             disabled={section === sections.length - 1}
           >

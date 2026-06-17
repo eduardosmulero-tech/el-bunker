@@ -12,11 +12,11 @@ export const PlaylistNameInput = ({ onConfirm }) => {
         onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
         placeholder="Nueva playlist..."
         style={{ flex: 1, background: "transparent", border: `1px solid ${ACID}33`, borderRadius: 2,
-          color: ACID, fontSize: 11, padding: "6px 10px", fontFamily: FONT_MONO,
+          color: ACID, fontSize: 11, padding: "12px 12px", fontFamily: FONT_MONO,
           letterSpacing: "0.15em", outline: "none" }} />
       <button onClick={() => { if (name.trim()) onConfirm(name); }}
         style={{ background: `${ACID}15`, border: `1px solid ${ACID}44`, color: ACID, fontSize: 11,
-          padding: "6px 10px", borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
+          padding: "12px 16px", borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
         OK
       </button>
     </div>
@@ -38,7 +38,7 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
       </div>
       {playlists.map((pl) => (
         <button key={pl.id}
-          style={{ display: "block", width: "100%", padding: "10px 16px", textAlign: "left",
+          style={{ display: "block", width: "100%", padding: "14px 16px", textAlign: "left",
             color: ACID, fontSize: 11, letterSpacing: "0.2em", background: "transparent",
             border: "none", borderBottom: `1px solid ${ACID}10`, cursor: "pointer" }}
           onClick={() => onSelectPlaylist(pl.id)}>
@@ -149,7 +149,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <motion.button whileTap={{ scale: 0.9 }}
               onClick={() => { setShowSearch((p) => !p); setSearchQuery(""); }}
-              style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
+              style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
                 borderRadius: 2, fontSize: 15, transition: "all 0.15s",
                 color: ACID, border: `1px solid ${showSearch ? ACID + "66" : ACID + "33"}`,
                 background: showSearch ? `${ACID}15` : `${ACID}06`, cursor: "pointer" }}>
@@ -158,7 +158,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
             {plTracks.length > 0 && (
               <motion.button whileTap={{ scale: 0.92 }} onClick={handlePlay}
                 style={{ background: `${ACID}18`, border: `1px solid ${ACID}44`, color: ACID,
-                  fontSize: 11, padding: "5px 12px", borderRadius: 2, cursor: "pointer",
+                  fontSize: 11, padding: "12px 16px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.2em" }}>
                 ▶ PLAY
               </motion.button>
@@ -167,13 +167,13 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
               <motion.button whileTap={{ scale: 0.92 }} onClick={() => onAddAllToQueue(plTracks)}
                 title="Añadir toda la playlist a la cola"
                 style={{ background: `${ACID}0d`, border: `1px solid ${ACID}33`, color: ACID,
-                  fontSize: 10, padding: "5px 8px", borderRadius: 2, cursor: "pointer",
+                  fontSize: 10, padding: "12px 14px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
                 ▶▶
               </motion.button>
             )}
             <motion.button whileTap={{ scale: 0.9 }} onClick={onClose}
-              style={{ color: `${ACID}44`, fontSize: 14, background: "none", border: "none", cursor: "pointer" }}>✕</motion.button>
+              style={{ color: `${ACID}44`, fontSize: 14, padding: "12px 16px", background: "none", border: "none", cursor: "pointer" }}>✕</motion.button>
           </div>
         </div>
 
@@ -237,7 +237,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                 </div>
                 <motion.button whileTap={{ scale: 0.85 }}
                   onClick={() => onRemoveTrack(playlist.id, track.id)}
-                  style={{ color: `${ACID}55`, fontSize: 14, background: "none", border: "none",
+                  style={{ color: `${ACID}55`, fontSize: 14, padding: "10px 14px", background: "none", border: "none",
                     cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>−</motion.button>
               </div>
             ))
@@ -262,7 +262,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
               onClick={handleCleanMissing}
               style={{ color: "#ff6b35", background: "rgba(255,107,53,0.12)",
                 border: "1px solid rgba(255,107,53,0.3)", borderRadius: 2,
-                fontSize: 9, padding: "3px 8px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}
+                fontSize: 11, padding: "12px 14px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}
             >
               LIMPIAR
             </motion.button>
@@ -274,7 +274,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
           {confirmDelete ? (
               <div style={{ display: "flex", gap: 8 }}>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDeletePlaylist(playlist.id); onClose(); }}
-                  style={{ flex: 1, padding: "6px 0", background: "#ff444418", border: "1px solid #ff444455",
+                  style={{ flex: 1, padding: "14px 0", background: "#ff444418", border: "1px solid #ff444455",
                     color: "#ff4444", fontSize: 10, letterSpacing: "0.2em", borderRadius: 2,
                     cursor: "pointer", fontFamily: FONT_MONO }}>
                   CONFIRMAR BORRAR
@@ -287,7 +287,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
               </div>
             ) : (
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmDelete(true)}
-                style={{ width: "100%", padding: "6px 0", background: "transparent",
+                style={{ width: "100%", padding: "14px 0", background: "transparent",
                   border: "1px solid #ff444422", color: "#ff444466", fontSize: 10,
                   letterSpacing: "0.2em", borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
                 BORRAR PLAYLIST

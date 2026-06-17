@@ -154,7 +154,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
               key={m.id}
               whileTap={{ scale: 0.92 }}
               onClick={() => { setFilterModule(m.id); setVisibleCount(PAGE_SIZE); }}
-              className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+               className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm flex-shrink-0"
               style={{
                 color: filterModule === m.id ? accent : `${accent}55`,
                 border: `1px solid ${filterModule === m.id ? `${accent}44` : `${accent}18`}`,
@@ -172,7 +172,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={() => { setFilterType("all"); setVisibleCount(PAGE_SIZE); }}
-              className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+               className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm flex-shrink-0"
               style={{
                 color: filterType === "all" ? accent : `${accent}40`,
                 border: `1px solid ${filterType === "all" ? `${accent}33` : `${accent}14`}`,
@@ -186,7 +186,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
                 key={t}
                 whileTap={{ scale: 0.92 }}
                 onClick={() => { setFilterType(filterType === t ? "all" : t); setVisibleCount(PAGE_SIZE); }}
-                className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+                className="text-xs px-3 py-2 min-h-[44px] rounded-sm flex-shrink-0"
                 style={{
                   color: filterType === t ? accent : `${accent}40`,
                   border: `1px solid ${filterType === t ? `${accent}33` : `${accent}14`}`,
@@ -205,7 +205,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             <motion.button
               whileTap={{ scale: 0.92 }}
               onClick={() => { setFilterEra("all"); setVisibleCount(PAGE_SIZE); }}
-              className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+               className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm flex-shrink-0"
               style={{ color: filterEra === "all" ? accent : `${accent}40`, border: `1px solid ${filterEra === "all" ? `${accent}33` : `${accent}14`}` }}
             >
               TODAS
@@ -215,7 +215,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
                 key={era.id}
                 whileTap={{ scale: 0.92 }}
                 onClick={() => { setFilterEra(filterEra === era.id ? "all" : era.id); setVisibleCount(PAGE_SIZE); }}
-                className="text-xs px-2 py-1 rounded-sm flex-shrink-0"
+                className="text-xs px-3 py-2 min-h-[44px] rounded-sm flex-shrink-0"
                 style={{ color: filterEra === era.id ? era.color : `${accent}40`, border: `1px solid ${filterEra === era.id ? `${era.color}44` : `${accent}14`}` }}
               >
                 ◈ {era.name}
@@ -233,7 +233,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             { id: "compact", icon: "≡", label: "COMPACT" },
           ].map(m => (
             <button key={m.id} onClick={() => setViewMode(m.id)}
-              className={`text-xs px-2 py-1 uppercase ${viewMode === m.id ? "" : "opacity-30"}`}
+              className={`text-xs px-3 py-2.5 min-h-[44px] uppercase ${viewMode === m.id ? "" : "opacity-30"}`}
               style={{ color: accent, borderBottom: viewMode === m.id ? `1px solid ${accent}` : "1px solid transparent", fontFamily: FONT_MONO }}>
               {m.icon} {m.label}
             </button>
@@ -302,7 +302,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
         <motion.button
           whileTap={{ scale: 0.96 }}
           onClick={() => setVisibleCount(c => Math.min(c + PAGE_SIZE, filteredEvents.length))}
-          className="text-xs tracking-[0.2em] uppercase py-2 px-4 mx-auto opacity-50 hover:opacity-100 transition-opacity"
+          className="text-xs tracking-[0.2em] uppercase py-3 px-4 min-h-[44px] mx-auto opacity-50 hover:opacity-100 transition-opacity"
           style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
         >
           ↓ CARGAR MÁS ({filteredEvents.length - visibleCount} restantes)

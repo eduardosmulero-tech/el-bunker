@@ -24,7 +24,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
           <button key={vibe.id} onClick={() => onVibeChange(vibe.id)}
             style={{
               flexShrink: 0, display: "flex", alignItems: "center", gap: 4,
-              padding: "4px 12px", fontSize: 11, letterSpacing: "0.1em",
+              padding: "12px 16px", fontSize: 12, letterSpacing: "0.1em",
               textTransform: "uppercase", borderRadius: 2, transition: "all 0.15s",
               fontFamily: FONT_MONO, cursor: "pointer", border: "none",
               color: isActive ? vibe.color : `${vibe.color}55`,
@@ -45,7 +45,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
       <motion.button whileTap={{ scale: 0.9 }} onClick={onOpenTagManager}
         style={{
           position: "absolute", right: 0, top: 4,
-          width: 32, padding: "4px 0",
+          width: 44, padding: "12px 0",
           display: "flex", alignItems: "center", justifyContent: "center",
           borderRadius: 2, fontFamily: FONT_MONO, fontSize: 11,
           color: isTagManagerOpen ? accentColor : `${accentColor}99`,
@@ -166,8 +166,8 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
           style={{ position: "absolute", top: 4, right: 4,
             color: `${vibeColor}cc`, background: "rgba(0,0,0,0.55)",
             border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 18,
-            lineHeight: 1, padding: "6px 8px", borderRadius: 2,
-            fontFamily: FONT_MONO_LOCAL, minWidth: 32, minHeight: 32,
+            lineHeight: 1, padding: "12px 14px", borderRadius: 2,
+            fontFamily: FONT_MONO_LOCAL, minWidth: 44, minHeight: 44,
             display: "flex", alignItems: "center", justifyContent: "center",
             zIndex: 2 }}>
           ⋮
@@ -314,9 +314,9 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
               onPointerDown={(e) => e.stopPropagation()}
               style={{ color: `${vibeColor}cc`, background: "rgba(0,0,0,0.4)",
                 border: `1px solid ${vibeColor}55`, cursor: "pointer", fontSize: 20,
-                lineHeight: 1, padding: "6px 8px", borderRadius: 2,
-                fontFamily: FONT_MONO, minWidth: 32, minHeight: 32,
-                display: "flex", alignItems: "center", justifyContent: "center" }}
+            lineHeight: 1, padding: "12px 14px", borderRadius: 2,
+            fontFamily: FONT_MONO, minWidth: 44, minHeight: 44,
+            display: "flex", alignItems: "center", justifyContent: "center" }}
               title="Más opciones">
               ⋮
             </motion.button>

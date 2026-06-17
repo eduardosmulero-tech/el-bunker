@@ -67,12 +67,12 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
       <div className="flex gap-1">
         <input value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar lugar…" autoComplete="off"
-          className="bg-transparent text-xs p-2 flex-1 outline-none"
+          className="bg-transparent text-xs p-3 min-h-[44px] flex-1 outline-none"
           style={{ color: ACID, border: `1px solid ${hasCoords ? `${ACID}55` : `${ACID}33`}`, fontFamily: FONT_MONO }} />
         {query && (
-          <button onClick={handleClear} className="text-xs px-2 opacity-30 hover:opacity-60" style={{ color: ACID }}>✕</button>
+          <button onClick={handleClear} className="text-xs px-3 py-2.5 opacity-30 hover:opacity-60" style={{ color: ACID }}>✕</button>
         )}
-        <button onClick={() => setShowManual((p) => !p)} className="text-[9px] px-2 tracking-widest uppercase opacity-30 hover:opacity-60"
+        <button onClick={() => setShowManual((p) => !p)} className="text-xs px-3 py-2.5 tracking-widest uppercase opacity-30 hover:opacity-60"
           style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }}>°°</button>
       </div>
 
@@ -85,7 +85,7 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
             style={{ background: "#0a0a0a", border: `1px solid ${ACID}22`, maxHeight: 200, overflowY: "auto" }}>
             {results.map((r, i) => (
               <div key={i} onClick={() => handlePick(r)}
-                className="flex items-center gap-2 px-3 py-2 cursor-pointer text-xs"
+                className="flex items-center gap-2 px-3 py-3 cursor-pointer text-xs"
                 style={{ color: ACID, borderBottom: i < results.length - 1 ? `1px solid ${ACID}0d` : "none" }}
                 onMouseEnter={(e) => e.currentTarget.style.background = `${PURPLE}0d`}
                 onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
@@ -103,12 +103,12 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             className="flex gap-1 overflow-hidden">
             <input value={manualLat} onChange={(e) => setManualLat(e.target.value)} placeholder="Latitud" type="number" step="any"
-              className="bg-transparent text-[10px] p-2 flex-1 outline-none"
+              className="bg-transparent text-xs p-3 min-h-[44px] flex-1 outline-none"
               style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }} />
             <input value={manualLng} onChange={(e) => setManualLng(e.target.value)} placeholder="Longitud" type="number" step="any"
-              className="bg-transparent text-[10px] p-2 flex-1 outline-none"
+              className="bg-transparent text-xs p-3 min-h-[44px] flex-1 outline-none"
               style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }} />
-            <button onClick={handleApplyManual} className="text-[9px] px-2 tracking-widest uppercase"
+            <button onClick={handleApplyManual} className="text-xs px-3 py-2.5 tracking-widest uppercase"
               style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>↲</button>
           </motion.div>
         )}

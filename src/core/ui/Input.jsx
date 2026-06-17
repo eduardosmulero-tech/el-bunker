@@ -22,6 +22,7 @@ export default function Input({
     border: `1px solid ${error ? "#ff3b3b" : `${accentColor}33`}`,
     borderRadius: 2,
     padding: "10px 12px",
+    minHeight: 44,
     fontSize: 13,
     letterSpacing: "0.05em",
     transition: "border-color 0.15s",

@@ -132,7 +132,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         </span>
         <button
           onClick={() => window.location.reload()}
-          className="text-xs tracking-widest uppercase px-2 py-1 rounded-sm transition-all"
+          className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
           style={{ border: `1px solid ${accentColor}33`, opacity: 1 }}
         >
           ↺
@@ -140,7 +140,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         {onSignOut && (
           <button
             onClick={onSignOut}
-            className="text-xs tracking-widest uppercase px-2 py-1 rounded-sm transition-all"
+            className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
             style={{ border: `1px solid #ff3b3b44`, color: "#ff3b3b", opacity: 0.7 }}
           >
             EXIT
@@ -178,7 +178,7 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             whileTap={{ scale: 0.9 }}
-            className="relative flex flex-col items-center gap-1 px-3 py-1 text-xs tracking-widest uppercase transition-all"
+            className="relative flex flex-col items-center gap-1 px-4 py-2 text-xs tracking-widest uppercase transition-all min-h-[44px]"
             style={{
               color: isActive ? accentColor : `${accentColor}88`,
               textShadow: isActive ? `0 0 12px ${accentColor}` : "none",
@@ -297,7 +297,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
         {/* Play/Pause */}
         <motion.div
           whileTap={{ scale: 0.88 }}
-          className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-sm"
+          className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-sm"
           style={{
             background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}08 100%)`,
             border: `1px solid ${accentColor}55`,
@@ -338,7 +338,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           <motion.div
             whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); skip(-1); }}
-            className="w-8 h-8 flex items-center justify-center rounded-sm"
+            className="w-11 h-11 flex items-center justify-center rounded-sm"
             style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
             title="Anterior"
           >
@@ -349,7 +349,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           <motion.div
             whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); skip(1); }}
-            className="w-8 h-8 flex items-center justify-center rounded-sm"
+            className="w-11 h-11 flex items-center justify-center rounded-sm"
             style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
             title="Siguiente"
           >
@@ -498,14 +498,14 @@ export default function Layout({
               <div className="flex items-center gap-1 ml-1">
                 {sessionToast.action && (
                   <button onClick={(e) => { e.stopPropagation(); sessionToast.action(); }}
-                    className="px-1.5 py-0.5 rounded-sm text-[8px] tracking-wider uppercase font-bold"
+                    className="px-3 py-2.5 rounded-sm text-[10px] tracking-wider uppercase font-bold"
                     style={{ background: "rgba(255,45,85,0.2)", border: "1px solid rgba(255,45,85,0.5)" }}>
                     {sessionToast.actionLabel || "OK"}
                   </button>
                 )}
                 {sessionToast.secondaryLabel && (
                   <button onClick={(e) => { e.stopPropagation(); setSessionToast(null); }}
-                    className="px-1.5 py-0.5 rounded-sm text-[8px] tracking-wider uppercase"
+                    className="px-3 py-2.5 rounded-sm text-[10px] tracking-wider uppercase"
                     style={{ border: "1px solid rgba(255,45,85,0.25)", opacity: 0.6 }}>
                     {sessionToast.secondaryLabel}
                   </button>

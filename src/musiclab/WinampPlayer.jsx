@@ -29,7 +29,7 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
     title={title}
     aria-label={ariaLabel ?? title}
     className={`rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
-      size === "sm" ? "w-7 h-7" : "w-10 h-10"
+      size === "sm" ? "w-11 h-11" : "w-11 h-11"
     }`}
     style={{
       background: active ? withAlpha(color, 0.2) : "transparent",
@@ -433,7 +433,7 @@ return () => cancelAnimationFrame(raf);
                 ? `${partnerName} está escuchando — tocar para unirte`
                 : "Nadie escuchando"}
             aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
-            className="relative flex items-center justify-center gap-1 text-xs font-bold h-6 overflow-visible"
+            className="relative flex items-center justify-center gap-1 text-xs font-bold h-11 overflow-visible"
             style={{
               minWidth: sessionId ? 56 : 48,
               paddingLeft: sessionId ? 8 : 6,
@@ -555,7 +555,7 @@ return () => cancelAnimationFrame(raf);
               disabled={castState === "connecting"}
               title={isCasting ? `Cast: ${castDeviceName || "conectado"} — tocar para desconectar` : "Conectar a Chromecast"}
               aria-label={isCasting ? "Desconectar Chromecast" : "Conectar a Chromecast"}
-              className="text-xs tracking-widest uppercase px-2 py-0.5 rounded-sm flex items-center gap-1.5"
+              className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm flex items-center gap-1.5"
               style={{
                 color: isCasting ? "#fff" : accentColor,
                 background: isCasting ? "#4285f4" : withAlpha(accentColor, 0.08),
@@ -587,7 +587,7 @@ return () => cancelAnimationFrame(raf);
           style={{ background: `${accentColor}15`, borderBottom: `1px solid ${accentColor}22`, fontFamily: FONT_MONO }}
         >
           <button onClick={() => undoRemoveFromQueue?.(track.id)}
-            className="underline" style={{ color: accentColor }}>
+            className="px-3 py-2.5 underline" style={{ color: accentColor }}>
             Deshacer
           </button>
           <span className="opacity-40 ml-2" style={{ color: accentColor }}>eliminado de la cola</span>
@@ -621,7 +621,7 @@ return () => cancelAnimationFrame(raf);
       <div className="px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-xs tabular-nums opacity-50" style={{ color: accentColor }}>{fmtTime(currentT)}</span>
-          <div className="relative flex-1 h-2 group cursor-pointer" onClick={(e) => {
+          <div className="relative flex-1 h-4 py-2 group cursor-pointer" onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             seekTo(((e.clientX - rect.left) / rect.width) * 100);
           }}>

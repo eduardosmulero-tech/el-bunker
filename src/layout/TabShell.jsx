@@ -107,7 +107,7 @@ export const UnauthorizedScreen = ({ userEmail }) => (
       </p>
       <button
         onClick={() => window.location.reload()}
-        className="px-6 py-2 text-xs font-bold tracking-[0.3em] uppercase transition-all"
+        className="px-6 py-3 text-xs font-bold tracking-[0.3em] uppercase transition-all min-h-[44px]"
         style={{ border: "1px solid #ff3b3b", color: "#ff3b3b" }}
       >
         REINTENTAR IDENTIFICACIÓN

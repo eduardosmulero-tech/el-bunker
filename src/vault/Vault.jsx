@@ -534,7 +534,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
               <span className="flex gap-1 opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-1">
                 <button
                   onClick={(e) => { e.stopPropagation(); onEditEntry?.(entry); }}
-                  className="text-xs px-1 hover:scale-110 transition-transform"
+                  className="text-xs px-2 py-2 min-h-[44px] hover:scale-110 transition-transform"
                   style={{ color: era.color ?? ACID }}
                   title="Editar entrada"
                 >
@@ -542,7 +542,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeleteEntry?.(entry.id); }}
-                  className="text-xs px-1 hover:scale-110 transition-transform"
+                  className="text-xs px-2 py-2 min-h-[44px] hover:scale-110 transition-transform"
                   style={{ color: "#ff3b3b" }}
                   title="Eliminar entrada"
                 >
@@ -807,7 +807,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setShowAddEra(p => !p)}
-            className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm transition-all"
+            className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
             style={{
               color: showAddEra ? `${accent}44` : accent,
               border: `1px solid ${showAddEra ? `${accent}22` : `${accent}44`}`,
@@ -833,7 +833,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
                   value={newEraName}
                   onChange={e => setNewEraName(e.target.value)}
                   placeholder="NOMBRE DE LA ERA"
-                  className="bg-transparent text-sm p-2 outline-none"
+                  className="bg-transparent text-sm p-3 min-h-[44px] outline-none"
                   style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
                 />
                 {/* Phase 2.2: ColorPicker unificado con el de tags — paleta 12 colores + custom hex + preview */}
@@ -905,7 +905,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => setShowAddEntry(prev => !prev)}
-              className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm"
+              className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm"
               style={{
                 color: showAddEntry ? `${accent}44` : accent,
                 border: `1px solid ${showAddEntry ? `${accent}22` : `${accent}44`}`,
@@ -923,7 +923,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
             <button
               key={cat.id}
               onClick={() => setFilterCategory(cat.id)}
-              className={`text-[9px] px-1.5 py-1 rounded-sm whitespace-nowrap flex-shrink-0 flex items-center gap-0.5 ${isActive ? "" : "opacity-25 hover:opacity-50"}`}
+              className={`text-[10px] px-2.5 py-2 rounded-sm whitespace-nowrap flex-shrink-0 flex items-center gap-0.5 ${isActive ? "" : "opacity-25 hover:opacity-50"}`}
               style={{
                 color: isActive ? accent : `${accent}88`,
                 borderBottom: isActive ? `1px solid ${accent}` : "1px solid transparent",
@@ -947,7 +947,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="BUSCAR…"
-            className="bg-transparent text-xs p-1.5 w-full outline-none"
+            className="bg-transparent text-xs p-3 min-h-[44px] w-full outline-none"
             style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO }}
           />
         </div>
@@ -1024,7 +1024,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
            whileTap={{ scale: 0.95 }}
            onClick={handleExport}
            disabled={exporting || !db}
-           className="text-xs tracking-widest uppercase px-3 py-1 rounded-sm"
+           className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm"
            style={{
              color: accent,
              border: `1px solid ${accent}33`,

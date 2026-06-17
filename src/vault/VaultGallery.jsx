@@ -281,7 +281,7 @@ const ZoomModal = ({ entry, era, onClose }) => {
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center text-xl rounded-full"
+        className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center text-xl rounded-full"
         style={{ background: "rgba(255,255,255,0.08)", color: ACID, border: `1px solid ${ACID}33` }}
       >
         ✕
@@ -489,7 +489,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
       {/* Navigation */}
       <div className="flex items-center gap-4">
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i - 1 + entries.length) % entries.length)}
-          className="text-xl w-10 h-10 flex items-center justify-center rounded-full"
+          className="text-xl w-11 h-11 flex items-center justify-center rounded-full"
           style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>
           ◀
         </motion.button>
@@ -497,12 +497,12 @@ const CinemaView = ({ entries, eras, onZoom }) => {
           {safeIdx + 1} / {entries.length}
         </span>
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i + 1) % entries.length)}
-          className="text-xl w-10 h-10 flex items-center justify-center rounded-full"
+          className="text-xl w-11 h-11 flex items-center justify-center rounded-full"
           style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>
           ▶
         </motion.button>
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => onZoom?.(entry)}
-          className="text-sm w-8 h-8 flex items-center justify-center rounded-full"
+          className="text-sm w-11 h-11 flex items-center justify-center rounded-full"
           style={{ color: eraColor, border: `1px solid ${eraColor}22`, background: `${eraColor}05` }} title="Ampliar">
           ⊞
         </motion.button>
@@ -572,7 +572,7 @@ const DialogueView = ({ entries, eras }) => {
         </div>
         <div className="flex gap-1">
           <button onClick={() => setFilterMode("all")}
-            className="text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest"
+            className="text-xs px-3 py-2 rounded-sm uppercase tracking-widest"
             style={{
               color: filterMode === "all" ? PURPLE : `${PURPLE}44`,
               borderBottom: filterMode === "all" ? `1px solid ${PURPLE}` : "1px solid transparent",
@@ -580,7 +580,7 @@ const DialogueView = ({ entries, eras }) => {
             TODO
           </button>
           <button onClick={() => setFilterMode("conversations")}
-            className="text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest"
+            className="text-xs px-3 py-2 rounded-sm uppercase tracking-widest"
             style={{
               color: filterMode === "conversations" ? PURPLE : `${PURPLE}44`,
               borderBottom: filterMode === "conversations" ? `1px solid ${PURPLE}` : "1px solid transparent",
@@ -856,7 +856,7 @@ const ReelView = ({ entries, eras }) => {
         <p className="text-xs opacity-30 text-center py-8" style={{ color: PURPLE }}>Agrupa 2+ entradas el mismo día para generar REELS automáticos</p>
       ) : activeReel !== null ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
-          <button onClick={() => setActiveReel(null)} className="text-xs self-start px-3 py-1 rounded-sm" style={{ color: PURPLE, border: `1px solid ${PURPLE}33` }}>← VOLVER</button>
+          <button onClick={() => setActiveReel(null)} className="text-xs self-start px-3 py-2.5 rounded-sm" style={{ color: PURPLE, border: `1px solid ${PURPLE}33` }}>← VOLVER</button>
           {(() => {
             const [day, items] = reels[activeReel];
             const era = eras.find(e => items.some(i => i.era_id === e.id));
@@ -1072,7 +1072,7 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
           <span className="text-[7px] opacity-40 w-[52px] text-right shrink-0 leading-tight" style={{ color: PURPLE }}>
             {fmtSliderDate(dateMin)}
           </span>
-          <div className="relative flex-1 h-5">
+          <div className="relative flex-1 h-11 py-3">
             <input type="range" min={dateRange.min} max={dateRange.max} value={dateMin}
               onChange={(e) => setDateMin(Math.min(Number(e.target.value), dateMax))}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-auto"
@@ -1216,7 +1216,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
             key={key}
             whileTap={{ scale: 0.92 }}
             onClick={() => setDensity(key)}
-            className="text-xs px-3 py-1.5 uppercase tracking-widest rounded-sm"
+            className="text-xs px-3 py-2.5 min-h-[44px] uppercase tracking-widest rounded-sm"
             style={{
               color: density === key ? ACID : `${ACID}66`,
               border: density === key ? `1px solid ${ACID}55` : `1px solid ${ACID}22`,
@@ -1296,7 +1296,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
       <nav className="flex gap-1 overflow-x-auto">
         {MODES.map(m => (
           <button key={m.id} onClick={() => setMode(m.id)}
-            className={`text-xs px-2 py-1 uppercase whitespace-nowrap ${mode === m.id ? "" : "opacity-30"}`}
+            className={`text-xs px-3 py-2.5 uppercase whitespace-nowrap ${mode === m.id ? "" : "opacity-30"}`}
             style={{ color: ACID, borderBottom: mode === m.id ? `1px solid ${ACID}` : "1px solid transparent", fontFamily: FONT_MONO }}>
             {m.icon} {m.label}
           </button>
@@ -1309,7 +1309,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
           <button
             key={cat.id}
             onClick={() => { setFilterCategory(cat.id); setCurrentIdx(0); }}
-            className={`text-[9px] px-1.5 py-1 rounded-sm whitespace-nowrap transition-all flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
+            className={`text-xs px-2.5 py-2 rounded-sm whitespace-nowrap transition-all flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
             style={{
               color: filterCategory === cat.id ? ACID : `${ACID}88`,
               borderBottom: filterCategory === cat.id ? `1px solid ${ACID}` : "1px solid transparent",

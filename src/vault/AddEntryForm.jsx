@@ -222,7 +222,7 @@ function TypeGroup({ category, currentType, onSelect }) {
           <button
             key={t.id}
             onClick={() => onSelect(t.id)}
-            className={`text-[10px] px-2 py-1.5 transition-all ${currentType === t.id ? "" : "opacity-25 hover:opacity-50"}`}
+            className={`text-xs px-3 py-2.5 min-h-[11px] transition-all ${currentType === t.id ? "" : "opacity-25 hover:opacity-50"}`}
             style={{
               color: currentType === t.id ? ACID : `${ACID}88`,
               borderBottom: currentType === t.id ? `1px solid ${ACID}` : "1px solid transparent",
@@ -385,7 +385,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                   key={f.key}
                   value={extraValues[f.key] || ""}
                   onChange={(e) => setExtraValue(f.key, e.target.value)}
-                  className="bg-transparent text-xs p-2 flex-1 min-w-[100px]"
+                  className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px]"
                   style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}
                 >
                   {(f.options ?? []).map((opt) => (
@@ -401,7 +401,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                 value={extraValues[f.key] || ""}
                 onChange={(e) => setExtraValue(f.key, e.target.value)}
                 placeholder={f.placeholder ?? f.label}
-                className="bg-transparent text-xs p-2 flex-1 min-w-[100px] outline-none"
+                className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px] outline-none"
                 style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}
               />
             );
@@ -411,7 +411,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
 
       {/* Campos */}
       <input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO"
-        className="bg-transparent text-sm p-2 outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+        className="bg-transparent text-sm p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
 
       {FILE_UPLOAD_TYPES.has(type) ? (
         <>
@@ -457,12 +457,12 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {/* Era + Destinatario */}
       <div className="flex gap-2">
         <select value={eraId || ""} onChange={e => setEraId(e.target.value || null)}
-          className="bg-transparent text-xs p-2 flex-1" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+          className="bg-transparent text-xs p-3 min-h-[44px] flex-1" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
           <option value="" style={{ background: "#050505" }}>Sin Era</option>
           {eras.map(e => <option key={e.id} value={e.id} style={{ background: "#050505" }}>{e.name}</option>)}
         </select>
         <select value={toUser} onChange={e => setToUser(e.target.value)}
-          className="bg-transparent text-xs p-2" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+          className="bg-transparent text-xs p-3 min-h-[44px]" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
           <option value="both" style={{ background: "#050505" }}>PARA AMBOS</option>
           <option value="edu" style={{ background: "#050505" }}>PARA EDU</option>
           <option value="david" style={{ background: "#050505" }}>PARA DAVID</option>
@@ -491,7 +491,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       <div className="flex flex-wrap gap-1">
         {VIBE_TAGS.filter(t => t.namespace === "vault" || !t.namespace).map(tag => (
           <button key={tag.id} onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
-            className="text-xs px-2 py-1"
+            className="text-xs px-3 py-2.5"
             style={{
               color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}44`,
               border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}22`}`,
@@ -505,12 +505,12 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {/* Botones */}
       <div className="flex gap-2">
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting}
-          className="text-xs tracking-[0.2em] uppercase p-2 flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
+          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
           {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : FILE_UPLOAD_TYPES.has(type) ? `SUBIR ${currentMeta?.label ?? "ARCHIVO"}` : "GUARDAR"}
         </motion.button>
         {onCancel && (
           <motion.button whileTap={{ scale: 0.95 }} onClick={onCancel}
-            className="text-xs tracking-[0.2em] uppercase p-2 opacity-40" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
             CANCELAR
           </motion.button>
         )}

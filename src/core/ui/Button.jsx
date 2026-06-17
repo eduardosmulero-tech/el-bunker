@@ -8,7 +8,7 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  sm:  { height: 32, px: 10, fontSize: 10, iconSize: 14 },
+  sm:  { height: 44, px: 10, fontSize: 10, iconSize: 14 },
   md:  { height: 44, px: 16, fontSize: 11, iconSize: 16 },
   lg:  { height: 52, px: 20, fontSize: 12, iconSize: 18 },
 };

@@ -801,7 +801,7 @@ export default function MusicLab({
             const tabColor = tab.id === "drops" ? PURPLE : accentColor;
             return (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                className="flex-1 py-2.5 text-xs tracking-[0.25em] uppercase font-bold transition-all"
+                className="flex-1 py-2.5 min-h-[44px] text-xs tracking-[0.25em] uppercase font-bold transition-all"
                 style={{ fontFamily: FONT_MONO,
                   color: isActive ? tabColor : `${accentColor}33`,
                   background: isActive ? `${tabColor}10` : "transparent",
@@ -834,7 +834,7 @@ export default function MusicLab({
                   <div className="flex gap-1">
                     <motion.button whileTap={{ scale: 0.9 }} title="Buscar en cola"
                       onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
-                      className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                      className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${showQueueSearch ? accentColor + "66" : accentColor + "33"}`, background: showQueueSearch ? `${accentColor}15` : `${accentColor}06` }}>
                       ⌕
                     </motion.button>
@@ -844,13 +844,13 @@ export default function MusicLab({
                         if (!name?.trim()) return;
                         handleCreatePlaylist(name.trim());
                       }}
-                      className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                      className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${accentColor}33`, background: `${accentColor}06` }}>
                       ◈
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} title="Vaciar cola"
                       onClick={() => setConfirmClearQueue(true)}
-                      className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                      className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: "#ff4444", border: "1px solid #ff444433", background: "#ff444406" }}>
                       ✕
                     </motion.button>
@@ -949,7 +949,7 @@ export default function MusicLab({
                         if (next) { setActiveTrack(next); setAutoPlaySignal((n) => n + 1); }
                         else setActiveTrack(rawTracks[0] ?? null);
                       }}
-                      className="ml-3 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                      className="ml-3 flex-shrink-0 text-xs px-3 py-3 rounded-sm"
                       style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                       ✕
                     </motion.button>
@@ -1031,7 +1031,7 @@ export default function MusicLab({
                             </motion.button>
                           )}
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
-                            className="ml-1 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                            className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                             ✕
                           </motion.button>
@@ -1074,7 +1074,7 @@ export default function MusicLab({
                             {qVibe?.icon}
                           </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
-                            className="ml-1 flex-shrink-0 text-xs px-2 py-1 rounded-sm"
+                            className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                             ✕
                           </motion.button>
@@ -1111,7 +1111,7 @@ export default function MusicLab({
                     onClick={() => setShowSortMenu((v) => !v)}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
                     aria-label="Cambiar ordenación"
-                    className="text-[10px] px-1.5 py-0.5 rounded-sm transition-all flex-shrink-0 flex items-center gap-1"
+                    className="text-[10px] px-2 py-2.5 rounded-sm transition-all flex-shrink-0 flex items-center gap-1"
                     style={{
                       color: accentColor,
                       border: `1px solid ${accentColor}33`,
@@ -1157,35 +1157,35 @@ export default function MusicLab({
                   <span style={{ width: 1, background: `${accentColor}15`, margin: "2px 2px" }} />
                   <motion.button whileTap={{ scale: 0.9 }} title={`Vista: ${viewMode}`}
                     onClick={cycleViewMode}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${accentColor}33`,
                       background: `${accentColor}06`, fontFamily: FONT_MONO }}>
                     {VIEW_MODE_ICON[viewMode]}
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Buscar track"
                     onClick={() => { setShowTrackSearch((p) => !p); setTrackSearch(""); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showTrackSearch ? accentColor + "66" : accentColor + "33"}`,
                       background: showTrackSearch ? `${accentColor}15` : `${accentColor}06` }}>
                     ⌕
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
                     onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showAdd ? accentColor + "66" : accentColor + "33"}`,
                       background: showAdd ? `${accentColor}15` : `${accentColor}06` }}>
                     {showAdd ? "✕" : "+"}
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Editar track"
                     onClick={() => { setShowEdit((p) => !p); setShowDelete(false); setShowAdd(false); setEditingTrack(null); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showEdit ? accentColor + "66" : accentColor + "33"}`,
                       background: showEdit ? `${accentColor}15` : `${accentColor}06` }}>
                     {showEdit ? "✕" : "✎"}
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Eliminar track"
                     onClick={() => { setShowDelete((p) => !p); setShowAdd(false); setShowEdit(false); setEditingTrack(null); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: "#ff4444", border: `1px solid ${showDelete ? "#ff444466" : "#ff444433"}`,
                       background: showDelete ? "#ff444415" : "#ff444406" }}>
                     {showDelete ? "✕" : "−"}
@@ -1263,7 +1263,7 @@ export default function MusicLab({
                             <span className="text-xs opacity-40 truncate" style={{ color: "#ff4444" }}>{track.artist}</span>
                           </div>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDeleteTrack(track.id)}
-                            className="ml-3 flex-shrink-0 text-xs tracking-widest uppercase px-2 py-1 rounded-sm"
+                            className="ml-3 flex-shrink-0 text-xs tracking-widest uppercase px-3 py-3 rounded-sm"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                             ✕
                           </motion.button>
@@ -1320,7 +1320,7 @@ export default function MusicLab({
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setVisibleCount((c) => c + 50)}
-                    className="w-full py-2.5 text-xs tracking-[0.25em] uppercase font-bold rounded-sm mt-1"
+                    className="w-full py-3 text-xs tracking-[0.25em] uppercase font-bold rounded-sm mt-1"
                     style={{
                       color: `${ACID}88`,
                       border: `1px solid ${ACID}22`,
@@ -1352,14 +1352,14 @@ export default function MusicLab({
                 <div className="flex gap-1">
                   <motion.button whileTap={{ scale: 0.9 }} title="Buscar lista"
                     onClick={() => { setShowListSearch((p) => !p); setListSearch(""); }}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showListSearch ? accentColor + "66" : accentColor + "33"}`,
                       background: showListSearch ? `${accentColor}15` : `${accentColor}06` }}>
                     ⌕
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
                     onClick={() => setShowCreatePlaylist((p) => !p)}
-                    className="w-8 h-8 flex items-center justify-center rounded-sm text-sm transition-all"
+                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showCreatePlaylist ? accentColor + "66" : accentColor + "33"}`,
                       background: showCreatePlaylist ? `${accentColor}15` : `${accentColor}06` }}>
                     {showCreatePlaylist ? "✕" : "+"}
@@ -1420,7 +1420,7 @@ export default function MusicLab({
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowCreatePlaylist(true)}
-                    className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm"
+                    className="text-xs tracking-[0.2em] uppercase px-4 py-3 rounded-sm"
                     style={{
                       color: accentColor,
                       border: `1px solid ${accentColor}44`,
@@ -1481,7 +1481,7 @@ export default function MusicLab({
                           )}
                           {isRenaming ? (
                             <motion.button whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); handleRenamePlaylist(pl.id); }}
-                              style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 10, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                              style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 10, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                               OK
                             </motion.button>
                           ) : (
@@ -1489,18 +1489,18 @@ export default function MusicLab({
                               {!isEmpty && (
                                 <motion.button whileTap={{ scale: 0.88 }}
                                   onClick={(e) => { e.stopPropagation(); handlePlayPlaylistContext(plTracks, pl.name); }}
-                                  style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                  style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 11, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                   ▶
                                 </motion.button>
                               )}
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setRenamingPlId(pl.id); setRenameVal(pl.name); setConfirmDeletePlId(null); }}
-                                style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`, borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`, borderRadius: 2, fontSize: 11, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                 ✎
                               </motion.button>
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setConfirmDeletePlId(pl.id); setRenamingPlId(null); }}
-                                style={{ color: "#ff4444", background: "#ff444408", border: "1px solid #ff444422", borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                style={{ color: "#ff4444", background: "#ff444408", border: "1px solid #ff444422", borderRadius: 2, fontSize: 11, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                                 ✕
                               </motion.button>
                             </>
@@ -1741,7 +1741,7 @@ export default function MusicLab({
                     setAutoPlaySignal((n) => n + 1);
                     setContextSheet(null);
                   }}
-                  className="w-full py-3 text-xs tracking-[0.35em] uppercase font-bold rounded-sm"
+                  className="w-full py-3.5 text-xs tracking-[0.35em] uppercase font-bold rounded-sm"
                   style={{
                     color: "#0a0a0a",
                     background: accentColor,
@@ -1760,7 +1760,7 @@ export default function MusicLab({
                     showToast({ msg: `AÑADIDOS ${contextSheet.plTracks.length} TRACKS A COLA` }, 2500);
                     setContextSheet(null);
                   }}
-                  className="w-full py-3 text-xs tracking-[0.35em] uppercase font-bold rounded-sm"
+                  className="w-full py-3.5 text-xs tracking-[0.35em] uppercase font-bold rounded-sm"
                   style={{
                     color: accentColor,
                     background: `${accentColor}0d`,
@@ -1774,7 +1774,7 @@ export default function MusicLab({
                 {/* Cancel */}
                 <button
                   onClick={() => setContextSheet(null)}
-                  className="w-full py-2 text-xs tracking-widest uppercase opacity-40 hover:opacity-70 transition-opacity"
+                  className="w-full py-3 text-xs tracking-widest uppercase opacity-40 hover:opacity-70 transition-opacity"
                   style={{ color: accentColor, fontFamily: FONT_MONO }}
                 >
                   CANCELAR

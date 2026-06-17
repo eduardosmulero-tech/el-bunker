@@ -86,7 +86,7 @@ export default class ChunkErrorBoundary extends Component {
               whileTap={{ scale: 0.95 }}
               onClick={this.handleRetry}
               disabled={this.state.retrying}
-              className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm"
+              className="text-xs tracking-[0.2em] uppercase px-4 py-3 rounded-sm min-h-[44px]"
               style={{
                 color: ACID,
                 border: `1px solid ${ACID}44`,
@@ -101,7 +101,7 @@ export default class ChunkErrorBoundary extends Component {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => window.location.reload()}
-              className="text-xs tracking-[0.2em] uppercase px-4 py-2 rounded-sm opacity-50"
+              className="text-xs tracking-[0.2em] uppercase px-4 py-3 rounded-sm min-h-[44px] opacity-50"
               style={{
                 color: ACID,
                 border: `1px solid ${ACID}33`,

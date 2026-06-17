@@ -92,7 +92,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
         </span>
         <motion.button whileTap={{ scale: 0.9 }}
           onClick={() => { if (showForm && !editingId) { handleCancel(); } else { openForm(); } }}
-          className="w-8 h-8 flex items-center justify-center rounded-sm text-sm"
+          className="w-11 h-11 flex items-center justify-center rounded-sm text-sm"
           style={{ color: ACID, border: `1px solid ${showForm && !editingId ? ACID + "66" : ACID + "33"}`,
             background: showForm && !editingId ? `${ACID}15` : `${ACID}06` }}>
           {showForm && !editingId ? "✕" : "+"}
@@ -115,7 +115,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
               <input value={form.label} onChange={(e) => setForm((p) => ({ ...p, label: e.target.value }))}
                 placeholder="mi tag"
                 style={{ background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                  color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                  color: ACID, fontSize: 11, padding: "12px 12px", fontFamily: FONT_MONO,
                   letterSpacing: "0.15em", outline: "none" }} />
             </div>
 
@@ -130,7 +130,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                   placeholder="◈"
                   maxLength={4}
                   style={{ flex: 1, background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                    color: ACID, fontSize: 18, padding: "5px 10px", fontFamily: FONT_MONO,
+                    color: ACID, fontSize: 18, padding: "12px 12px", fontFamily: FONT_MONO,
                     letterSpacing: "0.1em", outline: "none", textAlign: "center" }} />
               </div>
             </div>
@@ -157,14 +157,14 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
             {/* Acciones */}
             <div className="flex gap-2">
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={!isValid}
-                style={{ flex: 1, padding: "7px 0", background: isValid ? `${ACID}18` : `${ACID}06`,
+                style={{ flex: 1, padding: "14px 0", background: isValid ? `${ACID}18` : `${ACID}06`,
                   border: `1px solid ${isValid ? ACID + "55" : ACID + "22"}`,
                   color: isValid ? ACID : `${ACID}44`, fontSize: 10, letterSpacing: "0.2em",
                   borderRadius: 2, cursor: isValid ? "pointer" : "not-allowed", fontFamily: FONT_MONO }}>
                 {editingId ? "GUARDAR" : "CREAR TAG"}
               </motion.button>
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleCancel}
-                style={{ padding: "7px 16px", background: "transparent", border: `1px solid ${ACID}22`,
+                style={{ padding: "14px 16px", background: "transparent", border: `1px solid ${ACID}22`,
                   color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
                 CANCELAR
               </motion.button>
@@ -198,26 +198,26 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                   <p className="text-xs font-bold tracking-widest" style={{ color: tag.color }}>{tag.label}</p>
                   <motion.button whileTap={{ scale: 0.95 }}
                     onClick={() => onFilterByTag?.(tag.id)}
-                    style={{ background: "none", border: "none", padding: 0, cursor: onFilterByTag ? "pointer" : "default",
-                      color: `${ACID}40`, fontSize: 10, letterSpacing: "0.15em", fontFamily: FONT_MONO }}>
+                    style={{ background: "none", border: "none", padding: "12px 8px", cursor: onFilterByTag ? "pointer" : "default",
+                      color: `${ACID}40`, fontSize: 12, letterSpacing: "0.15em", fontFamily: FONT_MONO }}>
                     {inUse} track{inUse !== 1 ? "s" : ""}{isSystem ? " · sistema" : ""}
                     {onFilterByTag && inUse > 0 ? " →" : ""}
                   </motion.button>
                 </div>
                 <div style={{ width: 20, height: 20, borderRadius: 2, background: tag.color, flexShrink: 0,
                   border: `1px solid ${tag.color}88` }} />
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleEdit(tag)}
-                  style={{ color: ACID, background: `${ACID}0a`, border: `1px solid ${ACID}22`,
-                    borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0 }}>
-                  ✎
-                </motion.button>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDelete(tag)}
-                  style={{ color: inUse > 0 ? "#ff444466" : "#ff4444",
-                    background: "#ff444408", border: "1px solid #ff444422",
-                    borderRadius: 2, fontSize: 11, padding: "4px 8px", fontFamily: FONT_MONO, flexShrink: 0,
-                    cursor: inUse > 0 ? "not-allowed" : "pointer" }}>
-                  ✕
-                </motion.button>
+                  <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleEdit(tag)}
+                    style={{ color: ACID, background: `${ACID}0a`, border: `1px solid ${ACID}22`,
+                      borderRadius: 2, fontSize: 12, padding: "12px 14px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                    ✎
+                  </motion.button>
+                  <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDelete(tag)}
+                    style={{ color: inUse > 0 ? "#ff444466" : "#ff4444",
+                      background: "#ff444408", border: "1px solid #ff444422",
+                      borderRadius: 2, fontSize: 12, padding: "12px 14px", fontFamily: FONT_MONO, flexShrink: 0,
+                      cursor: inUse > 0 ? "not-allowed" : "pointer" }}>
+                    ✕
+                  </motion.button>
               </div>
             );
           })
