@@ -275,3 +275,16 @@ Nota: demasiadas iteraciones en fix scroll — localizar causa raíz con DevTool
   - Migración de `TagManager` a overlay global.
   - Resolución del secuestro táctil del scroll horizontal en Android causado por listeners `whileTap` de `framer-motion` (SCROLL-01).
   - Corrección de solapamiento del overlay con el header superior.
+
+## S131 — 2026-06-17
+- **Pliegos:** PLIEGO-231 (JourneyPolylines), PLIEGO-232 (date slider), PLIEGO-233 (geocoder), PLIEGO-234-S0.1 (PRECACHE), S0.2 (safe-area), S0.3 (design system)
+- **Commits:** `9db085d`, `89363a5`, `638e217`
+- **Archivos:** VaultGallery.jsx, AddEntryForm.jsx, VaultContext.jsx, MusicLab.jsx, Layout.jsx, vite.config.js, public/sw.js, workers/worker.js, workers/routes/config.js, src/vault/GeocoderService.js, src/vault/LocationSearch.jsx, src/core/ui/Button.jsx, src/core/ui/Card.jsx, src/core/ui/Input.jsx
+- **Hitos:**
+  - Re-auditoría completa: score real 32% con factor premium
+  - Nuevo plan 5 fases (~27 pliegos)
+  - MAP Sub-fases 2-4 completadas (polylines, slider, geocoder)
+  - 2 bugs corregidos (delete track, adventure counter 500d)
+  - PRECACHE funcional via swAssetManifest Vite plugin
+  - safe-area-inset-* en StatusBar, BottomNav, MiniPlayer
+  - Design system creado: Button/Card/Input

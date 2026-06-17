@@ -21,8 +21,8 @@
 
 ## IMPACTO DE STALENESS
 
-Ninguno — todos los docs resincronizados en S64.
-S66 no tocó código, solo documentación de planificación.
+⚠️ S130-B tocó VaultContext.jsx + worker.js + workers/routes/. Todos los docs de arquitectura marcados stale — pendientes de resincronización.
+⚠️ S131 tocó Layout.jsx (safe-area), VaultGallery.jsx (MapView real), vite.config.js, public/sw.js. Sin efecto adicional sobre stale flags.
 
 ---
 
