@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** Fase 0.4 — Touch targets ≥44px audit.
-**Última sesión:** PLIEGO-234-S0.3. Design system creado: `<Button>`, `<Card>`, `<Input>` en `src/core/ui/`.
+**Última sesión:** S132 — Auditoría escucha compartida SC1-SC14. Score ~78%.
 **Rama activa:** `master`
-**Commit:** `89363a5` → S0.2 (safe-area)
+**Commit:** S132 — heart→header, auto-join, queue sync, animations
 
 ---
 
@@ -13,6 +13,7 @@
 | Módulo | % | Gap principal |
 |---|---|---|
 | Audio engine | 70% | Sin gapless/crossfade |
+| Escucha compartida | 78% | SC6/SC12 stats (bloq STAT-M9) |
 | VAULT data model | 80% | UI de entrada básica |
 | WALL | 35% | Sin virtualización → OOM |
 | CINEMA | 18% | Sin música ambiente, audioguías, transiciones |
@@ -22,13 +23,16 @@
 | REEL | 11% | Sin banda sonora, pinning, animaciones |
 | CAPSULES | 8% | Timeline y RECAP no existen |
 | Infraestructura | 6% | Offline roto (✅ FIXED S0.1), sin safe areas, sin skeletons |
-| **TOTAL** | **~32%** | |
+| **TOTAL** | **~35%** | |
 
 ## Bugs activos
 
 ### P1
 - ~~Offline = blank screen~~ ✅ RESUELTO S0.1 (PRECACHE + sw-assets.json)
-- Sin safe-area-inset-* en elementos fijos (PENDIENTE S0.2)
+- ~~Heart en controls bar~~ ✅ RESUELTO S132 (header centrado)
+- ~~Sin auto-join escucha compartida~~ ✅ RESUELTO S132 (pending_session_id)
+- ~~Queue compartida incompleta~~ ✅ RESUELTO S132 (add/remove bidireccional + persistencia)
+- SC6/SC12 stats credit: bloqueado en STAT-M9 (stats engine)
 
 ### P2/resto
 | Bug | Estado |

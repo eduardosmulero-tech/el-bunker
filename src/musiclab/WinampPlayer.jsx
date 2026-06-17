@@ -58,8 +58,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
     // Fase C — Escucha Compartida (S123)
-    sessionId, isHost, partnerListening, partnerTrack,
-    createSession, _joinSession, leaveSession,
+    sessionId, isHost, partnerListening, partnerTrack, partnerName,
+    createSession, leaveSession,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
   // Se resetea al cambiar de track para que el corazón no quede "pegado".
@@ -387,13 +387,13 @@ return () => cancelAnimationFrame(raf);
 
       {/* Title Bar */}
       <div
-        className="flex items-center justify-between px-3 py-2"
+        className="flex items-center px-3 py-2"
         style={{
           background: `linear-gradient(90deg, ${withAlpha(accentColor, 0.09)} 0%, transparent 100%)`,
           borderBottom: `1px solid ${withAlpha(accentColor, 0.13)}`,
         }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-none">
           <motion.div
             animate={playing ? { opacity: [1, 0.3, 1] } : { opacity: 0.4 }}
             transition={{ duration: 0.8, repeat: playing ? Infinity : 0 }}
@@ -411,7 +411,118 @@ return () => cancelAnimationFrame(raf);
             <span className="text-xs" style={{ color: "#ff4444" }} title="Error guardando cola">✕</span>
           )}
         </div>
-        <div className="flex gap-2">
+
+        {/* Fase C — S123: Corazón centrado en el header (SC5) + SC-M19-ANIM */}
+        <div className="flex-1 flex items-center justify-center min-w-0 px-1">
+          <motion.button
+            layout
+            whileTap={{ scale: 0.85 }}
+            onClick={async () => {
+              if (sessionId) {
+                await leaveSession();
+              } else if (partnerListening) {
+                await createSession();
+              } else {
+                setLikeToast("NADIE ESTÁ ESCUCHANDO");
+              }
+            }}
+            title={sessionId
+              ? `Sesión compartida activa · tocar para salir`
+              : partnerListening
+                ? `${partnerName || "El otro"} está escuchando — tocar para unirte`
+                : "Nadie escuchando"}
+            aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
+            className="relative flex items-center justify-center gap-1 text-xs font-bold h-6 overflow-visible"
+            style={{
+              minWidth: sessionId ? 48 : 36,
+              paddingLeft: sessionId ? 8 : 6,
+              paddingRight: sessionId ? 8 : 6,
+              borderRadius: 2,
+              background: sessionId
+                ? withAlpha("#ff2d55", 0.18)
+                : partnerListening
+                  ? withAlpha("#ffcc00", 0.15)
+                  : "transparent",
+              border: `1px solid ${sessionId ? withAlpha("#ff2d55", 0.5) : partnerListening ? withAlpha("#ffcc00", 0.5) : withAlpha(accentColor, 0.15)}`,
+              boxShadow: sessionId ? `0 0 12px ${withAlpha("#ff2d55", 0.4)}` : partnerListening ? `0 0 8px ${withAlpha("#ffcc00", 0.3)}` : "none",
+            }}
+          >
+            {/* SC-M19-ANIM: ripple ring on active session */}
+            {sessionId && (
+              <motion.span
+                initial={{ scale: 0.8, opacity: 0.6 }}
+                animate={{ scale: [1, 1.6, 1], opacity: [0.4, 0, 0.4] }}
+                transition={{ duration: 2.4, repeat: Infinity, ease: "easeOut" }}
+                className="absolute inset-0 rounded-sm pointer-events-none"
+                style={{
+                  border: `1px solid ${withAlpha("#ff2d55", 0.3)}`,
+                }}
+              />
+            )}
+
+            {/* Heart icon with smooth color transitions */}
+            <motion.span
+              key={sessionId ? "active" : partnerListening ? "partner" : "idle"}
+              initial={{ scale: 1.3, opacity: 0 }}
+              animate={
+                sessionId
+                  ? { scale: [1, 1.25, 1], opacity: [1, 0.7, 1] }
+                  : partnerListening
+                    ? { y: [0, -2, 0] }
+                    : { scale: 1, opacity: 1 }
+              }
+              transition={{
+                scale: sessionId ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 },
+                opacity: { duration: 0.3 },
+                y: partnerListening ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" } : undefined,
+              }}
+              className="inline-block"
+              style={{
+                fontSize: 14,
+                lineHeight: 1,
+                color: sessionId ? "#ff2d55" : partnerListening ? "#ffcc00" : withAlpha(accentColor, 0.35),
+              }}
+            >
+              {sessionId || partnerListening ? "♥" : "♡"}
+            </motion.span>
+
+            {/* Pokémon "!" exclamation when partner listening */}
+            {partnerListening && !sessionId && (
+              <motion.span
+                key="exclamation"
+                initial={{ scale: 2.5, opacity: 0 }}
+                animate={{
+                  scale: [2.5, 1, 1.3, 0.9, 1.1, 1],
+                  opacity: [1, 1, 0.8, 1, 0.9, 1],
+                }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="font-bold leading-none"
+                style={{
+                  fontSize: 13,
+                  color: "#ff2d55",
+                  textShadow: `0 0 8px ${withAlpha("#ff2d55", 0.6)}`,
+                }}
+              >
+                !
+              </motion.span>
+            )}
+
+            {/* "En sesión" label for active session */}
+            {sessionId && (
+              <motion.span
+                key="status-label"
+                initial={{ opacity: 0, x: -4 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-[9px] uppercase tracking-wider leading-none"
+                style={{ color: withAlpha("#ff2d55", 0.7) }}
+              >
+                {isHost ? "HOST" : "LINK"}
+              </motion.span>
+            )}
+          </motion.button>
+        </div>
+
+        <div className="flex gap-2 flex-none">
           {/* S109 — Chromecast button */}
           {castState !== "unavailable" && (
             <motion.button
@@ -500,11 +611,11 @@ return () => cancelAnimationFrame(raf);
         </div>  
       </div>
 
-      {/* Controls — Phase 2.1: bg opaco, botones más grandes, ♥ (like) y ⊕ (add to queue) */}
+      {/* Controls — bg opaco, botones más grandes, ⊕ (add to queue) */}
       {/* S125: restructurado a 3 clusters con flex-1 en el central — el play queda realmente centrado */}
       <div className="flex items-center gap-2 px-3 pb-3"
         style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
-        {/* Cluster izquierdo: loop + shuffle + corazón */}
+        {/* Cluster izquierdo: loop + shuffle */}
         <div className="flex gap-2 flex-none">
           <WinampBtn
             label={loopMode === "track" ? "⟳¹" : "⟳"}
@@ -515,74 +626,6 @@ return () => cancelAnimationFrame(raf);
             aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
           />
           <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
-          {/* Fase C — S123: Corazón de escucha compartida (SC5) */}
-          <motion.button
-            whileTap={{ scale: 0.85 }}
-            onClick={async () => {
-              if (sessionId) {
-                // En sesión → abandonar (SC10)
-                await leaveSession();
-              } else if (partnerListening) {
-                // Partner escuchando → crear sesión y unirse (SC5)
-                await createSession();
-              } else {
-                // Nadie escuchando → feedback (no crear sesión sin partner)
-                setLikeToast("NADIE ESTÁ ESCUCHANDO");
-              }
-            }}
-            title={sessionId
-              ? (isHost ? "Sesión compartida activa (host) — tocar para salir" : "Sesión compartida activa (guest) — tocar para salir")
-              : partnerListening
-                ? `${partnerTrack?.title || "El otro"} está escuchando — tocar para unirte`
-                : "Iniciar escucha compartida"}
-            aria-label={sessionId ? "Salir de sesión compartida" : "Iniciar escucha compartida"}
-            className="rounded-sm flex items-center justify-center text-xs font-bold transition-all w-10 h-10 relative flex-none"
-            style={{
-              background: sessionId
-                ? withAlpha("#ff2d55", 0.18)
-                : partnerListening
-                  ? withAlpha("#ffcc00", 0.18)
-                  : withAlpha(accentColor, 0.08),
-              border: `1px solid ${sessionId ? withAlpha("#ff2d55", 0.6) : partnerListening ? withAlpha("#ffcc00", 0.6) : withAlpha(accentColor, 0.2)}`,
-              color: sessionId ? "#ff2d55" : partnerListening ? "#ffcc00" : withAlpha(accentColor, 0.4),
-              boxShadow: sessionId ? `0 0 12px ${withAlpha("#ff2d55", 0.5)}` : partnerListening ? `0 0 8px ${withAlpha("#ffcc00", 0.3)}` : "none",
-            }}
-          >
-            <motion.span
-              animate={sessionId
-                ? { scale: [1, 1.25, 1], opacity: [1, 0.7, 1] }
-                : partnerListening
-                  ? { y: [0, -3, 0], opacity: [0.5, 1, 0.5] }
-                  : {}}
-              transition={{
-                duration: sessionId ? 1.2 : 0.6,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              {sessionId ? "♥" : partnerListening ? "♥!" : "♡"}
-            </motion.span>
-            {/* SC5: indicador de presencia — track del partner */}
-            {partnerListening && !sessionId && partnerTrack && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="absolute -top-1 -right-1 text-[8px] px-1 py-0.5 rounded-sm"
-                style={{
-                  background: "#0a0a0a",
-                  border: "1px solid #ffcc0066",
-                  color: "#ffcc00",
-                  fontFamily: FONT_MONO,
-                  whiteSpace: "nowrap",
-                  maxWidth: "80px",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {partnerTrack.title?.slice(0, 10) || "..."}
-              </motion.span>
-            )}
-          </motion.button>
         </div>
 
         {/* Cluster central: prev + play + next + ⚡ + ⊕ (flex-1 ocupa el espacio, justify-center centra el play) */}

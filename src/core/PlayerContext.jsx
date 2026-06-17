@@ -186,32 +186,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const [partnerId,        setPartnerId]        = useState(null);
   const [partnerTrack,     setPartnerTrack]     = useState(null);  // SC14: track activo del otro
   const [partnerListening, setPartnerListening] = useState(false);  // SC5: ¿el otro está escuchando?
-  const _sessionPollRef     = useRef(null);       // AbortController para long-polling
-  const _lastSyncTsRef      = useRef(0);          // Último timestamp recibido del server
-  const _isRemoteActionRef  = useRef(false);       // Previene bucles: ignora cambios locales durante sync remoto
+  const [sessionToast,     setSessionToast]     = useState(null);  // toast para eventos de sesión
+  const _sessionPollRef         = useRef(null);       // AbortController para long-polling
+  const _lastSyncTsRef          = useRef(0);          // Último timestamp recibido del server
+  const _isRemoteActionRef      = useRef(false);       // Previene bucles: ignora cambios locales durante sync remoto
+  const _wasDisconnectedRef     = useRef(false);       // SC8: se perdió conexión durante sesión
 
-  // SC5: Chequear presencia del partner (¿está escuchando? ¿qué track?)
-  const checkPresence = useCallback(async () => {
-    if (!workerClient.hasToken() || !userId) return;
-    try {
-      const res = await workerClient.get(`/api/sync?action=presence&user_id=${userId}`);
-      if (res?.active) {
-        setPartnerListening(true);
-        setPartnerTrack(res.active_track || null);
-      } else {
-        setPartnerListening(false);
-        setPartnerTrack(null);
-      }
-    } catch { /* noop */ }
-  }, [userId]);
-
-  // Poll loop: chequear presencia cada 15s (SC5)
-  useEffect(() => {
-    if (!userId || sessionId) return;  // Si ya estoy en sesión, no necesito poll de presencia
-    checkPresence();
-    const interval = setInterval(checkPresence, 15000);
-    return () => clearInterval(interval);
-  }, [userId, sessionId, checkPresence]);
+  const partnerName = partnerId === "edu" ? "Edu" : partnerId === "david" ? "David" : partnerId || null;
 
   // Crear sesión (host)
   const createSession = useCallback(async () => {
@@ -234,7 +215,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (!data.active) return;
       setSessionId(sid);
       setIsHost(false);
-      setPartnerId(data.host_id || data.guest_id);
+      setPartnerId(data.host_id);
       // SC7: sincronizar al estado actual (track + posición)
       if (data.active_track_id) {
         const track = tracks.find(t => t.id === data.active_track_id);
@@ -255,6 +236,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           }
         }
       }
+      setSessionToast(`${data.host_id === "edu" ? "Edu" : "David"} está escuchando contigo`);
       console.info("[Búnker] 🔗 Unido a sesión:", sid);
     } catch (e) { console.warn("[Búnker] joinSession error:", e); }
   }, [tracks]);
@@ -262,6 +244,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // Abandonar sesión (SC10, SC13)
   const leaveSession = useCallback(async () => {
     if (!sessionId) return;
+    setSessionToast("Has abandonado la sesión compartida");
     try {
       await workerClient.del(`/api/sync?session_id=${sessionId}`);
     } catch { /* noop */ }
@@ -273,17 +256,47 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     console.info("[Búnker] 🔗 Sesión finalizada");
   }, [sessionId]);
 
+  // SC5: Chequear presencia del partner + auto-join si hay sesión pendiente
+  const checkPresence = useCallback(async () => {
+    if (!workerClient.hasToken() || !userId) return;
+    try {
+      const res = await workerClient.get(`/api/sync?action=presence&user_id=${userId}`);
+      if (res?.active) {
+        setPartnerListening(true);
+        setPartnerTrack(res.active_track || null);
+        // Auto-join si hay sesión pendiente creada por el otro (SC5)
+        if (res.pending_session_id && !sessionId) {
+          await joinSession(res.pending_session_id);
+        }
+      } else {
+        setPartnerListening(false);
+        setPartnerTrack(null);
+      }
+    } catch { /* noop */ }
+  }, [userId, sessionId, joinSession]);
+
+  // Poll loop: chequear presencia cada 15s (SC5)
+  useEffect(() => {
+    if (!userId || sessionId) return;
+    checkPresence();
+    const interval = setInterval(checkPresence, 15000);
+    return () => clearInterval(interval);
+  }, [userId, sessionId, checkPresence]);
+
   // Sync: enviar acción local al partner (SC1, SC4)
   const syncAction = useCallback((action, opts = {}) => {
     if (!sessionId || _isRemoteActionRef.current) return;
-    workerClient.post("/api/sync", {
+    const body = {
       session_id: sessionId,
       action,
       track_id: opts.trackId || activeTrack?.id || null,
       position: opts.position ?? (audioRef.current?.currentTime ?? null),
       is_playing: opts.isPlaying ?? isPlaying,
       queue: opts.queue || null,
-    }).catch(() => {});
+    };
+    if (opts.trackData) body.track_data = opts.trackData;
+    if (activeTrack?.vibe || activeTrack?.tag) body.vibe = activeTrack.vibe || activeTrack.tag;
+    workerClient.post("/api/sync", body).catch(() => {});
   }, [sessionId, activeTrack, isPlaying]);
 
   // Long-polling: recibir cambios del partner (SC4)
@@ -301,18 +314,42 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           if (!active) break;
           data = await res.json();
 
+          // SC8: reset disconnect flag on any successful response
+          if (_wasDisconnectedRef.current) {
+            _wasDisconnectedRef.current = false;
+            setSessionToast({
+              msg: "Conexión recuperada",
+              action: () => {
+                const latestPos = audioRef.current?.currentTime ?? 0;
+                setSessionToast(`Sincronizado en ${Math.floor(latestPos / 60)}:${String(Math.floor(latestPos % 60)).padStart(2, "0")}`);
+              },
+              actionLabel: "RESINCRONIZAR",
+              secondaryLabel: "MANTENER",
+            });
+          }
+
           if (data.ended) {
-            // SC10: partner terminó la sesión
+            // SC10: partner terminó la sesión — preserve partner's queue tracks (SC13)
+            if (Array.isArray(data.queue_json) && data.queue_json.length > 0) {
+              setLocalQueue((q) => {
+                const existingIds = new Set(q.map(t => t.id));
+                const partnerTracks = data.queue_json.filter(t => !existingIds.has(t.id));
+                return partnerTracks.length ? [...q, ...partnerTracks] : q;
+              });
+            }
             setSessionId(null);
             setIsHost(false);
             setPartnerId(null);
             setPartnerTrack(null);
-            try {
-              window.dispatchEvent(new CustomEvent("bunker_session_ended", {
-                detail: { by: "partner" }
-              }));
-            } catch { /* noop */ }
+            setSessionToast("La sesión compartida ha terminado");
             break;
+          }
+
+          if (data.action === "joined" && isHost && data.guest_id) {
+            // SC5: partner joined the session — show toast on host side
+            setPartnerId(data.guest_id);
+            setSessionToast(`${data.guest_id === "edu" ? "Edu" : "David"} se ha unido a la sesión`);
+            continue;
           }
 
           if (!data.unchanged && data.session_id && data.action && data.action !== "created" && data.action !== "joined") {
@@ -347,6 +384,23 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
               }
             } else if (data.action === "seek" && data.position != null) {
               if (audioRef.current) audioRef.current.currentTime = data.position;
+            } else if (data.action === "sync" && data.position != null) {
+              // SC4 premium: position drift correction (>2s gap)
+              if (audioRef.current && Math.abs(audioRef.current.currentTime - data.position) > 2) {
+                audioRef.current.currentTime = data.position;
+              }
+            } else if (data.action === "queue_remove" && data.active_track_id) {
+              // SC2: remote queue remove
+              setLocalQueue((q) => q.filter(t => t.id !== data.active_track_id));
+            } else if (data.action === "queue_add" && Array.isArray(data.queue_json)) {
+              // SC2: remote queue add — merge into local queue
+              setLocalQueue((q) => {
+                const existingIds = new Set(q.map(t => t.id));
+                const newFromSession = data.queue_json.filter(t => t._added_by !== userId && !existingIds.has(t.id));
+                if (!newFromSession.length) return q;
+                const merged = [...q, ...newFromSession];
+                return merged.length > MAX_QUEUE_SIZE ? merged.slice(-MAX_QUEUE_SIZE) : merged;
+              });
             }
 
             // Actualizar presencia
@@ -358,7 +412,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
             setTimeout(() => { _isRemoteActionRef.current = false; }, 150);
           }
         } catch {
-          // Error de red — reintentar en 3s (SC8: continuar localmente)
+          // SC8: mark disconnected, retry in 3s
+          _wasDisconnectedRef.current = true;
           await new Promise(r => setTimeout(r, 3000));
         }
 
@@ -393,6 +448,19 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id, sessionId]);
 
+  // SC4 premium: periodic position sync cada 1s durante sesión activa (§13.3)
+  useEffect(() => {
+    if (!sessionId || !isPlaying) return;
+    const interval = setInterval(() => {
+      syncAction("sync", {
+        position: audioRef.current?.currentTime ?? null,
+        isPlaying: true,
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, isPlaying]);
+
   // SC5: Heartbeat de presencia cada 30s mientras se está reproduciendo
   useEffect(() => {
     if (!userId || !workerClient.hasToken() || !activeTrack) return;
@@ -404,10 +472,18 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         track_title: activeTrackRef.current?.title || null,
       }).catch(() => {});
     };
-    sendHeartbeat(); // enviar inmediatamente
+    sendHeartbeat();
     const interval = setInterval(sendHeartbeat, 30000);
     return () => clearInterval(interval);
   }, [userId, activeTrack?.id]);
+
+  // Auto-clear session toast after 3s (only plain strings, not action toasts)
+  useEffect(() => {
+    if (!sessionToast) return;
+    if (typeof sessionToast === "object" && sessionToast.action) return;
+    const t = setTimeout(() => setSessionToast(null), 3000);
+    return () => clearTimeout(t);
+  }, [sessionToast]);
 
   const audioRef        = useRef(null);
   const preloadAudioRef = useRef(null);  // Fase 1.1 — P-M8: segundo <audio> para precarga silenciosa
@@ -660,8 +736,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (force) {
       setSoftDeletedIds(prev => { const n = new Set(prev); n.delete(track.id); return n; });
     }
+    // SC2: sync queue add to shared session
+    if (sessionId && !_isRemoteActionRef.current) {
+      syncAction("queue_add", {
+        trackData: { id: track.id, title: track.title, artist: track.artist, tag: track.tag },
+      });
+    }
     return "added";
-  }, [localQueue, enforceQueueLimit]);
+  }, [localQueue, enforceQueueLimit, sessionId, syncAction]);
 
   // S77 Q12: add entire playlist to queue
   const addPlaylistToQueue = useCallback((playlistTracks, clearFirst = false) => {
@@ -729,7 +811,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     });
     // B5 fix (S112-B): no auto-limpiar softDeletedIds tras 3s.
     // La eliminación soft es permanente hasta que el usuario haga UNDO explícito.
-  }, [tracks]);
+    // SC2: sync actual removal (not soft delete) to shared session
+    if (!softDelete && sessionId && !_isRemoteActionRef.current) {
+      syncAction("queue_remove", { trackId });
+    }
+  }, [tracks, sessionId, syncAction]);
 
   // S77 Q17: undo soft delete
   const undoRemoveFromQueue = useCallback((trackId) => {
@@ -1471,8 +1557,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // S109 — Chromecast
       castState, startCasting, stopCasting, isCasting, castDeviceName,
       // Fase C — Escucha Compartida (S123)
-      sessionId, isHost, partnerId, partnerTrack, partnerListening,
+      sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName,
       createSession, joinSession, leaveSession, syncAction, checkPresence,
+      sessionToast, setSessionToast,
       sharedListening: !!sessionId, setSharedListening: () => {},
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}

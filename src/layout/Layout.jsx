@@ -53,6 +53,7 @@ const CornerBrackets = ({ color = ACID, thickness = 2 }) => {
 // ─── TOP STATUS BAR ──────────────────────────────────────────
 const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
   const [tick, setTick] = useState(new Date());
+  const { partnerListening, partnerTrack, partnerName, sessionId } = usePlayer();
 
   useEffect(() => {
     const id = setInterval(() => setTick(new Date()), 1000);
@@ -79,24 +80,46 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         background: `linear-gradient(180deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
       }}
     >
-      {/* LEFT: Brand */}
-      <div className="flex items-center gap-3">
+      {/* LEFT: Brand + Presence */}
+      <div className="flex items-center gap-3 min-w-0">
         <motion.div
           animate={{ opacity: [1, 0.3, 1] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          className="w-2 h-2 rounded-full"
+          className="w-2 h-2 rounded-full flex-none"
           style={{ background: isAuthenticated ? accentColor : "#ff3b3b", boxShadow: `0 0 8px ${isAuthenticated ? accentColor : "#ff3b3b"}` }}
         />
         <span
-          className="text-xs tracking-[0.3em] uppercase font-bold"
+          className="text-xs tracking-[0.3em] uppercase font-bold flex-none"
           style={{ color: accentColor, textShadow: `0 0 12px ${accentColor}44` }}
         >
           EL BÚNKER
         </span>
+
+        {/* SC14: Presence indicator in status bar */}
+        {partnerListening && (
+          <motion.div
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-1.5 text-[9px] tracking-wider uppercase truncate"
+            style={{ color: sessionId ? "#ff2d55" : "#ffcc00", opacity: 0.8 }}
+          >
+            <motion.span
+              animate={sessionId
+                ? { scale: [1, 1.3, 1] }
+                : { opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+            >
+              {sessionId ? "♥" : "◉"}
+            </motion.span>
+            <span className="truncate max-w-[120px]">
+              {partnerName || "Otro"}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
+            </span>
+          </motion.div>
+        )}
       </div>
 
       {/* RIGHT: Clock */}
-      <div className="flex items-center gap-4 text-xs whitespace-nowrap" style={{ color: accentColor, opacity: 0.75 }}>
+      <div className="flex items-center gap-4 text-xs whitespace-nowrap flex-none" style={{ color: accentColor, opacity: 0.75 }}>
         <span className="tracking-wider">{dateStr}</span>
         <span
           className="font-bold tracking-widest tabular-nums"
@@ -402,7 +425,7 @@ export default function Layout({
   onTabChange = () => {},
   onSignOut,
 }) {
-  const { trackVibe, resolveVibeAccent, networkStatus } = usePlayer();
+  const { trackVibe, resolveVibeAccent, networkStatus, sessionToast, setSessionToast } = usePlayer();
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   return (
@@ -444,6 +467,48 @@ export default function Layout({
             }}
           >
             ◉ Sin conexión
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Fase C — Toast de sesión compartida ── */}
+      <AnimatePresence>
+        {sessionToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.25 }}
+            className="fixed top-14 left-1/2 -translate-x-1/2 z-40 px-3 py-1.5 rounded-sm flex items-center gap-2"
+            style={{
+              fontSize: "9px",
+              letterSpacing: "0.15em",
+              background: "rgba(255,45,85,0.10)",
+              border: "1px solid rgba(255,45,85,0.35)",
+              color: "#ff2d55",
+              textShadow: "0 0 8px rgba(255,45,85,0.3)",
+            }}
+          >
+            <span>♥</span>
+            <span>{typeof sessionToast === "string" ? sessionToast : sessionToast.msg}</span>
+            {typeof sessionToast === "object" && (
+              <div className="flex items-center gap-1 ml-1">
+                {sessionToast.action && (
+                  <button onClick={(e) => { e.stopPropagation(); sessionToast.action(); }}
+                    className="px-1.5 py-0.5 rounded-sm text-[8px] tracking-wider uppercase font-bold"
+                    style={{ background: "rgba(255,45,85,0.2)", border: "1px solid rgba(255,45,85,0.5)" }}>
+                    {sessionToast.actionLabel || "OK"}
+                  </button>
+                )}
+                {sessionToast.secondaryLabel && (
+                  <button onClick={(e) => { e.stopPropagation(); setSessionToast(null); }}
+                    className="px-1.5 py-0.5 rounded-sm text-[8px] tracking-wider uppercase"
+                    style={{ border: "1px solid rgba(255,45,85,0.25)", opacity: 0.6 }}>
+                    {sessionToast.secondaryLabel}
+                  </button>
+                )}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

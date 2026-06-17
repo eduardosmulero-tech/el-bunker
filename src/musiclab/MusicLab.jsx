@@ -984,7 +984,19 @@ export default function MusicLab({
                               : <span style={{ color: trackColor, fontSize: 10 }}>⌕</span>}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate" style={{ color: trackColor }}>{track.title}</p>
+                            <p className="text-xs font-bold truncate flex items-center gap-1" style={{ color: trackColor }}>
+                              {track.title}
+                              {track._added_by && (
+                                <span className="text-[8px] px-1 py-0.5 rounded-sm uppercase tracking-wider font-bold flex-none"
+                                  style={{
+                                    background: track._added_by === "edu" ? "rgba(0,200,100,0.15)" : "rgba(150,100,255,0.15)",
+                                    border: `1px solid ${track._added_by === "edu" ? "rgba(0,200,100,0.4)" : "rgba(150,100,255,0.4)"}`,
+                                    color: track._added_by === "edu" ? "#00c864" : "#9664ff",
+                                  }}>
+                                  {track._added_by === "edu" ? "EDU" : "DAV"}
+                                </span>
+                              )}
+                            </p>
                             <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
