@@ -44,3 +44,9 @@
 | G6 | Volumen SmokeSession — S85c añadió `<input type="range">` funcional | SmokeSession.jsx | 2026-06-14 |
 | G7 | Mini-player entre pestañas — Layout.jsx ya renderiza `<MiniPlayer>` en `activeTab !== "music"` | Layout.jsx | 2026-06-14 |
 | ALERT-1/2 | alert() → toast vibe-aware en Vault.jsx (addEra + updateEntry) | Vault.jsx | 2026-06-14 |
+| S126-A | VolumeFadeBar componente eliminado (S126 — doble barra decorativa duplicaba input range) | SmokeSession.jsx | 2026-06-17 |
+| S126-B | Botón ▶ ACTIVAR outlined cuando !running (jerarquía secundaria sin perder hitbox) | SmokeSession.jsx | 2026-06-17 |
+| S126-C | S97 inline category badge removido en EraDetailPanel row (filtro global arriba ya indica categoría) | Vault.jsx | 2026-06-17 |
+| S126-D | S98 badges slice(0,2) + +N indicator con title discoverability | Vault.jsx | 2026-06-17 |
+| S126-E | edit/delete buttons mobile-friendly con sm:group-hover dual-class | Vault.jsx | 2026-06-17 |
+| S126-F | _CAT_LOOKUP dead code eliminado (era helper sin uso tras quitar S97) | Vault.jsx | 2026-06-17 |

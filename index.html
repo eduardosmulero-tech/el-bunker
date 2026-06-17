@@ -5,12 +5,16 @@
     <link rel="icon" type="image/png" href="/icons/icon-192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#bfff00" />
-    <!-- S117: Content Security Policy (single-line, R2 proxy + Google OAuth2 + Cast) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://el-bunker-api.thebunker-admin.workers.dev https://*.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; img-src 'self' data: blob: https://*.googleusercontent.com https://el-bunker-api.thebunker-admin.workers.dev https://*.r2.cloudflarestorage.com; media-src 'self' blob: https://el-bunker-api.thebunker-admin.workers.dev https://*.r2.cloudflarestorage.com; frame-src https://accounts.google.com https://apis.google.com https://*.googleapis.com;" />
+    <!-- S117 + S130-A: CSP (R2 proxy + Google OAuth2 + Cast + CartoDB tiles para MAP mode) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://el-bunker-api.thebunker-admin.workers.dev https://*.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; img-src 'self' data: blob: https://*.googleusercontent.com https://el-bunker-api.thebunker-admin.workers.dev https://*.r2.cloudflarestorage.com https://*.basemaps.cartocdn.com https://*.openstreetmap.org; media-src 'self' blob: https://el-bunker-api.thebunker-admin.workers.dev https://*.r2.cloudflarestorage.com; frame-src https://accounts.google.com https://apis.google.com https://*.googleapis.com;" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+    <!-- S130-A: Leaflet + MarkerCluster CSS (local copy en public/vendor para evitar CORS/CSP issues) -->
+    <link rel="stylesheet" href="/vendor/leaflet.css" />
+    <link rel="stylesheet" href="/vendor/MarkerCluster.css" />
+    <link rel="stylesheet" href="/vendor/MarkerCluster.Default.css" />
     <title>El Búnker</title>
     <!-- Chromecast SDK (S109) -->
     <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>

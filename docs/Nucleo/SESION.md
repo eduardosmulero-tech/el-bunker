@@ -3,6 +3,50 @@
 > Dispatcher del sistema. Leer primero.
 > Actualizar al cerrar cada sesión.
 
+## S126 — PLIEGO MEDIANO: 6 FIXES UI (17 Junio 2026)
+
+### Hallazgos (3)
+
+1. **Doble barra de volumen en SmokeSession** — `VolumeFadeBar` (decorativo, ~28 líneas) renderizaba una franja de gradiente encima del `<input type="range">` interactivo. El usuario veía dos barras apiladas, una decorativa y la otra como slider real.
+2. **Botón ▶ ACTIVAR siempre prominente** — Aunque cambia label entre estados (▶ ACTIVAR / ⏸ PAUSAR / ◈ NUEVO), siempre está renderizado con fondo brillante (gradient + font-bold + glow + shimmer). Cuando la sesión ya está corriendo el botón grande se siente redundante.
+3. **Vault detail row muy cargada** — Cada fila en `EraDetailPanel` renderizaba 6-7 elementos (icon + S97 badge categoría + título + hasta 5 badges extra + date + 2 botones). En pantallas de ~340px wide, la densidad hacía ilegible la información esencial.
+
+### Fixes (6)
+
+1. **SmokeSession.jsx** — Eliminado el componente `VolumeFadeBar` entero (28 líneas). La leyenda inline `El volumen se fundirá a cero en {formatTime(remaining)}` ya existía debajo y aporta más valor (timer en vivo).
+2. **SmokeSession.jsx** — Eliminado `<VolumeFadeBar volume={...} isFading={...} />` del render (5 líneas). Comentario inline S126 añadido.
+3. **SmokeSession.jsx** — Botón Play/Pause con jerarquía distinta: cuando `!running/+!done` es **outlined secundário** (border 1px + font-medium + px-5/py-2/text-xs + bg transparent). Cuando `isRunning/isDone` recobra **primária** (gradient fill + font-bold + px-6/py-2.5/text-sm + glow + shimmer). ClassName dinámico con conditional ternary.
+4. **Vault.jsx** — Eliminado el span S97 badge categoría inline del row (3 líneas). El filtro global arriba ya indica la categoría activa — el badge duplicaba ruido. Icono `◎/◉` ahora con `text-xs opacity-70`.
+5. **Vault.jsx** — `badges.map(...)` → `visible.map(...)` con `visible = badges.slice(0, 2)` + `<span>+{overflow}</span>` cuando hay >2. Title attribute con todos los badges restantes concatenados para discoverability on hover.
+6. **Vault.jsx** — Botones edit/delete ahora `opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100`. Visible mobile siempre (base 40%), desktop solo en group-hover. Mobile-friendly sin saturar desktop.
+
+### Bonus cleanup
+
+- **Vault.jsx** — Eliminado `CAT_LOOKUP → _CAT_LOOKUP → undefined` por lint (`/^_/u` convention). Era código muerto preservado con sufijo `_` para satisfy eslint; al no usarse nunca tras quitar S97, lo correcto era eliminar la línea entera (~1 línea).
+
+### Validación
+
+- **Build**: ✅ 2.20s
+- **Lint**: ✅ 0 errores
+- **Code review**: ✅ apto para push
+- **Browser**: pendiente smoke test (Volumen único en smoke session, botón outlined al inicio, row Vault no saturado en mobile)
+
+### Archivos modificados (2)
+
+- `src/smoke/SmokeSession.jsx` (−1 componente −1 uso +1 className conditional)
+- `src/vault/Vault.jsx` (−1 span S97 −1 helper CAT_LOOKUP +1 slice(0,2)+indicator +1 mobile hover)
+
+### Workflow note
+
+`tools/pliego_apply.py` no se pudo aplicar por incompatibilidad unicode (em-dash en `// ─── ... ───`). Bypasear con regex Python directo es decisión pragmática. Pliegos formales (tools/pliego_228.txt + tools/pliego_229.txt) dejados como referencia histórica. BACKLOG/ESTADO actualizados manualmente.
+
+### Pendiente (manual)
+
+1. Smoke test browser (especialmente mobile <400px para Vault detail row buttons)
+2. Continuar con Fase 1 — MAP (S130-A) modo gallery premium
+
+---
+
 ## S125 — 5 QUICK-FIXES UI (17 Junio 2026)
 
 ### Hallazgos

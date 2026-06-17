@@ -5,6 +5,52 @@
 
 ---
 
+## v2.0.21 — "S126 — Pliego mediano: doble barra volumen + botón play + Vault detail row" (17 Junio 2026)
+
+### 🐛 CORREGIDO — SmokeSession: doble barra de volumen
+
+`VolumeFadeBar` (decorativo) renderizaba una franja de gradiente encima del `<input type="range">` interactivo. El usuario veía dos barras apiladas, una como decoración y otra como slider real. Fix: componente `VolumeFadeBar` (~28 líneas) eliminado entero. La leyenda inline `El volumen se fundirá a cero en {formatTime(remaining)}` (que ya existía debajo) comunica el estado de fade — no necesitamos componente decorativo adicional.
+
+### 🎨 PULIDO — SmokeSession: botón Play/Pause con jerarquía distinta
+
+Cuando la sesión no está corriendo, el botón ▶ ACTIVAR ahora es **outlined secundário** (border 1px + font-medium + px-5/py-2/text-xs + bg transparent). Cuando `isRunning`/`isDone` recobra jerarquía **primária** (gradient fill + font-bold + px-6/py-2.5/text-sm + glow + shimmer en running). Patrón visual primario ↔ secundario sin perder hitbox.
+
+### 🗑️ ELIMINADO — Vault: EraDetailPanel inline badge categoría (S97)
+
+Cada fila de entrada renderizaba 6-7 elementos (icon + S97 badge + título + hasta 5 badges extra + date + 2 botones). El badge de categoría inline era ruido — la barra de filtros global arriba ya indica la categoría activa. Removido el span con `CAT_LOOKUP[ENTRY_CATEGORY[entry.type]]`. La línea completa de `_CAT_LOOKUP` también se eliminó (era código muerto preservado con sufijo `_` para eslint, ahora innecesario).
+
+### 📏 COMPACTADO — Vault: badges extra limitados a 2 con indicador "+N"
+
+Cada entrada puede tener hasta 6 badges extra (rating, location, date, url, mood, amount). En pantallas de ~340px era visible 1-2 nada más. Fix: `badges.slice(0, 2)` con overflow indicator `<span>+{overflow}</span>` que muestra `title` con todos los badges restantes concatenados para discoverability on hover.
+
+### 📱 MEJORADO — Vault: botones edit/delete visibles en mobile
+
+Antes `opacity-0 group-hover:opacity-100` solo aparecía en desktop (group-hover no funciona en móvil). Fix: `opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100` — base 40% en mobile (siempre visibles), 0% en desktop hasta hover. Mantiene hit target accesible sin saturar el diseño.
+
+### ⚠️ OBSERVACIONES DE CODE REVIEW (no bloquean, mejoras futuras)
+
+1. ⚠️ Workflow desviado: `tools/pliego_apply.py` no se pudo usar porque el parser tuvo problemas con unicode dash em-dash en `// ─── VOLUME FADE INDICATOR ───`. Bypasear con regex Python directo deja S126 sin traza automática en `BACKLOG.md` § RESUELTOS (registrado manualmente ahora) y sin incremento automático de `próximo pliego` en `ESTADO.md` (actualizado manualmente a S126-B).
+2. Verificación visual pendiente del icono `◎/◉` con nueva class `text-xs opacity-70` — antes heredaba font-size del row. Mitigación: `font-mono` mantiene aspect ratio uniforme.
+3. `_CAT_LOOKUP` eliminado pero `ENTRY_CATEGORY` (módulo top-level) sigue siendo exportado de `AddEntryForm.jsx` y usado en Vault.jsx — solo el helper de lookup CAT_LOOKUP era muerto.
+
+### Archivos (2)
+
+- `src/smoke/SmokeSession.jsx` (−1 componente, −1 uso, +1 button className conditional ternario)
+- `src/vault/Vault.jsx` (−1 span badge S97, −1 CAT_LOOKUP helper, +1 slice(0,2) + +N indicator, +1 mobile hover fix)
+
+### Validación
+
+- Build: ✅ 2.20s
+- Lint: ✅ 0 errores (pre-existente joinSession ya arreglado en S125)
+- Code review: ✅ apto para push — 1 issue de overflow indicator discoverability manejado con `title` attribute
+
+### Pendiente (manual)
+
+1. Smoke test browser: VAULT (contador días sigue >0 desde S125), tab VAULT/FIRE (mobile view de EraDetailPanel — botones edit/delete visibles), smoke session sin doble barra
+2. Pliegos formales (tools/pliego_228.txt + tools/pliego_229.txt) dejados como referencia histórica — aplicación manual por regex documentado en CODE REVIEW observación #1
+
+---
+
 ## v2.0.20 — "S125 — 5 quick-fixes UI" (17 Junio 2026)
 
 ### 🐛 CORREGIDO — Contador aventura "0000 días"

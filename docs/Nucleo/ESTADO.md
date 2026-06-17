@@ -1,8 +1,9 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** S130-A — Fase 1: MAP (Leaflet pines + líneas viaje + slider temporal)
-**Última sesión:** S125 — 5 quick-fixes UI (counter aventura 0, sliders visibles, corner brackets smoke, mini player, winamp descentrado) → RESUELTOS
+**Próximo pliego:** PLIEGO-229 → siguiente PLIEGO-230 (Fase 1: MAP/EXHIBITION/REEL/CINEMA premium restantes)
+**Nota:** S128/S129 bajas a BACKLOG porque session atajo manualmente por bypass de pliego_apply.py.
+**Última sesión:** S126 — Pliego mediano (doble barra volumen smoke + botón play outlined + Vault detail row con S97 quitado + badges slice 2 + mobile buttons) commit b7f3ff7 → RESUELTOS
 **Rama activa:** `master`
 **Roadmap:** 4 fases, ~52h → docs/operacional/ROADMAP_COMPLETO.md
 
@@ -43,6 +44,9 @@ ninguno
 | A6 No Molestar | 🟡 DIFERIDO (Chromium-only) |
 | TRACKS-SORT verificar | 🟡 PENDIENTE |
 | ~~VISUALIZER-MODE-NOT-DEFINED~~ | ✅ RESUELTO S124 (17 Junio) |
+| ~~DOUBLE-VOLUME-BAR-SMOKE~~ | ✅ RESUELTO S126 (17 Junio, commit b7f3ff7) |
+| ~~PLAY-BUTTON-REDUNDANT~~ | ✅ RESUELTO S126 (outlined cuando !running) |
+| ~~VAULT-DETAIL-ROW-DENSE~~ | ✅ RESUELTO S126 (S97 quitado + slice 2 + mobile buttons) |
 
 ---
 

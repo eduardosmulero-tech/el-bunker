@@ -6,6 +6,11 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
+
+// S130-A — MAP mode: Leaflet real + clustering + CartoDB Dark tiles (Sub-fase 1)
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
+import L from "leaflet";
 import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 
 // ─── LONG PRESS THRESHOLD ───────────────────────────────────
@@ -906,30 +911,148 @@ const ReelView = ({ entries, eras }) => {
   );
 };
 
-// ─── MAP VIEW (S122-E: placeholder semántico con guía de features) ──
-const MapView = () => (
-  <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
-    <div className="flex items-center gap-2">
-      <span style={{ color: PURPLE }}>◉</span>
-      <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>MAP</span>
-    </div>
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center gap-4 py-12 px-6 rounded-sm"
-      style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
-      <motion.span animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 3, repeat: Infinity }}
-        className="text-5xl" style={{ color: PURPLE }}>🌍</motion.span>
-      <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>MAPA · Geografía de la relación</p>
-      <p className="text-[10px] leading-relaxed text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
-        Las entradas necesitan coordenadas (lat/lng) para aparecer aquí. Añade ubicación al crear una entrada y el mapa cobrará vida.
-      </p>
-      <div className="flex gap-3 mt-2">
-        <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Pines</span>
-        <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Líneas</span>
-        <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>⧖ Timeline</span>
+// ─── MAP VIEW (S130-A Sub-fase 1: Leaflet real — TileLayer CartoDB Dark + MarkerClusterGroup + demo entries) ──
+// S130-A: Leaflet defaultIcon fix — workaround estándar para bundlers (Vite/Webpack rompen el path relativo por defecto)
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+// S130-A: divIcon helper — círculo coloreado por Era con glow búnker (no usa PNG default)
+const makePinIcon = (color) => L.divIcon({
+  className: "bunker-pin",
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 0 8px ${color}cc,0 0 16px ${color}55;"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+  popupAnchor: [0, -12],
+});
+
+// S130-A: 9 entries demo hardcoded (Madrid + 5 ciudades España + Lisboa + París + Roma). Sub-fase 4 las reemplaza por geocoder real.
+const DEMO_ENTRIES_GEO = [
+  { id: "demo-m1",  title: "Atocha al atardecer",   era_id: 1, era_name: "RUTINA",      color: "#bfff00", type: "place",  lat: 40.4068, lng: -3.6903,  date: "2024-03-15T19:30:00Z", from_user: "edu"   },
+  { id: "demo-m2",  title: "Cena en Malasaña",      era_id: 1, era_name: "RUTINA",      color: "#bfff00", type: "place",  lat: 40.4258, lng: -3.7058,  date: "2024-05-22T22:00:00Z", from_user: "david" },
+  { id: "demo-bcn", title: "Búnker del Carmel",     era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 41.4178, lng:  2.1525,  date: "2024-07-08T20:15:00Z", from_user: "edu"   },
+  { id: "demo-gr",  title: "Alhambra",             era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 37.1761, lng: -3.5881,  date: "2023-11-12T11:00:00Z", from_user: "david" },
+  { id: "demo-sv",  title: "Plaza de España",       era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 37.3773, lng: -5.9869,  date: "2024-04-01T16:30:00Z", from_user: "edu"   },
+  { id: "demo-vlc", title: "Ciudad de las Artes",  era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "place",  lat: 39.4549, lng: -0.3517,  date: "2023-06-20T13:45:00Z", from_user: "david" },
+  { id: "demo-lis", title: "Alfama al amanecer",    era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 38.7113, lng: -9.1305,  date: "2024-09-14T08:00:00Z", from_user: "edu"   },
+  { id: "demo-par", title: "Sena en Nochevieja",    era_id: 3, era_name: "CELEBRACIÓN", color: "#a96fff", type: "travel", lat: 48.8589, lng:  2.2935,  date: "2023-12-31T23:55:00Z", from_user: "edu"   },
+  { id: "demo-rm",  title: "Fontana di Trevi",      era_id: 3, era_name: "CELEBRACIÓN", color: "#a96fff", type: "travel", lat: 41.9009, lng: 12.4833,  date: "2024-02-18T18:00:00Z", from_user: "david" },
+];
+
+// S130-A: Auto-fit bounds a todos los pines (sin esto mapa arranca en Madrid center y hay que panear)
+// lives at module scope porque useMap requiere contexto de MapContainer (no funciona dentro del JSX conditional de MapView)
+const FitBoundsToMarkers = ({ positions }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (!positions.length) return;
+    const bounds = L.latLngBounds(positions);
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6 });
+  }, [map, positions]);
+  return null;
+};
+
+// S130-A: MapView real. Si `entries` prop viene vacío, usa DEMO_ENTRIES_GEO hardcoded.
+const MapView = ({ entries = DEMO_ENTRIES_GEO, eras: _eras = [] }) => {
+  const geocoded = useMemo(
+    () => entries.filter((e) => typeof e.lat === "number" && typeof e.lng === "number"),
+    [entries]
+  );
+  const positions = useMemo(() => geocoded.map((e) => [e.lat, e.lng]), [geocoded]);
+  // S130-A: era breakdown memoizado (evita recompute cada render del MapView)
+  const eraBreakdown = useMemo(
+    () => Object.values(geocoded.reduce((acc, e) => { acc[e.era_name ?? "—"] = (acc[e.era_name ?? "—"] || 0) + 1; return acc; }, {})),
+    [geocoded]
+  );
+
+  return (
+    <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
+      <div className="flex items-center gap-2">
+        <span style={{ color: PURPLE }}>◉</span>
+        <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>MAP</span>
+        <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>
+          {geocoded.length} {geocoded.length === 1 ? "pin" : "pines"} · {eraBreakdown.length} eras
+        </span>
+        <span className="text-[9px] opacity-20 ml-auto" style={{ color: PURPLE }}>
+          CARTO DARK · OSM
+        </span>
       </div>
-    </motion.div>
-  </div>
-);
+
+      {geocoded.length === 0 ? (
+        // Fallback elegante (idéntico al placeholder S122-E, preservado para entries sin coords)
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          className="flex flex-col items-center justify-center gap-4 py-12 px-6 rounded-sm"
+          style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
+          <motion.span animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 3, repeat: Infinity }}
+            className="text-5xl" style={{ color: PURPLE }}>🌍</motion.span>
+          <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>MAPA · Geografía de la relación</p>
+          <p className="text-[10px] leading-relaxed text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
+            Las entradas necesitan coordenadas (lat/lng) para aparecer aquí. Añade ubicación al crear una entrada y el mapa cobrará vida.
+          </p>
+          <div className="flex gap-3 mt-2">
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Pines</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Líneas</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>⧖ Timeline</span>
+          </div>
+        </motion.div>
+      ) : (
+        <div className="rounded-sm overflow-hidden" style={{ border: `1px solid ${PURPLE}33`, height: "70vh", minHeight: 480 }}>
+          <MapContainer
+            center={[40.4168, -3.7038]} // Madrid centro (fallback initial center)
+            zoom={4}
+            scrollWheelZoom
+            style={{ height: "100%", width: "100%", background: "#1a1a1a" }}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              subdomains={["a", "b", "c", "d"]}
+              maxZoom={20}
+            />
+            <FitBoundsToMarkers positions={positions} />
+            <MarkerClusterGroup chunkedLoading>
+              {geocoded.map((e) => (
+                <Marker key={e.id} position={[e.lat, e.lng]} icon={makePinIcon(e.color ?? PURPLE)}>
+                  <Popup>
+                    <div style={{ fontFamily: FONT_MONO, minWidth: 180 }}>
+                      <div style={{ fontSize: 9, opacity: 0.6, marginBottom: 4 }}>
+                        {(e.era_name ?? "—").toUpperCase()} · {e.from_user === "edu" ? "EDU" : e.from_user === "david" ? "DAVID" : ""}
+                      </div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#000", marginBottom: 4 }}>
+                        {e.title}
+                      </div>
+                      {e.date && (
+                        <div style={{ fontSize: 9, opacity: 0.5, color: "#000" }}>
+                          {new Date(e.date).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 8, opacity: 0.4, marginTop: 4, color: "#000" }}>
+                        {CAT_ICON[ENTRY_CATEGORY[e.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[e.type]] ?? e.type}
+                      </div>
+                      {typeof e.lat === "number" && (
+                        <div style={{ fontSize: 7, opacity: 0.3, marginTop: 2, color: "#000" }}>
+                          {e.lat.toFixed(4)}, {e.lng.toFixed(4)}
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+              ))}
+            </MarkerClusterGroup>
+          </MapContainer>
+        </div>
+      )}
+
+      {geocoded.length > 0 && (
+        <p className="text-[9px] text-center opacity-25 mt-1" style={{ color: PURPLE }}>
+          S130-A · Sub-fase 1 demo · click pin para metadata · zoom para desclusterizar
+        </p>
+      )}
+    </div>
+  );
+};
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────
 export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _onOpenEntry }) {
@@ -1036,7 +1159,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
     <ReelView entries={filteredEntries} eras={eras} />
   );
 
-  // S122-E: MAP delegado a componente con placeholder semántico
+  // S130-A: MAP delegado a MapView real. Sin props → MapView usa DEMO_ENTRIES_GEO hardcoded (Sub-fase 1). Sub-fase 4 sustituirá por entries reales con coords via geocoder.
   const renderMap = () => <MapView />;
 
   return (
