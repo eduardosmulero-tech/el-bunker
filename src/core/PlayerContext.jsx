@@ -212,7 +212,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     } catch (e) { console.warn("[Búnker] createSession error:", e); }
   }, []);
 
-  // Unirse a sesión (guest)
+  // Unirse a sesión (guest) — solo desde joinPendingSession (1 click)
   const joinSession = useCallback(async (sid) => {
     if (!workerClient.hasToken()) return;
     try {
@@ -225,26 +225,32 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (data.active_track_id) {
         const track = tracks.find(t => t.id === data.active_track_id);
         if (track) {
-          _isRemoteActionRef.current = true;
-          setActiveTrack(track);
-          setAutoPlaySignal(n => n + 1);
-          if (data.position > 0) {
-            setTimeout(() => {
-              if (audioRef.current) {
-                audioRef.current.currentTime = data.position;
-              }
-              _isRemoteActionRef.current = false;
-            }, 600);
+          // Si ya estamos escuchando el mismo track, solo buscar posición
+          if (activeTrack?.id === track.id) {
+            if (data.position > 0 && audioRef.current) {
+              audioRef.current.currentTime = data.position;
+            }
           } else {
-            // SC7: Sin posición guardada → timeout de seguridad amplio (300ms)
-            setTimeout(() => { _isRemoteActionRef.current = false; }, 300);
+            _isRemoteActionRef.current = true;
+            setActiveTrack(track);
+            setAutoPlaySignal(n => n + 1);
+            if (data.position > 0) {
+              setTimeout(() => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = data.position;
+                }
+                _isRemoteActionRef.current = false;
+              }, 600);
+            } else {
+              setTimeout(() => { _isRemoteActionRef.current = false; }, 300);
+            }
           }
         }
       }
       setSessionToast(`${data.host_id === "edu" ? "Edu" : "David"} está escuchando contigo`);
       console.info("[Búnker] 🔗 Unido a sesión:", sid);
     } catch (e) { console.warn("[Búnker] joinSession error:", e); }
-  }, [tracks]);
+  }, [tracks, activeTrack]);
 
   // Abandonar sesión (SC10, SC13)
   const leaveSession = useCallback(async () => {
@@ -272,11 +278,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         const otherUserId = userId === "edu" ? "david" : "edu";
         setPartnerId(otherUserId);
         _pendingSessionIdRef.current = res.pending_session_id || null;
-        // Auto-join: si el otro ya creó sesión, unirse automáticamente
-        if (res.pending_session_id && !sessionId) {
-          console.info("[Búnker] 🔗 Auto-join a sesión de", otherUserId);
-          await joinSession(res.pending_session_id);
-        }
       } else {
         setPartnerListening(false);
         setPartnerTrack(null);
@@ -284,7 +285,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         _pendingSessionIdRef.current = null;
       }
     } catch { /* noop */ }
-  }, [userId, sessionId, joinSession]);
+  }, [userId]);
 
   // Unirse a la sesión pendiente del partner (1 click desde el corazón)
   const joinPendingSession = useCallback(async () => {
