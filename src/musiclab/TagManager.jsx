@@ -8,6 +8,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 import { ColorPicker } from "../core/ColorPicker";
+import { useToast } from "../core/ToastContext";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 const GLASS_BG     = "rgba(191,255,0,0.03)";
@@ -18,10 +19,10 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
   const [showForm,      setShowForm]      = useState(false);
   const [editingId,     setEditingId]     = useState(null);
   const [form,          setForm]          = useState(emptyForm);
-  const [toast,         setToast]         = useState(null);
+  const { toast } = useToast();
   const dragIdx = useRef(null);
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
+  const showToast = (msg) => toast({ msg, duration: 2500 });
 
   const isValid = form.label.trim() && form.icon.trim() && /^#[0-9a-fA-F]{6}$/.test(form.color);
 
@@ -73,17 +74,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
 
-      {/* Toast */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-            style={{ position: "fixed", bottom: 90, left: 16, right: 16, background: `${ACID}18`,
-              border: `1px solid ${ACID}55`, color: ACID, fontFamily: FONT_MONO, fontSize: 11,
-              letterSpacing: "0.25em", padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}>
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {null}
 
       {/* Cabecera */}
       <div className="flex items-center justify-between">

@@ -5,7 +5,7 @@
 // ============================================================
 
 import { CORS_HEADERS } from "./config.js";
-import { json, err } from "./utils/response.js";
+import { err } from "./utils/response.js";
 import { authenticate } from "./utils/auth.js";
 import { checkRateLimit } from "./utils/rate-limit.js";
 

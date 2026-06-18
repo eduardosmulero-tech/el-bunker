@@ -31,12 +31,12 @@ window.HTMLMediaElement.prototype.pause = () => {};
 window.HTMLMediaElement.prototype.load = () => {};
 
 // Mock MediaMetadata (not in jsdom)
-global.MediaMetadata = class MediaMetadata {
+globalThis.MediaMetadata = class MediaMetadata {
   constructor(init) { Object.assign(this, init); }
 };
 
 // Mock gapi (Google API — avoid crash in PlayerContext tests)
-global.gapi = {
+globalThis.gapi = {
   client: {
     drive: { files: {} },
     request: () => Promise.resolve({ result: {} }),

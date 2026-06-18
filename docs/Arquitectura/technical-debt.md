@@ -1,6 +1,6 @@
 ---
 describe: cualquier refactor estructural
-sincronizado_con: S64 — VaultContext → Worker API (carga híbrida)
+sincronizado_con: S132 — ToastProvider consolidation + Escucha Compartida gap-analysis
 stale_si_pliego_toca: cualquier refactor estructural
 ---
 
@@ -9,14 +9,18 @@ stale_si_pliego_toca: cualquier refactor estructural
 ## Deuda resuelta ✅
 
 - ✅ YouTube Engine eliminado (S49). Motor exclusivo HTMLAudioElement + R2.
-- ✅ D1 schema + Workers + Wrangler desplegados (S54).
-- ✅ Worker API: 22 endpoints REST + JWT auth (S55-S63).
+- ✅ D1 schema + Workers + Wrangler desplegados (S54: 16 tablas base; S132: +1 `shared_sessions`).
+- ✅ Worker API: 16 endpoints REST + JWT auth + módulo `routes/` separado (S55-S63, S114-W refactor).
 - ✅ Capsules conectadas a Worker API real (S58).
-- ✅ StatsEngine wired: trackPlay/Pause/Skip, entryCreated, dropSent (S58-S59).
+- ✅ StatsEngine wired: trackPlay/Pause/Skip, entryCreated, dropSent, smoke_session_* (S58-S59, S73).
 - ✅ FileUploadService con pre-signed URLs a R2 (S58).
-- ✅ JWT frontend wiring: VaultContext obtiene y propaga JWT (S59, S61).
+- ✅ JWT frontend wiring: VaultContext obtiene y propaga JWT (S59, S61, S116 → sessionStorage).
 - ✅ Imports MusicLab corregidos Layout → tokens (S60).
-- ✅ VaultContext carga híbrida Drive+Worker para entries/eras/tracks (S64).
+- ✅ VaultContext D1-only: carga única de Worker API (S64, S115-D5 eliminó Drive fallback).
+- ✅ PRECACHE + safe areas + design system (S131 Fase 0 cimientos).
+- ✅ MapView real con react-leaflet + cluster (S131 Sub-fase 4).
+- ✅ ToastProvider unificado — eliminadas 7 implementaciones dispersas (S132 Fase 1).
+- ✅ Escucha Compartida SC1-SC14 wired + long-polling sync + queue bidireccional + auto-join (S132 Fase C).
 
 ## Deuda activa
 
@@ -50,7 +54,14 @@ stale_si_pliego_toca: cualquier refactor estructural
 ### TD-6: Virtualización pendiente en galería
 **Impacto:** ALTO. Sin virtualización, OOM en Android con >100 fotos.
 **Riesgo:** Crash de la PWA al cargar galerías grandes.
-**Plan:** Virtualización en WALL mode (masonry). Lazy loading ya implementado.
+**Progreso (S131):** MapView virtualiza via `MarkerClusterGroup` chunkedLoading + `DEMO_ENTRIES_GEO` 9 entries hardcoded. WALL mode sigue masonry sin virtualizar.
+**Plan:** Virtualización en WALL mode (masonry). Lazy loading ya implementado. Falta: re-investigar `react-window` o `react-virtualized` para WALL.
+
+### TD-8: Escucha Compartida stats y consolidación de eventos (NEW S132)
+**Impacto:** MEDIO. SC6/SC12 (stats credit compartido) requiere emisión de eventos por sesiones.
+**Estado (2026-06-17):** Eventos `shared_session_started` / `shared_session_joined` / `shared_session_left` emitidos server-side desde `workers/routes/sync.js` via helper `workers/utils/events.js` (TD-8 events layer RESUELTO). Pendiente: STAT-M9 — capa de cómputo que agregue estos eventos con `track_play` para calcular crédito compartido (>50% escuchado = SC12).
+**Riesgo:** Sin capa de cómputo, los eventos quedan como datos crudos en D1 pero ninguna vista los lee.
+**Plan (resto STAT-M9):** Cliente emite `track_play` con `payload.session_id` y `payload.credit_to` cuando track termina en sesión compartida. Endpoint `/api/stats/shared` agrega play counts por usuarios con crédito. UI: badge "compartido" en tracks escuchados en sesión (MusicLab + Recap).
 
 ### TD-7: Sin manejo de archivos corruptos en R2
 **Impacto:** BAJO. Fallback estético Cyber-Vandal previsto en spec.

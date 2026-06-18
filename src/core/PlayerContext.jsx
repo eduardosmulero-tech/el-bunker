@@ -452,7 +452,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
     poll();
     return () => { active = false; };
-  }, [sessionId, tracks]);
+  }, [sessionId, tracks, isHost, userId]);
 
   // SC4: Sincronizar play/pause locales al partner
   const isPlayingRefShared = useRef(isPlaying);
@@ -493,6 +493,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     sendHeartbeat();
     const interval = setInterval(sendHeartbeat, 30000);
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, activeTrack?.id, isPlaying]);
 
   // Auto-clear session toast after 3s (only plain strings, not action toasts)
@@ -833,7 +834,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!softDelete && sessionId && !_isRemoteActionRef.current) {
       syncAction("queue_remove", { trackId });
     }
-  }, [tracks, sessionId, syncAction]);
+  }, [tracks, sessionId, syncAction, setSoftDeletedIds]);
 
   // S77 Q17: undo soft delete
   const undoRemoveFromQueue = useCallback((trackId) => {
@@ -842,7 +843,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       next.delete(trackId);
       return next;
     });
-  }, []);
+  }, [setSoftDeletedIds]);
 
   // S85d Q17: undo cola reorder (cola drag&drop). El snapshot se captura
   // antes del reorder; al pulsar DESHACER, restauramos la cola a su estado
@@ -971,6 +972,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       }
     };
     return () => { delete window.__onGCastApiAvailable; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // S109 — Castear un track al dispositivo conectado
@@ -1411,6 +1413,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       console.info("[Búnker] ⏭ Precarga inmediata (1s):", nextUrl.slice(-40));
     }, 1000);
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, activeTrack?.id, _resolveNextTrackUrl]);
 
   // ── S106 Fase 2: Safety net al 50% (bajado de 80%) ──
@@ -1446,7 +1449,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     return () => audio.removeEventListener("timeupdate", onTimeUpdate);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, _resolveNextTrackUrl]);
 
   // S106 — Limpiar precarga cuando cambia el track activo.

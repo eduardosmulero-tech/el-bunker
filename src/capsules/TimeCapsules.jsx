@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { workerClient } from "../core/WorkerClient";
+import { useToast } from "../core/ToastContext";
 
 // S74: Opening animation component for unlocked capsules
 const CapsuleReveal = ({ capsule, onClose }) => (
@@ -67,13 +68,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
   const [showContentPicker, setShowContentPicker] = useState(false);
   // S74: Opening animation
   const [openingCapsule, setOpeningCapsule] = useState(null);
-  // S85d: toast infra para feedback de errores (silent catch fix)
-  const [toast, setToast] = useState(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const { toast } = useToast();
 
   // S115-D3: WorkerClient maneja auth — sin prop-drilling de token
   useEffect(() => {
@@ -82,9 +77,9 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       .then(data => setCapsules(data))
       .catch(err => {
         console.warn("[TimeCapsules] fetch:", err);
-        setToast("NO SE PUDIERON CARGAR CÁPSULAS");
+        toast({ msg: "NO SE PUDIERON CARGAR CÁPSULAS", duration: 3500 });
       });
-  }, []);
+  }, [toast]);
 
   const now = new Date();
   const locked = capsules.filter(c => !c.is_unlocked && new Date(c.unlock_at) > now);
@@ -124,7 +119,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
     } catch (e) {
       setError(e.message);
       // S85d: toast feedback para creación fallida
-      setToast(`ERROR AL CREAR: ${e.message?.slice(0, 32) ?? ""}`);
+        toast({ msg: `ERROR AL CREAR: ${e.message?.slice(0, 32) ?? ""}`, duration: 3500 });
     } finally {
       setIsCreating(false);
     }
@@ -254,16 +249,6 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
         )}
       </AnimatePresence>
     </div>
-      {toast && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          style={{ position: "fixed", bottom: 90, left: 16, right: 16,
-            background: `${PURPLE}18`, border: `1px solid ${PURPLE}55`, color: PURPLE,
-            fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
-            padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}>
-          {toast}
-        </motion.div>
-      )}
+      {null}
   </>);
 }

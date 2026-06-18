@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "../core/ToastContext";
 import { usePlayer } from "../core/PlayerContext";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 
@@ -428,6 +429,7 @@ export default function Layout({
   onTabChange = () => {},
   onSignOut,
 }) {
+  const { toasts, muteToast } = useToast();
   const { trackVibe, resolveVibeAccent, networkStatus, sessionToast, setSessionToast } = usePlayer();
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
@@ -514,6 +516,50 @@ export default function Layout({
             )}
           </motion.div>
         )}
+      </AnimatePresence>
+
+      {/* ── Fase 1 — Toast unificado ── */}
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: -24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -24 }}
+            transition={{ duration: 0.2 }}
+            className="fixed z-40 flex items-center gap-2 px-3 py-2.5 rounded-sm pointer-events-auto"
+            style={{
+              top: 88,
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontSize: "10px",
+              letterSpacing: "0.15em",
+              background: t.type === "error" ? "rgba(255,59,59,0.12)" : `${accentColor}0d`,
+              border: `1px solid ${t.type === "error" ? "rgba(255,59,59,0.35)" : `${accentColor}33`}`,
+              color: t.type === "error" ? "#ff3b3b" : accentColor,
+              fontFamily: "'JetBrains Mono', monospace",
+              textShadow: t.type === "error" ? "0 0 8px rgba(255,59,59,0.3)" : "none",
+              maxWidth: "85vw",
+            }}
+          >
+            <span>{t.msg}</span>
+            {t.sub && <span className="opacity-50 text-[9px] ml-1">{t.sub}</span>}
+            {t.action && (
+              <button onClick={() => { t.action(); muteToast(t.id); }}
+                className="px-3 py-2 rounded-sm text-[10px] tracking-wider uppercase font-bold ml-1 whitespace-nowrap"
+                style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}44` }}>
+                {t.actionLabel || "OK"}
+              </button>
+            )}
+            {t.secondaryLabel && (
+              <button onClick={() => muteToast(t.id)}
+                className="px-3 py-2 rounded-sm text-[10px] tracking-wider uppercase ml-1 whitespace-nowrap"
+                style={{ border: `1px solid ${accentColor}22`, opacity: 0.5 }}>
+                {t.secondaryLabel}
+              </button>
+            )}
+          </motion.div>
+        ))}
       </AnimatePresence>
 
       {/* ── Layer 3: Page Content ── */}

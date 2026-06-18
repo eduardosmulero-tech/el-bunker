@@ -1,7 +1,7 @@
 ---
-describe: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, StatsEngine.js
-sincronizado_con: S64 — VaultContext → Worker API (carga híbrida)
-stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js
+describe: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, StatsEngine.js, ToastContext.jsx
+sincronizado_con: S132 — ToastProvider + Escucha Compartida long-polling + queue bidireccional
+stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, ToastContext.jsx
 ---
 
 # Data Flow
@@ -17,20 +17,29 @@ stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx
 - `onEnded` → `skip(1)` calcula próximo track considerando `shuffle`, `loopMode`, `_manual`.
 - `setActiveTrack(next)` → re-render del reproductor + MediaSession update + evento StatsEngine.
 
-## Flujo Persistencia (híbrido S64)
+## Flujo Persistencia (D1 Source of Truth — post-S115)
 
-### Worker API → D1 (primario para entries/eras/tracks/events/queue/capsules)
-- `_refreshWorkerData(jwtToken)`: `GET /api/entries` + `GET /api/eras` + `GET /api/tracks` en paralelo.
-- Mergea en `db` state: Worker data reemplaza entries/eras/music_lab.tracks.
-- `content` de entries se parsea de JSON string a objeto (safeParse).
-- Si Worker falla → fallback silencioso a Drive JSON.
-- `refreshDb()`: Drive refresh → Worker refresh secuencial.
+### Worker API → D1 (PRIMARIO y ÚNICO desde S115-D5)
+- `_buildDbFromWorker(jwt)`: `GET /api/entries` + `/api/eras` + `/api/tracks` + `/api/tags` + `/api/playlists` + `/api/drops` + `/api/files` en paralelo (7 fetches).
+- Mergea en `db` state: Worker data reemplaza entries/eras/music_lab.tracks.parsing `content` JSON safe.
+- Si Worker falla → fallback a `EMPTY_DB()` (sin Drive JSON). S115-D5 eliminó la dualidad.
+- `refreshDb()`: solo Worker refresh (sin Drive refresh).
+- `patchDb(updater)`: **local-only** desde S115-D5. NO escribe a Drive. Mutaciones a D1 requieren llamada explícita Worker API (POST/PATCH/DELETE).
 
-### Google Drive JSON (para libraries/playlists/drops/tags — en transición)
-- `patchDb(updater)`: actualización optimista local → `updateData()` → Drive.
-- `initDatabase()`: descarga `the_vault_database.json` → migración v5 → hidratación.
-- Polling de drops cada 30s en VaultContext.
-- Heartbeat cada 20 min vía `triggerHeartbeat()`.
+### Google Drive JSON (DEPRECADO para datos)
+- Auth OAuth2 + bibliotecas (`libraries`, `libraryCapacity`, `_calcLibraryStatus`) — único uso restante.
+- `GoogleDriveService` reducido a OAuth + checkLibraryCapacity + listLibraryContents.
+- Datos de contenido (entries/eras/tracks/playlists/drops/tags) — **solo D1**.
+
+### Carga progresiva en boot (S116+S132)
+1. **`App.jsx` mount**: `VaultProvider` arranca → boot phase = INIT_SERVICES.
+2. **`initGoogleServices()`**: gapi + GIS carga. `restoreToken()` chequea sessionStorage.
+3. **`_onSignedIn(token)`** vía `onAuthChange`: `_fetchUserAndDb(token)` → boot phase = INIT_DB.
+4. **`_fetchUserAndDb`**: google profile → whitelist check (3 usuarios) → si falla, `setBootPhase(UNAUTHORIZED)`.
+5. **`_fetchJwt(email, googleToken)`**: `POST /api/auth/login` Worker API → token JWT → persistido en `sessionStorage("bunker_jwt")` → inyectado en `workerClient.setToken()`, `setUploadToken()`, `setStatsToken()`.
+6. **`_buildDbFromWorker(jwt)`**: 7 fetches paralelos + 1 fetch `/api/config` para adventures_start_date.
+7. **`setDb(data)`** → boot phase = READY → UI renderiza.
+8. **Updates live**: SW `postMessage("BUNKER_NAVIGATE")` desde Background Sync → `window.dispatchEvent("bunker_navigate")`.
 
 ### Carga progresiva en boot (S64)
 1. `_fetchUserAndDb()`: Google OAuth2 → perfil → JWT (Worker API `POST /api/auth/login`).

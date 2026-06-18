@@ -45,7 +45,7 @@ function detectBeat(freqData, history, threshold) {
   return histAvg > 0 && avg > histAvg * (threshold || 1.4);
 }
 
-export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen }) => {
+export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen: _onRequestFullscreen }) => {
   const ac = accentColor || ACID;
   const canvasRef    = useRef(null);
   const analyserRef  = useRef(null);
@@ -84,13 +84,15 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
   }, [isFullscreen]);
 
   useEffect(() => {
-    if (isFullscreen) { resetHideTimer(); setFullscreenMode(preset.mode); }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (isFullscreen) { resetHideTimer(); }
     else {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
-      setShowControls(true); setFullscreenMode(null);
+      setShowControls(true);
+      setFullscreenMode(null);
     }
     return () => { if (hideTimerRef.current) clearTimeout(hideTimerRef.current); };
-  }, [isFullscreen, preset.mode, resetHideTimer]);
+  }, [isFullscreen, resetHideTimer]);
 
   // ── Cycle through visualizer modes ─────────────────────────
   const cycleMode = useCallback(() => {
@@ -431,7 +433,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [isPlaying, ac, effectiveMode]);
+  }, [isPlaying, ac, effectiveMode, isFullscreen, preset]);
 
   useEffect(() => { beatHistoryRef.current = []; }, [vibeId]);
 

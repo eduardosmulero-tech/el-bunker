@@ -16,6 +16,7 @@ import { entryCreated } from "../core/StatsEngine";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 import { Button } from "../core/ui";
+import { useToast } from "../core/ToastContext";
 
 // Code splitting: VaultGallery (el componente más pesado, incluye leaflet) se carga lazy
 const VaultGallery = lazy(() => import("./VaultGallery"));
@@ -617,7 +618,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
   const [exporting, setExporting] = useState(false);
   // Toast state — usado por handleDeleteEntry (reemplaza alert) y otros catch.
   // Mismo patrón que MusicLab: vibe-aware accent, fixed bottom, setTimeout 2500ms.
-  const [toast, setToast] = useState(null);
+  const { toast } = useToast();
 
   // G2: crear era vía Worker API
   const handleAddEra = async () => {
@@ -637,8 +638,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
       onAddEra(created);
     } catch (e) {
       console.warn("[Vault] addEra failed:", e);
-      setToast("NO SE PUDO CREAR LA ERA");
-      setTimeout(() => setToast(null), 2500);
+      toast({ msg: "NO SE PUDO CREAR LA ERA", duration: 2500 })
     } finally {
       setAddingEra(false);
     }
@@ -668,8 +668,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
       setEditingEntry(null);
     } catch (e) {
       console.warn("[Vault] updateEntry failed:", e);
-      setToast("NO SE PUDO ACTUALIZAR LA ENTRADA");
-      setTimeout(() => setToast(null), 2500);
+      toast({ msg: "NO SE PUDO ACTUALIZAR LA ENTRADA", duration: 2500 })
     }
   };
 
@@ -680,8 +679,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
       await deleteEntry(entryId);
     } catch (e) {
       console.warn("[Vault] deleteEntry failed:", e);
-      setToast("NO SE PUDO ELIMINAR");
-      setTimeout(() => setToast(null), 2500);
+      toast({ msg: "NO SE PUDO ELIMINAR", duration: 2500 })
     }
   };
 
@@ -749,23 +747,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
 
   return (
     <>
-      {/* Toast — mismo patrón que MusicLab (vibe-aware, fixed bottom, 2500ms) */}
-      <AnimatePresence>
-        {toast && (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            transition={{ duration: 0.25 }}
-            style={{ position: "fixed", bottom: 90, left: 16, right: 16,
-              background: `${accent}18`, border: `1px solid ${accent}55`, color: accent,
-              fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
-              padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}
-          >
-            {toast}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {null}
     <div
       className="flex flex-col gap-6 px-4 py-6 max-w-md mx-auto"
       style={{ fontFamily: FONT_MONO }}

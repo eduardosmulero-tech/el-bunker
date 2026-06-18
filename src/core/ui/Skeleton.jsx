@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { motion } from "framer-motion";
 import { ACID, BG } from "../../tokens";
 
@@ -89,7 +90,7 @@ function SkeletonTrackRow({ style, ...rest }) {
   );
 }
 
-function SkeletonGrid({ columns = 2, rows = 4, cardHeight = 180, gap = 8, style, ...rest }) {
+function SkeletonGrid({ columns = 2, rows = 4, gap = 8, style, ...rest }) {
   return (
     <div
       style={{

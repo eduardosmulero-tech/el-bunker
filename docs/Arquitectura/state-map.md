@@ -1,26 +1,27 @@
 ---
-describe: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx
-sincronizado_con: S64 — VaultContext → Worker API (carga híbrida)
-stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx
+describe: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx
+sincronizado_con: S132 — PlayerContext+escucha compartida + ToastContext ephemeral state + Design System props
+stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx
 ---
 
 # State Map (post-S64)
 
-## VaultContext (auth + DB híbrida)
+## VaultContext (auth + DB D1-only, post-S115)
 
 | Estado | Tipo | Descripción |
 |---|---|---|
-| authStatus | string | 'loading' \| 'authenticated' \| 'unauthorized' \| 'error' |
-| bootPhase | string | 'init_services' \| 'init_db' \| 'ready' \| 'unauthorized' \| 'error' |
+| bootPhase | string | 'idle' \| 'init_services' \| 'init_db' \| 'ready' \| 'unauthorized' \| 'error' |
+| authStatus | string | derived: 'idle' \| 'loading' \| 'authenticated' \| 'unauthorized' \| 'error' |
+| bootError | string \| null | Mensaje de error si bootPhase === 'error' o 'unauthorized' |
 | user | object | { id, email, name, avatar, role } |
-| db | object | DB híbrida: entries/eras/tracks de Worker, resto de Drive |
-| dbStatus | string | 'ONLINE' \| 'SYNCING' \| 'OFFLINE' \| 'ERROR' |
-| jwtToken | string | JWT del Worker API, persistido en localStorage |
+| db | object | DB cargada de Worker API (D1). Schema: entries[], eras[], music_lab: {tracks, tags, playlists, drops}, files[], libraries[], schema_version, heartbeat, adventures_start_date |
+| dbStatus | string | 'OFFLINE' \| 'SYNCING' \| 'ONLINE' \| 'ERROR' |
+| jwtToken | string | JWT del Worker API, persistido en **sessionStorage** ("bunker_jwt") |
 | activeTab | string | 'vault' \| 'music' \| 'capsules' |
 | masterVolume | number | 0-100 |
-| pendingDrop | object | Drop pendiente de ver (polling 30s) |
-| lastHeartbeat | ISO string | Último heartbeat a Drive |
-| libraryCapacity | object | Cache { [libraryId]: { used_gb, used_pct, near_full } } |
+| pendingDrop | object | Drop entrante del polling local (auto-detect post-S115) |
+| lastHeartbeat | ISO string | Local-only heartbeat (cada 20 min + Page Visibility visible) |
+| libraryCapacity | object | Cache { [libraryId]: { used_gb, used_pct, near_full, file_count } } |
 
 ### Derivados (useMemo)
 
@@ -33,7 +34,9 @@ stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, Mus
 | librariesLost | libraries | Status "lost" (≥23 meses) |
 | librariesNearFull | libraries + libraryCapacity | near_full === true |
 
-## PlayerContext (reproducción)
+## PlayerContext (reproducción + escucha compartida, S132)
+
+### Reproducción básica
 
 | Estado | Tipo | Descripción |
 |---|---|---|
@@ -41,12 +44,26 @@ stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, Mus
 | isPlaying | boolean | Estado play/pause |
 | masterVolume | number | 0-100 (sincronizado con VaultContext) |
 | trackVibe | string | Tag principal del track activo → `--vibe-accent` |
-| localQueue | array | Cola unificada (_manual: true/false) |
+| localQueue | array | Cola unificada (_manual: true/false, post-merge con queue_json de shared_sessions al end) |
 | loopMode | string | 'off' \| 'list' \| 'track' |
 | shuffle | boolean | Activo/inactivo |
 | queueContextName | string | Nombre de playlist como contexto |
 | playHistory | array | Historial de reproducción (localStorage) |
-| sharedListening | object | Stub para escucha compartida (futuro) |
+| syncStatus | string | 'idle' \| 'syncing' \| 'error' |
+
+### Escucha Compartida (NEW S132 — SC1-SC14)
+
+| Estado | Tipo | Descripción |
+|---|---|---|
+| sessionId | string \| null | ID de sesión compartida activa (null si no) |
+| userId | string | 'edu' \| 'david' \| 'admin' (de VaultContext.user.id) |
+| partnerListening | boolean | true si el otro user está active (presence >0) |
+| partnerTrack | object | { id, title, vibe } del track del partner |
+| partnerName | string | 'Edu' \| 'David' o resolvedUser name |
+| partnerTrackVibe | string | vibe del partner → deriveColor `getVibeConfig(vibe).palette.accent` |
+| pendingSessionIdDerived | boolean | Internal flag local: hay una sesión creada por partner pero no unida (auto-join trigger). El ID se fetchea una sola vez desde `/api/sync?action=presence` y se aplica vía `joinPendingSession()` |
+
+> Nota: `presenceAge` y `syncAction(action, payload)` definidos aquí no existen como tales en PlayerContext actual. La presencia se evalúa server-side (>5min = stale, descartado). Las acciones sync van vía callbacks directos a los handlers de sync.js (play/pause/skip/seek cada uno con su propio path).
 
 ## VAULT (contenido)
 

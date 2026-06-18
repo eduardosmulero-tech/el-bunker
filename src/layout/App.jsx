@@ -5,6 +5,7 @@
 // ============================================================
 import { useEffect, Component } from "react";
 
+import { ToastProvider } from "../core/ToastContext";
 import { VaultProvider, useVault } from "../core/VaultContext";
 import { PlayerProvider } from "../core/PlayerContext";
 import LoginScreen from "./LoginScreen";
@@ -85,7 +86,9 @@ const AppCore = () => {
   const tags   = db?.music_lab?.tags   ?? [];
   return (
     <PlayerProvider userId={user?.id ?? null} tracks={tracks} tags={tags} jwtToken={jwtToken}>
-      <AuthenticatedApp />
+      <ToastProvider>
+        <AuthenticatedApp />
+      </ToastProvider>
     </PlayerProvider>
   );
 };

@@ -9,6 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
+import { Input } from "../core/ui";
 import LocationSearch from "./LocationSearch";
 
 // Fase 8.3 — Taxonomía completa 14 categorías (docs/spec/taxonomia_vault.md)
@@ -395,14 +396,14 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
               );
             }
             return (
-              <input
+              <Input
                 key={f.key}
                 type={f.type}
                 value={extraValues[f.key] || ""}
                 onChange={(e) => setExtraValue(f.key, e.target.value)}
                 placeholder={f.placeholder ?? f.label}
-                className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px] outline-none"
-                style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}
+                className="flex-1 min-w-[100px]"
+                accentColor={ACID}
               />
             );
           })}
@@ -410,8 +411,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       )}
 
       {/* Campos */}
-      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO"
-        className="bg-transparent text-sm p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={ACID} />
 
       {FILE_UPLOAD_TYPES.has(type) ? (
         <>
@@ -449,9 +449,8 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           )}
         </>
       ) : (
-        <textarea value={text} onChange={e => setText(e.target.value)}
-          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} rows={4}
-          className="bg-transparent text-sm p-2 outline-none resize-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+        <Input multiline value={text} onChange={e => setText(e.target.value)}
+          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={ACID} />
       )}
 
       {/* Era + Destinatario */}

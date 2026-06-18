@@ -15,12 +15,12 @@ export async function searchLocation(query) {
   try {
     const res = await fetch(`${PHOTON_URL}?q=${encodeURIComponent(query)}&lang=es&limit=5`);
     if (res.ok) { const data = await res.json(); if (data.features?.length) return parsePhoton(data); }
-  } catch {}
+  } catch (e) { console.warn("[Geocoder] Photon falló, usando Nominatim:", e.message); }
 
   try {
     const res = await fetch(`${NOMINATIM_URL}?q=${encodeURIComponent(query)}&format=json&limit=5&accept-language=es`, { headers: { "User-Agent": "ElBunker/1.0" } });
     if (res.ok) { const data = await res.json(); if (data.length) return parseNominatim(data); }
-  } catch {}
+  } catch (e) { console.warn("[Geocoder] Nominatim también falló:", e.message); }
 
   return [];
 }

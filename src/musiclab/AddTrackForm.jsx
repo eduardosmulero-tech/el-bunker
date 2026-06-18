@@ -1,12 +1,12 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID } from "../tokens";
+import { Input } from "../core/ui";
 // S90 EC-TR6: extraer metadatos ID3 al seleccionar MP3
 import jsmediatags from "jsmediatags";
 
-const GLASS_BG     = "rgba(191,255,0,0.03)";
-const GLASS_BORDER = "rgba(191,255,0,0.12)";
-const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
+const GLASS_BG  = "rgba(191,255,0,0.03)";
+const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
 export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) => {
   const [form, setForm] = useState(
@@ -31,16 +31,6 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
     onAdd({ ...initialData, ...form });
   };
 
-  const inputStyle = {
-    background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, color: ACID,
-    fontFamily: FONT_MONO, fontSize: 11, outline: "none", width: "100%",
-    padding: "12px 12px", borderRadius: 2, caretColor: ACID,
-  };
-  const labelStyle = {
-    color: `${ACID}55`, fontSize: 10, fontFamily: FONT_MONO,
-    letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4,
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
@@ -52,22 +42,13 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
       </p>
 
       <div className="flex flex-col gap-3">
-        <div>
-          <label style={labelStyle}>Título *</label>
-          <input style={inputStyle} value={form.title} onChange={set("title")} placeholder="Nombre del track..." />
-        </div>
-        <div>
-          <label style={labelStyle}>Artista</label>
-          <input style={inputStyle} value={form.artist} onChange={set("artist")} placeholder="Nombre del artista..." />
-        </div>
-        <div>
-          <label style={labelStyle}>Nota</label>
-          <input style={inputStyle} value={form.note} onChange={set("note")} placeholder="¿Por qué este track?" />
-        </div>
+        <Input label="Título *" accentColor={ACID} value={form.title} onChange={set("title")} placeholder="Nombre del track..." />
+        <Input label="Artista" accentColor={ACID} value={form.artist} onChange={set("artist")} placeholder="Nombre del artista..." />
+        <Input label="Nota" accentColor={ACID} value={form.note} onChange={set("note")} placeholder="¿Por qué este track?" />
         {/* S90 EC-TR6: File input para MP3 con extracción ID3 */}
         {!initialData && (
           <div>
-            <label style={labelStyle}>Archivo MP3</label>
+            <label style={{ color: `${ACID}55`, fontSize: 10, fontFamily: FONT_MONO, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Archivo MP3</label>
             <div className="flex items-center gap-2">
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -127,7 +108,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           </div>
         )}
         <div>
-          <label style={labelStyle}>Vibe <span style={{ color: "#ff4444", marginLeft: 2 }}>*</span></label>
+          <label style={{ color: `${ACID}55`, fontSize: 10, fontFamily: FONT_MONO, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Vibe <span style={{ color: "#ff4444", marginLeft: 2 }}>*</span></label>
           <div className="flex flex-wrap gap-2 mt-1">
             {VIBE_TAGS.filter((v) => v.id !== "all").map((vibe) => (
               <motion.button

@@ -6,6 +6,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { emitEvent } from "../utils/events.js";
 
 const POLL_TIMEOUT = 20000;  // 20s max
 const POLL_INTERVAL = 1000;  // Check every 1s
@@ -118,6 +119,11 @@ export default async function handleSync(request, env, url, userId) {
          is_playing, last_action, last_action_by, queue_json, created_at, updated_at)
          VALUES (?, ?, NULL, NULL, 0, 0, 'created', ?, '[]', datetime('now'), datetime('now'))`
       ).bind(sessionId, userId, userId).run();
+      // TD-8/SC6: emitir shared_session_started para stats credit (server-side can\u00f3nico).
+      // StatsEngine.js NO incluye sim\u00e9tricos: cliente no emite esta familia.
+      await emitEvent(env, "shared_session_started", userId, "session", sessionId, {
+        host_id: userId,
+      });
       return json({ session_id: sessionId, active: true, host_id: userId });
     }
 
@@ -132,6 +138,11 @@ export default async function handleSync(request, env, url, userId) {
         `UPDATE shared_sessions SET guest_user_id = ?, last_action = 'joined',
          last_action_by = ?, updated_at = datetime('now') WHERE id = ?`
       ).bind(userId, userId, session_id).run();
+      // TD-8/SC6: emitir shared_session_joined (guest llegó) para stats credit
+      await emitEvent(env, "shared_session_joined", userId, "session", session_id, {
+        host_id: session.host_user_id,
+        guest_id: userId,
+      });
 
       return json({
         active: true,
@@ -152,12 +163,23 @@ export default async function handleSync(request, env, url, userId) {
 
       if (session.guest_user_id === userId) {
         // Guest leaves — clear guest
+        // TD-8/SC6: emitir shared_session_left (guest salió) ANTES del UPDATE
+        await emitEvent(env, "shared_session_left", userId, "session", session_id, {
+          role: "guest",
+          host_id: session.host_user_id,
+        });
         await env.DB.prepare(
           `UPDATE shared_sessions SET guest_user_id = NULL, last_action = 'left',
            last_action_by = ?, updated_at = datetime('now') WHERE id = ?`
         ).bind(userId, session_id).run();
       } else if (session.host_user_id === userId) {
         // Host leaves — end session
+        // TD-8/SC6: emitir shared_session_left (host terminó sesión) ANTES del DELETE
+        await emitEvent(env, "shared_session_left", userId, "session", session_id, {
+          role: "host",
+          ended_session: true,
+          guest_id: session.guest_user_id || null,
+        });
         await env.DB.prepare(
           `DELETE FROM shared_sessions WHERE id = ?`
         ).bind(session_id).run();
@@ -173,7 +195,7 @@ export default async function handleSync(request, env, url, userId) {
       ).bind(session_id).first();
       if (!session) return err("Session not found", 404);
 
-      let q = [];
+      let q;
       try { q = session.queue_json ? JSON.parse(session.queue_json) : []; } catch { q = []; }
       q = q.filter(t => t.id !== track_id);
 
@@ -192,7 +214,7 @@ export default async function handleSync(request, env, url, userId) {
       ).bind(session_id).first();
       if (!session) return err("Session not found", 404);
 
-      let q = [];
+      let q;
       try { q = session.queue_json ? JSON.parse(session.queue_json) : []; } catch { q = []; }
       q.push({
         id: track_data.id,
@@ -249,13 +271,26 @@ export default async function handleSync(request, env, url, userId) {
     return err("session_id required for sync actions", 400);
   }
 
-  // END session (DELETE)
+  // END session (DELETE — terminación explícita desde cliente)
   if (request.method === "DELETE") {
     const sessionId = url.searchParams.get("session_id");
     if (!sessionId) return err("session_id required", 400);
-    const session = await env.DB.prepare("SELECT queue_json FROM shared_sessions WHERE id = ?").bind(sessionId).first();
+    const session = await env.DB.prepare("SELECT queue_json, host_user_id, guest_user_id FROM shared_sessions WHERE id = ?").bind(sessionId).first();
     let finalQueue = [];
-    if (session) { try { finalQueue = JSON.parse(session.queue_json || '[]'); } catch {} }
+    if (session) { try { finalQueue = JSON.parse(session.queue_json || '[]'); } catch (e) { console.warn('[sync] finalQueue parse:', e.message); } }
+    // TD-8/SC6: emitir ANTES del DELETE (consistencia con PATCH leave-host).
+    // Si DELETE throws post-emit, events tiene shared_session_left para
+    // un row que sigue vivo en shared_sessions \u2014 aceptado por ADR-019
+    // (append-only lossy). Pr\u00f3ximo DELETE exitoso emite otro forced: true.
+    if (session) {
+      const isHost = session.host_user_id === userId;
+      await emitEvent(env, "shared_session_left", userId, "session", sessionId, {
+        role: isHost ? "host" : "guest",
+        ended_session: true,
+        forced: true,
+        guest_id: session.guest_user_id || null,
+      });
+    }
     await env.DB.prepare("DELETE FROM shared_sessions WHERE id = ?").bind(sessionId).run();
     return json({ ended: true, queue_json: finalQueue });
   }

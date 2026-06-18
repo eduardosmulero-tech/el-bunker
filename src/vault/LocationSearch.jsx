@@ -16,6 +16,7 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (query.length < 2) { setResults([]); setOpen(false); return; }
     setLoading(true);
     timerRef.current = setTimeout(async () => {

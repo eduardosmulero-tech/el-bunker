@@ -368,6 +368,15 @@ const CinemaView = ({ entries, eras, onZoom }) => {
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
 
+  // S122-A fix: hooks deben ejecutarse siempre — antes del early return
+  useEffect(() => {
+    if (!entries.length) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsPaused(false);
+    pauseTimerRef.current = setTimeout(() => setIsPaused(true), 3000);
+    return () => { if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current); };
+  }, [currentIdx, entries.length]);
+
   if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   const safeIdx = ((currentIdx % entries.length) + entries.length) % entries.length;
@@ -398,14 +407,6 @@ const CinemaView = ({ entries, eras, onZoom }) => {
     }
     pauseTimerRef.current = setTimeout(() => setIsPaused(true), 3000);
   };
-
-  // S122-A fix: hooks deben ejecutarse siempre — guard dentro del effect
-  useEffect(() => {
-    if (!entries.length) return;
-    setIsPaused(false);
-    pauseTimerRef.current = setTimeout(() => setIsPaused(true), 3000);
-    return () => { if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current); };
-  }, [currentIdx, entries.length]);
 
   return (
     <div className="flex flex-col items-center gap-3" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -523,8 +524,6 @@ const CinemaView = ({ entries, eras, onZoom }) => {
 const DialogueView = ({ entries, eras }) => {
   const [filterMode, setFilterMode] = useState("all"); // "all" | "conversations"
 
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
-
   // S122-B: Emparejamiento temporal — fotos tomadas <5min de diferencia
   const pairs = useMemo(() => {
     const eduEntries = entries.filter(e => e.from_user === "edu");
@@ -553,6 +552,8 @@ const DialogueView = ({ entries, eras }) => {
     }
     return { pairs: result, eduCount: eduEntries.length, davidCount: davidEntries.length };
   }, [entries]);
+
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   const displayPairs = filterMode === "conversations"
     ? pairs.pairs.filter(p => p.paired)
@@ -767,8 +768,6 @@ const DialogueView = ({ entries, eras }) => {
 
 // ─── EXHIBITION VIEW (S122-C: agrupación por Era + vibe breakdown + layout museo) ──
 const ExhibitionView = ({ entries, eras }) => {
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
-
   const eraGroups = useMemo(() => {
     const groups = {};
     entries.forEach(e => {
@@ -778,6 +777,8 @@ const ExhibitionView = ({ entries, eras }) => {
     });
     return Object.entries(groups).sort(([, a], [, b]) => b.length - a.length);
   }, [entries]);
+
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   return (
     <div className="flex flex-col gap-6" style={{ fontFamily: FONT_MONO }}>
@@ -833,7 +834,6 @@ const ExhibitionView = ({ entries, eras }) => {
 
 // ─── REEL VIEW (S122-D: auto-generación secuencias por día + pinning) ──
 const ReelView = ({ entries, eras }) => {
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
   const reels = useMemo(() => {
     const byDay = {};
     entries.forEach(e => {
@@ -845,6 +845,9 @@ const ReelView = ({ entries, eras }) => {
     return Object.entries(byDay).filter(([, items]) => items.length >= 2).sort(([a], [b]) => b.localeCompare(a)).slice(0, 12);
   }, [entries]);
   const [activeReel, setActiveReel] = useState(null);
+
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+
   return (
     <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       <div className="flex items-center gap-2">
@@ -1024,7 +1027,6 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
     () => normalized.filter((e) => typeof e.lat === "number" && typeof e.lng === "number"),
     [normalized]
   );
-  const positions = useMemo(() => geocoded.map((e) => [e.lat, e.lng]), [geocoded]);
   // S130-A: era breakdown memoizado (evita recompute cada render del MapView)
   const eraBreakdown = useMemo(
     () => Object.values(geocoded.reduce((acc, e) => { acc[e.era_name ?? "—"] = (acc[e.era_name ?? "—"] || 0) + 1; return acc; }, {})),
@@ -1040,6 +1042,7 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
   const [dateMax, setDateMax] = useState(null);
   useEffect(() => {
     if (dateRange) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDateMin((p) => p ?? dateRange.min);
       setDateMax((p) => p ?? dateRange.max);
     }
@@ -1186,7 +1189,7 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
 export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _onOpenEntry }) {
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
-  const [currentIdx, setCurrentIdx] = useState(0);
+  const [, setCurrentIdx] = useState(0);
   // S66: Long-press preview + zoom
   const [previewEntry, setPreviewEntry] = useState(null);
   const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });

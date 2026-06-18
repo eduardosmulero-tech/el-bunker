@@ -29,7 +29,7 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
     title={title}
     aria-label={ariaLabel ?? title}
     className={`rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
-      size === "sm" ? "w-11 h-11" : "w-11 h-11"
+      size === "sm" ? "w-10 h-10" : "w-11 h-11"
     }`}
     style={{
       background: active ? withAlpha(color, 0.2) : "transparent",
@@ -661,7 +661,7 @@ return () => cancelAnimationFrame(raf);
         </div>
 
         {/* Cluster central: prev + play + next + ⚡ + ⊕ (flex-1 ocupa el espacio, justify-center centra el play) */}
-        <div className="flex-1 flex items-center justify-center gap-1.5">
+        <div className="flex-1 flex items-center justify-center gap-1.5 overflow-x-auto">
           <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" size="sm" />
           <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
             className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"

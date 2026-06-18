@@ -4,7 +4,7 @@
 //  Consume eventos vía props (datos de D1)
 //  S72 — Filtros Era/module/tipo, banner "Un día como hoy"
 // ============================================================
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, PURPLE } from "../tokens";
 
@@ -28,13 +28,6 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
   const [filterType, setFilterType] = useState("all");
   const [filterEra, setFilterEra] = useState("all");
   const accent = accentColor ?? ACID;
-  // S85d: toast infra para feedback de fetch errors (silent catch fix)
-  const [toast, setToast] = useState(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   // S72: Filtered & sorted events
   const filteredEvents = useMemo(() => {
@@ -309,16 +302,6 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
         </motion.button>
       )}
     </div>
-      {toast && (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
-          style={{ position: "fixed", bottom: 90, left: 16, right: 16,
-            background: `${ACID}18`, border: `1px solid ${ACID}55`, color: ACID,
-            fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
-            padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}>
-          {toast}
-        </motion.div>
-      )}
+      {null}
   </>);
 }
