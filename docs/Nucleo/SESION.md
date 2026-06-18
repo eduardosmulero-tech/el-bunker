@@ -99,3 +99,38 @@ Auditoría detallada de escucha compartida vs specs SC1-SC14. Score inicial ~38%
 
 ## Pendiente Fase 0.4
 Touch targets ≥44px audit + fix en toda la app.
+
+## S133 — ESTABILIZACIÓN PRE-TESTING S0.6 (18 Junio 2026)
+
+### Resumen
+Estabilización completa pre-testing con usuarios reales (Edu y David). Lint 38→0, build 3.4s→2.2s. 28 ficheros modificados. Commit `f86a1a4`.
+
+### Runtime fixes
+| Bug | Fix | Archivo |
+|-----|-----|---------|
+| Hooks condicionales en ExhibitionView/ReelView/DialogueView | useMemo/useState movidos antes de early return | `VaultGallery.jsx` |
+| Volumen slider oculto (S0.4 sm=40px en vez de md=44px) | Diferencial sm=40/md=44 + overflow-x-auto en controls | `WinampPlayer.jsx` |
+| labelStyle undefined crash en AddTrackForm | Replaced with inline styles | `AddTrackForm.jsx` |
+| Catch blocks vacíos en GeocoderService | Añadidos console.warn | `GeocoderService.js` |
+
+### Lint fixes (~38 errors/warnings → 0)
+- **exhaustive-deps**: PlayerContext (4), Capsules (2), TimeCapsules (1), AudioVisualizer (1)
+- **Fast Refresh**: Skeleton (7 exports), ToastContext (2 exports) — `eslint-disable` top-level
+- **set-state-in-effect**: AudioVisualizer, VaultGallery (CinemaView + MapView), LocationSearch
+- **Unused vars**: Timeline (toast), MusicLab (useToast), AudioVisualizer (onRequestFullscreen), VaultGallery (positions, currentIdx), Skeleton (cardHeight), worker.js (json import)
+- **Bad eslint comments**: AudioVisualizer, VaultGallery (comment text en rule name con `—`)
+- **Unused disable**: PlayerContext line 1449 (removed)
+- **test-setup.js**: `global` → `globalThis`
+- **PlayerContext.test.jsx**: unused `vi` import
+
+### Nuevos archivos
+- `src/core/ToastContext.jsx` — Provider + useToast unificado (51 líneas)
+- `workers/utils/events.js` — Server event helpers (shared_session_started/joined/left)
+
+### Docs actualizados
+- 7 ficheros Arquitectura/ (INDEX, architecture, data-flow, event-lifecycle, ownership-map, rendering-flow, state-map, technical-debt)
+
+### Build/Lint/Tests
+- **Build**: 2.22s ✓ (2240 modules, 10 chunks)
+- **Lint**: 0 errors, 0 warnings
+- **Tests**: 12/12 ✓
