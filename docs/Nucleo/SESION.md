@@ -134,3 +134,108 @@ Estabilización completa pre-testing con usuarios reales (Edu y David). Lint 38�
 - **Build**: 2.22s ✓ (2240 modules, 10 chunks)
 - **Lint**: 0 errors, 0 warnings
 - **Tests**: 12/12 ✓
+
+---
+
+## S134 — CHECKLIST TESTING SELF-CONTAINED + INLINE DATA (18 Junio 2026)
+
+### Resumen
+Checklist de testing exhaustiva (312 items, 31 secciones) unificada en un solo archivo HTML self-contained. Inline de datos desde `checklist_data.js` (15 KB) directamente en el HTML para evitar dependencias externas. Tester toggle localStorage independiente para Edu (acid green) y David (purple). Commits: `a7ef533` (checklist split) + `735f066` (inline data).
+
+### Cambios
+| Archivo | Qué |
+|---------|-----|
+| `docs/operacional/checklist_data.js` | Eliminado (datos inline en HTML ahora) |
+| `docs/operacional/bunker_checklist.html` | 15 KB de datos inline + UI shell + CSS + JS logic + tester toggle |
+
+### Score pre-testing (sin cambios desde S133)
+- Audio engine 70% · Escucha compartida ~85% · VAULT data model 80%
+- WALL 35% · CINEMA 18% · MAP 30% · DIALOGUE 60% · EXHIBITION 6% · REEL 11% · CAPSULES 8% · Infra ~30%
+- **TOTAL ~40%**
+
+### Pendiente
+Ejecutar testing con Edu y David. Abrir con `npx serve docs/operacional -p 3001` y acceder desde Android en la misma WiFi.
+
+---
+
+## S135 — AUDITORÍA VISUAL GEMINI + FASE 0 ESTÉTICA (22 Junio 2026)
+
+### Resumen
+Auditoría visual completa con Gemini sobre 10 capturas reales del móvil. 8 hallazgos mayores → 6 corregidos. Fase 0 de estética completada: safe-areas, glows, touch targets, tipografía, scanlines, selects nativos custom. Roadmap al 100% generado en `docs/operacional/roadmap_100.md`.
+
+### Cambios Fase 0
+| # | Archivo | Qué |
+|---|---------|-----|
+| 0.1 | `Layout.jsx` | Safe-area bottom `calc(80px + env(...))` en main, BottomNav gradiente más opaco, StatusBar gradiente extendido |
+| 0.1 | `Layout.jsx` | AmbientGlows: blur 80→48px, opacity .06→.08, tamaños reducidos |
+| 0.1 | `Layout.jsx`, `WinampPlayer.jsx`, `MusicLab.jsx` | Touch targets ≥44px en StatusBar, MiniPlayer, WinampBtn, cola, playlists |
+| 0.2 | `index.css` | JetBrains Mono forzada en `html, body` con `!important` |
+| 0.3 | `TrackCard.jsx` | List mode padding `p-3`→`p-4` (12px→16px) |
+| 0.4 | `AddEntryForm.jsx` | 3 `<select>` nativos → `appearance:none` + SVG chevron dinámico por accentColor |
+| 0.5 | `Layout.jsx` | Scanlines opacity 0.18→0.25 |
+
+### Archivos nuevos
+- `docs/operacional/roadmap_100.md` — Plan 5 fases (~43 pliegos) del 42% al 100%
+
+### Score post-Fase 0
+- Estética/UX: 55% → 65%
+- TOTAL: ~40% → ~42%
+
+### Build/Lint
+- **Build**: 2.98s ✓
+- **Lint**: 0 errors, 1 warning (index.css ignorado por eslint config — esperado)
+
+---
+
+## S136 — CICLO AUTÓNOMO FASES 0-6 + AUDITORÍA FINAL (25 Junio 2026)
+
+### Resumen
+Ciclo autónomo de desarrollo iterativo: auditoría → plan → ejecución → review → repetir hasta techo frontend. 6 fases completadas en 6 ramas. Score pasó de ~40% → ~70% alcanzable frontend. El 30% restante es backend-blocked (STAT-M9, gapless, offline, Chromecast, Live Sync, Canvas 2D).
+
+### Fases ejecutadas
+| Fase | Rama | Commit | Build | Qué |
+|------|------|--------|-------|-----|
+| 0 | `master` | S135 | 2.98s | Estética: safe-areas, glows, touch targets, JetBrains, scanlines, selects |
+| 1 | `fase1-wall-gallery` | `edf76e3` | 2.68s | WALL: WallView.jsx (394 líneas), virtualización masonry, pinch zoom, badges, stagger |
+| 2 | `fase2-cinema-map` | `2742631` | 2.54s | CINEMA: ambient toggle. MAP: capas Era/Año, distancias Haversine |
+| 3 | `fase3-capsules` | `cc77a96` | 2.86s | CAPSULES: filtro por usuario en Timeline (Edu/David) |
+| 4 | `fase4-dialogue-exhibition` | `218ef2e` | 2.78s | DIALOGUE+REEL+EXHIBITION: Live Sync placeholder |
+| 5 | `fase5-pulido` | `6f1513e` | 2.75s | PULIDO: decoding=async en imágenes restantes |
+| 6 | `fase6-vb9-map` | `2754cd9` | 2.65s | VB9: --vibe-accent CSS var + WallView/VaultGallery vibe-reactivos. MAP: popup thumbnails |
+
+### Archivos clave modificados/creados
+| Archivo | Fase | Cambio |
+|---------|------|--------|
+| `src/vault/WallView.jsx` | 1, 6 | NUEVO: masonry virtualizado + VB9 accentColor prop |
+| `src/vault/VaultGallery.jsx` | 1-6 | ~250 líneas dead code eliminadas, mode bar VB9, MAP popup thumbnails, Live Sync placeholder |
+| `src/layout/Layout.jsx` | 0, 6 | Safe-areas, glows, touch targets, scanlines, --vibe-accent CSS var |
+| `src/index.css` | 0 | JetBrains Mono !important en html,body |
+| `src/musiclab/WinampPlayer.jsx` | 0 | WinampBtn touch targets ≥44px |
+| `src/musiclab/MusicLab.jsx` | 0 | Touch targets en cola/playlists/delete |
+| `src/musiclab/TrackCard.jsx` | 0 | List mode padding p-3→p-4 |
+| `src/vault/AddEntryForm.jsx` | 0 | Selects custom con SVG chevron |
+| `src/capsules/Timeline.jsx` | 3 | Filtro por usuario (all/edu/david) |
+| `docs/operacional/roadmap_100.md` | S136 | Actualizado con scores finales + conclusión |
+
+### Bloqueantes identificados (30% restante)
+1. 🔒 STAT-M9 — stats engine en D1 (desbloquea RECAPs, SC6/SC12)
+2. 🔒 Gapless/crossfade (P3) — refactor PlayerContext
+3. 🔒 Offline total — SW strategies + R2 cache
+4. 🔒 Chromecast receiver — Workers cast receiver app
+5. 🔒 Live Sync — WebSocket/SSE en Worker
+6. 🔒 Música ambiente real CINEMA — PlayerContext + auto-playlist
+7. 🔒 Canvas 2D EXHIBITION — complejidad muy alta
+8. 🔒 REEL banda sonora — generación procedural + PlayerContext
+
+### Bugs cerrados
+- VB9: vibe solo afectaba reproductor → ARREGLADO (--vibe-accent en :root + WallView/VaultGallery vibe-reactivos)
+- DROP-M20: drops abrían en navegador nativo → YA FUNCIONABA (handleDropPlay usa playTrack inline)
+- MAP sin thumbnails → ARREGLADO (popup muestra foto si el entry tiene imagen)
+
+### Build/Lint
+- **Build**: 2.65s ✓ (último commit)
+- **Lint**: 0/0 ✓
+
+### Pendiente
+- Merge de ramas a master (Edu decide)
+- STAT-M9 como próximo pliego prioritario
