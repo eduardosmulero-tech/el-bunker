@@ -1020,6 +1020,10 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
+      {/* Fase 4: Live Sync indicator placeholder */}
+      <div className="text-[8px] text-center opacity-10 tracking-[0.4em] uppercase" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
+        LIVE SYNC · próximamente
+      </div>
       {/* Mode bar */}
       <nav className="flex gap-1 overflow-x-auto">
         {MODES.map(m => (
