@@ -60,8 +60,36 @@ const CinemaView = ({ entries, eras, onZoom }) => {
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
 
-    // Fase 2: ambient music toggle
+  // Fase 7: CINEMA ambient music — conectar toggle a PlayerContext
+  const { masterVolume, setMasterVolume } = usePlayer();
+  const ambientVolumeRef = useRef(null);
   const [ambientOn, setAmbientOn] = useState(false);
+  const prevMasterRef = useRef(80);
+
+  useEffect(() => {
+    if (!ambientOn) {
+      if (ambientVolumeRef.current !== null) {
+        setMasterVolume?.(prevMasterRef.current);
+        ambientVolumeRef.current = null;
+      }
+      return;
+    }
+    // Guardar volumen actual y bajar para ambiente
+    prevMasterRef.current = masterVolume;
+    ambientVolumeRef.current = 20;
+    setMasterVolume?.(20);
+  }, [ambientOn, setMasterVolume, masterVolume]);
+
+  // Cleanup: restore volume when leaving cinema mode
+  useEffect(() => {
+    return () => {
+      if (ambientVolumeRef.current !== null) {
+        setMasterVolume?.(prevMasterRef.current);
+        ambientVolumeRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // S122-A fix: hooks deben ejecutarse siempre — antes del early return
   useEffect(() => {
@@ -211,8 +239,8 @@ const CinemaView = ({ entries, eras, onZoom }) => {
       </div>
 
       {ambientOn && era && (
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] opacity-20 italic" style={{ color: eraColor, fontFamily: FONT_MONO }}>
-          ♫ Música ambiente de {eraName} — próximamente
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] opacity-30 italic" style={{ color: eraColor, fontFamily: FONT_MONO }}>
+          ♫ Volumen reducido para contemplar — {eraName}
         </motion.p>
       )}
 
@@ -806,6 +834,17 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
   }, [layerFiltered, dateMin, dateMax, dateRange]);
   const filteredPositions = useMemo(() => filteredByDate.map((e) => [e.lat, e.lng]), [filteredByDate]);
 
+  // Fase 7: agrupar entries por ubicación (~11m) para carrusel en popup
+  const locationGroups = useMemo(() => {
+    const groups = {};
+    filteredByDate.forEach((e) => {
+      const key = `${e.lat?.toFixed(3)},${e.lng?.toFixed(3)}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(e);
+    });
+    return groups;
+  }, [filteredByDate]);
+
   return (
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
       <div className="flex items-center gap-2 flex-wrap">
@@ -942,17 +981,48 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
                       <div style={{ fontSize: 8, opacity: 0.4, marginTop: 4, color: "#000" }}>
                         {CAT_ICON[ENTRY_CATEGORY[e.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[e.type]] ?? e.type}
                       </div>
-                      {/* Fase 6: foto thumbnail en popup si tiene imagen */}
-                      {(e.content?.images?.[0]?.r2_key || e.content?.images?.[0]?.dataUrl) && (
-                        <div style={{ marginTop: 6, borderRadius: 4, overflow: "hidden", maxHeight: 120 }}>
-                          <img
-                            src={e.content.images[0].r2_key ? `${R2_PUBLIC_BASE}/${e.content.images[0].r2_key}` : e.content.images[0].dataUrl}
-                            alt={e.title || ""}
-                            style={{ width: "100%", height: "auto", maxHeight: 120, objectFit: "cover", display: "block" }}
-                            loading="lazy"
-                          />
-                        </div>
-                      )}
+                      {/* Fase 7: carrusel horizontal de fotos de esta ubicación */}
+                      {(() => {
+                        const groupKey = `${e.lat?.toFixed(3)},${e.lng?.toFixed(3)}`;
+                        const groupEntries = locationGroups[groupKey] || [];
+                        const images = groupEntries
+                          .map(ge => {
+                            const imgs = ge.content?.images;
+                            if (!imgs?.length) return null;
+                            const src = imgs[0].r2_key ? `${R2_PUBLIC_BASE}/${imgs[0].r2_key}` : imgs[0].dataUrl;
+                            return src ? { src, title: ge.title || "", id: ge.id } : null;
+                          })
+                          .filter(Boolean);
+                        if (!images.length) return null;
+                        return (
+                          <div style={{ marginTop: 6 }}>
+                            <div style={{
+                              display: "flex", gap: 4, overflowX: "auto",
+                              scrollSnapType: "x mandatory", borderRadius: 4,
+                              maxHeight: 130
+                            }}>
+                              {images.map((img, i) => (
+                                <img
+                                  key={img.id || i}
+                                  src={img.src}
+                                  alt={img.title}
+                                  style={{
+                                    width: 120, height: 100, objectFit: "cover",
+                                    flexShrink: 0, borderRadius: 3,
+                                    scrollSnapAlign: "start"
+                                  }}
+                                  loading="lazy"
+                                />
+                              ))}
+                            </div>
+                            {images.length > 1 && (
+                              <div style={{ fontSize: 7, opacity: 0.3, marginTop: 2, textAlign: "center", color: "#000" }}>
+                                {images.length} fotos en esta ubicación · desliza →
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                       {typeof e.lat === "number" && (
                         <div style={{ fontSize: 7, opacity: 0.3, marginTop: 2, color: "#000" }}>
                           {e.lat.toFixed(4)}, {e.lng.toFixed(4)}
