@@ -18,7 +18,7 @@ const ScanlineOverlay = () => (
     className="pointer-events-none fixed inset-0 z-50"
     style={{
       backgroundImage:
-        "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px)",
+        "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.25) 2px, rgba(0,0,0,0.25) 4px)",
       mixBlendMode: "overlay",
     }}
   />
@@ -76,9 +76,10 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-6"
       style={{
-        paddingTop: "env(safe-area-inset-top, 8px)",
-        paddingBottom: "8px",
-        background: `linear-gradient(180deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
+        paddingTop: "env(safe-area-inset-top, 12px)",
+        paddingBottom: "12px",
+        minHeight: "calc(36px + env(safe-area-inset-top, 8px))",
+        background: `linear-gradient(180deg, rgba(5,5,5,0.995) 0%, rgba(5,5,5,0.95) 60%, rgba(5,5,5,0.0) 100%)`,
       }}
     >
       {/* LEFT: Brand + Presence */}
@@ -133,7 +134,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         </span>
         <button
           onClick={() => window.location.reload()}
-          className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
+          className="text-xs tracking-widest uppercase px-4 py-3 rounded-sm transition-all min-h-[44px] min-w-[44px]"
           style={{ border: `1px solid ${accentColor}33`, opacity: 1 }}
         >
           ↺
@@ -141,7 +142,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         {onSignOut && (
           <button
             onClick={onSignOut}
-            className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
+            className="text-xs tracking-widest uppercase px-4 py-3 rounded-sm transition-all min-h-[44px]"
             style={{ border: `1px solid #ff3b3b44`, color: "#ff3b3b", opacity: 0.7 }}
           >
             EXIT
@@ -165,11 +166,12 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.3 }}
-      className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-4"
+      className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-2"
       style={{
-        paddingTop: "12px",
-        paddingBottom: "env(safe-area-inset-bottom, 12px)",
-        background: `linear-gradient(0deg, rgba(5,5,5,0.98) 0%, rgba(5,5,5,0.0) 100%)`,
+        paddingTop: "10px",
+        paddingBottom: "calc(10px + env(safe-area-inset-bottom, 8px))",
+        minHeight: "calc(52px + env(safe-area-inset-bottom, 8px))",
+        background: `linear-gradient(0deg, rgba(5,5,5,0.99) 0%, rgba(5,5,5,0.85) 60%, rgba(5,5,5,0.0) 100%)`,
       }}
     >
       {tabs.map((tab) => {
@@ -185,8 +187,8 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
               textShadow: isActive ? `0 0 12px ${accentColor}` : "none",
             }}
           >
-            <span className="text-base">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span className="text-base" style={{ fontSize: 16, lineHeight: 1.2 }}>{tab.icon}</span>
+            <span style={{ fontSize: 11, lineHeight: 1.2 }}>{tab.label}</span>
             {isActive && (
               <motion.div
                 layoutId="nav-indicator"
@@ -222,28 +224,28 @@ const GridBackground = ({ accentColor = ACID }) => {
 // ─── AMBIENT GLOWS ───────────────────────────────────────────
 const AmbientGlows = ({ accentColor = ACID }) => (
   <div aria-hidden="true" className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-    {/* Top-left vibe glow */}
+    {/* Top-left vibe glow — más definido (S135: blur 80→48, opacity .06→.08) */}
     <div
-      className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.06]"
-      style={{ background: accentColor, filter: "blur(80px)" }}
+      className="absolute -top-32 -left-32 w-80 h-80 rounded-full opacity-[0.08]"
+      style={{ background: accentColor, filter: "blur(48px)" }}
     />
-    {/* Bottom-right purple glow */}
+    {/* Bottom-right purple glow — más definido */}
     <div
-      className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-[0.06]"
-      style={{ background: PURPLE, filter: "blur(80px)" }}
+      className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full opacity-[0.08]"
+      style={{ background: PURPLE, filter: "blur(48px)" }}
     />
-    {/* Center pulse */}
+    {/* Center pulse — más nítido */}
     <motion.div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full opacity-[0.02]"
-      style={{ background: accentColor, filter: "blur(60px)" }}
-      animate={{ scale: [1, 1.3, 1], opacity: [0.02, 0.04, 0.02] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full opacity-[0.03]"
+      style={{ background: accentColor, filter: "blur(40px)" }}
+      animate={{ scale: [1, 1.2, 1], opacity: [0.03, 0.06, 0.03] }}
+      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
     />
   </div>
 );
 
 // ─── MINI PLAYER (G7: persistente entre pestañas) ───────────
-const MiniPlayer = ({ accentColor = ACID }) => {
+const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
   const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
   // ADR-Refs: refs NO se leen durante el render. Valores inicializados a 0;
   // el useEffect de abajo sincroniza desde el ref vía evento 'timeupdate' en mount.
@@ -284,7 +286,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="fixed left-0 right-0 z-[25] mx-2"
-      style={{ bottom: "calc(64px + env(safe-area-inset-bottom, 0px))" }}
+      style={{ bottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom, 4px))` }}
     >
       <div
         className="flex items-center gap-2 px-3 py-2.5 rounded-sm cursor-pointer select-none"
@@ -339,7 +341,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           <motion.div
             whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); skip(-1); }}
-            className="w-11 h-11 flex items-center justify-center rounded-sm"
+            className="w-11 h-11 flex items-center justify-center rounded-sm min-w-[44px] min-h-[44px]"
             style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
             title="Anterior"
           >
@@ -350,7 +352,7 @@ const MiniPlayer = ({ accentColor = ACID }) => {
           <motion.div
             whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); skip(1); }}
-            className="w-11 h-11 flex items-center justify-center rounded-sm"
+            className="w-11 h-11 flex items-center justify-center rounded-sm min-w-[44px] min-h-[44px]"
             style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
             title="Siguiente"
           >
@@ -432,6 +434,12 @@ export default function Layout({
   const { toasts, muteToast } = useToast();
   const { trackVibe, resolveVibeAccent, networkStatus, sessionToast, setSessionToast } = usePlayer();
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
+
+  // VB9: propagate vibe accent as CSS variable on :root so all components can react
+  useEffect(() => {
+    document.documentElement.style.setProperty("--vibe-accent", accentColor);
+    return () => { document.documentElement.style.removeProperty("--vibe-accent"); };
+  }, [accentColor]);
 
   return (
     <div
@@ -566,13 +574,14 @@ export default function Layout({
       {/* NOTA: Las transiciones de página las maneja App.jsx (AuthenticatedApp).
            No duplicar AnimatePresence aquí — causa doble animación y flicker. */}
       <main
-        className="relative z-20 pt-10 pb-20 min-h-screen"
+        className="relative z-20 pt-10 min-h-screen"
+        style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
       >
         {children}
       </main>
 
       {/* ── Layer 3.5: Mini Player (G7) ── */}
-      {activeTab !== "music" && <MiniPlayer accentColor={accentColor} />}
+      {activeTab !== "music" && <MiniPlayer accentColor={accentColor} bottomNavHeight={80} />}
 
       {/* ── Layer 4: Bottom Nav ── */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />

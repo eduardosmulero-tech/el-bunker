@@ -2,6 +2,7 @@
 //  EL BÚNKER — WallView.jsx
 //  Fase 1: WALL virtualizado con IntersectionObserver +
 //  pinch-to-zoom densidad + badges contexto + stagger animations
+//  VB9: vibe-accent propagation via accentColor prop
 // ============================================================
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -44,7 +45,7 @@ const buildMasonryColumns = (items, columnCount) => {
 };
 
 // ─── WALL ITEM (virtualized) ────────────────────────────────
-const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
+const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor = ACID }) => {
   const imgUrl = getImageUrl(entry);
   const longPressTimer = useRef(null);
   const [isPressed, setIsPressed] = useState(false);
@@ -93,8 +94,9 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
     }
   }, []);
 
-  const whoColor = entry.from_user === "edu" ? ACID : entry.from_user === "david" ? PURPLE : `${ACID}66`;
+  const whoColor = entry.from_user === "edu" ? accentColor : entry.from_user === "david" ? PURPLE : `${accentColor}66`;
   const whoInitial = entry.from_user === "edu" ? "E" : entry.from_user === "david" ? "D" : "";
+  const ac = accentColor;
 
   return (
     <div
@@ -117,7 +119,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
             marginBottom: `${config.gap}px`,
             breakInside: "avoid",
           }}
-          whileHover={{ borderColor: `${era?.color || ACID}66`, boxShadow: `0 0 12px ${era?.color || ACID}11` }}
+          whileHover={{ borderColor: `${era?.color || ac}66`, boxShadow: `0 0 12px ${era?.color || ac}11` }}
         >
           {imgUrl ? (
             <img
@@ -130,7 +132,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
           ) : (
             <div
               className="flex items-center justify-center text-3xl opacity-25"
-              style={{ minHeight: config.columns === 4 ? 70 : config.columns === 2 ? 200 : 130, color: ACID }}
+              style={{ minHeight: config.columns === 4 ? 70 : config.columns === 2 ? 200 : 130, color: ac }}
             >
               📷
             </div>
@@ -143,12 +145,12 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
             style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}
           >
             {entry.title && (
-              <p className="text-xs truncate leading-tight" style={{ color: ACID, fontFamily: FONT_MONO }}>
+              <p className="text-xs truncate leading-tight" style={{ color: ac, fontFamily: FONT_MONO }}>
                 {entry.title}
               </p>
             )}
             {entry.content?.text && (
-              <p className="text-xs opacity-50 truncate mt-0.5" style={{ color: ACID, fontFamily: FONT_MONO }}>
+              <p className="text-xs opacity-50 truncate mt-0.5" style={{ color: ac, fontFamily: FONT_MONO }}>
                 {entry.content.text.slice(0, 60)}
               </p>
             )}
@@ -177,7 +179,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
             )}
             <span
               className="text-[8px] px-1 py-0.5 rounded-sm opacity-70"
-              style={{ background: "rgba(0,0,0,0.55)", color: ACID, fontFamily: FONT_MONO }}
+              style={{ background: "rgba(0,0,0,0.55)", color: ac, fontFamily: FONT_MONO }}
             >
               {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"}
             </span>
@@ -186,7 +188,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
           {entry.is_capsule_locked && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
               style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
-              <span className="text-lg" style={{ color: ACID, opacity: 0.6 }}>⧖</span>
+              <span className="text-lg" style={{ color: ac, opacity: 0.6 }}>⧖</span>
             </div>
           )}
 
@@ -195,7 +197,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
               className="absolute inset-0 pointer-events-none"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              style={{ background: `${ACID}15`, border: `2px solid ${ACID}44` }}
+              style={{ background: `${ac}15`, border: `2px solid ${ac}44` }}
             />
           )}
         </motion.div>
@@ -205,10 +207,11 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap }) => {
 };
 
 // ─── LONG PRESS PREVIEW (enhanced Fase 1.5) ─────────────────
-const LongPressPreview = ({ entry, era, position, onClose }) => {
+const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID }) => {
   if (!entry) return null;
   const imgUrl = getImageUrl(entry);
-  const whoColor = entry.from_user === "edu" ? ACID : entry.from_user === "david" ? PURPLE : `${ACID}66`;
+  const ac = accentColor;
+  const whoColor = entry.from_user === "edu" ? ac : entry.from_user === "david" ? PURPLE : `${ac}66`;
   const whoName = entry.from_user === "edu" ? "Edu" : entry.from_user === "david" ? "David" : "";
   const dateStr = entry.created_at
     ? new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
@@ -227,7 +230,7 @@ const LongPressPreview = ({ entry, era, position, onClose }) => {
         top: Math.min(position?.y ?? 100, window.innerHeight - 380),
         left: Math.max(8, Math.min((position?.x ?? 40) - 140, window.innerWidth - 300)),
         background: "rgba(10,10,10,0.97)",
-        border: `1px solid ${era?.color || ACID}55`,
+        border: `1px solid ${era?.color || ac}55`,
         fontFamily: FONT_MONO,
         backdropFilter: "blur(16px)",
         maxHeight: 360,
@@ -246,10 +249,10 @@ const LongPressPreview = ({ entry, era, position, onClose }) => {
             {era.name}
           </span>
         )}
-        <span className="text-[9px] px-1 py-0.5 rounded-sm opacity-60" style={{ background: `${ACID}15`, color: ACID }}>
+        <span className="text-[9px] px-1 py-0.5 rounded-sm opacity-60" style={{ background: `${ac}15`, color: ac }}>
           {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
         </span>
-        <span className="text-xs opacity-30 ml-auto" style={{ color: ACID }}>
+        <span className="text-xs opacity-30 ml-auto" style={{ color: ac }}>
           {dateStr}
         </span>
       </div>
@@ -259,35 +262,36 @@ const LongPressPreview = ({ entry, era, position, onClose }) => {
           <img src={imgUrl} alt={entry.title || ""} className="w-full object-cover" style={{ maxHeight: 180 }} loading="lazy" decoding="async" />
         </div>
       ) : (
-        <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ACID }}>📷</div>
+        <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ac }}>📷</div>
       )}
 
-      <p className="text-xs font-bold truncate" style={{ color: ACID }}>{entry.title || "Sin título"}</p>
+      <p className="text-xs font-bold truncate" style={{ color: ac }}>{entry.title || "Sin título"}</p>
       {entry.content?.text && (
-        <p className="text-xs opacity-50 mt-1 line-clamp-3" style={{ color: ACID }}>{entry.content.text}</p>
+        <p className="text-xs opacity-50 mt-1 line-clamp-3" style={{ color: ac }}>{entry.content.text}</p>
       )}
 
       <div className="flex flex-wrap gap-1 mt-2">
         {timeStr && (
-          <span className="text-[8px] px-1.5 py-0.5 rounded-sm opacity-40" style={{ color: ACID, border: `1px solid ${ACID}22` }}>
+          <span className="text-[8px] px-1.5 py-0.5 rounded-sm opacity-40" style={{ color: ac, border: `1px solid ${ac}22` }}>
             ☀ {timeStr}
           </span>
         )}
         {entry.content?.location_name && (
-          <span className="text-[8px] px-1.5 py-0.5 rounded-sm opacity-40" style={{ color: ACID, border: `1px solid ${ACID}22` }}>
+          <span className="text-[8px] px-1.5 py-0.5 rounded-sm opacity-40" style={{ color: ac, border: `1px solid ${ac}22` }}>
             📍 {entry.content.location_name}
           </span>
         )}
       </div>
 
-      <p className="text-xs mt-2 opacity-20" style={{ color: ACID }}>tap para cerrar</p>
+      <p className="text-xs mt-2 opacity-20" style={{ color: ac }}>tap para cerrar</p>
     </motion.div>
   );
 };
 
 // ─── ZOOM MODAL (enhanced Fase 1.6) ─────────────────────────
-const ZoomModal = ({ entry, era, onClose }) => {
+const ZoomModal = ({ entry, era, onClose, accentColor = ACID }) => {
   const imgUrl = getImageUrl(entry);
+  const ac = accentColor;
 
   useEffect(() => {
     if (entry) {
@@ -299,7 +303,7 @@ const ZoomModal = ({ entry, era, onClose }) => {
 
   if (!entry) return null;
 
-  const whoColor = entry.from_user === "edu" ? ACID : entry.from_user === "david" ? PURPLE : `${ACID}66`;
+  const whoColor = entry.from_user === "edu" ? ac : entry.from_user === "david" ? PURPLE : `${ac}66`;
   const whoName = entry.from_user === "edu" ? "Edu" : entry.from_user === "david" ? "David" : "";
   const dateStr = entry.created_at
     ? new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
@@ -317,7 +321,7 @@ const ZoomModal = ({ entry, era, onClose }) => {
       <button
         onClick={onClose}
         className="absolute top-4 right-4 z-10 min-w-[44px] min-h-[44px] flex items-center justify-center text-xl rounded-full"
-        style={{ background: "rgba(255,255,255,0.08)", color: ACID, border: `1px solid ${ACID}33` }}
+        style={{ background: "rgba(255,255,255,0.08)", color: ac, border: `1px solid ${ac}33` }}
       >
         ✕
       </button>
@@ -335,13 +339,13 @@ const ZoomModal = ({ entry, era, onClose }) => {
             src={imgUrl}
             alt={entry.title || ""}
             className="max-w-full max-h-[65vh] object-contain rounded-sm"
-            style={{ boxShadow: `0 0 60px ${era?.color || ACID}22` }}
+            style={{ boxShadow: `0 0 60px ${era?.color || ac}22` }}
             loading="lazy"
             decoding="async"
           />
         ) : (
           <div className="w-64 h-64 flex items-center justify-center text-6xl opacity-20 rounded-sm"
-            style={{ color: ACID, background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
+            style={{ color: ac, background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
             📷
           </div>
         )}
@@ -366,31 +370,31 @@ const ZoomModal = ({ entry, era, onClose }) => {
               {era.name}
             </span>
           )}
-          <span className="text-[9px] px-1.5 py-0.5 rounded-sm opacity-60" style={{ background: `${ACID}15`, color: ACID }}>
+          <span className="text-[9px] px-1.5 py-0.5 rounded-sm opacity-60" style={{ background: `${ac}15`, color: ac }}>
             {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
           </span>
-          <span className="text-xs opacity-40 ml-auto" style={{ color: ACID }}>{dateStr}</span>
+          <span className="text-xs opacity-40 ml-auto" style={{ color: ac }}>{dateStr}</span>
         </div>
 
-        <p className="text-sm font-bold" style={{ color: ACID }}>{entry.title || "Sin título"}</p>
+        <p className="text-sm font-bold" style={{ color: ac }}>{entry.title || "Sin título"}</p>
         {entry.content?.text && (
-          <p className="text-xs opacity-50 mt-1 leading-relaxed" style={{ color: ACID }}>{entry.content.text}</p>
+          <p className="text-xs opacity-50 mt-1 leading-relaxed" style={{ color: ac }}>{entry.content.text}</p>
         )}
 
         <div className="flex flex-wrap gap-1.5 mt-2">
           {entry.content?.location_name && (
-            <span className="text-[9px] px-2 py-0.5 rounded-sm opacity-50" style={{ color: era?.color || ACID, background: `${era?.color || ACID}10` }}>
+            <span className="text-[9px] px-2 py-0.5 rounded-sm opacity-50" style={{ color: era?.color || ac, background: `${era?.color || ac}10` }}>
               📍 {entry.content.location_name}
             </span>
           )}
           {entry.content?.event_date && (
-            <span className="text-[9px] px-2 py-0.5 rounded-sm opacity-50" style={{ color: era?.color || ACID, background: `${era?.color || ACID}10` }}>
+            <span className="text-[9px] px-2 py-0.5 rounded-sm opacity-50" style={{ color: era?.color || ac, background: `${era?.color || ac}10` }}>
               📅 {new Date(entry.content.event_date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
             </span>
           )}
         </div>
 
-        <p className="text-[9px] mt-3 opacity-15 text-center" style={{ color: ACID }}>
+        <p className="text-[9px] mt-3 opacity-15 text-center" style={{ color: ac }}>
           tap fuera para cerrar · desliza para siguiente
         </p>
       </motion.div>
@@ -399,13 +403,14 @@ const ZoomModal = ({ entry, era, onClose }) => {
 };
 
 // ─── MAIN WALL VIEW EXPORT ──────────────────────────────────
-export default function WallView({ entries = [], eras = [], density, setDensity, filterCategory }) {
+export default function WallView({ entries = [], eras = [], density, setDensity, filterCategory, accentColor = ACID }) {
   const [previewEntry, setPreviewEntry] = useState(null);
   const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
   const [zoomEntry, setZoomEntry] = useState(null);
 
   const containerRef = useRef(null);
   const pinchRef = useRef({ startDist: 0, initialDensity: density });
+  const ac = accentColor;
 
   const onTouchStart = useCallback((e) => {
     if (e.touches.length === 2) {
@@ -455,9 +460,9 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
               onClick={() => setDensity?.(key)}
               className="text-xs px-3 py-2.5 min-h-[44px] uppercase tracking-widest rounded-sm"
               style={{
-                color: density === key ? ACID : `${ACID}66`,
-                border: density === key ? `1px solid ${ACID}55` : `1px solid ${ACID}22`,
-                background: density === key ? `${ACID}0d` : "transparent",
+                color: density === key ? ac : `${ac}66`,
+                border: density === key ? `1px solid ${ac}55` : `1px solid ${ac}22`,
+                background: density === key ? `${ac}0d` : "transparent",
                 fontFamily: FONT_MONO,
               }}
             >
@@ -465,7 +470,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
             </motion.button>
           ))}
         </div>
-        <span className="text-[9px] opacity-20" style={{ color: ACID }}>
+        <span className="text-[9px] opacity-20" style={{ color: ac }}>
           pinch ↕ zoom
         </span>
       </div>
@@ -483,6 +488,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
                   era={era}
                   density={density}
                   index={globalIdx}
+                  accentColor={ac}
                   onLongPress={(e) => {
                     setPreviewEntry(e);
                     setPreviewPos({ x: window.innerWidth / 2, y: window.innerHeight / 3 });
@@ -496,7 +502,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
       </div>
 
       {!entries.length && (
-        <p className="text-xs opacity-30 text-center py-4" style={{ color: ACID }}>
+        <p className="text-xs opacity-30 text-center py-4" style={{ color: ac }}>
           Sin entradas{filterCategory && filterCategory !== "all" ? ` en ${CAT_LABEL[filterCategory]}` : ""}
         </p>
       )}
@@ -507,6 +513,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
             entry={previewEntry}
             era={eras.find(e => e.id === previewEntry.era_id)}
             position={previewPos}
+            accentColor={ac}
             onClose={() => setPreviewEntry(null)}
           />
         )}
@@ -517,6 +524,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
           <ZoomModal
             entry={zoomEntry}
             era={eras.find(e => e.id === zoomEntry.era_id)}
+            accentColor={ac}
             onClose={() => setZoomEntry(null)}
           />
         )}

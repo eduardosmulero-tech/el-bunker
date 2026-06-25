@@ -6,6 +6,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
+import { usePlayer } from "../core/PlayerContext"; // VB9: vibe accent propagation
 import WallView from "./WallView"; // Fase 1: WALL virtualizado
 
 // S130-A — MAP mode: Leaflet real + clustering + CartoDB Dark tiles (Sub-fase 1)
@@ -941,6 +942,17 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
                       <div style={{ fontSize: 8, opacity: 0.4, marginTop: 4, color: "#000" }}>
                         {CAT_ICON[ENTRY_CATEGORY[e.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[e.type]] ?? e.type}
                       </div>
+                      {/* Fase 6: foto thumbnail en popup si tiene imagen */}
+                      {(e.content?.images?.[0]?.r2_key || e.content?.images?.[0]?.dataUrl) && (
+                        <div style={{ marginTop: 6, borderRadius: 4, overflow: "hidden", maxHeight: 120 }}>
+                          <img
+                            src={e.content.images[0].r2_key ? `${R2_PUBLIC_BASE}/${e.content.images[0].r2_key}` : e.content.images[0].dataUrl}
+                            alt={e.title || ""}
+                            style={{ width: "100%", height: "auto", maxHeight: 120, objectFit: "cover", display: "block" }}
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
                       {typeof e.lat === "number" && (
                         <div style={{ fontSize: 7, opacity: 0.3, marginTop: 2, color: "#000" }}>
                           {e.lat.toFixed(4)}, {e.lng.toFixed(4)}
@@ -970,6 +982,10 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
   const [density, setDensity] = useState("normal");
   const [, setCurrentIdx] = useState(0);
 
+  // VB9: vibe accent from current track — propagates to mode bar, category filter, etc.
+  const { trackVibe, resolveVibeAccent } = usePlayer();
+  const vibeAccent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
+
   // S95: mostrar todas las entradas con imagen/media, no solo photo.
   // Los filtros de categoría reducen el subset visible.
   const entriesWithMedia = useMemo(() =>
@@ -992,6 +1008,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
       density={density}
       setDensity={setDensity}
       filterCategory={filterCategory}
+      accentColor={vibeAccent}
     />
   );
 
@@ -1024,18 +1041,18 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
       <div className="text-[8px] text-center opacity-10 tracking-[0.4em] uppercase" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
         LIVE SYNC · próximamente
       </div>
-      {/* Mode bar */}
+      {/* Mode bar — VB9: vibe-reactive accent */}
       <nav className="flex gap-1 overflow-x-auto">
         {MODES.map(m => (
           <button key={m.id} onClick={() => setMode(m.id)}
             className={`text-xs px-3 py-2.5 uppercase whitespace-nowrap ${mode === m.id ? "" : "opacity-30"}`}
-            style={{ color: ACID, borderBottom: mode === m.id ? `1px solid ${ACID}` : "1px solid transparent", fontFamily: FONT_MONO }}>
+            style={{ color: vibeAccent, borderBottom: mode === m.id ? `1px solid ${vibeAccent}` : "1px solid transparent", fontFamily: FONT_MONO }}>
             {m.icon} {m.label}
           </button>
         ))}
       </nav>
 
-      {/* S95 — Filtro por categoría (14 categorías) */}
+      {/* S95 — Filtro por categoría (14 categorías) — VB9: vibe-reactive */}
       <div className="flex gap-0.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
         {CATEGORY_FILTERS.map((cat) => (
           <button
@@ -1043,8 +1060,8 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
             onClick={() => { setFilterCategory(cat.id); setCurrentIdx(0); }}
             className={`text-xs px-2.5 py-2 rounded-sm whitespace-nowrap transition-all flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
             style={{
-              color: filterCategory === cat.id ? ACID : `${ACID}88`,
-              borderBottom: filterCategory === cat.id ? `1px solid ${ACID}` : "1px solid transparent",
+              color: filterCategory === cat.id ? vibeAccent : `${vibeAccent}88`,
+              borderBottom: filterCategory === cat.id ? `1px solid ${vibeAccent}` : "1px solid transparent",
               fontFamily: FONT_MONO,
             }}
             title={cat.label}
