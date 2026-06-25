@@ -267,3 +267,59 @@ Tercera iteración del ciclo autónomo. 3 mejoras UX alcanzables desde frontend 
 - Merge de ramas a master (Edu decide)
 - STAT-M9 como próximo pliego prioritario
 - ~26% restante es backend-blocked (D1 + Worker + R2)
+
+---
+
+## S138 — AUDITORÍA CÓDIGO + 8 BUG FIXES + OAUTH UX (26 Junio 2026)
+
+### Resumen
+Auditoría exhaustiva con Gemini sobre ~6000 líneas de código frontend + backend. 8 bugs reales priorizados (3 P1 arquitectónicos, 3 P2 UX, 2 P3 perf+security). Todos corregidos en commit `1070f21`. Además, mejora de UX para el error OAuth `origin_mismatch` (la causa más común de bloqueo en dev).
+
+### Bug fixes aplicados
+
+| # | Sev | Archivo | Bug | Fix |
+|---|-----|---------|-----|-----|
+| P1.1 | Crítico | `VaultGallery.jsx` | `<audio controls>` en VAULT → viola ADR-018 (motor de audio único en MusicLab) | Reemplazado por texto "AUDIO · Reproducir en Music Lab" |
+| P1.2 | Crítico | `PlaylistManager.jsx` | Petición HTTP dentro de `setOrderedIds` updater → race en React 18 (rerolls + PUTs duplicados al D1) | Side-effect movido fuera del updater con `queueMicrotask` |
+| P1.3 | Crítico | `PlayerContext.jsx` (3 sitios) | `play().catch(); setIsPlaying(true)` → UI muestra "playing" mientras audio falla (autoplay policy) | Encadenado `.then(setIsPlaying(true)).catch(setIsPlaying(false))` |
+| P2.1 | UX | `MusicLab.jsx` | Keys duplicados en historial + cola (mismo track varias veces → React warning) | Sufijo de índice: `hist-${id}-${idx}`, `queue-manual-${id}-${i}` |
+| P2.2 | UX | `VaultGallery.jsx` (MapView) | Slider fechas se atora fuera de rango al cambiar capa | Clamp `Math.max(min, Math.min(p, max))` en dateMin/dateMax |
+| P2.3 | Perf | `PlayerContext.jsx` | Tracks fantasma persisten tras borrado en D1 (guard `tracks.length` estático) | `useEffect` reactivo re-filtra playHistory cuando tracks cargan |
+| P3.1 | Perf | `PlayerContext.jsx` (skip gapless) | Comparación URL frágil (browser encoding vs getStreamUrl) | Normalizado con `new URL(src).href === new URL(nextUrl).href` |
+| P3.2 | Security | `workers/routes/sync.js` | `queue_json` sin límite → cliente puede agotar D1 con JSON masivo | Validación max 50KB → 413 Payload Too Large |
+
+### OAuth origin_mismatch UX (NUEVO)
+
+| Archivo | Cambio |
+|---------|--------|
+| `GoogleDriveService.js` | Nueva función `_translateGisError` que mapea `idpiframe_initialization_failed`/`redirect_uri_mismatch`/`access_denied`/`popup_closed_by_user`/`invalid_client` a mensajes en español + hint dev (mostrar origen actual + instruir registrarlo en Google Cloud Console si localhost) |
+| `VaultContext.jsx` | `onAuthChange` ahora lee `translated.msg` + `translated.action` y propaga a `bootError` para mostrar en `ErrorScreen` |
+| `.env.example` | NUEVO. Documenta `VITE_GOOGLE_CLIENT_ID` + nota explícita: "registra http://localhost:5174 en Authorized JavaScript origins", más `VITE_API_URL`, R2 config, `VITE_AUTH_DEBUG` |
+
+### Score
+Sin cambio: ~74% (estos eran bugs, no features nuevas). ~26% restante sigue siendo backend-blocked.
+
+### Build/Lint
+- **Build**: 2.37s ✓
+- **Lint**: 0 errors, 0 warnings ✓
+- **Self-review**: Aprobado con 1 nit menor
+
+### Pendiente para que el login funcione en localhost
+**Acción manual requerida del usuario** (no automatizable desde código):
+1. https://console.cloud.google.com/apis/credentials
+2. Click en el OAuth client_id actual
+3. En "Authorized JavaScript origins" → "+ ADD URI" → añadir `http://localhost:5174` (y `http://localhost:5173` si usas ese puerto)
+4. Esperar 5 min a propagación de Google
+5. Reload → botón "ACCEDER AL BÚNKER" debería abrir el popup Google correctamente
+
+**Alternativa recomendada**: crear un OAuth client_id dedicado de tipo "Web" con `http://localhost:5174` registrado para dev, mantener el de producción separado. Documentado en `.env.example`.
+
+### Archivos modificados (8)
+- `src/vault/VaultGallery.jsx`
+- `src/musiclab/PlaylistManager.jsx`
+- `src/musiclab/MusicLab.jsx`
+- `src/core/PlayerContext.jsx`
+- `src/core/GoogleDriveService.js`
+- `src/core/VaultContext.jsx`
+- `workers/routes/sync.js`
+- `.env.example` (NUEVO)

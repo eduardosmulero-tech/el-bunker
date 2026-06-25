@@ -2,14 +2,14 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** STAT-M9 — Motor de estadísticas en D1 (desbloquea RECAPs, SC6, SC12)
-**Última sesión:** S137 — Fase 9 UX polish: DIALOGUE zoom, EXHIBITION expansion, LIVE SYNC subtitle.
+**Última sesión:** S138 — Auditoría código + 8 bug fixes + OAuth origin_mismatch UX.
 **Rama activa:** `fase9-ux-polish`
-**Commit:** `401dac9` — Fase 9: UX polish - DIALOGUE zoom + EXHIBITION expansion + LIVE SYNC subtitle
+**Commit:** `1070f21` — S137: 8 bug fixes from audit + OAuth origin_mismatch UX
 
 ---
 
 ## Build/Lint/Tests
-✅ **Build 2.60s** · **Lint 0/0** · **Tests: sin cambios**
+✅ **Build 2.37s** · **Lint 0/0** · **Tests: sin cambios**
 
 ## Score post-Fase 9 (S137)
 
