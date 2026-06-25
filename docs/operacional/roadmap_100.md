@@ -18,11 +18,11 @@
 | MAP | 75% | Capas Era/Año ✅, distancias Haversine ✅, polylines ✅, slider temporal ✅, popup thumbnails ✅, carrusel fotos ✅ | 🟢 Pulido |
 | DIALOGUE | 70% | Chat layout ✅, emparejamiento <5min ✅, asimetría poética ✅, stats ✅ | 🔒 Live Sync (WebSocket) |
 | EXHIBITION | 25% | Agrupación Era ✅, vibe breakdown ✅, decoding=async ✅ | 🔒 Canvas 2D |
-| REEL | 30% | Auto-generación ✅, pinning ✅, decoding=async ✅ | 🔒 Banda sonora |
+| REEL | 40% | Auto-generación ✅, pinning ✅, ambient volume ✅ | 🔒 Banda sonora procedural |
 | CAPSULES | 80% | Timeline + 13 tipos ✅, user filter ✅, TimeCapsules CRUD ✅, RECAP ✅, Smoke ✅ | 🟡 "Un día como hoy" |
 | Infraestructura | 40% | Safe-areas ✅, skeletons ✅, ToastContext ✅, --vibe-accent ✅ | 🔒 Offline/paginación API |
 | Estética/UX | 80% | JetBrains ✅, selects custom ✅, touch ≥44px ✅, scanlines ✅, VB9 global ✅ | 🟢 Micro-interacciones |
-| **TOTAL** | **~72%** | ~324/450 features | **28% backend-blocked** |
+| **TOTAL** | **~73%** | ~328/450 features | **27% backend-blocked** |
 
 ---
 
@@ -161,6 +161,17 @@ FASE 5 → depende de Fase 1-4
 
 ---
 
+### FASE 8: REEL + EDGE POLISH (ahora → ~73%)
+
+| # | Tarea | Archivos | Estado |
+|---|-------|----------|--------|
+| 8.1 | REEL: ambient volume (30%) al ver detalle + save/restore | VaultGallery.jsx | ✅ 02b8bd6 |
+| 8.2 | REEL: useEffect antes de early return (rules-of-hooks) | VaultGallery.jsx | ✅ 02b8bd6 |
+
+**Build 2.57s · Lint 0/0**
+
+---
+
 ### FASE 7: PULIDO AVANZADO (ahora → ~72%)
 
 | # | Tarea | Archivos | Estado |
@@ -191,6 +202,7 @@ FASE 5 → depende de Fase 1-4
 | `fase5-pulido` | 5: PULIDO | `6f1513e` | 2.75s | 0/0 |
 | `fase6-vb9-map` | 6: VB9 + MAP popup | `2754cd9` | 2.65s | 0/0 |
 | `fase7-pulido-avanzado` | 7: MAP carrusel + CINEMA ambient | `fb14dcc` | 2.71s | 0/0 |
+| `fase8-edge-polish` | 8: REEL soundtrack | `02b8bd6` | 2.57s | 0/0 |
 
 > No hacer push — Edu hace commit manualmente.
 > Para merge: `git checkout master && git merge fase6-vb9-map`
