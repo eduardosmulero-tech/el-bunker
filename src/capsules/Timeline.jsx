@@ -27,6 +27,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
   const [filterModule, setFilterModule] = useState("all"); // all | vault | music | smoke | system
   const [filterType, setFilterType] = useState("all");
   const [filterEra, setFilterEra] = useState("all");
+  const [filterUser, setFilterUser] = useState("all"); // Fase 3: all | edu | david
   const accent = accentColor ?? ACID;
 
   // S72: Filtered & sorted events
@@ -52,8 +53,11 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
         } catch { return false; }
       });
     }
+    if (filterUser !== "all") {
+      result = result.filter(e => e.user_id === filterUser);
+    }
     return result;
-  }, [events, filterModule, filterType, filterEra]);
+  }, [events, filterModule, filterType, filterEra, filterUser]);
 
   // S72: "Un día como hoy" — events from this day in past years
   const todayEvents = useMemo(() => {
@@ -102,6 +106,13 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
     { id: "vault", label: "VAULT" },
     { id: "music", label: "MUSIC" },
     { id: "smoke", label: "SMOKE" },
+  ];
+
+  // Fase 3: User filter options
+  const USERS = [
+    { id: "all", label: "AMBOS" },
+    { id: "edu", label: "EDU" },
+    { id: "david", label: "DAVID" },
   ];
 
   return (
@@ -155,6 +166,24 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
               }}
             >
               {m.label}
+            </motion.button>
+          ))}
+        </div>
+        {/* Fase 3: User filter */}
+        <div className="flex gap-1 overflow-x-auto">
+          {USERS.map(u => (
+            <motion.button
+              key={u.id}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => { setFilterUser(u.id); setVisibleCount(PAGE_SIZE); }}
+               className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm flex-shrink-0"
+              style={{
+                color: filterUser === u.id ? accent : `${accent}55`,
+                border: `1px solid ${filterUser === u.id ? `${accent}44` : `${accent}18`}`,
+                background: filterUser === u.id ? `${accent}0d` : "transparent",
+              }}
+            >
+              {u.label}
             </motion.button>
           ))}
         </div>
