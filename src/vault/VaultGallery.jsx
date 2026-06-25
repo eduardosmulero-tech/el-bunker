@@ -124,7 +124,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
                   <audio src={imgUrl} controls className="w-full max-w-sm" />
                 </div>
               ) : (
-                <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" />
+                <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" loading="lazy" decoding="async" />
               )
             ) : (
               <div className="flex flex-col items-center gap-3">
@@ -380,7 +380,7 @@ const DialogueView = ({ entries, eras }) => {
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${ACID}33` }}>
                         {eduImg ? (
-                          <img src={eduImg} alt="" className="w-full h-full object-cover" />
+                          <img src={eduImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}>📷</div>
                         )}
@@ -437,7 +437,7 @@ const DialogueView = ({ entries, eras }) => {
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${PURPLE}33` }}>
                         {davidImg ? (
-                          <img src={davidImg} alt="" className="w-full h-full object-cover" />
+                          <img src={davidImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}>📷</div>
                         )}
@@ -507,7 +507,7 @@ const ExhibitionView = ({ entries, eras }) => {
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-14 h-14 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}44` }}>
                   {firstImg ? (
-                    <img src={firstImg} alt="" className="w-full h-full object-cover" />
+                    <img src={firstImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xl opacity-30" style={{ background: `${eraColor}15`, color: eraColor }}>◈</div>
                   )}
