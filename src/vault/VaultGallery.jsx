@@ -1,11 +1,12 @@
 // ============================================================
 //  EL BÚNKER — VaultGallery.jsx
 //  Galería del VAULT: 6 modos (ADR-021)
-//  S66 — WALL masonry responsive + long-press preview + zoom
+//  Fase 1 — WALL delegado a WallView.jsx (virtualizado + pinch + badges)
 // ============================================================
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
+import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
+import WallView from "./WallView"; // Fase 1: WALL virtualizado
 
 // S130-A — MAP mode: Leaflet real + clustering + CartoDB Dark tiles (Sub-fase 1)
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
@@ -13,9 +14,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 
-// ─── LONG PRESS THRESHOLD ───────────────────────────────────
-const LONG_PRESS_MS = 500;
-
+// ─── MODES ──────────────────────────────────────────────────
 const MODES = [
   { id: "wall",       icon: "⊞", label: "WALL" },
   { id: "cinema",     icon: "▶", label: "CINEMA" },
@@ -24,13 +23,6 @@ const MODES = [
   { id: "exhibition", icon: "◆", label: "EXHIBITION" },
   { id: "reel",       icon: "◎", label: "REEL" },
 ];
-
-// S66: Densidades reales con columnas responsivas
-const DENSITY_CONFIG = {
-  compact:  { columns: 4, gap: 6,  minCol: "100px", label: "COMPACT" },
-  normal:   { columns: 3, gap: 8,  minCol: "140px", label: "NORMAL" },
-  expanded: { columns: 2, gap: 10, minCol: "220px", label: "EXPANDED" },
-};
 
 // S95 — CATEGORY_FILTERS importado de AddEntryForm (single source of truth)
 
@@ -53,311 +45,10 @@ const getImageUrl = (entry) => {
 };
 
 // PLIEGO-239: getMediaType helper — extrae el multimedia subtype
-// de entry.content.images[0].media_type (image|video|audio) o
-// fallback a entry.type. Usado por renderCinema para elegir entre
-// <img>, <video> o <audio>.
 const getMediaType = (entry) => {
   const images = entry.content?.images;
   if (images?.length && images[0].media_type) return images[0].media_type;
   return entry.type ?? "note";
-};
-
-// ─── WALL MASONRY (JS — respeta cronología left→right) ──────
-const buildMasonryColumns = (items, columnCount) => {
-  const columns = Array.from({ length: columnCount }, () => []);
-  items.forEach((item, i) => {
-    columns[i % columnCount].push(item);
-  });
-  return columns;
-};
-
-// ─── WALL MASONRY ITEM ──────────────────────────────────────
-const WallItem = ({ entry, era, density, onLongPress, onTap }) => {
-  const imgUrl = getImageUrl(entry);
-  const longPressTimer = useRef(null);
-  const [isPressed, setIsPressed] = useState(false);
-
-  const config = DENSITY_CONFIG[density] || DENSITY_CONFIG.normal;
-
-  const onPointerDown = useCallback(() => {
-    setIsPressed(true);
-    longPressTimer.current = setTimeout(() => {
-      onLongPress?.(entry);
-    }, LONG_PRESS_MS);
-  }, [entry, onLongPress]);
-
-  const onPointerUp = useCallback(() => {
-    setIsPressed(false);
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-      // Short tap = zoom
-      onTap?.(entry);
-    }
-  }, [entry, onTap]);
-
-  const onPointerLeave = useCallback(() => {
-    setIsPressed(false);
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
-
-  return (
-    <motion.div
-      layout
-      onPointerDown={onPointerDown}
-      onPointerUp={onPointerUp}
-      onPointerLeave={onPointerLeave}
-      onPointerCancel={onPointerLeave}
-      className="relative cursor-pointer overflow-hidden rounded-sm group"
-      style={{
-        background: era?.color ? `${era.color}18` : GLASS_BG,
-        border: `1px solid ${GLASS_BORDER}`,
-        marginBottom: `${config.gap}px`,
-        breakInside: "avoid",
-        scale: isPressed ? 0.97 : 1,
-        transition: "scale 0.1s ease",
-      }}
-    >
-      {imgUrl ? (
-        <img
-          src={imgUrl}
-          alt={entry.title || ""}
-          className="w-full object-cover block"
-          loading="lazy"
-        />
-      ) : (
-        <div
-          className="flex items-center justify-center text-3xl opacity-25"
-          style={{
-            minHeight: config.columns === 4 ? 70 : config.columns === 2 ? 200 : 130,
-            color: ACID,
-          }}
-        >
-          📷
-        </div>
-      )}
-
-      {/* Hover overlay: título + era dot */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileHover={{ opacity: 1 }}
-        className="absolute inset-x-0 bottom-0 p-2"
-        style={{
-          background: "linear-gradient(transparent, rgba(0,0,0,0.85))",
-        }}
-      >
-        {entry.title && (
-          <p className="text-xs truncate leading-tight" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            {entry.title}
-          </p>
-        )}
-        {entry.content?.text && (
-          <p className="text-xs opacity-50 truncate mt-0.5" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            {entry.content.text.slice(0, 60)}
-          </p>
-        )}
-      </motion.div>
-
-      {/* Era dot + category badge */}
-      <div className="absolute top-2 right-2 flex items-center gap-1">
-        {era && (
-          <div
-            className="w-2.5 h-2.5 rounded-full opacity-80"
-            style={{ background: era.color, boxShadow: `0 0 6px ${era.color}` }}
-          />
-        )}
-        <span
-          className="text-[8px] px-1 py-0.5 rounded-sm opacity-70"
-          style={{ background: "rgba(0,0,0,0.55)", color: ACID, fontFamily: FONT_MONO }}
-        >
-          {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"}
-        </span>
-      </div>
-
-      {/* Long-press ring indicator */}
-      {isPressed && (
-        <motion.div
-          className="absolute inset-0 pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          style={{ background: `${ACID}15`, border: `2px solid ${ACID}44` }}
-        />
-      )}
-    </motion.div>
-  );
-};
-
-// ─── LONG-PRESS PREVIEW CARD ────────────────────────────────
-const LongPressPreview = ({ entry, era, position, onClose }) => {
-  if (!entry) return null;
-  const imgUrl = getImageUrl(entry);
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, y: 10 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9, y: 10 }}
-      className="fixed z-50 p-3 rounded-sm shadow-2xl max-w-xs"
-      style={{
-        top: Math.min(position?.y ?? 100, window.innerHeight - 320),
-        left: Math.max(8, Math.min((position?.x ?? 40) - 140, window.innerWidth - 300)),
-        background: "rgba(10,10,10,0.97)",
-        border: `1px solid ${era?.color || ACID}55`,
-        fontFamily: FONT_MONO,
-        backdropFilter: "blur(16px)",
-        maxHeight: 300,
-        overflow: "hidden",
-      }}
-      onClick={onClose}
-    >
-      {/* Header bar */}
-      <div className="flex items-center gap-2 mb-2">
-        {era && (
-          <span className="text-xs px-1.5 py-0.5 rounded-sm" style={{ background: `${era.color}22`, color: era.color }}>
-            {era.name}
-          </span>
-        )}
-        <span className="text-[9px] px-1 py-0.5 rounded-sm opacity-60" style={{ background: `${ACID}15`, color: ACID, fontFamily: FONT_MONO }}>
-          {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
-        </span>
-        <span className="text-xs opacity-30" style={{ color: ACID }}>
-          {new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "2-digit" })}
-        </span>
-      </div>
-
-      {/* Image — PLIEGO-239 ext: video/audio/img condicional */}
-      {imgUrl ? (
-        <div className="rounded-sm overflow-hidden mb-2" style={{ maxHeight: 180 }}>
-          {getMediaType(entry) === "video" ? (
-            <video src={imgUrl} controls className="w-full" style={{ maxHeight: 180 }} />
-          ) : getMediaType(entry) === "audio" ? (
-            <audio src={imgUrl} controls className="w-full" />
-          ) : (
-            <img src={imgUrl} alt={entry.title || ""} className="w-full object-cover" style={{ maxHeight: 180 }} />
-          )}
-        </div>
-      ) : (
-        <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ACID }}>📷</div>
-      )}
-
-      {/* Title + text */}
-      <p className="text-xs font-bold truncate" style={{ color: ACID }}>{entry.title || "Sin título"}</p>
-      {entry.content?.text && (
-        <p className="text-xs opacity-50 mt-1 line-clamp-3" style={{ color: ACID }}>
-          {entry.content.text}
-        </p>
-      )}
-
-      <p className="text-xs mt-2 opacity-20" style={{ color: ACID }}>tap para cerrar</p>
-    </motion.div>
-  );
-};
-
-// ─── ZOOM MODAL ─────────────────────────────────────────────
-const ZoomModal = ({ entry, era, onClose }) => {
-  const imgUrl = getImageUrl(entry);
-  // Bloquear scroll del body
-  useEffect(() => {
-    if (entry) {
-      document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!entry]);
-
-  if (!entry) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(10px)" }}
-      onClick={onClose}
-    >
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center text-xl rounded-full"
-        style={{ background: "rgba(255,255,255,0.08)", color: ACID, border: `1px solid ${ACID}33` }}
-      >
-        ✕
-      </button>
-
-      {/* Image with spring animation */}
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="max-w-[95vw] max-h-[75vh] flex items-center justify-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {imgUrl ? (
-          getMediaType(entry) === "video" ? (
-            <video
-              src={imgUrl}
-              controls
-              className="max-w-full max-h-[75vh] object-contain rounded-sm"
-              style={{ boxShadow: `0 0 60px ${era?.color || ACID}22` }}
-            />
-          ) : getMediaType(entry) === "audio" ? (
-            <audio src={imgUrl} controls className="w-full" />
-          ) : (
-            <img
-              src={imgUrl}
-              alt={entry.title || ""}
-              className="max-w-full max-h-[75vh] object-contain rounded-sm"
-              style={{ boxShadow: `0 0 60px ${era?.color || ACID}22` }}
-            />
-          )
-        ) : (
-          <div className="w-64 h-64 flex items-center justify-center text-6xl opacity-20 rounded-sm"
-            style={{ color: ACID, background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
-            📷
-          </div>
-        )}
-      </motion.div>
-
-      {/* Metadata bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="mt-4 px-4 py-3 rounded-sm max-w-md w-full mx-4"
-        style={{
-          background: "rgba(255,255,255,0.03)",
-          border: `1px solid ${GLASS_BORDER}`,
-          fontFamily: FONT_MONO,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-2 mb-1">
-          {era && (
-            <span className="text-xs px-2 py-0.5 rounded-sm" style={{ background: `${era.color}22`, color: era.color }}>
-              {era.name}
-            </span>
-          )}
-          <span className="text-[9px] px-1.5 py-0.5 rounded-sm opacity-60" style={{ background: `${ACID}15`, color: ACID, fontFamily: FONT_MONO }}>
-            {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
-          </span>
-          <span className="text-xs opacity-40" style={{ color: ACID }}>
-            {new Date(entry.created_at).toLocaleDateString("es-ES", {
-              day: "numeric", month: "long", year: "numeric",
-              hour: "2-digit", minute: "2-digit",
-            })}
-          </span>
-        </div>
-        <p className="text-sm font-bold" style={{ color: ACID }}>{entry.title || "Sin título"}</p>
-        {entry.content?.text && (
-          <p className="text-xs opacity-50 mt-1" style={{ color: ACID }}>{entry.content.text}</p>
-        )}
-      </motion.div>
-    </motion.div>
-  );
 };
 
 // ─── CINEMA VIEW (S122-A: full-bleed + swipe + Ken Burns + overlay emocional) ──
@@ -1190,10 +881,6 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
   const [, setCurrentIdx] = useState(0);
-  // S66: Long-press preview + zoom
-  const [previewEntry, setPreviewEntry] = useState(null);
-  const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
-  const [zoomEntry, setZoomEntry] = useState(null);
 
   // S95: mostrar todas las entradas con imagen/media, no solo photo.
   // Los filtros de categoría reducen el subset visible.
@@ -1209,70 +896,20 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
     return entriesWithMedia.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
   }, [entriesWithMedia, filterCategory]);
 
-  // S66: WALL con masonry responsive real
+  // Fase 1: WALL delegado a WallView.jsx (virtualización + pinch zoom + badges + stagger)
   const renderWall = () => (
-    <div className="flex flex-col gap-3">
-      {/* Density control */}
-      <div className="flex gap-1">
-        {Object.entries(DENSITY_CONFIG).map(([key, cfg]) => (
-          <motion.button
-            key={key}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setDensity(key)}
-            className="text-xs px-3 py-2.5 min-h-[44px] uppercase tracking-widest rounded-sm"
-            style={{
-              color: density === key ? ACID : `${ACID}66`,
-              border: density === key ? `1px solid ${ACID}55` : `1px solid ${ACID}22`,
-              background: density === key ? `${ACID}0d` : "transparent",
-              fontFamily: FONT_MONO,
-            }}
-          >
-            {cfg.label}
-          </motion.button>
-        ))}
-      </div>
-
-      {/* S66: Masonry grid con columnas JS (respeta cronología left→right) */}
-      {(() => {
-        const config = DENSITY_CONFIG[density];
-        const columns = buildMasonryColumns(filteredEntries, config.columns);
-        return (
-          <div style={{ display: "flex", gap: `${config.gap}px` }}>
-            {columns.map((colItems, colIdx) => (
-              <div key={colIdx} style={{ flex: 1, display: "flex", flexDirection: "column", gap: `${config.gap}px`, minWidth: config.minCol }}>
-                {colItems.map((entry) => {
-                  const era = eras.find(e => e.id === entry.era_id);
-                  return (
-                    <WallItem
-                      key={entry.id}
-                      entry={entry}
-                      era={era}
-                      density={density}
-                      onLongPress={(e) => {
-                        setPreviewEntry(e);
-                        setPreviewPos({ x: window.innerWidth / 2, y: window.innerHeight / 3 });
-                      }}
-                      onTap={(e) => setZoomEntry(e)}
-                    />
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        );
-      })()}
-
-      {!filteredEntries.length && (
-        <p className="text-xs opacity-30 text-center py-4" style={{ color: ACID, fontFamily: FONT_MONO }}>
-          Sin entradas{filterCategory !== "all" ? ` en ${CAT_LABEL[filterCategory]}` : ""}
-        </p>
-      )}
-    </div>
+    <WallView
+      entries={filteredEntries}
+      eras={eras}
+      density={density}
+      setDensity={setDensity}
+      filterCategory={filterCategory}
+    />
   );
 
   // S122-A: CINEMA delegado a componente separado CinemaView (hooks propios, swipe + Ken Burns)
   const renderCinema = () => (
-    <CinemaView entries={filteredEntries} eras={eras} onZoom={setZoomEntry} />
+    <CinemaView entries={filteredEntries} eras={eras} />
   );
 
   // S122-B: DIALOGUE delegado a componente con emparejamiento temporal + chat layout
@@ -1337,28 +974,7 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
         </motion.div>
       </AnimatePresence>
 
-      {/* S66: Long-press preview overlay */}
-      <AnimatePresence>
-        {previewEntry && (
-          <LongPressPreview
-            entry={previewEntry}
-            era={eras.find(e => e.id === previewEntry.era_id)}
-            position={previewPos}
-            onClose={() => setPreviewEntry(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* S66: Zoom modal overlay */}
-      <AnimatePresence>
-        {zoomEntry && (
-          <ZoomModal
-            entry={zoomEntry}
-            era={eras.find(e => e.id === zoomEntry.era_id)}
-            onClose={() => setZoomEntry(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Fase 1: Preview + Zoom now handled inside WallView.jsx */}
     </div>
   );
 }
