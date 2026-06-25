@@ -239,3 +239,31 @@ Ciclo autónomo de desarrollo iterativo: auditoría → plan → ejecución → 
 ### Pendiente
 - Merge de ramas a master (Edu decide)
 - STAT-M9 como próximo pliego prioritario
+
+---
+
+## S137 — FASE 9 UX POLISH: DIALOGUE ZOOM + EXHIBITION EXPANSION (26 Junio 2026)
+
+### Resumen
+Tercera iteración del ciclo autónomo. 3 mejoras UX alcanzables desde frontend puro: zoom en DIALOGUE, expansión en EXHIBITION, y reemplazo del placeholder LIVE SYNC. Score ~73% → ~74%. Commit `401dac9` en rama `fase9-ux-polish`.
+
+### Cambios
+| Área | Archivo | Qué |
+|------|---------|-----|
+| DIALOGUE | `VaultGallery.jsx` | Tap en foto de burbuja → zoom modal fullscreen (blur backdrop, Escape key, ✕ close, título) |
+| EXHIBITION | `VaultGallery.jsx` | Tap en era card → expand/colapsar (▾/▴), grid 3-columnas de todas las entries de la era |
+| LIVE SYNC | `VaultGallery.jsx` | Placeholder "LIVE SYNC · próximamente" reemplazado por subtitle contextual (MODE · count elementos) |
+
+### Score post-Fase 9
+- DIALOGUE: 70% → 75% (zoom añadido)
+- EXHIBITION: 25% → 35% (expansión añadida)
+- TOTAL: ~73% → ~74% (~333/450 features)
+
+### Build/Lint
+- **Build**: 2.60s ✓
+- **Lint**: 0/0 ✓
+
+### Pendiente
+- Merge de ramas a master (Edu decide)
+- STAT-M9 como próximo pliego prioritario
+- ~26% restante es backend-blocked (D1 + Worker + R2)

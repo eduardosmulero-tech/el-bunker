@@ -1,7 +1,7 @@
 # EL BÚNKER — ROADMAP AL 100%
 > Generado: S135 — Actualizado: S136 (Ciclo autónomo Fases 0-6 completadas, Junio 2026)
-> **Score auditoría final S136: ~70% alcanzable frontend / ~95% total teórico**
-> Fases completadas: 0-6 en ramas (`fase1-wall-gallery` → `fase6-vb9-map`)
+> **Score auditoría S137: ~74% alcanzable frontend / ~95% total teórico**
+> Fases completadas: 0-9 en ramas (`fase1-wall-gallery` → `fase9-ux-polish`)
 > Fuentes: CONTRATO.md (27 ADRs) + specs + inventario_features.txt
 
 ---
@@ -16,13 +16,13 @@
 | WALL | 80% | Virtualización ✅, badges E/D ✅, pinch zoom ✅, decoding=async ✅, VB9 vibe ✅ | 🟢 Pulido animaciones |
 | CINEMA | 50% | Ken Burns ✅, swipe ✅, ambient toggle ✅, ambient volume ✅, overlay emocional ✅ | 🔒 Música real (PlayerContext) |
 | MAP | 75% | Capas Era/Año ✅, distancias Haversine ✅, polylines ✅, slider temporal ✅, popup thumbnails ✅, carrusel fotos ✅ | 🟢 Pulido |
-| DIALOGUE | 70% | Chat layout ✅, emparejamiento <5min ✅, asimetría poética ✅, stats ✅ | 🔒 Live Sync (WebSocket) |
-| EXHIBITION | 25% | Agrupación Era ✅, vibe breakdown ✅, decoding=async ✅ | 🔒 Canvas 2D |
+| DIALOGUE | 75% | Chat layout ✅, emparejamiento <5min ✅, asimetría poética ✅, stats ✅, tap-to-zoom ✅ | 🔒 Live Sync (WebSocket) |
+| EXHIBITION | 35% | Agrupación Era ✅, vibe breakdown ✅, era expansion ✅, entries grid ✅ | 🔒 Canvas 2D |
 | REEL | 40% | Auto-generación ✅, pinning ✅, ambient volume ✅ | 🔒 Banda sonora procedural |
 | CAPSULES | 80% | Timeline + 13 tipos ✅, user filter ✅, TimeCapsules CRUD ✅, RECAP ✅, Smoke ✅ | 🟡 "Un día como hoy" |
 | Infraestructura | 40% | Safe-areas ✅, skeletons ✅, ToastContext ✅, --vibe-accent ✅ | 🔒 Offline/paginación API |
 | Estética/UX | 80% | JetBrains ✅, selects custom ✅, touch ≥44px ✅, scanlines ✅, VB9 global ✅ | 🟢 Micro-interacciones |
-| **TOTAL** | **~73%** | ~328/450 features | **27% backend-blocked** |
+| **TOTAL** | **~74%** | ~333/450 features | **26% backend-blocked** |
 
 ---
 
@@ -161,6 +161,18 @@ FASE 5 → depende de Fase 1-4
 
 ---
 
+### FASE 9: UX POLISH — DIALOGUE + EXHIBITION (ahora → ~74%)
+
+| # | Tarea | Archivos | Estado |
+|---|-------|----------|--------|
+| 9.1 | DIALOGUE: tap-to-zoom fullscreen modal (blur backdrop, Escape key, title) | VaultGallery.jsx | ✅ 401dac9 |
+| 9.2 | EXHIBITION: era card expansion toggle (▾/▴), 3-col entries grid | VaultGallery.jsx | ✅ 401dac9 |
+| 9.3 | LIVE SYNC placeholder → contextual subtitle (MODE · count) | VaultGallery.jsx | ✅ 401dac9 |
+
+**Build 2.60s · Lint 0/0**
+
+---
+
 ### FASE 8: REEL + EDGE POLISH (ahora → ~73%)
 
 | # | Tarea | Archivos | Estado |
@@ -203,6 +215,7 @@ FASE 5 → depende de Fase 1-4
 | `fase6-vb9-map` | 6: VB9 + MAP popup | `2754cd9` | 2.65s | 0/0 |
 | `fase7-pulido-avanzado` | 7: MAP carrusel + CINEMA ambient | `fb14dcc` | 2.71s | 0/0 |
 | `fase8-edge-polish` | 8: REEL soundtrack | `02b8bd6` | 2.57s | 0/0 |
+| `fase9-ux-polish` | 9: DIALOGUE zoom + EXHIBITION expansion | `401dac9` | 2.60s | 0/0 |
 
 > No hacer push — Edu hace commit manualmente.
 > Para merge: `git checkout master && git merge fase6-vb9-map`
