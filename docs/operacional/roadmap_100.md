@@ -14,15 +14,15 @@
 | Escucha Compartida | 85% | ♡ heartbeat, sync <1s, queue compartida, presencia, reconnect, vibe | 🔒 STAT-M9 stats credit |
 | VAULT Data Model | 80% | Eras, entries CRUD, AddEntryForm styled, location search, geocoder | 🟡 UI avanzada creación |
 | WALL | 80% | Virtualización ✅, badges E/D ✅, pinch zoom ✅, decoding=async ✅, VB9 vibe ✅ | 🟢 Pulido animaciones |
-| CINEMA | 45% | Ken Burns ✅, swipe ✅, ambient toggle ✅, overlay emocional ✅ | 🔒 Música real (PlayerContext) |
-| MAP | 70% | Capas Era/Año ✅, distancias Haversine ✅, polylines ✅, slider temporal ✅, popup thumbnails ✅ | 🟡 Carrusel fotos por ubicación |
+| CINEMA | 50% | Ken Burns ✅, swipe ✅, ambient toggle ✅, ambient volume ✅, overlay emocional ✅ | 🔒 Música real (PlayerContext) |
+| MAP | 75% | Capas Era/Año ✅, distancias Haversine ✅, polylines ✅, slider temporal ✅, popup thumbnails ✅, carrusel fotos ✅ | 🟢 Pulido |
 | DIALOGUE | 70% | Chat layout ✅, emparejamiento <5min ✅, asimetría poética ✅, stats ✅ | 🔒 Live Sync (WebSocket) |
 | EXHIBITION | 25% | Agrupación Era ✅, vibe breakdown ✅, decoding=async ✅ | 🔒 Canvas 2D |
 | REEL | 30% | Auto-generación ✅, pinning ✅, decoding=async ✅ | 🔒 Banda sonora |
 | CAPSULES | 80% | Timeline + 13 tipos ✅, user filter ✅, TimeCapsules CRUD ✅, RECAP ✅, Smoke ✅ | 🟡 "Un día como hoy" |
 | Infraestructura | 40% | Safe-areas ✅, skeletons ✅, ToastContext ✅, --vibe-accent ✅ | 🔒 Offline/paginación API |
 | Estética/UX | 80% | JetBrains ✅, selects custom ✅, touch ≥44px ✅, scanlines ✅, VB9 global ✅ | 🟢 Micro-interacciones |
-| **TOTAL** | **~70%** | ~315/450 features | **30% backend-blocked** |
+| **TOTAL** | **~72%** | ~324/450 features | **28% backend-blocked** |
 
 ---
 
@@ -159,6 +159,18 @@ FASE 5 → depende de Fase 1-4
 - ✅ **DROP-M20**: ARREGLADO — handleDropPlay ya llama playTrack inline, TabShell correcto
 - ✅ **MAP popup thumbnails**: ARREGLADO Fase 6 — fotos en popup de pin
 
+---
+
+### FASE 7: PULIDO AVANZADO (ahora → ~72%)
+
+| # | Tarea | Archivos | Estado |
+|---|-------|----------|--------|
+| 7.1 | MAP: carrusel horizontal de fotos en popup (locationGroups) | VaultGallery.jsx | ✅ fb14dcc |
+| 7.2 | CINEMA: ambient toggle conectado a PlayerContext (save/restore masterVolume) | VaultGallery.jsx | ✅ fb14dcc |
+| 7.3 | Shuffle edge case: cola manual respetada (ya OK) | PlayerContext.jsx | ✅ verificado |
+
+**Build 2.71s · Lint 0/0**
+
 ## PRÓXIMOS PASOS (ALTO IMPACTO)
 
 1. **STAT-M9 en D1**: stats engine unificado → desbloquea RECAPs, SC6, SC12
@@ -178,6 +190,7 @@ FASE 5 → depende de Fase 1-4
 | `fase4-dialogue-exhibition` | 4: DIALOGUE + REEL + EXHIBITION | `218ef2e` | 2.78s | 0/0 |
 | `fase5-pulido` | 5: PULIDO | `6f1513e` | 2.75s | 0/0 |
 | `fase6-vb9-map` | 6: VB9 + MAP popup | `2754cd9` | 2.65s | 0/0 |
+| `fase7-pulido-avanzado` | 7: MAP carrusel + CINEMA ambient | `fb14dcc` | 2.71s | 0/0 |
 
 > No hacer push — Edu hace commit manualmente.
 > Para merge: `git checkout master && git merge fase6-vb9-map`
