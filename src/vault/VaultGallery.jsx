@@ -258,6 +258,16 @@ const CinemaView = ({ entries, eras, onZoom }) => {
 // ─── DIALOGUE VIEW (S122-B: emparejamiento temporal + hilos conectores + asimetría) ──
 const DialogueView = ({ entries, eras }) => {
   const [filterMode, setFilterMode] = useState("all"); // "all" | "conversations"
+  // Fase 9: tap-to-zoom — fullscreen image modal
+  const [zoomImage, setZoomImage] = useState(null); // { src, title }
+
+  // Escape key to close zoom modal
+  useEffect(() => {
+    if (!zoomImage) return;
+    const onKey = (e) => { if (e.key === 'Escape') setZoomImage(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zoomImage]);
 
   // S122-B: Emparejamiento temporal — fotos tomadas <5min de diferencia
   const pairs = useMemo(() => {
@@ -409,7 +419,7 @@ const DialogueView = ({ entries, eras }) => {
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${ACID}33` }}>
                         {eduImg ? (
-                          <img src={eduImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                          <img src={eduImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => setZoomImage({ src: eduImg, title: pair.edu?.title })} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}>📷</div>
                         )}
@@ -466,7 +476,7 @@ const DialogueView = ({ entries, eras }) => {
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${PURPLE}33` }}>
                         {davidImg ? (
-                          <img src={davidImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                          <img src={davidImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => setZoomImage({ src: davidImg, title: pair.david?.title })} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}>📷</div>
                         )}
@@ -494,8 +504,35 @@ const DialogueView = ({ entries, eras }) => {
 
       {!displayPairs.length && (
         <p className="text-xs opacity-20 text-center py-8" style={{ color: PURPLE }}>
-          {filterMode === "conversations" ? "Sin conversaciones sincronizadas" : "Sin momentos aún"}
+          {filterMode === "conversaciones" ? "Sin conversaciones sincronizadas" : "Sin momentos aún"}
         </p>
+      )}
+
+      {/* Fase 9: Fullscreen zoom modal */}
+      {zoomImage && (
+        <div
+          onClick={() => setZoomImage(null)}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
+          <div className="relative max-w-full max-h-full">
+            <img
+              src={zoomImage.src}
+              alt={zoomImage.title || ""}
+              className="max-w-full max-h-[85vh] object-contain rounded-sm"
+              style={{ boxShadow: "0 0 60px rgba(180,130,255,0.15)" }} />
+            {zoomImage.title && (
+              <p className="text-xs text-center mt-3 opacity-50" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
+                {zoomImage.title}
+              </p>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); setZoomImage(null); }}
+              className="absolute top-2 right-2 text-sm w-10 h-10 flex items-center justify-center rounded-full"
+              style={{ color: PURPLE, border: "1px solid rgba(180,130,255,0.3)", background: "rgba(0,0,0,0.5)" }}>
+              ✕
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -503,6 +540,9 @@ const DialogueView = ({ entries, eras }) => {
 
 // ─── EXHIBITION VIEW (S122-C: agrupación por Era + vibe breakdown + layout museo) ──
 const ExhibitionView = ({ entries, eras }) => {
+  // Fase 9: expansion — tap era card to expand and show all entries
+  const [expandedEra, setExpandedEra] = useState(null);
+
   const eraGroups = useMemo(() => {
     const groups = {};
     entries.forEach(e => {
@@ -532,7 +572,8 @@ const ExhibitionView = ({ entries, eras }) => {
           eraEntries.forEach(e => { const tag = e.tag || "otros"; vibeCounts[tag] = (vibeCounts[tag] || 0) + 1; });
           return (
             <motion.div key={eraId} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-sm" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}33` }}>
+              className="p-4 rounded-sm cursor-pointer" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}33` }}
+              onClick={() => setExpandedEra(expandedEra === eraId ? null : eraId)}>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-14 h-14 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}44` }}>
                   {firstImg ? (
@@ -543,7 +584,7 @@ const ExhibitionView = ({ entries, eras }) => {
                 </div>
                 <div>
                   <p className="text-sm font-bold" style={{ color: eraColor }}>{eraName}</p>
-                  <p className="text-[10px] opacity-50" style={{ color: eraColor }}>{eraEntries.length} piezas · {Object.keys(vibeCounts).length} vibes</p>
+                  <p className="text-[10px] opacity-50" style={{ color: eraColor }}>{eraEntries.length} piezas · {Object.keys(vibeCounts).length} vibes · {expandedEra === eraId ? '▴' : '▾'}</p>
                 </div>
                 <div className="ml-auto flex -space-x-2">
                   {eraEntries.slice(0, 5).map((e, i) => {
@@ -559,6 +600,26 @@ const ExhibitionView = ({ entries, eras }) => {
                   </span>
                 ))}
               </div>
+              {/* Fase 9: expanded entries grid */}
+              {expandedEra === eraId && (
+                <div className="grid grid-cols-3 gap-1.5 mt-3 pt-3" style={{ borderTop: `1px solid ${eraColor}22` }}>
+                  {eraEntries.map((e) => {
+                    const url = getImageUrl(e);
+                    return (
+                      <div key={e.id} className="aspect-square rounded-sm overflow-hidden" style={{ border: `1px solid ${eraColor}22` }}>
+                        {url ? (
+                          <img src={url} alt={e.title || ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-1" style={{ background: `${eraColor}08` }}>
+                            <span className="text-xs opacity-30" style={{ color: eraColor }}>{CAT_ICON[ENTRY_CATEGORY[e.type]] || "◈"}</span>
+                            <span className="text-[7px] text-center leading-tight opacity-40 truncate" style={{ color: eraColor, fontFamily: FONT_MONO }}>{e.title || ""}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </motion.div>
           );
         })}
@@ -1129,9 +1190,9 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
-      {/* Fase 4: Live Sync indicator placeholder */}
-      <div className="text-[8px] text-center opacity-10 tracking-[0.4em] uppercase" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
-        LIVE SYNC · próximamente
+      {/* Fase 9: contextual subtitle — mode + count feedback */}
+      <div className="text-[8px] text-center opacity-15 tracking-[0.3em] uppercase" style={{ color: vibeAccent, fontFamily: FONT_MONO }}>
+        {mode.toUpperCase()} · {filteredEntries.length} elementos
       </div>
       {/* Mode bar — VB9: vibe-reactive accent */}
       <nav className="flex gap-1 overflow-x-auto">
