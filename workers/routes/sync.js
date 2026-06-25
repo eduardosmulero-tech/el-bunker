@@ -248,6 +248,11 @@ export default async function handleSync(request, env, url, userId) {
           session_id
         ).run();
       } else {
+        // P3.2 fix: validar tamaño máximo de queue_json (50KB) para evitar D1 exhaustion.
+        const queueJson = queue ? JSON.stringify(queue) : null;
+        if (queueJson && queueJson.length > 50000) {
+          return err("Queue too large (max 50KB)", 413);
+        }
         await env.DB.prepare(
           `UPDATE shared_sessions SET active_track_id = COALESCE(?, active_track_id),
            position = COALESCE(?, position), is_playing = COALESCE(?, is_playing),
@@ -258,7 +263,7 @@ export default async function handleSync(request, env, url, userId) {
           track_id || null,
           position != null ? position : null,
           is_playing != null ? (is_playing ? 1 : 0) : null,
-          queue ? JSON.stringify(queue) : null,
+          queueJson,
           action,
           userId,
           session_id

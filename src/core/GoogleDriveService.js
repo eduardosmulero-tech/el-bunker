@@ -62,6 +62,41 @@ const _vaultError = (code, message, cause = null) => {
   return err;
 };
 
+// Traducción de errores de Google Identity Services (GIS) al español
+// con guía accionable. El problema más común en dev (localhost) es
+// origin_mismatch / idpiframe_initialization_failed por no registrar
+// http://localhost:<puerto> en Authorized JavaScript origins del OAuth client.
+const _translateGisError = (err) => {
+  if (!err) return { msg: "Error desconocido al autenticar con Google.", action: null };
+  const code = err.error ?? err.type ?? "unknown";
+  const subcode = err.error_subtype ?? err.subtype ?? "";
+  const currentOrigin = typeof window !== "undefined" ? window.location.origin : "?";
+  const isLocal = currentOrigin.startsWith("http://localhost") || currentOrigin.startsWith("http://127.");
+  switch (code) {
+    case "idpiframe_initialization_failed":
+      if (isLocal) {
+        return {
+          msg: `Google OAuth rechaza ${currentOrigin}. El client_id actual no tiene este origen autorizado.`,
+          action: "DEV: crea un OAuth client_id de tipo 'Web' en Google Cloud Console y añade '${currentOrigin}' en 'Authorized JavaScript origins'. Alternativamente usa 'chrome.identity.launchWebAuthFlow' o el flujo PKCE fuera del navegador.",
+        };
+      }
+      return {
+        msg: "Google OAuth no se inicializó. Verifica VITE_GOOGLE_CLIENT_ID y la red.",
+        action: null,
+      };
+    case "redirect_uri_mismatch":
+      return { msg: "redirect_uri_mismatch: el origen no está en Authorized redirect URIs del OAuth client.", action: null };
+    case "access_denied":
+      return { msg: "Acceso denegado por el usuario.", action: null };
+    case "popup_closed_by_user":
+      return { msg: "Popup cerrado por el usuario.", action: null };
+    case "invalid_client":
+      return { msg: "invalid_client: VITE_GOOGLE_CLIENT_ID inválido o no autorizado.", action: null };
+    default:
+      return { msg: `Error OAuth (${code}${subcode ? ":" + subcode : ""}).`, action: null };
+  }
+};
+
 // ─── SECTION 1: GAPI + GIS INIT ──────────────────────────────
 const _loadGapiScript = () =>
   new Promise((resolve, reject) => {
@@ -112,8 +147,9 @@ export const initGoogleServices = async () => {
       scope:     CONFIG.SCOPES,
       callback:  () => {},
       error_callback: (err) => {
-        console.error("[Búnker] GIS error:", err);
-        _notifyAuthListeners("AUTH_ERROR", { error: err });
+        const translated = _translateGisError(err);
+        console.error("[Búnker] GIS error:", err, "\n→", translated.msg);
+        _notifyAuthListeners("AUTH_ERROR", { error: err, translated });
       },
     });
     console.info("[Búnker] Google Services inicializados ✓");
@@ -131,7 +167,9 @@ export const requestAccessToken = (forceConsent = false) =>
     }
     _state.tokenClient.callback = async (tokenResponse) => {
       if (tokenResponse.error) {
-        _notifyAuthListeners("AUTH_ERROR", { error: tokenResponse });
+        const translated = _translateGisError(tokenResponse);
+        console.error("[Búnker] Token error:", tokenResponse, "\n→", translated.msg);
+        _notifyAuthListeners("AUTH_ERROR", { error: tokenResponse, translated });
         return reject(_vaultError("TOKEN_ERROR", tokenResponse.error_description, tokenResponse));
       }
       _state.accessToken = tokenResponse.access_token;

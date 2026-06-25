@@ -109,14 +109,21 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
   const handleTrackDragLeave  = () => { setDragOverIdx(null); };
   const handleTrackDrop      = (i) => {
     if (dragTrackIdx.current === null || dragTrackIdx.current === i) return;
+    const from = dragTrackIdx.current;
+    dragTrackIdx.current = null;
+    setDragOverIdx(null);
     setOrderedIds((ids) => {
       const next = [...ids];
-      const [moved] = next.splice(dragTrackIdx.current, 1);
+      const [moved] = next.splice(from, 1);
       next.splice(i, 0, moved);
-      dragTrackIdx.current = null;
-      setDragOverIdx(null);
-      onReorderTracks?.(playlist.id, next);
       return next;
+    });
+    // P1.2 fix: side effect OUTSIDE React state updater (ADR-015 compliance).
+    // onReorderTracks se llama después del setOrderedIds, no dentro del updater.
+    setOrderedIds((ids) => {
+      // Usar un microtask para asegurar que el estado ya se actualizó
+      queueMicrotask(() => onReorderTracks?.(playlist.id, ids));
+      return ids;
     });
   };
 

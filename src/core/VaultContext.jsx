@@ -209,13 +209,15 @@ export function VaultProvider({ children }) {
         await initGoogleServices();
         if (cancelled) return;
 
-        onAuthChange(({ event, token, error }) => {
+        onAuthChange(({ event, token, error, translated }) => {
           if (event === "SIGNED_IN"  && !cancelled) _onSignedIn(token);
           if (event === "SIGNED_OUT" && !cancelled) _onSignedOut();
           if (event === "AUTH_ERROR" && !cancelled) {
             console.error("[Búnker] Auth error:", error);
+            const friendly = translated?.msg ?? error?.error_description ?? "Error de autenticación";
+            const actionHint = translated?.action ? ` · ${translated.action}` : "";
             setBootPhase(BOOT.ERROR);
-            setBootError(error?.error_description ?? "Error de autenticación");
+            setBootError(friendly + actionHint);
           }
         });
 

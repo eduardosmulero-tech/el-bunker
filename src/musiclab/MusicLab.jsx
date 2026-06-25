@@ -711,7 +711,7 @@ export default function MusicLab({
             {toast?.action && (
               <button onClick={() => { toast.action(); setToast(null); }}
                 style={{ marginLeft: 12, color: ACID, background: `${ACID}25`, border: `1px solid ${ACID}66`,
-                  borderRadius: 2, fontSize: 10, padding: "2px 8px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
+                  borderRadius: 2, fontSize: 10, padding: "8px 12px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em", minHeight: 44 }}>
                 {toast.actionLabel}
               </button>
             )}
@@ -899,10 +899,11 @@ export default function MusicLab({
                     {(() => {
                       const reversed = [...playHistory].reverse();
                       const visible = showFullHistory ? reversed : reversed.slice(0, 3);
-                      return visible.map((track) => {
+                      return visible.map((track, idx) => {
                         const hVibe = getVibeConfig(track.tag ?? track.vibe);
+                        const histKey = `hist-${track.id}-${idx}`;
                         return (
-                          <div key={`hist-${track.id}`} className="flex items-center gap-3 p-3 rounded-sm"
+                          <div key={histKey} className="flex items-center gap-3 p-3 rounded-sm"
                             style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO }}>
                             <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                               style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
@@ -949,7 +950,7 @@ export default function MusicLab({
                         if (next) { setActiveTrack(next); setAutoPlaySignal((n) => n + 1); }
                         else setActiveTrack(rawTracks[0] ?? null);
                       }}
-                      className="ml-3 flex-shrink-0 text-xs px-3 py-3 rounded-sm"
+                      className="ml-3 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
                       style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                       ✕
                     </motion.button>
@@ -968,8 +969,9 @@ export default function MusicLab({
                         ? dbPlaylists.find((p) => p.name === queueContextName)
                         : null;
                       const queuePos = localQueue.filter((t) => t.id !== activeTrack?.id && t._manual).findIndex((t) => t.id === track.id);
+                      const manualKey = `queue-manual-${track.id}-${i}`;
                       return (
-                        <div key={`queue-manual-${track.id}`}
+                        <div key={manualKey}
                           draggable
                           onDragStart={() => handleDragStart(i)}
                           onDragOver={handleDragOver}
@@ -1031,7 +1033,7 @@ export default function MusicLab({
                             </motion.button>
                           )}
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
-                            className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm"
+                            className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                             ✕
                           </motion.button>
@@ -1050,8 +1052,9 @@ export default function MusicLab({
                   <div className="flex flex-col gap-2">
                     {filteredQueue.filter((t) => t.id !== activeTrack?.id && !t._manual).map((track, i) => {
                       const qVibe = getVibeConfig(track.tag ?? track.vibe);
+                      const ctxKey = `queue-ctx-${track.id}-${i}`;
                       return (
-                        <div key={`queue-ctx-${track.id}`}
+                        <div key={ctxKey}
                           draggable
                           onDragStart={() => handleDragStart(i)}
                           onDragOver={handleDragOver}
@@ -1074,7 +1077,7 @@ export default function MusicLab({
                             {qVibe?.icon}
                           </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
-                            className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm"
+                            className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                             ✕
                           </motion.button>
@@ -1263,7 +1266,7 @@ export default function MusicLab({
                             <span className="text-xs opacity-40 truncate" style={{ color: "#ff4444" }}>{track.artist}</span>
                           </div>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDeleteTrack(track.id)}
-                            className="ml-3 flex-shrink-0 text-xs tracking-widest uppercase px-3 py-3 rounded-sm"
+                            className="ml-3 flex-shrink-0 text-xs tracking-widest uppercase px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
                             ✕
                           </motion.button>
@@ -1489,18 +1492,21 @@ export default function MusicLab({
                               {!isEmpty && (
                                 <motion.button whileTap={{ scale: 0.88 }}
                                   onClick={(e) => { e.stopPropagation(); handlePlayPlaylistContext(plTracks, pl.name); }}
-                                  style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, borderRadius: 2, fontSize: 11, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                  className="flex-shrink-0 flex items-center justify-center rounded-sm min-h-[44px] min-w-[44px]"
+                                  style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, fontSize: 11, fontFamily: FONT_MONO }}>
                                   ▶
                                 </motion.button>
                               )}
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setRenamingPlId(pl.id); setRenameVal(pl.name); setConfirmDeletePlId(null); }}
-                                style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`, borderRadius: 2, fontSize: 11, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                className="flex-shrink-0 flex items-center justify-center rounded-sm min-h-[44px] min-w-[44px]"
+                                style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`, fontSize: 11, fontFamily: FONT_MONO }}>
                                 ✎
                               </motion.button>
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setConfirmDeletePlId(pl.id); setRenamingPlId(null); }}
-                                style={{ color: "#ff4444", background: "#ff444408", border: "1px solid #ff444422", borderRadius: 2, fontSize: 11, padding: "12px 16px", fontFamily: FONT_MONO, flexShrink: 0 }}>
+                                className="flex-shrink-0 flex items-center justify-center rounded-sm min-h-[44px] min-w-[44px]"
+                                style={{ color: "#ff4444", background: "#ff444408", border: "1px solid #ff444422", fontSize: 11, fontFamily: FONT_MONO }}>
                                 ✕
                               </motion.button>
                             </>

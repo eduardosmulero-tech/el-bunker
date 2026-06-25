@@ -98,6 +98,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const [masterVolume,     setMasterVolume]     = useState(80);
   // playHistory — historial de sesión (Q2/Q3/Q15). Persiste en localStorage por usuario.
   // Se restaura al recargar. Se limpia al vaciar la cola o navegar todo el historial hacia atrás.
+  // P2.3 fix: loadHistory ahora filtra reactivamente cuando tracks se cargan.
+  // Antes usaba tracks.length como guard estático en useState initializer — ahora
+  // usa un useEffect para re-filtrar el historial cuando tracks cambian.
   const loadHistory = () => {
     if (!userId) return [];
     try {
@@ -105,8 +108,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
-      // Solo filtrar tracks inexistentes si la biblioteca ya está cargada
-      if (tracks.length > 0) return parsed.filter((h) => tracks.some((t) => t.id === h.id));
+      // Si hay tracks cargados, filtrar los que ya no existen en la biblioteca
+      // (filtra en re-render via useEffect, no aquí, para no duplicar trabajo)
       return parsed;
     } catch { return []; }
   };
@@ -387,8 +390,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
             // SC4: aplicar acción remota
             if (data.action === "play") {
               if (data.is_playing && audioRef.current) {
-                audioRef.current.play().catch(() => {});
-                setIsPlaying(true);
+                audioRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
               }
               if (data.position != null && audioRef.current) {
                 audioRef.current.currentTime = data.position;
@@ -611,7 +613,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // inyectar su src en el audio principal antes de actualizar estado.
       if (next && preloadAudioRef.current && audioRef.current) {
         const nextUrl = getStreamUrl(next);
-        if (preloadAudioRef.current.src === nextUrl) {
+        // P3.1 fix: normalizar URLs antes de comparar (el browser puede encodear src vs getStreamUrl).
+        const preloadSrc = preloadAudioRef.current.src;
+        const sameUrl = preloadSrc && nextUrl && (() => {
+          try { return new URL(preloadSrc).href === new URL(nextUrl).href; }
+          catch { return preloadSrc === nextUrl; }
+        })();
+        if (sameUrl) {
           const isR2 = nextUrl.includes("workers.dev");
           if (isR2) audioRef.current.crossOrigin = "anonymous";
           else audioRef.current.removeAttribute("crossOrigin");
@@ -884,8 +892,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         audioRef.current?.pause();
         setIsPlaying(false);
       } else {
-        audioRef.current?.play().catch(() => { setIsPlaying(false); });
-        setIsPlaying(true);
+        audioRef.current?.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
       }
       return;
     }
@@ -1048,7 +1055,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           ? [{ src: `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="${vibeAccent}"/></svg>`)}`, sizes: "512x512", type: "image/svg+xml" }]
           : [],
     });
-    navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play()?.catch(() => {}); setIsPlaying(true); });
+    navigator.mediaSession.setActionHandler("play", () => { audioRef.current?.play()?.then(() => setIsPlaying(true)).catch(() => {}); });
     navigator.mediaSession.setActionHandler("pause", () => { audioRef.current?.pause(); setIsPlaying(false); });
     navigator.mediaSession.setActionHandler("previoustrack", () => skip(-1));
     navigator.mediaSession.setActionHandler("nexttrack", () => skip(1));

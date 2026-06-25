@@ -150,7 +150,14 @@ const CinemaView = ({ entries, eras, onZoom }) => {
               ) : getMediaType(entry) === "audio" ? (
                 <div className="flex flex-col items-center gap-4 p-8">
                   <span className="text-6xl" style={{ color: eraColor }}>🎵</span>
-                  <audio src={imgUrl} controls className="w-full max-w-sm" />
+                  <p className="text-xs text-center opacity-50" style={{ color: eraColor, fontFamily: FONT_MONO }}>
+                    AUDIO · Reproducir en Music Lab
+                  </p>
+                  {entry.content?.text && (
+                    <p className="text-xs italic opacity-30 text-center max-w-xs" style={{ color: eraColor }}>
+                      "{entry.content.text.slice(0, 120)}"
+                    </p>
+                  )}
                 </div>
               ) : (
                 <img src={imgUrl} alt={entry.title || ""} className="w-full h-full object-contain" loading="lazy" decoding="async" />
@@ -904,8 +911,15 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
   useEffect(() => {
     if (dateRange) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDateMin((p) => p ?? dateRange.min);
-      setDateMax((p) => p ?? dateRange.max);
+      setDateMin((p) => {
+        if (p == null) return dateRange.min;
+        // Clamp to new range if outside bounds
+        return Math.max(dateRange.min, Math.min(p, dateRange.max));
+      });
+      setDateMax((p) => {
+        if (p == null) return dateRange.max;
+        return Math.max(dateRange.min, Math.min(p, dateRange.max));
+      });
     }
   }, [dateRange]);
   const filteredByDate = useMemo(() => {
