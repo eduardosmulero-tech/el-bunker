@@ -59,6 +59,9 @@ const CinemaView = ({ entries, eras, onZoom }) => {
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
 
+    // Fase 2: ambient music toggle
+  const [ambientOn, setAmbientOn] = useState(false);
+
   // S122-A fix: hooks deben ejecutarse siempre — antes del early return
   useEffect(() => {
     if (!entries.length) return;
@@ -178,7 +181,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
         </div>
       </motion.div>
 
-      {/* Navigation */}
+      {/* Navigation + ambient music toggle */}
       <div className="flex items-center gap-4">
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i - 1 + entries.length) % entries.length)}
           className="text-xl w-11 h-11 flex items-center justify-center rounded-full"
@@ -198,7 +201,19 @@ const CinemaView = ({ entries, eras, onZoom }) => {
           style={{ color: eraColor, border: `1px solid ${eraColor}22`, background: `${eraColor}05` }} title="Ampliar">
           ⊞
         </motion.button>
+        {/* Fase 2: Ambient music toggle */}
+        <motion.button whileTap={{ scale: 0.9 }} onClick={() => setAmbientOn(!ambientOn)}
+          className="text-sm min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full"
+          style={{ color: ambientOn ? eraColor : `${eraColor}44`, border: `1px solid ${ambientOn ? eraColor : `${eraColor}22`}`, background: ambientOn ? `${eraColor}12` : "transparent" }} title={ambientOn ? "Ambient ON" : "Ambient OFF"}>
+          {ambientOn ? "♫" : "♪"}
+        </motion.button>
       </div>
+
+      {ambientOn && era && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] opacity-20 italic" style={{ color: eraColor, fontFamily: FONT_MONO }}>
+          ♫ Música ambiente de {eraName} — próximamente
+        </motion.p>
+      )}
 
       {era && (
         <p className="text-[9px] opacity-25 tracking-widest uppercase" style={{ color: eraColor, fontFamily: FONT_MONO }}>
@@ -605,7 +620,7 @@ const ReelView = ({ entries, eras }) => {
   );
 };
 
-// ─── MAP VIEW (S130-A Sub-fase 1: Leaflet real — TileLayer CartoDB Dark + MarkerClusterGroup + demo entries) ──
+// ─── MAP VIEW (S130-A + Fase 2: capas Era/Año + distancias + carrusel popup) ──
 // S130-A: Leaflet defaultIcon fix — workaround estándar para bundlers (Vite/Webpack rompen el path relativo por defecto)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -613,6 +628,25 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
+
+// Fase 2: calcular distancia (Haversine) entre dos puntos en km
+const haversineKm = (lat1, lng1, lat2, lng2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// Fase 2: calcular distancia total entre pines consecutivos ordenados cronológicamente
+const calcTotalDistance = (entries) => {
+  if (entries.length < 2) return 0;
+  let total = 0;
+  for (let i = 1; i < entries.length; i++) {
+    total += haversineKm(entries[i - 1].lat, entries[i - 1].lng, entries[i].lat, entries[i].lng);
+  }
+  return total;
+};
 
 // S130-A: divIcon helper — círculo coloreado por Era con glow búnker (no usa PNG default)
 const makePinIcon = (color) => L.divIcon({
@@ -711,24 +745,48 @@ const normalizeEntry = (e, eras) => {
   };
 };
 
-// S130-A: MapView real. Si `entries` prop viene vacío, usa DEMO_ENTRIES_GEO hardcoded.
+// S130-A: MapView real con capas (Fase 2). Si `entries` prop viene vacío, usa DEMO_ENTRIES_GEO hardcoded.
 const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
   const normalized = useMemo(() => entries.map((e) => normalizeEntry(e, eras)), [entries, eras]);
   const geocoded = useMemo(
     () => normalized.filter((e) => typeof e.lat === "number" && typeof e.lng === "number"),
     [normalized]
   );
-  // S130-A: era breakdown memoizado (evita recompute cada render del MapView)
+  // Fase 2: capas — filter by Era or year
+  const [mapLayer, setMapLayer] = useState("all"); // "all" | era_id | year
+  const layerFiltered = useMemo(() => {
+    if (mapLayer === "all") return geocoded;
+    if (/^\d{4}$/.test(mapLayer)) return geocoded.filter((e) => new Date(e.date).getFullYear().toString() === mapLayer);
+    return geocoded.filter((e) => (e.era_id ?? "none").toString() === mapLayer);
+  }, [geocoded, mapLayer]);
+
+  // Fase 2: capas disponibles (Eras + años únicos)
+  const layerOptions = useMemo(() => {
+    const eraSet = new Map();
+    const yearSet = new Set();
+    geocoded.forEach((e) => {
+      if (e.era_id) eraSet.set(e.era_id.toString(), e.era_name ?? e.era_id);
+      const y = new Date(e.date).getFullYear();
+      if (!isNaN(y)) yearSet.add(y.toString());
+    });
+    return {
+      eras: Array.from(eraSet.entries()).map(([id, name]) => ({ id, label: name, icon: "🏛️" })),
+      years: Array.from(yearSet).sort().reverse().map((y) => ({ id: y, label: y, icon: "📅" })),
+    };
+  }, [geocoded]);
+
+  // Fase 2: distancia total del viaje visible
+  const totalKm = useMemo(() => calcTotalDistance(layerFiltered), [layerFiltered]);
+  // era breakdown
   const eraBreakdown = useMemo(
-    () => Object.values(geocoded.reduce((acc, e) => { acc[e.era_name ?? "—"] = (acc[e.era_name ?? "—"] || 0) + 1; return acc; }, {})),
-    [geocoded]
+    () => Object.values(layerFiltered.reduce((acc, e) => { acc[e.era_name ?? "—"] = (acc[e.era_name ?? "—"] || 0) + 1; return acc; }, {})),
+    [layerFiltered]
   );
-  // S130-C: rango de fechas para slider temporal
   const dateRange = useMemo(() => {
-    const dates = geocoded.map((e) => new Date(e.date).getTime()).filter((t) => !isNaN(t));
+    const dates = layerFiltered.map((e) => new Date(e.date).getTime()).filter((t) => !isNaN(t));
     if (!dates.length) return null;
     return { min: Math.min(...dates), max: Math.max(...dates) };
-  }, [geocoded]);
+  }, [layerFiltered]);
   const [dateMin, setDateMin] = useState(null);
   const [dateMax, setDateMax] = useState(null);
   useEffect(() => {
@@ -739,26 +797,56 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
     }
   }, [dateRange]);
   const filteredByDate = useMemo(() => {
-    if (!dateRange || !dateMin || !dateMax) return geocoded;
-    return geocoded.filter((e) => {
+    if (!dateRange || !dateMin || !dateMax) return layerFiltered;
+    return layerFiltered.filter((e) => {
       const t = new Date(e.date).getTime();
       return t >= dateMin && t <= dateMax;
     });
-  }, [geocoded, dateMin, dateMax, dateRange]);
+  }, [layerFiltered, dateMin, dateMax, dateRange]);
   const filteredPositions = useMemo(() => filteredByDate.map((e) => [e.lat, e.lng]), [filteredByDate]);
 
   return (
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <span style={{ color: PURPLE }}>◉</span>
         <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>MAP</span>
         <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>
           {filteredByDate.length}/{geocoded.length} pines · {eraBreakdown.length} eras
         </span>
+        {totalKm > 0 && (
+          <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>
+            · {totalKm < 1 ? `${(totalKm * 1000).toFixed(0)}m` : `${totalKm.toFixed(0)}km`}
+          </span>
+        )}
         <span className="text-[9px] opacity-20 ml-auto" style={{ color: PURPLE }}>
           CARTO DARK · OSM
         </span>
       </div>
+
+      {/* Fase 2: Capas — toggle Eras + Años */}
+      {(layerOptions.eras.length > 1 || layerOptions.years.length > 0) && (
+        <div className="flex gap-1 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          <button onClick={() => setMapLayer("all")}
+            className={`text-[9px] px-2 py-1.5 rounded-sm whitespace-nowrap ${mapLayer === "all" ? "" : "opacity-30"}`}
+            style={{ color: PURPLE, borderBottom: mapLayer === "all" ? `1px solid ${PURPLE}` : "1px solid transparent" }}>
+            🌍 TODOS
+          </button>
+          {layerOptions.eras.map((era) => (
+            <button key={era.id} onClick={() => setMapLayer(era.id)}
+              className={`text-[9px] px-2 py-1.5 rounded-sm whitespace-nowrap ${mapLayer === era.id ? "" : "opacity-30"}`}
+              style={{ color: PURPLE, borderBottom: mapLayer === era.id ? `1px solid ${PURPLE}` : "1px solid transparent" }}>
+              {era.icon} {era.label}
+            </button>
+          ))}
+          {layerOptions.years.map((y) => (
+            <button key={y.id} onClick={() => setMapLayer(y.id)}
+              className={`text-[9px] px-2 py-1.5 rounded-sm whitespace-nowrap ${mapLayer === y.id ? "" : "opacity-30"}`}
+              style={{ color: PURPLE, borderBottom: mapLayer === y.id ? `1px solid ${PURPLE}` : "1px solid transparent" }}>
+              {y.icon} {y.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* S130-C: slider temporal dual-range */}
       {dateRange && dateMin !== null && dateMax !== null && (
