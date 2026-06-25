@@ -569,6 +569,10 @@ const ExhibitionView = ({ entries, eras }) => {
 
 // ─── REEL VIEW (S122-D: auto-generación secuencias por día + pinning) ──
 const ReelView = ({ entries, eras }) => {
+  // Fase 8: REEL soundtrack — ambient volume when viewing REEL detail
+  const { masterVolume, setMasterVolume } = usePlayer();
+  const reelVolRef = useRef(null);
+
   const reels = useMemo(() => {
     const byDay = {};
     entries.forEach(e => {
@@ -580,6 +584,24 @@ const ReelView = ({ entries, eras }) => {
     return Object.entries(byDay).filter(([, items]) => items.length >= 2).sort(([a], [b]) => b.localeCompare(a)).slice(0, 12);
   }, [entries]);
   const [activeReel, setActiveReel] = useState(null);
+
+  // Fase 8: ambient volume when viewing REEL detail
+  const isViewingReel = activeReel !== null;
+  useEffect(() => {
+    if (isViewingReel) {
+      reelVolRef.current = masterVolume;
+      setMasterVolume?.(Math.round(masterVolume * 0.3));
+    } else if (reelVolRef.current !== null) {
+      setMasterVolume?.(reelVolRef.current);
+      reelVolRef.current = null;
+    }
+    return () => {
+      if (reelVolRef.current !== null) {
+        setMasterVolume?.(reelVolRef.current);
+        reelVolRef.current = null;
+      }
+    };
+  }, [isViewingReel, masterVolume, setMasterVolume]);
 
   if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
