@@ -444,3 +444,48 @@ Si devuelve rows, el listener y el dispatch path están vivos y funcionando.
 - `src/core/WorkerClient.js` (+9 líneas)
 - `src/core/VaultContext.jsx` (+26 líneas)
 - `src/capsules/Capsules.jsx` (+2 líneas)
+
+---
+
+## S141 — SHUFFLE RESPETA TAG FILTER EN MUSICLAB (26 Junio 2026)
+
+### Resumen
+Bug reportado por Edu: cuando selecciona un tag (ej. 'romantiqueo') en MusicLab y hace Skip, el siguiente track queda fuera del tag. Aleatorio también ignora el filtro. Causa raíz: `WinampPlayer` recibía `filteredTracks` como prop pero solo lo usaba para visualización; `PlayerContext.skip()` usaba `tracks` global del VaultContext como fallback. Además, `handleAudioEnded` (auto-advance) llamaba `skip(1)` sin argumentos → fallback global → ignora filtro. Y `shuffledListRefStable` mantenía el pool viejo con tracks del filtro anterior. Fix: establecer un conducto unidireccional por ref para que la UI sincronice la lista filtrada con el motor de audio; el motor la usa como fallback automático y limpia el pool de shuffle cuando la lista cambia de referencia.
+
+### Cambios (2 archivos, +18/-3 líneas)
+
+| Archivo | Qué |
+|---------|-----|
+| `src/core/PlayerContext.jsx` | (a) Añadidos `contextTracksRef` + `setContextTracks` (useCallback, deps `[]`). Cuando la referencia de la lista cambia, invalida los 4 shuffle refs (regulares + stable). (b) `skip()` línea 641 ahora tiene fallback chain: `filteredTracks ?? contextTracksRef.current ?? tracks`. (c) `setContextTracks` expuesto en Provider value para que WinampPlayer lo consuma |
+| `src/musiclab/WinampPlayer.jsx` | (a) Destructured `setContextTracks` de `usePlayer()`. (b) Nuevo `useEffect(() => { setContextTracks?.(tracks); }, [tracks, setContextTracks]);` que sincroniza la prop `tracks` (que en MusicLab es `filteredTracks`) con el motor de audio |
+
+### Por qué se rompía antes
+- **Skip manual con botón**: WinampPlayer llama `skip(dir, tracks)` → `tracks` es la prop filteredTracks. Funcionaba.
+- **Skip via MediaSession API** (lockscreen, Bluetooth, auriculares): En PlayerContext línea ~1496 llama `skip(1)` sin args. PlayerContext usaba `tracks` global → ignora filtro.
+- **Skip via handleAudioEnded** (auto-advance al terminar track): Mismo problema, sin args.
+- **Shuffle**: El pool se creaba una vez al activar shuffle y no se invalidaba al cambiar filter. Reproducir tras cambiar tag podía elegir tracks viejos.
+
+### Por qué el fix es seguro (sin TDZ)
+El factory de `useCallback([])` solo se ejecuta cuando WinampPlayer dispara su `useEffect` (que corre DESPUÉS del primer render de PlayerProvider). Cuando ocurre, todos los refs estables (declarados en línea ~715) ya están inicializados. JavaScript's TDZ no es problema aquí porque los refs están accesibles en closure cuando se ejecuta.
+
+### Edge cases cubiertos
+- **handleAudioEnded auto-advance**: ahora respeta filtro via `contextTracksRef.current` como segundo fallback en la cadena.
+- **shuffle re-activado**: persiste en localStorage. Al re-activarse, el pool se regenera desde `contextTracksRef.current` (nueva lista).
+- **Cambio de tag en vivo**: useEffect de WinampPlayer re-corre → `setContextTracks(newList)` → invalida pool → próximo shuffle usa nuevo filtro.
+- **Misma referencia**: Si MusicLab no re-memoiza el filteredTracks correctamente (bug en su useMemo), no invalidaría. Pero MusicLab.useMemo línea 388 tiene deps correctas `[libraryFilter, query, allTracks]`, así que el caso no aplica.
+- **`tracks = []` (filtro vacío)**: `list = [] ?? contextTracksRef.current ?? tracks` → `list = contextTracksRef.current` (lo que sea). Si es `[]`, `if (!list.length) return;` exits. Comportamiento correcto: shuffle sin tracks disponibles.
+
+### Build/Lint/Reviewer
+- **Build**: 3.85s ✓
+- **Lint**: 0 errors, 0 warnings ✓
+- **Code review** (Poirot mini): shippable. 1 P3 follow-up identificado (ver abajo).
+
+### P3 follow-up para futura iteración
+`_resolveNextTrackUrl` (línea ~1610 de PlayerContext.jsx) sigue usando el `tracks` global del closure para la precarga gapless (~1s post-play o al 50% del track). Esto significa que **el track precargado silenciosamente** puede estar fuera del tag activo, aunque el **playback real** sí respeta el filtro vía `skip()` parchado. Visible solo si el usuario nota que el buffer silencioso apunta a un track distinto del que suena. Fix monoespecífico: añadir `contextTracksRef.current` como segundo fallback en `_resolveNextTrackUrl` (mismo patrón). Defer a S142.
+
+### Pendiente (futuro, recomendado)
+- Test unitario que verifique `shuffle + setContextTracks(filteredList)`: añadir caso 8 a `src/core/__tests__/PlayerContext.test.jsx` que mockee filteredTracks y verifique que skip+shuffle solo elige tracks de la lista filtrada. Posponer si se mantiene scope mínimo.
+
+### Archivos modificados (2)
+- `src/core/PlayerContext.jsx` (+13/-1 líneas)
+- `src/musiclab/WinampPlayer.jsx` (+5/-2 líneas)

@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** Pendiente migration D1 + wrangler deploy (manual) para activar `/api/stats/recap`. Tras eso, STAT-M9 slice 2 (métricas avanzadas: era distribution, streaks, listening-time por Era).
-**Última sesión:** S140 — Fix JWT silent expiration busto Timeline stats (PWA background sessions).
+**Última sesión:** S141 — Shuffle ahora respeta el tag filter activo en MusicLab.
 **Rama activa:** `master`
-**Commit:** `67cf81f` — S140: fix JWT silent expiration breaking Timeline stats for PWA background sessions
+**Commit:** `d48042d` — S141: shuffle now respects active tag filter in MusicLab
 
 ---
 
@@ -40,6 +40,7 @@
 
 ### Resueltos recientes
 - **S140**: Timeline no registraba eventos para David (último track del 22-Jun aunque usó app hoy 26-Jun). Causa raíz: JWT expiraba silencioso en PWA → StatsEngine.emit() recibia 401swallowed→ eventos jamás llegaban a D1. Fix: WorkerClient dispatcha `bunker_jwt_expired` on 401 + VaultContext listener re-autentica silenciosamente con debounce 30s. PR `67cf81f` ya en master.
+- **S141**: Shuffle no respetaba el tag filter activo en MusicLab — al filtrar por 'romantiqueo' y hacer Skip, el siguiente track quedaba fuera del tag. Causa raíz: `WinampPlayer` recibía `filteredTracks` como prop pero solo lo usaba para visualización; el motor de audio en `PlayerContext` usaba `tracks` global del VaultContext. Fix: añadido `contextTracksRef` + `setContextTracks` con invalidación automática del shuffle pool cuando cambia la referencia, y fallback chain `filteredTracks ?? contextTracksRef.current ?? tracks` en `skip()`. PR `d48042d` ya en master.
 
 ### P2/resto (frontend achievable)
 - Shuffle Q1/Q8/Q9 → verificado OK en PlayerContext
