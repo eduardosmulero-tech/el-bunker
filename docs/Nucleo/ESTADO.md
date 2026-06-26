@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** Pendiente migration D1 + wrangler deploy (manual) para activar `/api/stats/recap`. Tras eso, STAT-M9 slice 2 (métricas avanzadas: era distribution, streaks, listening-time por Era).
-**Última sesión:** S141 — Shuffle ahora respeta el tag filter activo en MusicLab.
+**Última sesión:** S142 — Auditoría completa del reproductor: shuffle ahora opera sobre contexto de playlist (Q8/Q9) + fixes L1 y P3.
 **Rama activa:** `master`
-**Commit:** `d48042d` — S141: shuffle now respects active tag filter in MusicLab
+**Commit:** `2ebf8bf` — S142: shuffle now operates on playlist context (Q8/Q9 compliant) + L1 + P3 fixes
 
 ---
 
@@ -41,6 +41,7 @@
 ### Resueltos recientes
 - **S140**: Timeline no registraba eventos para David (último track del 22-Jun aunque usó app hoy 26-Jun). Causa raíz: JWT expiraba silencioso en PWA → StatsEngine.emit() recibia 401swallowed→ eventos jamás llegaban a D1. Fix: WorkerClient dispatcha `bunker_jwt_expired` on 401 + VaultContext listener re-autentica silenciosamente con debounce 30s. PR `67cf81f` ya en master.
 - **S141**: Shuffle no respetaba el tag filter activo en MusicLab — al filtrar por 'romantiqueo' y hacer Skip, el siguiente track quedaba fuera del tag. Causa raíz: `WinampPlayer` recibía `filteredTracks` como prop pero solo lo usaba para visualización; el motor de audio en `PlayerContext` usaba `tracks` global del VaultContext. Fix: añadido `contextTracksRef` + `setContextTracks` con invalidación automática del shuffle pool cuando cambia la referencia, y fallback chain `filteredTracks ?? contextTracksRef.current ?? tracks` en `skip()`. PR `d48042d` ya en master.
+- **S142**: **Auditoría completa del reproductor.** Edu reportó "aleatorio no funciona en cola". Diagnóstico: `PlayerContext.skip()` Rama 3 (FIFO) interceptaba TODO sin distinguir manuales vs contexto de playlist — CONTRADICE spec Q8/Q9 (`docs/spec/el_bunker_reproductor_spec_v2.md:71`) y `docs/legacy/DECISIONES.md:52-53` (ADR-008 REVERTIDO sesión 27). Regresión de BUG-NUEVO-16 (`ERRORES_RESUELTOS.md:52`, resuelto en S26 con PLIEGO-070) introducida inadvertidamente en S53 al unificar `_manual:false` playlist context dentro de `localQueue` (Q14). Fix: 6 ediciones en `PlayerContext.jsx` — `fisherYatesInPlace` helper (Fisher-Yates puro in-place) + useEffect que permuta sección `_manual:false` al activar shuffle (UI honesta Spotify-style) + `setPlaybackContext` y `addPlaylistToQueue` barajan si shuffle=ON (consistencia con toggle) + fixes P2 (loop=track absoluto L1: skip en cualquier dirección ahora seek-0) y P3 (cola de solo-duplicados del active aborta consumo en silencio). PR `2ebf8bf` ya en master.
 
 ### P2/resto (frontend achievable)
 - Shuffle Q1/Q8/Q9 → verificado OK en PlayerContext

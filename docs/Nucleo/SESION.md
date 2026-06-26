@@ -489,3 +489,56 @@ El factory de `useCallback([])` solo se ejecuta cuando WinampPlayer dispara su `
 ### Archivos modificados (2)
 - `src/core/PlayerContext.jsx` (+13/-1 líneas)
 - `src/musiclab/WinampPlayer.jsx` (+5/-2 líneas)
+
+---
+
+## S142 — AUDITORÍA PROFESIONAL: SHUFFLE OPERA SOBRE CONTEXTO DE PLAYLIST (Q8/Q9) + FIXES L1 Y P3 (26 Junio 2026)
+
+### Resumen
+Edu reportó "aleatorio no funciona en cola". Auditoría profesional descubrió que NO era un comportamiento intencional sino un **bug arquitectónico P1**: la cola unificada (Q14, S53) introdujo `_manual:false` (playlist context) dentro de `localQueue`, pero `PlayerContext.skip()` Rama 3 (FIFO línea 605–642) interceptaba TODO sin distinguir manuales de contexto, ignorando shuffle. Esto contradice tres documentos históricos que la spec ya escribía:
+- `docs/spec/el_bunker_reproductor_spec_v2.md:71` → **Q8/Q9:** "Shuffle nunca afecta el orden de la cola manual. Activar shuffle aleatoriza el contexto de reproducción desde el punto actual. La cola manual no se modifica."
+- `docs/legacy/DECISIONES.md:52-53` → ADR-008 REVERTIDO sesión 27: "la cola manual tiene prioridad, pero shuffle debe poder operar sobre el contexto de lista igualmente".
+- `docs/legacy/ERRORES_RESUELTOS.md:52` → BUG-NUEVO-16 resuelto en S26 con PLIEGO-070 (cola con prioridad solo si `!shuffle`). **Regresión no documentada en S53.**
+
+### Otros bugs descubiertos durante la auditoría (no reportados por Edu)
+| Sev | Archivo:línea | Bug | Fix |
+|-----|---------------|-----|-----|
+| P2 | `PlayerContext.jsx:577-589` (Rama 1 skip) | Loop=track + skip(-1) + currentTime<3s violaba L1: caía en playHistory en vez de seek-0. | Eliminado fall-through. Loop=track SIEMPRE seek-0+play. |
+| P3 | `PlayerContext.jsx:605-642` (Rama 3 skip) | Cola con todos los items duplicados del active producía comportamiento anómalo: `next` quedaba siendo el active, `setLocalQueue(q.slice(length))` = `[]`, y `setActiveTrack(next)` no cambiaba el track. Gapless preload confusion. | Guard post-while: si `next?.id === activeTrack?.id`, abortar consumo: `trackSkip` historial + `setLocalQueue []` + `setIsPlaying false` + return. |
+
+### Cambios (6 ediciones en `src/core/PlayerContext.jsx`, +60/-9 líneas netas)
+
+| # | Cambio | Líneas | Por qué |
+|---|--------|--------|---------|
+| 0 | Helper `fisherYatesInPlace(arr)` pure | nuevass fuera del componente | Reutilizable para S143 EC-C2 re-barajar contexto. Pure idempotente. |
+| 1 | useEffect deps=[`shuffle`] | nuevo bloque post-shuffle-reset useEffect | **CORE FIX:** al activar shuffle, baraja `_manual:false` vía Fisher-Yates. Cola manual (`_manual:true`) preservada al final. ActiveTrack preservado al inicio. UI honesta (vista COLA muestra orden aleatorio). |
+| 2 | `setPlaybackContext` permuta ctxItems si `shuffle=ON + length>1` | replace ~line 911 | Mantiene consistencia: cargar playlist con shuffle ON → playlist barajada. Cola manual preservada. |
+| 3 | `addPlaylistToQueue` permuta subset `_manual:false` si `shuffle=ON` | replace ~line 894 | Dos paths: `clearFirst=true` (PLAY playlist directo) y append (`clearFirst=false`). Cola manual preservada en ambos. EC-C2 re-shuffle pendiente. |
+| 4 | Rama 1 skip simplificada (L1 absoluto) | replace ~line 577 | Eliminado `if (dir===1 || currentTime>=3)`. Loop=track SIEMPRE seek-0+play. |
+| 5 | Rama 3 skip con guard P3 | replace ~line 605 | Post-while check: si cola solo-duplicados, abortar consumo silencioso. |
+
+### Por qué Opción A (Spotify-style) y no Opción B (random pick at skip)
+- Q8/Q9 ya está escrito: "shuffle nunca afecta orden de la cola manual". Opción B lo violaría.
+- ADR-009 (filosofía del reproductor: convención primero) penaliza no-determinismo — Opción B es no determinista (cada skip elige aleatorio), Opción A es determinista (orden fijo al activar toggle).
+- UX honesta: playlist barajada se ve en COLA antes de reproducir, no "sorpresa" en cada skip.
+- Toggle OFF no deshace el barajado (documentado en comentario): si shuffle ON y luego OFF, el orden actual se conserva. Usuario explícito > toggle.
+
+### Trazabilidad spec → código (cumplida por S142)
+- **Q1:** Cola manual tiene prioridad → ✓ cola manual preservada al final.
+- **Q8/Q9:** Shuffle baraja contexto, no toca cola manual → ✓ fix principal.
+- **L1 (Loop Track absoluto):** skip en cualquier dirección es seek-0 → ✓ fix P2.
+- **Q2/Q14:** Cola unificada pero con separación lógica manual/contexto → ✓ preservada vía `_manual:true/false`.
+
+### Build/Lint/Reviewer
+- **Build**: 3.39s ✓ (2240 modules, 10 chunks)
+- **Lint**: 0 errors, 0 warnings ✓
+- **Code review** (Poirot mini): shippable. 1 P3 menor benigno (activeTrackRef stale race on mount, mitigado por `if (q.length < 2) return q;`).
+
+### Pendiente (futuro, no bloqueante)
+- S143: EC-C2 inyección de playlist debería re-barajar el contexto si shuffle=ON (ahora inyecta al final sin re-shuffle).
+- S144: Toast efímero "Contexto barajado" al toggle para hacer visible la nueva UX.
+- S145: useEffect `[shuffle, last-playlist-load-trigger]` para re-barajar la cola cuando D1 devuelve queue al mount (mitiga P3 activeTrackRef race).
+- Tests unitarios: caso 8 en PlayerContext.test.jsx — `shuffle=true + addPlaylistToQueue` debe producir barajado.
+
+### Archivos modificados (1)
+- `src/core/PlayerContext.jsx` (+60/-9 líneas)
