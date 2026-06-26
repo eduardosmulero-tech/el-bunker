@@ -34,6 +34,17 @@ import { getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 import { workerClient } from "./WorkerClient";
+
+// S142: Fisher-Yates shuffle — Q8/Q9 compliant (Spotify-style).
+// Baraja el array in-place. No-op si length < 2. Pure idempotente (mismo input → mismo output si no random).
+function fisherYatesInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 const PlayerContext = createContext(null);
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -97,6 +108,27 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       shuffledListRef.current = [];
       shuffleIndexRef.current = 0;
     }
+  }, [shuffle]);
+
+  // S142: Shuffle Q8/Q9 compliant — al activar shuffle, baraja la sección _manual:false
+  // (contexto de playlist) del localQueue. Cola manual (_manual:true) y activeTrack se
+  // preservan intactos. UI honesta (Spotify-style): la vista COLA muestra exactamente
+  // el orden aleatorio que se va a reproducir. Skip(1) sigue consumiendo FIFO pero del
+  // nuevo orden barajado. Toggle OFF no deshace el barajado (se conserva el orden actual).
+  useEffect(() => {
+    if (!shuffle) return;
+    setLocalQueue((q) => {
+      if (q.length < 2) return q;
+      const active = activeTrackRef.current;
+      const activeId = active?.id;
+      const activeItem = activeId ? q.find((t) => t.id === activeId) : null;
+      const others = q.filter((t) => t.id !== activeId);
+      const manual = others.filter((t) => t._manual);
+      const ctx = others.filter((t) => !t._manual);
+      if (ctx.length < 2) return q;
+      const shuffled = fisherYatesInPlace([...ctx]);
+      return activeItem ? [activeItem, ...shuffled, ...manual] : [...shuffled, ...manual];
+    });
   }, [shuffle]);
 
   // S8: persistir loopMode en localStorage (S85b)
@@ -588,17 +620,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // No hay bifurcación queue/context. Shuffle aleatoriza solo
   // cuando la cola está vacía — nunca reordena posiciones existentes (Q1/Q8/Q9).
   const skip = useCallback((dir, filteredTracks) => {
-    // B1 fix (S112-A): loop track + skip(-1) respeta ADR-009 (3s rule).
-    // Si currentTime >= 3s → seek a 0 (reiniciar track).
-    // Si currentTime < 3s → ir al track anterior vía playHistory.
+    // S142 P2 fix (L1 spec: Loop Track absoluto):
+    // En loop=track, skip en CUALQUIER dirección (incluso -1 con currentTime<3s) es seek-0.
+    // Antes (S112-A) hacía fall-through a playHistory — violaba L1.
+    // Spec L1: track en repetición, skip SIEMPRE reinicia ese mismo track.
     if (loopModeRef.current === "track" && activeTrack && audioRef.current) {
-      if (dir === 1 || audioRef.current.currentTime >= 3) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => { setIsPlaying(false); });
-        setIsPlaying(true);
-        return;
-      }
-      // dir === -1 && currentTime < 3: fall through to playHistory navigation below
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => { setIsPlaying(false); });
+      setIsPlaying(true);
+      return;
     }
 
     // skip(-1) — navega por historial (Q2)
@@ -614,7 +644,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       return;
     }
 
-    // Cola unificada: si hay tracks en cola, avanzar en orden (Q1 — prioridad absoluta)
+    // Cola unificada: si hay tracks en cola, avanzar en orden (Q1 — prioridad absoluta).
+    // S142: el orden de localQueue refleja el orden de reproducción — FIFO natural,
+    // o aleatorio si shuffle=ON (permuta en toggle via useEffect y en setPlaybackContext).
+    // Cola manual (_manual:true) se preserva al final según Q8.
     // Q2: iterar hasta encontrar un track distinto del activo (evita loop en duplicados)
     if (dir === 1 && localQueue.length > 0) {
       let skipCount = 0;
@@ -622,6 +655,18 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       while (next && next.id === activeTrack?.id && skipCount < localQueue.length - 1) {
         skipCount++;
         next = localQueue[skipCount];
+      }
+      // S142 P3 fix: si todos los queue items son duplicados del active (caso raro pero
+      // posible si el usuario reprodujo dos veces el mismo track), abortar consumo en
+      // silencio en lugar de avanzar a un track inválido o producir gapless confusion.
+      if (next?.id === activeTrack?.id) {
+        if (activeTrack) {
+          trackSkip(activeTrack.id, "queue_advance");
+          setPlayHistory((h) => [...h, activeTrack]);
+        }
+        setLocalQueue([]);
+        setIsPlaying(false);
+        return;
       }
       // Fase 1.2 — P3: Gapless. Si el preload ya tiene el siguiente track cargado,
       // inyectar su src en el audio principal antes de actualizar estado.
@@ -788,15 +833,28 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, [localQueue, enforceQueueLimit, sessionId, syncAction]);
 
   // S77 Q12: add entire playlist to queue
+  // S142: shuffle=ON → baraja el subset _manual:false al añadir (contexto playlist).
+  // La cola manual (_manual:true) se respeta y queda al final (Q8/Q9 compliance).
+  // clearFirst=true reemplaza el contexto completo (escenario "PLAY" de playlist).
   const addPlaylistToQueue = useCallback((playlistTracks, clearFirst = false) => {
     if (!Array.isArray(playlistTracks) || !playlistTracks.length) return "empty";
     setLocalQueue((q) => {
-      const base = clearFirst ? [] : q;
-      const newTracks = playlistTracks.map(t => ({ ...t, _manual: true }));
-      return enforceQueueLimit([...base, ...newTracks]);
+      const manual = q.filter((t) => t._manual);
+      if (clearFirst) {
+        const ctxItems = playlistTracks.map((t) => ({ ...t, _manual: false }));
+        if (shuffle && ctxItems.length > 1) fisherYatesInPlace(ctxItems);
+        return enforceQueueLimit([...ctxItems, ...manual]);
+      }
+      // clearFirst=false: añade al final del contexto, mergea con el existente.
+      const ctx = q.filter((t) => !t._manual);
+      const newCtx = playlistTracks.map((t) => ({ ...t, _manual: false }));
+      const merged = shuffle && (ctx.length + newCtx.length > 1)
+        ? fisherYatesInPlace([...ctx, ...newCtx])
+        : [...ctx, ...newCtx];
+      return enforceQueueLimit([...merged, ...manual]);
     });
     return "added";
-  }, [enforceQueueLimit]);
+  }, [enforceQueueLimit, shuffle]);
 
   // addNext — C4-A: inserta tras el track activo, _manual:true
   const addNext = useCallback((track, force = false) => {
@@ -816,12 +874,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // Q10: preserva tracks manuales (_manual:true) al cambiar de playlist.
   // Manual primero (prioridad Q1), luego el contexto nuevo.
   // contextName opcional: nombre de la playlist para mostrar en cabecera de COLA.
+  // S142: si shuffle=ON, baraja el contexto recién cargado (consistente con el toggle).
   const setPlaybackContext = useCallback((contextTracks, contextName = null) => {
     if (!Array.isArray(contextTracks)) return;
     const manualTracks = localQueue.filter((t) => t._manual);
-    setLocalQueue([...manualTracks, ...contextTracks.map((t) => ({ ...t, _manual: false }))]);
+    const ctxItems = contextTracks.map((t) => ({ ...t, _manual: false }));
+    if (shuffle && ctxItems.length > 1) fisherYatesInPlace(ctxItems);
+    setLocalQueue([...manualTracks, ...ctxItems]);
     setQueueContextName(contextName ?? null);
-  }, [localQueue]);
+  }, [localQueue, shuffle]);
 
   // playbackContext — computed desde localQueue para compatibilidad con consumidores externos
   const playbackContext = localQueue.filter((t) => !t._manual);
