@@ -2,9 +2,9 @@
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
 **Próximo pliego:** Pendiente migration D1 + wrangler deploy (manual) para activar `/api/stats/recap`. Tras eso, STAT-M9 slice 2 (métricas avanzadas: era distribution, streaks, listening-time por Era).
-**Última sesión:** S139 — STAT-M9 first slice — agregaciones server-side en D1 + consumer Recaps.jsx.
+**Última sesión:** S140 — Fix JWT silent expiration busto Timeline stats (PWA background sessions).
 **Rama activa:** `master`
-**Commit:** `96c33a8` — S139 STAT-M9 first slice: server-side stats aggregations
+**Commit:** `67cf81f` — S140: fix JWT silent expiration breaking Timeline stats for PWA background sessions
 
 ---
 
@@ -37,6 +37,9 @@
 - Gapless/crossfade (P3): requiere PlayerContext refactor
 - Offline total: SW strategies + R2 cache
 - Chromecast receiver: cast receiver app en Workers
+
+### Resueltos recientes
+- **S140**: Timeline no registraba eventos para David (último track del 22-Jun aunque usó app hoy 26-Jun). Causa raíz: JWT expiraba silencioso en PWA → StatsEngine.emit() recibia 401swallowed→ eventos jamás llegaban a D1. Fix: WorkerClient dispatcha `bunker_jwt_expired` on 401 + VaultContext listener re-autentica silenciosamente con debounce 30s. PR `67cf81f` ya en master.
 
 ### P2/resto (frontend achievable)
 - Shuffle Q1/Q8/Q9 → verificado OK en PlayerContext

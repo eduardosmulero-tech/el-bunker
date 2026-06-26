@@ -393,3 +393,54 @@ wrangler deploy
 - `workers/routes/stats.js` (NUEVO)
 - `workers/schema.sql`
 - `workers/worker.js`
+
+---
+
+## S140 — FIX JWT SILENT EXPIRATION (PWA BACKGROUND SESSIONS) (26 Junio 2026)
+
+### Resumen
+Bug reportado por David: su Timeline mostraba el último track del 22-Junio aunque usó la app HOY (26-Junio). Causa raíz: la PWA puede quedarse abierta días sin recarga. JWT (24h expiry) expira mientras la sesión sigue viva en background. `StatsEngine.emit()` llama a `WorkerClient.post()` con token caducado, Worker devuelve 401, `StatsEngine` lo traga con `console.warn` — eventos jamás llegan a D1. Fix: que el frontend se entere del 401 y re-autentique silenciosamente con `window.gapi` si Google sigue vivo. Sin pantalla blanca, sin perder eventos a futuro. Backfill imposible: los eventos del 22-Jun al 26-Jun de David están perdidos; los siguientes plays sí registran.
+
+### Cambios (3 archivos, +40/-1 líneas)
+
+| Archivo | Qué |
+|---------|-----|
+| `src/core/WorkerClient.js` | Branch 401 del `_fetch()` ahora limpia token (`this.clearToken()`) + dispatch `CustomEvent("bunker_jwt_expired")` para notificar a la app. Try/catch para SSR/tests |
+| `src/core/VaultContext.jsx` | `useRef lastJwtExpiredRef` (debounce 30s contra loop de re-auth en clock-skew patológico) + nuevo `useEffect` que escucha `bunker_jwt_expired` y llama `_fetchJwt(user.email, googleToken)` si `window.gapi.client.getToken()` devuelve token válido. Si Google también murió, `console.warn` y deja que el usuario recargue manual |
+| `src/capsules/Capsules.jsx` | `limit=200` → `limit=500` (ventana más amplia; el server ya hace `min(parseInt, 500)` en `workers/routes/events.js`). No arregla root cause pero evita desplazamiento secundario por uso intenso del otro user |
+
+### Por qué pasaban desapercibidos los 401 silenciosos
+- `StatsEngine.emit()` usaba `await workerClient.post(...)` con `try/catch` que solo `console.warn`. Ningún UI feedback.
+- `_fetchUserAndDb()` solo se ejecuta al boot/sign-in. No hay refresh de JWT durante la sesión.
+- Resultado: cuando JWT expira en background, todos los `track_play` / `entry_created` / `drop_sent` posteriores fallan sin ruido.
+
+### Por qué re-autentica silencioso es seguro
+- Si `window.gapi.client.getToken()` es válido → `_fetchJwt` hace POST `/api/auth/login` con `{email, google_token}`, Worker firma un JWT nuevo con `JWT_EXPIRY=86400`. Frontend lo setea en `workerClient.setToken` / `workerClient.upload_token` / `setStatsToken` y todo vuelve a fluir.
+- Debounce de 30s con `lastJwtExpiredRef`: si JWT nuevo también llega expirado por clock skew patológico, evitamos loop de D1 writes quemados.
+- Si Google-GIS también perdió el token → no recargamos al user (`window.location.reload` sería demasiado intrusivo). Solo warning al console. La próxima vez que intente postear, el flujo normal manejará (porque las acciones se reinician al reload manual de PWA por el user).
+
+### Build/Lint/Reviewer
+- **Build**: 3.65s ✓
+- **Lint**: 0 errors, 0 warnings ✓
+- **Code review** (Poirot mini): shippable con 1 P2 + 1 P3 cosmetic — ambos corregidos antes de merge (debounce aplicado; logging del trip es P3 diferido)
+
+### Verificación post-merge (recomendada)
+Mañana, en `tools/cargar_contexto.py`, agregar query rápida para validar que el fix funciona end-to-end:
+```sql
+SELECT user_id, event_type, created_at, payload
+FROM events
+WHERE user_id = 'david'
+  AND created_at >= '2026-06-26'
+ORDER BY created_at DESC;
+```
+Si devuelve rows, el listener y el dispatch path están vivos y funcionando.
+
+### Pendiente (futuro, no bloqueante)
+- **P3 UX**: cuando `_fetchJwt` falla con `googleToken` válido pero server != 200 (Worker cold start, JWT_SECRET no configurado en prod, error 500), el ref se setea igualmente y user queda en "sesión muerta" sin feedback visual por 30s. Considerar toast o banner en StatusBar.
+- **P3 logging**: loggear cuando el debounce trip activa (`console.debug`). Hoy trippea silencioso.
+- **Pre-chequeo de expiración**: proactivo (`Date.now() >= payload.exp * 1000`) antes de postear, evita el round-trip de 401. Pero requiere parsear JWT en frontend (librería o manual). Bajo valor añadido — el re-auth silencioso ya funciona bajo demanda.
+
+### Archivos modificados (3)
+- `src/core/WorkerClient.js` (+9 líneas)
+- `src/core/VaultContext.jsx` (+26 líneas)
+- `src/capsules/Capsules.jsx` (+2 líneas)
