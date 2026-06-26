@@ -3,7 +3,7 @@
 //  RECAP Wrapped — 6 secciones narrativas (ADR-026)
 //  S75 — Portada, música, memoria, conexión, hitos, cierre
 // ============================================================
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { workerClient } from "../core/WorkerClient";
@@ -28,7 +28,7 @@ function getPeriodRange(period) {
   return { since: start.toISOString(), until: now.toISOString() };
 }
 
-export default function Recaps({ events = [], accentColor = ACID }) {
+export default function Recaps({ accentColor = ACID }) {
   const [period, setPeriod] = useState("weekly");
   const [section, setSection] = useState(0);
   // S119: guardar RECAP anual como entrada VAULT (ADR-026)
@@ -41,66 +41,63 @@ export default function Recaps({ events = [], accentColor = ACID }) {
   const range = getPeriodRange(period);
   const accent = accentColor ?? ACID;
 
-  const filtered = useMemo(() =>
-    events.filter(e => e.created_at >= range.since && e.created_at <= range.until),
-    [events, range.since, range.until]
-  );
-
-  const stats = useMemo(() => {
-    const plays = filtered.filter(e => e.event_type === "track_play").length;
-    const drops = filtered.filter(e => e.event_type === "drop_sent").length;
-    const created = filtered.filter(e => e.event_type === "entry_created").length;
-    const smokes = filtered.filter(e => e.event_type?.startsWith("smoke_"));
-    const completed = smokes.filter(e => e.event_type === "smoke_session_completed").length;
-
-    // Top day
-    const days = {};
-    filtered.forEach(e => {
-      const d = e.created_at?.slice(0, 10);
-      if (d) days[d] = (days[d] || 0) + 1;
+  // STAT-M9: agregaciones server-side mediante /api/stats/recap (workers/routes/stats.js)
+  // Mantiene shape idéntico al `stats` que el cliente generaba antes, más campos
+  // extra (title, artist, name) que vienen del JOIN en D1.
+  const [recapData, setRecapData] = useState(null);
+  const [loadingRecap, setLoadingRecap] = useState(false);
+  const [recapFetchErr, setRecapFetchErr] = useState(null);
+  // STAT-M9: race-condition guard. Si el usuario cambia de period rapid-click,
+  // `reqIdRef` incrementa en cada fetch — sólo el último reqId sobrevive.
+  const reqIdRef = useRef(0);
+  useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (!workerClient.hasToken()) { setRecapData(null); return; }
+    const reqId = ++reqIdRef.current;
+    let cancelled = false;
+    setLoadingRecap(true);
+    setRecapFetchErr(null);
+    workerClient.get(
+      `/api/stats/recap?since=${encodeURIComponent(range.since)}&until=${encodeURIComponent(range.until)}`
+    ).then(data => {
+      if (cancelled || reqId !== reqIdRef.current) return;
+      setRecapData(data);
+    }).catch(e => {
+      if (cancelled || reqId !== reqIdRef.current) return;
+      console.warn("[Recaps] fetch error:", e.message);
+      setRecapFetchErr(e.message);
+      setRecapData(null);
+    }).finally(() => {
+      if (cancelled || reqId !== reqIdRef.current) return;
+      setLoadingRecap(false);
     });
-    const topDay = Object.entries(days).sort((a, b) => b[1] - a[1])[0];
+    /* eslint-enable react-hooks/set-state-in-effect */
+    return () => { cancelled = true; };
+    // STAT-M9: deps `[period]` (no `[range.since, range.until]`) porque getPeriodRange
+    // usa `new Date()` y cambiaría `until` en cada render → re-fetches infinitos.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period]);
 
-    // Top tracks
-    const trackPlays = {};
-    filtered.filter(e => e.event_type === "track_play").forEach(e => {
-      let p = {};
-      try { p = typeof e.payload === "string" ? JSON.parse(e.payload) : (e.payload || {}); } catch { /* payload malformado — ignorar */ }
-      const id = p.track_id || "?";
-      trackPlays[id] = (trackPlays[id] || 0) + 1;
-    });
-    const topTrack = Object.entries(trackPlays).sort((a, b) => b[1] - a[1])[0];
-
-    // User contributions
-    const users = {};
-    filtered.forEach(e => {
-      const u = e.user_id || "?";
-      users[u] = (users[u] || 0) + 1;
-    });
-    const topUser = Object.entries(users).sort((a, b) => b[1] - a[1])[0];
-
-    return {
-      plays, drops, created, completed,
-      total: filtered.length,
-      topDay: topDay ? { date: topDay[0], count: topDay[1] } : null,
-      topTrack: topTrack ? { id: topTrack[0], plays: topTrack[1] } : null,
-      topUser: topUser ? { id: topUser[0], events: topUser[1] } : null,
-      uniqueDays: Object.keys(days).length,
-    };
-  }, [filtered]);
+  const stats = recapData ?? {
+    plays: 0, drops: 0, created: 0, completed: 0,
+    total: 0, uniqueDays: 0,
+    topDay: null, topTrack: null, topUser: null,
+  };
 
   const sections = [
     { icon: "📔", label: "PORTADA", content: `Tu ${PERIODS.find(p => p.id === period)?.label} en El Búnker`,
       detail: `${stats.total} eventos · ${stats.uniqueDays} días activos`,
       color: ACID },
     { icon: "🎵", label: "MÚSICA", content: `${stats.plays} reproducciones`,
-      detail: stats.topTrack ? `${stats.topTrack.id.slice(0, 20)} · ${stats.topTrack.plays}x` : "Sin datos",
+      detail: stats.topTrack
+        ? `${stats.topTrack.title}${stats.topTrack.artist ? " — " + stats.topTrack.artist : ""} · ${stats.topTrack.plays}x`
+        : "Sin datos",
       color: "#00ffcc" },
     { icon: "📝", label: "MEMORIA", content: `${stats.created} entradas creadas`,
       detail: "Fotos, notas, cartas e hitos en el VAULT",
       color: PURPLE },
     { icon: "♥", label: "CONEXIÓN", content: `${stats.drops} drops enviados`,
-      detail: stats.topUser ? `${stats.topUser.id} lidera con ${stats.topUser.events} eventos` : "",
+      detail: stats.topUser ? `${stats.topUser.name} lidera con ${stats.topUser.events} eventos` : "",
       color: "#ff6b35" },
     { icon: "🏆", label: "HITOS", content: stats.topDay ? `Día más activo: ${stats.topDay.date}` : "Sin datos",
       detail: `${stats.topDay?.count || 0} eventos en un solo día`,
@@ -112,6 +109,19 @@ export default function Recaps({ events = [], accentColor = ACID }) {
 
   return (
     <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+      {/* STAT-M9: indicador de carga + error de fetch server-side */}
+      {loadingRecap && (
+        <div className="flex items-center justify-center gap-2 py-3 text-xs opacity-50" style={{ color: accent, fontFamily: FONT_MONO }}>
+          <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.4, repeat: Infinity }}>◎</motion.span>
+          <span className="tracking-[0.3em] uppercase">GENERANDO RECAP</span>
+        </div>
+      )}
+      {recapFetchErr && !loadingRecap && (
+        <div className="py-2 px-3 text-xs opacity-70 text-center" style={{ color: "#ff3b3b", fontFamily: FONT_MONO }}>
+          ⚠ {recapFetchErr}
+        </div>
+      )}
+
       {/* Period selector */}
       <div className="flex gap-1">
         {PERIODS.map(p => (

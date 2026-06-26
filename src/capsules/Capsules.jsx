@@ -147,7 +147,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
           {subTab === "timecapsules" && (
             <TimeCapsules capsules={capsules} accentColor={accent} entries={_db?.entries || []} playlists={_db?.music_lab?.playlists || []} />
           )}
-          {subTab === "recap" && <Recaps events={events} accentColor={accent} />}
+          {subTab === "recap" && <Recaps accentColor={accent} />}
         </motion.div>
       </AnimatePresence>
     </div>

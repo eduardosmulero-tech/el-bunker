@@ -20,6 +20,7 @@ import handleEras from "./routes/eras.js";
 import handleFiles from "./routes/files.js";
 import handleQueue from "./routes/queue.js";
 import handleEvents from "./routes/events.js";
+import handleStats from "./routes/stats.js";
 import handleCapsules from "./routes/capsules.js";
 import handleUpload from "./routes/upload.js";
 import handleR2 from "./routes/r2.js";
@@ -39,6 +40,7 @@ const ROUTES = [
   ["/api/files",           handleFiles,      true],
   ["/api/queue",           handleQueue,      true],
   ["/api/events",          handleEvents,     true],
+  ["/api/stats",           handleStats,      true],   // STAT-M9: agregaciones server-side para RECAP
   ["/api/time_capsules",   handleCapsules,   true],
   ["/api/upload",          handleUpload,     true],
   ["/api/sync",            handleSync,       true],

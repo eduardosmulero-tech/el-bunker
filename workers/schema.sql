@@ -190,6 +190,9 @@ CREATE TABLE events (
 CREATE INDEX idx_events_type    ON events(event_type);
 CREATE INDEX idx_events_user    ON events(user_id);
 CREATE INDEX idx_events_created ON events(created_at);
+-- STAT-M9: índices compuestos para agregaciones server-side en /api/stats/recap
+CREATE INDEX IF NOT EXISTS idx_events_type_created ON events(event_type, created_at);
+CREATE INDEX IF NOT EXISTS idx_events_entity_type  ON events(entity_type);
 
 -- ═══ TIME CAPSULES (ADR-020) ════════════════════════════════
 CREATE TABLE time_capsules (
