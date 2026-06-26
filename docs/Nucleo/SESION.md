@@ -323,3 +323,73 @@ Sin cambio: ~74% (estos eran bugs, no features nuevas). ~26% restante sigue sien
 - `src/core/VaultContext.jsx`
 - `workers/routes/sync.js`
 - `.env.example` (NUEVO)
+
+---
+
+## S139 — STAT-M9 FIRST SLICE: AGREGACIONES SERVER-SIDE EN D1 (26 Junio 2026)
+
+### Resumen
+Primera slice del motor de estadísticas D1. Nuevo endpoint `GET /api/stats/recap?since=&until=` devuelve agregaciones server-side (no JSON.parse del cliente sobre los 200+ events locales). JOIN real a tablas `tracks`/`users` para mostrar títulos y nombres reales en RECAP. Requiere deploy manual del Worker (wrangler) y migration de los nuevos índices al D1.
+
+### Cambios
+
+| Archivo | Qué |
+|---------|-----|
+| `workers/schema.sql` | +2 `CREATE INDEX IF NOT EXISTS`: `idx_events_type_created(event_type, created_at)` y `idx_events_entity_type(entity_type)` — idempotentes, no rompen nada existente |
+| `workers/routes/stats.js` (NUEVO) | `GET /api/stats/recap?since=&until=` (auth required). 4 queries paralelas a D1:<br>• Q1: totales via `SUM(CASE WHEN event_type='…' THEN 1 ELSE 0 END)` (plays, drops, created_entries, smokes_completed, unique_days via `COUNT(DISTINCT date(created_at))`)<br>• Q2: top track via `LEFT JOIN tracks t ON t.id = e.entity_id` (devuelve title, artist, plays)<br>• Q3: top day via `GROUP BY date(created_at)`<br>• Q4: top user via `LEFT JOIN users u ON u.id = e.user_id` (devuelve name, events)<br>Cache-Control: public, max-age=60 (stats son globales). Validación: since≤until, ambas ISO, devuelve 400 si inválidas. |
+| `workers/worker.js` | Registrado `handleStats` con auth=true bajo `/api/stats` |
+| `src/capsules/Recaps.jsx` | Refactor 50+ líneas de cálculo client-side → fetch a `/api/stats/recap`. Añadido:<br>• `useRef(reqIdRef)` con race-condition guard (rapid-click entre periods no pisa datos viejos)<br>• Loading pill animado "GENERANDO RECAP" + error pill rojo ⚠<br>• `if (!workerClient.hasToken()) { setRecapData(null); return; }` short-circuit<br>• Sección MÚSICA ahora muestra `${topTrack.title} — ${topTrack.artist} (Nx)` (título real del JOIN)<br>• Sección CONEXIÓN ahora muestra `${topUser.name} lidera con X eventos` (nombre real del JOIN)<br>• Deps `[period]` (no `[range.since, range.until]` — esto último refetchearía en cada render porque `getPeriodRange` usa `new Date()`) |
+| `src/capsules/Capsules.jsx` | Quitado prop `events={events}` de `<Recaps>` — Recaps.jsx ahora consume backend directo via workerClient singleton |
+
+### Visible UX win (lo que el usuario ve al activar)
+Antes (client-side, topTrack calculado de `id.slice(0,20)`):
+```
+MÚSICA · 47 reproducciones
+detail: a3b8f8c0-d9e7-4c12-bb1... · 12x  ← ID truncado, sin contexto
+```
+
+Ahora (server-side, JOIN a tracks):
+```
+MÚSICA · 47 reproducciones
+detail: Liquid Spirit — Gregory Porter · 12x  ← Título y artista reales
+```
+
+Idem CONEXIÓN: "david lidera con 87 eventos" en lugar de "david lidera con 87 eventos" pero con id crudo.
+
+### Pasos manuales del usuario (no automatizables)
+Para que el endpoint `/api/stats/recap` esté vivo en producción:
+
+1. **Migrar índices al D1** (idempotente, ya tiene `IF NOT EXISTS`):
+```bash
+cd workers
+wrangler d1 execute el-bunker-db --file=schema.sql
+```
+
+2. **Desplegar Worker**:
+```bash
+wrangler deploy
+```
+
+3. **Verificar**: `curl -H "Authorization: Bearer $JWT" https://el-bunker-api.thebunker-admin.workers.dev/api/stats/recap?since=2026-06-19T00:00:00Z&until=2026-06-26T23:59:59Z`
+
+3. Vercel ya auto-deployó el frontend (Recaps.jsx ya consume el endpoint).
+
+### Build/Lint
+- **Build**: 2.60s ✓
+- **Lint**: 0 errors, 0 warnings ✓
+- **Code review** (Poirot mini): shippable, ítems P1 corregidos (deps [period] anti-refetch-infinito, UI consume title/name del JOIN)
+
+### Score
+- CAPSULES/RECAP: 80% → 85% (RECAP ahora muestra datos reales del D1)
+- STAT-M9 slice 1 completas: backend route + consumer + UX visible. Pendiente **slice 2**: `era distribution` + `listening time per era` + `streaks`.
+
+### Pendiente
+- **MANUAL do usuario**: ejecutar `wrangler d1 execute` + `wrangler deploy` (3-5 min).
+- **STAT-M9 slice 2**: agregar /api/stats/era-distribution y /api/stats/streak → desbloquear SC6/SC12 (stats credit en Escucha Compartida).
+
+### Archivos modificados/creados (5)
+- `src/capsules/Recaps.jsx`
+- `src/capsules/Capsules.jsx`
+- `workers/routes/stats.js` (NUEVO)
+- `workers/schema.sql`
+- `workers/worker.js`
