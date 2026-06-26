@@ -29,7 +29,7 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
     title={title}
     aria-label={ariaLabel ?? title}
     className={`rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
-      size === "sm" ? "w-10 h-10" : "w-11 h-11"
+      size === "sm" ? "w-11 h-11 min-w-[44px] min-h-[44px]" : "w-11 h-11 min-w-[44px] min-h-[44px]"
     }`}
     style={{
       background: active ? withAlpha(color, 0.2) : "transparent",
@@ -48,8 +48,10 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   const {
     activeTrack: track,
     isPlaying: playing, setIsPlaying: setPlaying,
-    localQueue: _queue, addToQueue,
+    localQueue: _queue,    addToQueue,
     loopMode, toggleLoopMode, shuffle, setShuffle,
+    // S141: sincronizar lista filtrada por tag activo con PlayerContext
+    setContextTracks,
     autoPlaySignal, syncStatus,
     audioRef,
     skip,
@@ -149,6 +151,14 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoPlaySignal]);
+
+  // S141: sincronizar la lista actual de tracks (= `filteredTracks` desde MusicLab)
+  // con PlayerContext. Cuando MusicLab cambia el tag filter, la referencia de `tracks`
+  // cambia, setContextTracks invalida el pool de shuffle automáticamente y skip()
+  // usa la nueva lista. Sin esto, skip+shuffle elegía tracks fuera del tag activo.
+  useEffect(() => {
+    setContextTracks?.(tracks);
+  }, [tracks, setContextTracks]);
 
   // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, l=like, q=add to queue.
   // Agrupado con el resto de useEffects (skipDir/togglePlay ya declaradas arriba).
@@ -671,7 +681,7 @@ return () => cancelAnimationFrame(raf);
             {playing ? <Pause size={18} color={accentColor} strokeWidth={2.5} /> : <Play size={18} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
           </motion.button>
           <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" size="sm" />
-          {/* PLIEGO-230: ⚡ DROP consolidado en la botonera central — antes estaba separado al final */}
+              {/* ⚡ DROP + ⊕ COL — ahora min-h-[44px] */}
           {track && (
             <WinampBtn
               label="⚡"

@@ -76,6 +76,20 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // SH1: orden aleatorio de tracks restantes. Se regenera al activar shuffle o al agotarse.
   const shuffledListRef  = useRef([]);
   const shuffleIndexRef  = useRef(0);
+  // S141: lista filtrada por tag activo desde MusicLab. setContextTracks se invoca
+  // desde WinampPlayer.useEffect al cambiar su prop `tracks` (= filteredTracks).
+  // Cuando la referencia cambia, invalidamos el pool de shuffle para que respete el filtro activo.
+  const contextTracksRef = useRef(null);
+  const setContextTracks = useCallback((list) => {
+    if (contextTracksRef.current !== list) {
+      contextTracksRef.current = list;
+      // SH1: invalidar pool de shuffle al cambiar filtro (evita tracks fuera del tag)
+      shuffledListRef.current = [];
+      shuffleIndexRef.current = 0;
+      shuffledListRefStable.current = [];
+      shuffleIndexRefStable.current = 0;
+    }
+  }, []);
 
   // Resetear estado de shuffle al desactivarlo
   useEffect(() => {
@@ -637,8 +651,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       return;
     }
 
-    // Cola vacía: shuffle aleatoriza sobre filteredTracks o tracks globales
-    const list = filteredTracks ?? tracks;
+    // Cola vacía: shuffle aleatoriza sobre filteredTracks (sincronizada vía contextTracksRef)
+    // o tracks globales. filteredTracks prop gana sobre ref para compatibilidad con callers externos.
+    const list = filteredTracks ?? contextTracksRef.current ?? tracks;
     if (!list.length) return;
     const idx  = list.findIndex((t) => t.id === activeTrack?.id);
     const base = idx < 0 ? 0 : idx;
@@ -1558,6 +1573,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       masterVolume, setMasterVolume,
       audioRef,
       skip, addToQueue, addNext, removeFromQueue, playTrack,
+      // S141: sincronizar lista filtrada por tag activo (MusicLab) → PlayerContext
+      setContextTracks,
       playbackContext, setPlaybackContext,
       // S77: Cola features
       addPlaylistToQueue,
