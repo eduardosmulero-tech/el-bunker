@@ -35,6 +35,13 @@ class WorkerClient {
     const res = await fetch(`${API_BASE}${path}`, opts);
     if (res.status === 401) {
       console.warn("[WorkerClient] ⚠ 401 — token expirado o inválido");
+      this.clearToken();
+      // S140: notificar a la app para que re-autentique silenciosamente.
+      // Sin esto, StatsEngine.emit() falla silenciosa y eventos (track_play,
+      // entry_created, etc.) jamás llegan a D1 — bug real detectado en
+      // Timeline de David (evento del 22-Jun se quedó como el último).
+      try { window.dispatchEvent(new CustomEvent("bunker_jwt_expired")); }
+      catch { /* SSR / tests */ }
     }
     return res;
   }

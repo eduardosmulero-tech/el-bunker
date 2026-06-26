@@ -45,7 +45,9 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       setFetchError(null);
       try {
         const [eventsData, capsulesData] = await Promise.all([
-          workerClient.get('/api/events?limit=200').catch(e => { throw new Error(`Events: ${e.message}`); }),
+          // S140: 500 = ventana amplia para no desplazar eventos de David
+          // cuando Edu acumula muchos plays. Server: min(parseInt, 500).
+          workerClient.get('/api/events?limit=500').catch(e => { throw new Error(`Events: ${e.message}`); }),
           workerClient.get('/api/time_capsules').catch(e => { throw new Error(`Capsules: ${e.message}`); }),
         ]);
         if (!cancelled) {

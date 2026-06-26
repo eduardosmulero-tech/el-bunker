@@ -129,6 +129,9 @@ export function VaultProvider({ children }) {
   const [libraryCapacity, setLibraryCapacity] = useState({});
 
   const hbTimerRef = useRef(null);
+  // S140: debounce ref para evitar loop de re-auth en clock-skew patológico
+  // (si JWT nuevo ya llega expirado, cada stats emit → 401 → re-auth → loop)
+  const lastJwtExpiredRef = useRef(0);
 
   // ── Derived: authStatus ───────────────────────────────────
   const authStatus =
@@ -356,6 +359,34 @@ export function VaultProvider({ children }) {
       setStatsToken(saved);
     }
   }, []);
+
+  // ── S140: Listener para JWT expirado ──────────────────────
+  // WorkerClient dispara 'bunker_jwt_expired' cuando recibe 401 del Worker.
+  // Esto ocurre en PWAs abiertas días sin recarga: JWT_EXPIRY (24h) se cumple
+  // y sessionStorage retiene el token inválido. Si Google sigue vivo
+  // (window.gapi), intentamos re-autenticar silenciosamente y todo vuelve a
+  // postear (StatsEngine, drops, entries). Si Google también murió,
+  // dejamos que el usuario recargue manualmente.
+  useEffect(() => {
+    const handler = async () => {
+      // S140-P2: debounce 30s — evita loop de re-auth si el JWT nuevo llega
+      // con clock skew patológico y expira inmediatamente. Sin esto, cada
+      // stats emit → 401 → re-auth → mismo JWT muerto → loop de D1 writes.
+      if (Date.now() - lastJwtExpiredRef.current < 30_000) return;
+      lastJwtExpiredRef.current = Date.now();
+
+      const googleToken = window.gapi?.client?.getToken?.()?.access_token;
+      if (!user?.email || !googleToken) {
+        console.warn("[Búnker] JWT expirado sin Google token — recarga manual necesaria");
+        return;
+      }
+      console.info("[Búnker] ♻ Re-autenticando silenciosamente (JWT expirado)...");
+      await _fetchJwt(user.email, googleToken);
+    };
+    window.addEventListener("bunker_jwt_expired", handler);
+    return () => window.removeEventListener("bunker_jwt_expired", handler);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.email]);
 
   // ── Step 2: Fetch user info + DB (S64: Worker primero, Drive fallback) ─
   const _fetchUserAndDb = useCallback(async (token) => {
