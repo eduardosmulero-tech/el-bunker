@@ -4,10 +4,11 @@
 //  Stack: React + Tailwind CSS + Framer Motion
 // ============================================================
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../core/ToastContext";
 import { usePlayer } from "../core/PlayerContext";
+import { useVault } from "../core/VaultContext";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 
 // ─── SCANLINE OVERLAY ────────────────────────────────────────
@@ -74,80 +75,94 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-6"
+      className="fixed top-0 left-0 right-0 z-30 flex flex-col px-6"
       style={{
         paddingTop: "env(safe-area-inset-top, 12px)",
         paddingBottom: "12px",
-        minHeight: "calc(36px + env(safe-area-inset-top, 8px))",
+        /* 80px contenido (20+4+44+12) + safe-area (misma formula que paddingTop del StatusBar) */
+        minHeight: "calc(80px + env(safe-area-inset-top, 12px))",
         background: `linear-gradient(180deg, rgba(5,5,5,0.995) 0%, rgba(5,5,5,0.95) 60%, rgba(5,5,5,0.0) 100%)`,
       }}
     >
-      {/* LEFT: Brand + Presence */}
-      <div className="flex items-center gap-3 min-w-0">
-        <motion.div
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          className="w-2 h-2 rounded-full flex-none"
-          style={{ background: isAuthenticated ? accentColor : "#ff3b3b", boxShadow: `0 0 8px ${isAuthenticated ? accentColor : "#ff3b3b"}` }}
-        />
-        <span
-          className="text-xs tracking-[0.3em] uppercase font-bold flex-none"
-          style={{ color: accentColor, textShadow: `0 0 12px ${accentColor}44` }}
-        >
-          EL BÚNKER
-        </span>
-
-        {/* SC14: Presence indicator in status bar — sigue el vibe del partner */}
-        {partnerListening && (() => {
-          const partnerVibeColor = partnerTrackVibe ? getVibeConfig(partnerTrackVibe).palette.accent : "#ffcc00";
-          return (
-            <motion.div
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-1.5 text-[9px] tracking-wider uppercase truncate"
-              style={{ color: sessionId ? "#ff2d55" : partnerVibeColor, opacity: 0.8 }}
-            >
-              <motion.span
-                animate={sessionId
-                  ? { scale: [1, 1.3, 1] }
-                  : { opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 1.2, repeat: Infinity }}
-              >
-                {sessionId ? "♥" : "◉"}
-              </motion.span>
-              <span className="truncate max-w-[120px]">
-                {partnerName}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
-              </span>
-            </motion.div>
-          );
-        })()}
+      {/* ROW 1: Brand (línea propia) + Clock compacto */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <motion.div
+            animate={{ opacity: [1, 0.3, 1] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            className="w-2 h-2 rounded-full flex-none"
+            style={{ background: isAuthenticated ? accentColor : "#ff3b3b", boxShadow: `0 0 8px ${isAuthenticated ? accentColor : "#ff3b3b"}` }}
+          />
+          <span
+            className="text-xs tracking-[0.3em] uppercase font-bold flex-none"
+            style={{ color: accentColor, textShadow: `0 0 12px ${accentColor}44` }}
+          >
+            EL BÚNKER
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-xs whitespace-nowrap flex-none" style={{ color: accentColor, opacity: 0.75 }}>
+          <span className="tracking-wider text-[11px]">{dateStr}</span>
+          <span
+            className="font-bold tracking-widest tabular-nums text-[11px]"
+            style={{ color: accentColor, textShadow: `0 0 8px ${accentColor}66` }}
+          >
+            {timeStr}
+          </span>
+        </div>
       </div>
 
-      {/* RIGHT: Clock */}
-      <div className="flex items-center gap-4 text-xs whitespace-nowrap flex-none" style={{ color: accentColor, opacity: 0.75 }}>
-        <span className="tracking-wider">{dateStr}</span>
-        <span
-          className="font-bold tracking-widest tabular-nums"
-          style={{ color: accentColor, textShadow: `0 0 8px ${accentColor}66` }}
-        >
-          {timeStr}
-        </span>
-        <button
-          onClick={() => window.location.reload()}
-          className="text-xs tracking-widest uppercase px-4 py-3 rounded-sm transition-all min-h-[44px] min-w-[44px]"
-          style={{ border: `1px solid ${accentColor}33`, opacity: 1 }}
-        >
-          ↺
-        </button>
-        {onSignOut && (
+      {/* ROW 2: Presence indicator + action buttons */}
+      <div className="flex items-center justify-between mt-1">
+        {/* SC14: Presence indicator — sigue el vibe del partner */}
+        <div className="min-w-0 flex-1">
+          {partnerListening ? (() => {
+            const partnerVibeColor = partnerTrackVibe ? getVibeConfig(partnerTrackVibe).palette.accent : "#ffcc00";
+            return (
+              <motion.div
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-1.5 text-[9px] tracking-wider uppercase truncate"
+                style={{ color: sessionId ? "#ff2d55" : partnerVibeColor, opacity: 0.8 }}
+              >
+                <motion.span
+                  animate={sessionId
+                    ? { scale: [1, 1.3, 1] }
+                    : { opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.2, repeat: Infinity }}
+                  className="flex-none"
+                >
+                  {sessionId ? "♥" : "◉"}
+                </motion.span>
+                <span className="truncate">
+                  {partnerName}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
+                </span>
+              </motion.div>
+            );
+          })() : (
+            <span className="text-[9px] opacity-20 tracking-wider uppercase" style={{ color: accentColor }}>
+              · offline ·
+            </span>
+          )}
+        </div>
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 flex-none ml-2">
           <button
-            onClick={onSignOut}
-            className="text-xs tracking-widest uppercase px-4 py-3 rounded-sm transition-all min-h-[44px]"
-            style={{ border: `1px solid #ff3b3b44`, color: "#ff3b3b", opacity: 0.7 }}
+            onClick={() => window.location.reload()}
+            className="text-xs tracking-widest uppercase px-3 py-2 rounded-sm transition-all min-h-[44px] min-w-[44px]"
+            style={{ border: `1px solid ${accentColor}33`, opacity: 1 }}
           >
-            EXIT
+            ↺
           </button>
-        )}
+          {onSignOut && (
+            <button
+              onClick={onSignOut}
+              className="text-xs tracking-widest uppercase px-3 py-2 rounded-sm transition-all min-h-[44px]"
+              style={{ border: "1px solid #ff3b3b44", color: "#ff3b3b", opacity: 0.7 }}
+            >
+              EXIT
+            </button>
+          )}
+        </div>
       </div>
     </motion.header>
   );
@@ -265,6 +280,17 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
     return () => audio.removeEventListener("timeupdate", onTime);
   }, [audioRef]);
 
+  // Tag pill from track's primary tag — resolve tag_id → label from db.music_lab.tags
+  const { db } = useVault();
+  const resolvedTagLabel = useMemo(() => {
+    if (!activeTrack?.tag_id) return null;
+    const tags = db?.music_lab?.tags;
+    if (!tags?.length) return null;
+    const tag = tags.find(t => t.id === activeTrack.tag_id);
+    return tag?.label ?? null;
+  }, [activeTrack, db?.music_lab?.tags]);
+  const tagLabel = activeTrack?.tag_label ?? resolvedTagLabel ?? activeTrack?.tag ?? activeTrack?.tag_id ?? null;
+
   if (!activeTrack) return null;
 
   const toggle = () => {
@@ -277,9 +303,6 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
     if (!s || isNaN(s)) return "0:00";
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
-
-  // Tag pill from track's primary tag
-  const tagLabel = activeTrack?.tag_label ?? activeTrack?.tag ?? activeTrack?.tag_id ?? null;
 
   return (
     <motion.div
@@ -574,8 +597,12 @@ export default function Layout({
       {/* NOTA: Las transiciones de página las maneja App.jsx (AuthenticatedApp).
            No duplicar AnimatePresence aquí — causa doble animación y flicker. */}
       <main
-        className="relative z-20 pt-10 min-h-screen"
-        style={{ paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))" }}
+        className="relative z-20 min-h-screen"
+        /* 80px contenido (20+4+44+12) + safe-area (misma formula que StatusBar) */
+        style={{
+          paddingTop: "calc(80px + env(safe-area-inset-top, 12px))",
+          paddingBottom: "calc(80px + env(safe-area-inset-bottom, 0px))",
+        }}
       >
         {children}
       </main>

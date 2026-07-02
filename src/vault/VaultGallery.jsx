@@ -1144,33 +1144,25 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
 };
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────
-export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _onOpenEntry }) {
+export default function VaultGallery({ entries = [], eras = [], filterCategory = "all", onOpenEntry: _onOpenEntry }) {
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
-  const [, setCurrentIdx] = useState(0);
 
   // VB9: vibe accent from current track — propagates to mode bar, category filter, etc.
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const vibeAccent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   // S95: mostrar todas las entradas con imagen/media, no solo photo.
-  // Los filtros de categoría reducen el subset visible.
+  // El filtro por categoría lo aplica el padre (Vault.jsx) — entries ya vienen filtradas.
   const entriesWithMedia = useMemo(() =>
     entries.filter(e => !e.is_deleted && (getImageUrl(e) || e.content?.text)),
     [entries]
   );
 
-  // S95 — Filtro por categoría
-  const [filterCategory, setFilterCategory] = useState("all");
-  const filteredEntries = useMemo(() => {
-    if (filterCategory === "all") return entriesWithMedia;
-    return entriesWithMedia.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
-  }, [entriesWithMedia, filterCategory]);
-
   // Fase 1: WALL delegado a WallView.jsx (virtualización + pinch zoom + badges + stagger)
   const renderWall = () => (
     <WallView
-      entries={filteredEntries}
+      entries={entriesWithMedia}
       eras={eras}
       density={density}
       setDensity={setDensity}
@@ -1181,32 +1173,32 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
 
   // S122-A: CINEMA delegado a componente separado CinemaView (hooks propios, swipe + Ken Burns)
   const renderCinema = () => (
-    <CinemaView entries={filteredEntries} eras={eras} />
+    <CinemaView entries={entriesWithMedia} eras={eras} />
   );
 
   // S122-B: DIALOGUE delegado a componente con emparejamiento temporal + chat layout
   const renderDialogue = () => (
-    <DialogueView entries={filteredEntries} eras={eras} />
+    <DialogueView entries={entriesWithMedia} eras={eras} />
   );
 
   // S122-C: EXHIBITION delegado a componente con agrupación por Era + vibe breakdown
   const renderExhibition = () => (
-    <ExhibitionView entries={filteredEntries} eras={eras} />
+    <ExhibitionView entries={entriesWithMedia} eras={eras} />
   );
 
   // S122-D: REEL delegado a componente con auto-generación secuencias por día
   const renderReel = () => (
-    <ReelView entries={filteredEntries} eras={eras} />
+    <ReelView entries={entriesWithMedia} eras={eras} />
   );
 
   // S130-D: MAP con entries reales. MapView normaliza lat/lng desde content.* (backward compat con DEMO_ENTRIES_GEO).
-  const renderMap = () => <MapView entries={filteredEntries} eras={eras} />;
+  const renderMap = () => <MapView entries={entriesWithMedia} eras={eras} />;
 
   return (
     <div className="flex flex-col gap-3" style={{ fontFamily: FONT_MONO }}>
       {/* Fase 9: contextual subtitle — mode + count feedback */}
       <div className="text-[8px] text-center opacity-15 tracking-[0.3em] uppercase" style={{ color: vibeAccent, fontFamily: FONT_MONO }}>
-        {mode.toUpperCase()} · {filteredEntries.length} elementos
+        {mode.toUpperCase()} · {entriesWithMedia.length} elementos
       </div>
       {/* Mode bar — VB9: vibe-reactive accent */}
       <nav className="flex gap-1 overflow-x-auto">
@@ -1219,24 +1211,8 @@ export default function VaultGallery({ entries = [], eras = [], onOpenEntry: _on
         ))}
       </nav>
 
-      {/* S95 — Filtro por categoría (14 categorías) — VB9: vibe-reactive */}
-      <div className="flex gap-0.5 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-        {CATEGORY_FILTERS.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => { setFilterCategory(cat.id); setCurrentIdx(0); }}
-            className={`text-xs px-2.5 py-2 rounded-sm whitespace-nowrap transition-all flex-shrink-0 ${filterCategory === cat.id ? "" : "opacity-25 hover:opacity-50"}`}
-            style={{
-              color: filterCategory === cat.id ? vibeAccent : `${vibeAccent}88`,
-              borderBottom: filterCategory === cat.id ? `1px solid ${vibeAccent}` : "1px solid transparent",
-              fontFamily: FONT_MONO,
-            }}
-            title={cat.label}
-          >
-            {cat.icon}
-          </button>
-        ))}
-      </div>
+      {/* S95 — Filtro por categoría: eliminado de VaultGallery (duplicado con Vault.jsx).
+           El filtro maestro está en Vault.jsx:892 — VaultGallery recibe entries ya filtradas. */}
 
       {/* Content */}
       <AnimatePresence mode="wait">

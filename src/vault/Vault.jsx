@@ -977,7 +977,8 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
               <Suspense fallback={<Skeleton.VaultGallery />}>
               <VaultGallery
                 entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
-                eras={displayEras}                />
+                eras={displayEras}
+                filterCategory={filterCategory}                />
               </Suspense>
             </ChunkErrorBoundary>
           </div>

@@ -288,3 +288,65 @@ Nota: demasiadas iteraciones en fix scroll — localizar causa raíz con DevTool
   - PRECACHE funcional via swAssetManifest Vite plugin
   - safe-area-inset-* en StatusBar, BottomNav, MiniPlayer
   - Design system creado: Button/Card/Input
+## S132 — 2026-06-17
+- **Pliegos:** Auditoria escucha compartida SC1-SC14 (sin pliegos formales)
+- **Archivos:** WinampPlayer.jsx, PlayerContext.jsx, MusicLab.jsx, sync.js, Layout.jsx
+- **Hitos:** Score 38% → 78%. Corazon header, auto-join, posicion 1s, queue compartida, reconnect SC8, vibe SC3. 10 bugs resueltos.
+
+## S133 — 2026-06-18
+- **Pliegos:** Estabilizacion pre-testing S0.6 (commit f86a1a4)
+- **Archivos:** 28 ficheros modificados
+- **Hitos:** Lint 38→0, build 3.4s→2.2s. 4 runtime fixes. ToastContext.jsx + events.js nuevos. Tests 12/12.
+
+## S134 — 2026-06-18
+- **Pliegos:** Checklist testing self-contained (commits a7ef533, 735f066)
+- **Archivos:** bunker_checklist.html, checklist_data.js (eliminado)
+- **Hitos:** 312 items, 31 secciones. Inline data. Tester toggle Edu/David.
+
+## S135 — 2026-06-22
+- **Pliegos:** Fase 0 estetica (auditoria visual Gemini)
+- **Archivos:** Layout.jsx, WinampPlayer.jsx, MusicLab.jsx, TrackCard.jsx, AddEntryForm.jsx, index.css
+- **Hitos:** 6/8 hallazgos corregidos. Safe-areas, glows, touch targets >=44px, JetBrains Mono, scanlines, selects custom. Roadmap 100% generado.
+
+## S136 — 2026-06-25
+- **Pliegos:** Ciclo autonomo Fases 0-6 (6 ramas, 6 commits)
+- **Archivos:** WallView.jsx (NUEVO), VaultGallery.jsx, Layout.jsx, Timeline.jsx, etc.
+- **Hitos:** Score 40% → 70% frontend. WALL virtualizado, MAP capas, CAPSULES filtro, VB9 vibe-accent. 30% backend-blocked.
+
+## S137 — 2026-06-26
+- **Pliegos:** Fase 9 UX polish (commit 401dac9)
+- **Archivos:** VaultGallery.jsx
+- **Hitos:** DIALOGUE zoom modal, EXHIBITION expansion, LIVE SYNC subtitle contextual. Build 2.60s.
+
+## S138 — 2026-06-26
+- **Pliegos:** 8 bug fixes + OAuth UX (commit 1070f21)
+- **Archivos:** VaultGallery.jsx, PlaylistManager.jsx, PlayerContext.jsx, MusicLab.jsx, GoogleDriveService.js, VaultContext.jsx, workers/routes/sync.js, .env.example
+- **Hitos:** 3 P1 (audio en VAULT, race PlaylistManager, autoplay promise), 3 P2 (keys duplicados, slider clamp, tracks fantasma), 2 P3 (URL normalize, queue_json 50KB). OAuth translation. Build 2.37s.
+
+## S139 — 2026-06-26
+- **Pliegos:** STAT-M9 first slice (agregaciones server-side en D1)
+- **Archivos:** Recaps.jsx, Capsules.jsx, workers/routes/stats.js (NUEVO), workers/schema.sql, workers/worker.js
+- **Hitos:** GET /api/stats/recap con JOINs reales a tracks/users. TOP track/TOP user con nombres. Build 2.60s.
+
+## S140 — 2026-06-26
+- **Pliegos:** PLIEGO-S140 (JWT silent expiration fix)
+- **Archivos:** WorkerClient.js, VaultContext.jsx, Capsules.jsx
+- **Hitos:** Re-auth silencioso en 401. Debounce 30s. limit 200→500. Build 3.65s.
+
+## S141 — 2026-06-26
+- **Pliegos:** PLIEGO-S141 (shuffle respeta tag filter)
+- **Archivos:** PlayerContext.jsx, WinampPlayer.jsx
+- **Hitos:** contextTracksRef + setContextTracks. Fallback chain en skip(). Build 3.85s.
+
+## S142 — 2026-06-26
+- **Pliegos:** PLIEGO-S142 (shuffle Q8/Q9 + L1 + P3 fixes en PlayerContext.jsx)
+- **Archivos:** PlayerContext.jsx
+- **Hitos:** Fisher-Yates shuffle, cola manual preservada, loop=track absoluto, guard duplicados. Build 3.39s.
+
+## S143 — 2026-07-02
+- **Tipo:** Revision. Fable verifico informe de Opus: 14 hallazgos confirmados, 2 errores factuales corregidos. PLIEGO-235 aprobado.
+
+## S144 — 2026-07-02 (DeepSeek)
+- **Pliegos:** PLIEGO-235 (FASE A.1 "Cero pantallas rotas"), PLIEGO-236 (correcciones post-revision)
+- **Archivos:** Layout.jsx, VaultGallery.jsx, config.js, Vault.jsx
+- **Hitos:** 6 P1 cerrados (header, contenido, UUID tag, filtro duplicado, RECAP 404, leak config). Build 2.31s, Lint 0/0. FASE A completada.
