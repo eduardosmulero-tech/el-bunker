@@ -325,7 +325,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
       ) : (
       <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
-        className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all"
+        className="relative flex items-center gap-3 p-4 rounded-sm cursor-pointer transition-all"
         style={{
           background: isActive ? `${vibeColor}18` : `${vibeColor}0e`,
           border: `1px solid ${isActive ? vibeColor + "66" : vibeColor + "33"}`,

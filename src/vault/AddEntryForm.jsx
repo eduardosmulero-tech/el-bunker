@@ -238,6 +238,13 @@ function TypeGroup({ category, currentType, onSelect }) {
   );
 }
 
+const SELECT_ARROW_SVG = (c) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23${c.slice(1)}' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`;
+const SELECT_STYLE = (color = ACID) => ({
+  color, border: `1px solid ${color}33`, fontFamily: FONT_MONO,
+  backgroundImage: SELECT_ARROW_SVG(color),
+  backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: 30,
+});
+
 export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel }) {
   const isEditing = !!entry;
   const [type, setType] = useState(entry?.type ?? "note");
@@ -386,8 +393,8 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                   key={f.key}
                   value={extraValues[f.key] || ""}
                   onChange={(e) => setExtraValue(f.key, e.target.value)}
-                  className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px]"
-                  style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}
+                  className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px] appearance-none"
+                  style={SELECT_STYLE(ACID)}
                 >
                   {(f.options ?? []).map((opt) => (
                     <option key={opt} value={opt === "—" ? "" : opt} style={{ background: "#050505" }}>{opt}</option>
@@ -456,12 +463,14 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {/* Era + Destinatario */}
       <div className="flex gap-2">
         <select value={eraId || ""} onChange={e => setEraId(e.target.value || null)}
-          className="bg-transparent text-xs p-3 min-h-[44px] flex-1" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+          className="bg-transparent text-xs p-3 min-h-[44px] flex-1 appearance-none"
+          style={SELECT_STYLE(ACID)}>
           <option value="" style={{ background: "#050505" }}>Sin Era</option>
           {eras.map(e => <option key={e.id} value={e.id} style={{ background: "#050505" }}>{e.name}</option>)}
         </select>
         <select value={toUser} onChange={e => setToUser(e.target.value)}
-          className="bg-transparent text-xs p-3 min-h-[44px]" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+          className="bg-transparent text-xs p-3 min-h-[44px] appearance-none"
+          style={SELECT_STYLE(ACID)}>
           <option value="both" style={{ background: "#050505" }}>PARA AMBOS</option>
           <option value="edu" style={{ background: "#050505" }}>PARA EDU</option>
           <option value="david" style={{ background: "#050505" }}>PARA DAVID</option>

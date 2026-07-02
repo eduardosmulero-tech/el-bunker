@@ -45,7 +45,7 @@ html, body {
   overscroll-behavior: none;
   user-select: none;
   -webkit-user-select: none;
-  font-family: var(--font-mono);
+  font-family: 'JetBrains Mono', 'Courier New', monospace !important;
 }
 
 /* ── Fase 4.6 T8: Pulso sutil cuando mismo tag suena otra vez ── */
