@@ -1,10 +1,11 @@
 # ESTADO.md — el_bunker
 > Fuente de verdad de sesión. MAX 60 líneas. Bugs en espera → BACKLOG.md.
 
-**Próximo pliego:** Pendiente migration D1 + wrangler deploy (manual) para activar `/api/stats/recap`. Tras eso, STAT-M9 slice 2 (métricas avanzadas: era distribution, streaks, listening-time por Era).
-**Última sesión:** S142 — Auditoría completa del reproductor: shuffle ahora opera sobre contexto de playlist (Q8/Q9) + fixes L1 y P3.
+**Próximo pliego:** **PLIEGO-235 — FASE A.1 "Cero pantallas rotas"** (ver `docs/operacional/auditoria_fable_1.0.md` §8): Layout.jsx (StatusBar sin solape + pt real + tag_id→label en MiniPlayer) + config.js (cerrar leak presence) + filtro categoría duplicado. Tras aplicar: **`wrangler deploy` manual de Edu** (mata a la vez el leak de /api/config y el 404 de /api/stats/recap).
+**Plan vigente hasta v1.0:** `docs/operacional/auditoria_fable_1.0.md` — Fases A→D + checklist cerrada §6. Score real verificado: ~52%.
+**Última sesión:** S143 — Fable reverificó la auditoría de Opus: todos los P1/P2/P3 CONFIRMADOS contra código + producción. 2 errores factuales de Opus corregidos (17 tablas, no 13; 16 rutas, no 17). Plan A-D y PLIEGO-235 aprobados.
 **Rama activa:** `master`
-**Commit:** `2ebf8bf` — S142: shuffle now operates on playlist context (Q8/Q9 compliant) + L1 + P3 fixes
+**Commit:** `d566188` — docs: S142 AUDITORÍA reproductor + Q8/Q9 shuffle fix session log + ESTADO bump
 
 ---
 
@@ -29,10 +30,17 @@
 | Estética/UX | 80% | Micro-interacciones | 🟢 |
 | **TOTAL** | **~74%** | **26% backend-blocked** | |
 
-## Bugs activos
+## Bugs activos (verificados en vivo por Fable, 2026-07-02)
 
-### P1 (backend-blocked)
-- STAT-M9: **slice 1 listo en código (commit 96c33a8) — pendiente `wrangler d1 migrate` + `wrangler deploy`** (cuando se ejecute, `/api/stats/recap` queda vivo y RECAP muestra títulos reales de tracks y nombres reales de users via JOIN).
+### P1 — objetivo de PLIEGO-235 (FASE A)
+- **RECAP roto en prod: `/api/stats/recap` → 404** (stats.js commiteado, Worker NO desplegado). Fix: `wrangler deploy` manual.
+- **Leak: `/api/config` sin auth devuelve presence_edu/presence_david** (título track + timestamp). `worker.js:47` + `config.js`. Fix seguro: whitelist keys (verificado: nada consume presence vía config).
+- **Header "EL BÚNKER" solapado con la fecha** en todas las pantallas (`Layout.jsx` StatusBar).
+- **MiniPlayer muestra UUID como tag** (`Layout.jsx:282`, `tag_label` no se setea en ningún sitio).
+- **Contenido recortado bajo StatusBar** (`Layout.jsx:577` pt-10=40px vs header ~70-90px).
+- **Filtro de categoría DUPLICADO en VAULT** con estados independientes (`Vault.jsx:902` + `VaultGallery.jsx:1224`).
+
+### P1 (backend-blocked, post-Fase A)
 - STAT-M9 slice 2: era distribution + listening-time por Era + streaks en D1
 - Gapless/crossfade (P3): requiere PlayerContext refactor
 - Offline total: SW strategies + R2 cache

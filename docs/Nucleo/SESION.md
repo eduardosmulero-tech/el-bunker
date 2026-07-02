@@ -542,3 +542,29 @@ Edu reportó "aleatorio no funciona en cola". Auditoría profesional descubrió 
 
 ### Archivos modificados (1)
 - `src/core/PlayerContext.jsx` (+60/-9 líneas)
+
+---
+
+## S143 — REVISIÓN FABLE DE LA AUDITORÍA TOTAL 1.0 (2 Julio 2026)
+
+### Resumen
+Fable auditó el informe de Opus (`docs/operacional/auditoria_fable_1.0.md`) reverificando cada hallazgo contra código real en master + producción en vivo (curl anónimo) + captura real del móvil. **Veredicto: informe VÁLIDO.** Los 14 hallazgos principales confirmados con evidencia propia; 2 errores factuales de Opus corregidos (schema tiene 17 tablas, no 13; ROUTES tiene 16 entradas, no 17). Verificación adicional que Opus no hizo: whitelistear `/api/config` NO rompe la escucha compartida (presence viaja solo por `/api/sync` con auth). Plan de fases A→D y PLIEGO-235 aprobados.
+
+### Confirmado en producción (2026-07-02)
+- `GET /api/stats/recap` → **404** (Worker desplegado anterior a stats.js).
+- `GET /api/config` anónimo → **200 con presence de ambos usuarios** (título de track + timestamp).
+
+### Matices sobre el informe de Opus
+- El header solapado es colisión brand + **fecha** (no presencia). El fix del PLIEGO-235 cubre ambos.
+- El filtro duplicado del VAULT es peor de lo descrito: los dos filtros tienen **estados independientes**.
+- Capturas del 22-Jun, pero Layout.jsx en master conserva el mismo código → P1 visuales vigentes hoy.
+
+### Docs actualizados
+- `docs/operacional/auditoria_fable_1.0.md` — sección "REVISIÓN FABLE" añadida + estado → REVISADO.
+- `docs/Nucleo/ESTADO.md` — próximo pliego = PLIEGO-235, bugs P1 verificados, plan vigente = auditoría.
+- `CLAUDE.md` — corregidos conteos falsos (11 endpoints→16 rutas+R2, 16 tablas→17) + eliminados artefactos "SEARCH/REPLACE" de un pliego mal aplicado.
+
+### Próximo paso (cualquier modelo puede continuar desde aquí)
+1. **PLIEGO-235 — FASE A.1** (ver auditoría §8): Layout.jsx + config.js + filtro duplicado.
+2. Manual de Edu tras aplicarlo: `cd workers && wrangler d1 execute el-bunker-db --file=schema.sql && wrangler deploy` (un solo deploy mata el 404 de RECAP y el leak de config).
+3. Después: FASE B (reproductor premium) → FASE C (galería premium) → FASE D (endurecimiento). Checklist de salida v1.0 en auditoría §6.
