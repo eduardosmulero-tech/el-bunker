@@ -7,10 +7,21 @@ Edu es desarrollador novato — Claude es el responsable técnico.
 
 ## REGLAS DE ORO
 Convenciones antes de arquitectura propia. Ver ADR-009 en CONTRATO.md.
-Archivo antes de diagnóstico. 
-Estado conocido antes de Pliegos nuevos.
+Archivo antes de diagnóstico — pero **la lectura completa la hace DeepSeek, no Sonnet.**
+Jerarquía de lectura (S145, prioridad = consumo de tokens): DeepSeek lee archivos completos e
+investiga a fondo — es su trabajo. Sonnet lee archivo completo SOLO en casos extremadamente
+necesarios; el resto del tiempo trabaja con lo que DeepSeek ya reportó y verifica con lecturas
+puntuales (grep de una cita/línea concreta), nunca releyendo el archivo entero por sistema.
+Fable recibe contexto exacto ya extraído (citas + archivo:línea) — nunca la instrucción de "lee
+tal archivo"; si hace falta un fragmento para su decisión, Sonnet o DeepSeek lo extraen antes.
+Estado conocido antes de tareas nuevas.
 Un bug = una causa.
-Edu aplica pliegos con tools/pliego_apply.py. Claude genera el .txt; el script aplica. Nunca diffs.
+tools/pliego_apply.py y el formato SEARCH/REPLACE en .txt son LEGACY (sistema previo a tener un
+agente CLI). Metodología vigente desde S145: Sonnet escribe el encargo en task_deepseek.md con
+contexto suficiente (archivo, problema, cambio deseado, restricciones, criterio de verificación) —
+NUNCA un pliego .txt de SEARCH/REPLACE. DeepSeek se pone en contexto solo (lee el código real) y
+edita el archivo directamente, como agente — nunca vía pliego_apply.py. Sonnet no ejecuta scripts
+de aplicación él mismo tampoco. Nunca diffs.
 Resolución de formato. SEARCH/REPLACE por defecto. Archivo completo solo si menos de 80 líneas o más del 40% afectado.
 **NO MICRO-EDICIÓN:** Los bloques SEARCH deben contener el bloque lógico completo (ADR-015).
 Un Pliego = un archivo.
@@ -69,42 +80,39 @@ Loop es triestado.
 | `src/services/FileUploadService.js` | Subida unificada a R2 (ADR-022) |
 | `src/services/StatsEngine.js` | Emisor/agregador de eventos (ADR-019) |
 
-Formato compatible con pliego_apply.py (ver tools/README.md):
-- SEARCH: y REPLACE: solos en su línea, sin backticks, sin texto adicional.
-- El texto de SEARCH debe coincidir exactamente.
-- **Obligatorio:** Copiar bloque completo sin re-indentar.
-- **Prohibido entre bloques:** cualquier texto entre el contenido del REPLACE y el siguiente SEARCH: se inyecta literalmente en el archivo. Esto incluye cabeceras ── título ──, separadores --- y cualquier comentario. El REPLACE termina donde empieza el siguiente SEARCH:.
-- **Multi-bloque:** línea en blanco **obligatoria** tras el último contenido de cada REPLACE cuando hay bloques siguientes — el parser interpreta cualquier texto pegado al REPLACE como contenido a inyectar. El número de bloque va solo en su línea (`SEARCH/REPLACE 1`, sin guión ni texto adicional). Sin títulos ni cabeceras intermedias.
+> **⚠ LEGACY (desde S145):** todo lo de `pliego_apply.py`, formato SEARCH/REPLACE en .txt y los
+> workflows de abajo (HUMANO / B / A) es el sistema previo a tener agentes CLI. Ya no se usa.
+> Se conserva el texto solo como referencia histórica de `tools/PLIEGO-*.txt` anteriores a S145.
 
-## WORKFLOW HUMANO
-Claude genera el pliego como .txt. Edu lo guarda y aplica.
-Si SEARCH no coincide: extraer con `Get-Content` el bloque exacto.
+## METODOLOGÍA VIGENTE (desde S145) — task_deepseek.md
 
-## WORKFLOW B — Script (principal)
-git status
-Guardar pliego .txt en tools/
-python pliego_apply.py pliego_0XX.txt
-Verificar en navegador
-git add src/Archivo.js
-git commit -m "PLIEGO-0XX: descripción"
+1. Sonnet escribe el encargo en `task_deepseek.md` (raíz del proyecto): Estado + Contrato +
+   Contexto mínimo + Tarea + Restricciones + Entregable + criterio de verificación. Nunca un
+   pliego .txt de SEARCH/REPLACE — DeepSeek no ejecuta scripts para aplicar cambios.
+2. DeepSeek lee el prompt, se pone en contexto solo (lee el código real que necesite) y edita
+   el/los archivo(s) directamente, como agente.
+3. DeepSeek reporta hecho/bloqueado. Edu avisa a Sonnet.
+4. Sonnet verifica el resultado contra el código real (Regla de Oro) antes de darlo por bueno —
+   "hecho" no se cree sin verificar.
+5. Build/lint para confirmar (`npm run build`), commit sin coautoría, push si Edu lo pide.
 
-## WORKFLOW A — Asíncrono (fallback)
-Prerequisito: ollama list + ollama run qwen3:14b.
+Sonnet no edita código de `src/`/`workers/` directamente salvo instrucción explícita de Edu —
+su rol es coordinar, redactar el encargo y verificar, no ejecutar. Docs (`docs/`, `CLAUDE.md`,
+`REGLAS.md`) sí los edita Sonnet directamente, son trabajo de coordinación.
 
 ## TABLA DE MODELOS
 Modelo | Cuándo
-deepseek/deepseek-chat    | Todo uso diario: pliegos, bugs, refactors
+deepseek/deepseek-chat    | Ejecutor: implementa directamente lo encargado en task_deepseek.md
 deepseek/deepseek-r1-0528 | Arquitectura o decisiones complejas
 
-## CHECKLIST CIERRE DE PLIEGO
- Marcar stale en docs/Arquitectura/INDEX.md si el pliego toca archivos listados
+## CHECKLIST CIERRE DE TAREA
+ Marcar stale en docs/Arquitectura/INDEX.md si la tarea toca archivos listados
  Actualizar docs/Nucleo/CONTRATO.md si hay ADR nuevo
- Actualizar docs/Nucleo/ESTADO.md (próximo pliego + bugs)
- pliego_apply.py actualiza ESTADO.md y BACKLOG.md automáticamente
+ Actualizar docs/Nucleo/ESTADO.md (próximo pliego + bugs) — manual
+ Actualizar docs/Nucleo/BACKLOG.md (fila en RESUELTOS) — manual
+ Archivar el bloque cerrado de task_deepseek.md y dejar el archivo MAGRO (solo tarea activa)
 
 ## CHECKLIST CIERRE DE SESIÓN
  Actualizar docs/Nucleo/SESION.md con resumen de la sesión
  Actualizar docs de Arquitectura marcados stale en INDEX.md
- Bugs resueltos: pliego_apply.py los registra en BACKLOG.md automáticamente
- Pliegos aplicados: añadir fila a docs/legacy/PLIEGOS_HISTORIAL.md
  Escribir entrada en docs/legacy/SESIONES.md

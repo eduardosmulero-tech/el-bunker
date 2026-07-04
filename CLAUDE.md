@@ -60,14 +60,18 @@ Esperando instruccion.
 
 ## REGLAS DE SESION
 
-- Antes de generar cualquier pliego: verificar que no contradice CONTRATO.md.
-  Si contradice, detener y reportar antes de generar nada.
-- Bloques SEARCH en pliegos: siempre el contenedor logico completo (ADR-015).
-  Nunca micro-edicion ni bloques parciales.
+- Antes de encargar cualquier cambio a DeepSeek: verificar que no contradice CONTRATO.md.
+  Si contradice, detener y reportar antes de escribir el encargo.
+- Cambios de codigo siempre por contenedor logico completo (ADR-015). Nunca micro-edicion
+  ni fragmentos parciales que dejen el archivo en estado inconsistente.
 - Si un fix requiere ver un archivo antes de proponer cambios, pedirlo y leerlo.
   No inventar estado ni asumir contenido de archivos no leidos.
-- Formato de pliegos: siempre SEARCH/REPLACE aplicado por tools/pliego_apply.py.
-  No generar ediciones directas de codigo salvo instruccion explicita.
+- **LEGACY (pre-S145):** tools/pliego_apply.py y el formato SEARCH/REPLACE en .txt ya no se usan
+  — eran el sistema previo a tener agentes CLI. Metodologia vigente: Sonnet escribe el encargo en
+  `task_deepseek.md` (contexto + tarea + restricciones + verificacion); DeepSeek se pone en
+  contexto solo y edita el codigo directamente, como agente. Sonnet no edita `src/`/`workers/`
+  el mismo salvo instruccion explicita de Edu — su rol es coordinar y verificar. Ver REGLAS.md
+  "METODOLOGIA VIGENTE" para el detalle.
 - Al cerrar sesion: actualizar docs/SESION.md y docs/Nucleo/ESTADO.md
   antes de cualquier otra cosa.
 - 🔴 REGLA DE ORO: Antes de implementar, INVESTIGAR. Leer el código completo
@@ -83,7 +87,7 @@ Esperando instruccion.
 - 🔒 3 tabs definitivos: VAULT · MUSIC LAB · CAPSULES. Timeline fusionada en CAPSULES.
 - 🔒 Stats engine unico: tabla events en D1, append-only. Sin agregadores paralelos.
 - 🔒 Google OAuth2 solo para auth. No usar Drive para DB ni archivos.
-- 🔒 SEARCH contenedor logico completo. Nunca micro-edicion.
+- 🔒 Cambios de codigo por contenedor logico completo. Nunca micro-edicion.
 
 ---
 
@@ -91,7 +95,7 @@ Esperando instruccion.
 
 | Modelo                    | Cuando usar                                          |
 |---------------------------|------------------------------------------------------|
-| deepseek/deepseek-chat    | Todo uso diario: pliegos, bugs, refactors, commits   |
+| deepseek/deepseek-chat    | Ejecutor: implementa directamente vía task_deepseek.md, bugs, refactors |
 | deepseek/deepseek-r1-0528 | Sesiones de arquitectura o decisiones complejas      |
 
 Cambiar modelo en Claude Code:
@@ -130,6 +134,12 @@ NUNCA dejar que la mano de obra decida arquitectura ni toque ADRs 🔒.
   wrangler.toml               Config Cloudflare: D1 + R2 bindings.
   docs/sesiones/              Registros de sesiones (S49-S54).
   docs/operacional/auditoria_fable_1.0.md  ⭐ AUDITORIA TOTAL — score real, P1-P3, plan a v1.0.
+  docs/operacional/cola_decisiones_fable.md  Decisiones de diseño abiertas, pendientes de Fable (puede no existir).
+  task_deepseek.md            Encargo vigente para DeepSeek (analisis/investigacion). NO es un pliego:
+                               los pliegos (tools/PLIEGO-*.txt) son el unico vehiculo para cambios de codigo.
+                               task_deepseek.md es para tareas de lectura/analisis/informe. Formato:
+                               Estado + Contrato + Contexto + Tarea + Entregable + Restricciones + Hand-off.
+                               Se mantiene MAGRO: al cerrar la tarea, archivar y borrar el bloque de aqui.
 
 ---
 
@@ -157,7 +167,18 @@ NUNCA dejar que la mano de obra decida arquitectura ni toque ADRs 🔒.
 ARRANQUE AUTOMATICO de cada sesion normal — ese sigue funcionando igual con cualquier modelo,
 incluido Fable. Si Edu no invoca esta auditoria, ignora esta seccion.
 
-Cuando se invoque, adopta integramente el siguiente prompt como tus instrucciones de trabajo:
+**Como se invoca desde S145 en adelante:** Claude (Sonnet, coordinador) NUNCA invoca a Fable como
+subagente. Cuando durante un pliego aparece una decision de diseno/producto no resuelta por el plan
+(ej. "cuantas filas de controles", "cuanto CRT sobre el arte") -- el mismo patron que el ADDENDUM
+S145 de auditoria_fable_1.0.md -- Claude registra la decision en
+`docs/operacional/cola_decisiones_fable.md` (contexto minimo + evidencia archivo:linea + 2-3
+opciones concretas, mismo formato que el ADDENDUM S145) y avisa a Edu en el chat. Edu decide cuando
+hace `/clear` + `/model claude-fable-5` para resolverla el mismo. Al invocarse asi, Fable debe leer
+`docs/operacional/cola_decisiones_fable.md` ademas de la lectura obligatoria de mas abajo, y resolver
+los items pendientes con el mismo criterio ("¿esto reemplaza a Spotify/Google Photos?").
+
+Cuando se invoque el prompt completo de auditoria total (mas abajo), adopta integramente el
+siguiente prompt como tus instrucciones de trabajo:
 
 > ---
 >

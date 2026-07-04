@@ -148,3 +148,25 @@ Metodología: cada hallazgo reverificado leyendo el código real en master + pro
 atacan hallazgos confirmados y el cambio backend es seguro (verificado que nada consume presence vía config).
 Recordatorio: la parte backend requiere `wrangler deploy` manual de Edu, que además revive `/api/stats/recap`
 (mata P1.1 y P1.2 en un solo deploy).
+
+---
+
+## ADDENDUM S145 (2026-07-04) — Decisión Fable: layout de controles WinampPlayer (FASE B)
+
+FASE B (§7) decía "controles rebalanceados sin recorte de volumen" sin bajar a nivel de layout. Al empezar
+la implementación se detectó (verificado en `src/musiclab/WinampPlayer.jsx:650-716`) que la fila única de
+controles (3 clusters: loop/shuffle/like · prev/play/next/⚡/⊕ · 🔊+slider) no cabe en ~375px de ancho —
+el cluster central necesita ≥144px pero solo dispone de ~85px, forzando `overflow-x-auto` real sobre
+prev/play/next. Causa raíz del reporte de Edu: "los botones dificultan mucho el uso".
+
+**Decisión Fable:** 2 filas. Fila 1 (primaria, sin scroll): ♡ · ◀◀ · ⏯(52px) · ▶▶ · ⊕ — controles de
+transporte + like, siempre visibles. Fila 2 (secundaria): ⟳ · ⇄ · ⚡ · 🔊(popover con el slider, ya no
+fijo en la fila — el volumen físico de Android ya está wireado vía `volumechange`). Hitbox de todos los
+botones se mantiene en 44px mínimo siempre; el prop `size` de `WinampBtn` (roto — ambas ramas idénticas)
+pasa a diferenciar solo peso visual (texto/alpha), nunca el hitbox.
+
+Caveats abiertos: verificar en pantalla corta (~640px alto) que el player no empuje contenido fuera de
+viewport tras crecer ~48px; y verificar en dispositivo real si `volumechange` dispara con los botones
+físicos de Chrome Android — si no dispara, el popover pasa de "nice" a "necesario".
+
+Ejecutado como **PLIEGO-237** sobre `WinampPlayer.jsx` (ver `tools/PLIEGO-237.txt`).
