@@ -1,48 +1,67 @@
-# 🔴 S145 — El fix del grid centró el corazón pero descentró el tag de vibe (regresión)
+# 🔴 S145 — Round 3: la causa real es que el hitbox 44px ES el box visible (no solo el texto)
 
-> **Estado:** 🔴 Reabierta 2026-07-05. El cambio de flexbox a CSS grid en el Title Bar de
-> `WinampPlayer.jsx` centró bien el corazón, pero rompió la alineación a la derecha del cluster
-> derecho (botón CAST + badge de vibe). Sonnet ya encontró la causa exacta leyendo el código —
-> es un fix de una línea, no hace falta re-investigar.
-> **Contrato:** editar código directamente. Nunca pliego.
+> **Estado:** 🔴 Reabierta 2026-07-05. Edu sigue viendo los botones grandes pese al fix anterior
+> (que solo redujo texto/opacidad/padding). Sonnet investigó más a fondo y encontró la causa real:
+> el fix anterior nunca separó "tamaño del hitbox" de "tamaño de la caja visible" — son la misma
+> caja, con borde y fondo visibles a 44x44px completos. Reducir el texto de dentro no encoge la
+> caja. Esta vez el fix es estructural, no cosmético.
+> **Contrato:** editar código directamente como agente. Nunca pliego.
 > **Verificación:** Sonnet revisa con grep puntual + build.
 
-## Causa exacta (confirmada, no re-investigar)
+## Causa real confirmada (no re-investigar, ya está verificado leyendo el código)
 
-`src/musiclab/WinampPlayer.jsx:401-407`: el Title Bar es ahora `display: grid` con
-`gridTemplateColumns: "1fr auto 1fr"`. El div del cluster derecho (línea 560,
-`<div className="flex gap-2">`, contiene el botón CAST condicional + el badge de vibe) es hijo
-directo de ese grid, así que por el `justify-items: stretch` por defecto de CSS Grid, ese div
-se estira para ocupar TODO el ancho de su columna `1fr`. Como el div es `flex` sin
-`justify-content`, su contenido (flex-start por defecto) queda pegado al borde IZQUIERDO de esa
-columna ya estirada — que está en algún punto del centro-derecha de la barra, no en el borde
-derecho real. Por eso Edu ve el badge "centrado" en vez de pegado a la derecha.
+Todos estos botones tienen su PROPIA caja (`className` con `w-11 h-11` o `min-w/min-h-[44px]`)
+con `border` y `background` visibles aplicados directamente a esa caja de 44x44px. El fix anterior
+(S145 round 2) solo cambió el texto/icono de dentro (tamaño, opacidad) — pero el borde y el fondo
+siguen trazando un cuadrado de 44x44px completo, así que visualmente se sigue viendo "grande"
+sin importar cuán pequeño sea el texto interior. Para que un botón se vea genuinely más pequeño
+manteniendo el hitbox táctil de 44px (obligatorio, no tocar), hace falta separar:
+- **Hitbox** (área clicable, 44x44px, invisible — sin borde ni fondo propios).
+- **Caja visible** (más pequeña, p.ej. 28-32px, con el borde/fondo/icono dentro, centrada dentro
+  del hitbox).
 
-El cluster izquierdo (línea 409, `<div className="flex items-center gap-2">`) no tiene este
-problema porque `justify-content: flex-start` (default) ya coincide con pegarse al borde
-izquierdo, que es donde debe estar.
+## Tarea — aplicar el patrón hitbox/visual a estos botones
 
-## Fix (una línea)
+1. **`src/layout/Layout.jsx:148-165`** — botones ↺ (reload) y ⎋ (exit) del header. Ya tienen
+   `min-h-[44px] min-w-[44px]` con `border`/`background` en la misma caja — sepáralos: hitbox
+   `min-h-[44px] min-w-[44px] flex items-center justify-center` sin borde propio, con un `<span>`
+   o div interior de ~28px con el borde/color/icono actual.
 
-En `src/musiclab/WinampPlayer.jsx:560`, cambiar:
-```
-<div className="flex gap-2">
-```
-por:
-```
-<div className="flex gap-2 justify-end">
-```
+2. **`src/musiclab/MusicLab.jsx:1161-1195`** — 5 botones del toolbar de tracks: vista (`cycleViewMode`),
+   buscar (⌕), añadir (+), editar (✎), eliminar-toggle (−). Todos `w-11 h-11` con borde/fondo en
+   la misma caja de 44px. Mismo patrón: hitbox 44px transparente + caja visible interior ~28-32px
+   con el estilo actual (border/background/color condicionales según estado activo — no cambies
+   esa lógica, solo la estructura de la caja).
 
-Eso empuja el contenido del cluster derecho (CAST + badge) al borde derecho real de su columna
-estirada, que coincide con el borde derecho de la barra completa.
+3. **`src/musiclab/MusicLab.jsx:1268-1272`** — botón ✕ de borrar cada track dentro del panel de
+   confirmación. Mismo patrón hitbox/visual.
+
+## Tarea — el panel "ELIMINAR TRACK" debe ser un modal fijo, no un panel inline
+
+**Dónde:** `src/musiclab/MusicLab.jsx:1253-1275` aprox (`{showDelete && (...)}`). Hoy es un
+`<motion.div>` que se expande INLINE en el flujo normal de la página (con `max-h-[40vh]
+overflow-y-auto` ya añadido en la ronda anterior). El problema persiste porque el panel puede
+abrirse muy abajo en la página (tras el reproductor de 2 filas + toolbar + búsqueda), y aunque su
+contenido interno scrollee, el panel entero puede quedar fuera del área visible sin que el usuario
+sepa que tiene que hacer scroll de página para encontrarlo — percibido como "se sale de pantalla".
+
+**Fix:** conviértelo en un modal fijo centrado en viewport, igual patrón que
+`DropComposeModal` en `src/musiclab/DropsManager.jsx:74` (`className="fixed inset-0 z-[999] flex
+items-center justify-center p-6"` + backdrop). Así el panel de borrar siempre aparece centrado y
+visible sin depender de dónde esté el scroll de la página, y su lista interna de tracks mantiene
+el `max-h` + `overflow-y-auto` ya existente pero ahora dentro de un contenedor de modal con ancho
+acotado (similar a como ya hace `DropComposeModal`).
 
 ## Restricciones
 
-- Solo ese cambio. No toques el grid del corazón (ya está bien) ni el cluster izquierdo.
+- No cambies la lógica de qué track se borra ni las confirmaciones existentes — solo estructura
+  visual (hitbox/caja) y el contenedor (inline → modal).
+- No bajes ningún hitbox de 44px.
 - `npm run build` debe pasar antes de reportar hecho.
-- Antes de reportar hecho, confirma tú mismo (leyendo el archivo) que el cambio quedó aplicado
-  exactamente como se describe arriba.
+- Verifica visualmente (o razona explícitamente) que cada caja visible ahora es más pequeña que
+  el hitbox que la contiene — esa es la prueba de que el fix funcionó esta vez.
 
 ## Hand-off a Sonnet
 
-Confirma la línea final del archivo tras el cambio. Sonnet verifica con grep puntual.
+Reporta archivo:línea de cada uno de los 4 cambios (3 hitbox/visual + 1 modal). Sonnet verifica
+con grep puntual + build, no relee los archivos completos.

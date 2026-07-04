@@ -1160,38 +1160,48 @@ export default function MusicLab({
                   <span style={{ width: 1, background: `${accentColor}15`, margin: "2px 2px" }} />
                   <motion.button whileTap={{ scale: 0.9 }} title={`Vista: ${viewMode}`}
                     onClick={cycleViewMode}
-                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: accentColor, border: `1px solid ${accentColor}33`,
-                      background: `${accentColor}06`, fontFamily: FONT_MONO }}>
-                    {VIEW_MODE_ICON[viewMode]}
+                    className="w-11 h-11 flex items-center justify-center">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: accentColor, border: `1px solid ${accentColor}33`,
+                        background: `${accentColor}06`, fontFamily: FONT_MONO }}>
+                      {VIEW_MODE_ICON[viewMode]}
+                    </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Buscar track"
                     onClick={() => { setShowTrackSearch((p) => !p); setTrackSearch(""); }}
-                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: accentColor, border: `1px solid ${showTrackSearch ? accentColor + "66" : accentColor + "33"}`,
-                      background: showTrackSearch ? `${accentColor}15` : `${accentColor}06` }}>
-                    ⌕
+                    className="w-11 h-11 flex items-center justify-center">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: accentColor, border: `1px solid ${showTrackSearch ? accentColor + "66" : accentColor + "33"}`,
+                        background: showTrackSearch ? `${accentColor}15` : `${accentColor}06` }}>
+                      ⌕
+                    </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
                     onClick={() => { setShowAdd((p) => !p); setShowDelete(false); setShowEdit(false); setEditingTrack(null); }}
-                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: accentColor, border: `1px solid ${showAdd ? accentColor + "66" : accentColor + "33"}`,
-                      background: showAdd ? `${accentColor}15` : `${accentColor}06` }}>
-                    {showAdd ? "✕" : "+"}
+                    className="w-11 h-11 flex items-center justify-center">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: accentColor, border: `1px solid ${showAdd ? accentColor + "66" : accentColor + "33"}`,
+                        background: showAdd ? `${accentColor}15` : `${accentColor}06` }}>
+                      {showAdd ? "✕" : "+"}
+                    </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Editar track"
                     onClick={() => { setShowEdit((p) => !p); setShowDelete(false); setShowAdd(false); setEditingTrack(null); }}
-                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: accentColor, border: `1px solid ${showEdit ? accentColor + "66" : accentColor + "33"}`,
-                      background: showEdit ? `${accentColor}15` : `${accentColor}06` }}>
-                    {showEdit ? "✕" : "✎"}
+                    className="w-11 h-11 flex items-center justify-center">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: accentColor, border: `1px solid ${showEdit ? accentColor + "66" : accentColor + "33"}`,
+                        background: showEdit ? `${accentColor}15` : `${accentColor}06` }}>
+                      {showEdit ? "✕" : "✎"}
+                    </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Eliminar track"
                     onClick={() => { setShowDelete((p) => !p); setShowAdd(false); setShowEdit(false); setEditingTrack(null); }}
-                    className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
-                    style={{ color: "#ff4444", border: `1px solid ${showDelete ? "#ff444466" : "#ff444433"}`,
-                      background: showDelete ? "#ff444415" : "#ff444406" }}>
-                    {showDelete ? "✕" : "−"}
+                    className="w-11 h-11 flex items-center justify-center">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
+                      style={{ color: "#ff4444", border: `1px solid ${showDelete ? "#ff444466" : "#ff444433"}`,
+                        background: showDelete ? "#ff444415" : "#ff444406" }}>
+                      {showDelete ? "✕" : "−"}
+                    </span>
                   </motion.button>
                 </div>
               </div>
@@ -1251,28 +1261,37 @@ export default function MusicLab({
 
               <AnimatePresence>
                 {showDelete && (
-                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }} className="flex flex-col gap-2 p-3 rounded-sm max-h-[40vh] overflow-y-auto"
-                    style={{ background: "rgba(255,68,68,0.04)", border: "1px solid #ff444422", fontFamily: FONT_MONO }}>
-                    <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}>◈ ELIMINAR TRACK</p>
-                    {rawTracks.length === 0 ? (
-                      <p className="text-xs opacity-40" style={{ color: "#ff4444" }}>NO HAY TRACKS</p>
-                    ) : (
-                      rawTracks.filter(t => !t.is_deleted).map((track) => (
-                        <div key={track.id} className="flex items-center justify-between px-3 py-2 rounded-sm"
-                          style={{ background: "rgba(255,68,68,0.03)", border: "1px solid #ff444418" }}>
-                          <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-xs font-bold truncate" style={{ color: "#ff6666" }}>{track.title}</span>
-                            <span className="text-xs opacity-40 truncate" style={{ color: "#ff4444" }}>{track.artist}</span>
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[999] flex items-center justify-center p-6"
+                    style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
+                    onClick={() => setShowDelete(false)}>
+                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.9, opacity: 0 }} transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                      className="relative w-full max-w-xs flex flex-col gap-2 p-4 rounded-sm max-h-[60vh] overflow-y-auto"
+                      style={{ background: "#0e0e0e", border: "1px solid #ff444433", fontFamily: FONT_MONO }}
+                      onClick={(e) => e.stopPropagation()}>
+                      <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}>◈ ELIMINAR TRACK</p>
+                      {rawTracks.length === 0 ? (
+                        <p className="text-xs opacity-40" style={{ color: "#ff4444" }}>NO HAY TRACKS</p>
+                      ) : (
+                        rawTracks.filter(t => !t.is_deleted).map((track) => (
+                          <div key={track.id} className="flex items-center justify-between px-3 py-2 rounded-sm"
+                            style={{ background: "rgba(255,68,68,0.03)", border: "1px solid #ff444418" }}>
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="text-xs font-bold truncate" style={{ color: "#ff6666" }}>{track.title}</span>
+                              <span className="text-xs opacity-40 truncate" style={{ color: "#ff4444" }}>{track.artist}</span>
+                            </div>
+                            <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDeleteTrack(track.id)}
+                              className="ml-3 flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                              <span className="w-7 h-7 flex items-center justify-center rounded-sm text-xs"
+                                style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
+                                ✕
+                              </span>
+                            </motion.button>
                           </div>
-                          <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDeleteTrack(track.id)}
-                            className="ml-3 flex-shrink-0 text-xs tracking-widest uppercase px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
-                            style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
-                            ✕
-                          </motion.button>
-                        </div>
-                      ))
-                    )}
+                        ))
+                      )}
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>

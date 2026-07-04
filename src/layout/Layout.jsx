@@ -148,18 +148,22 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         <div className="flex items-center gap-2 flex-none ml-2">
           <button
             onClick={() => window.location.reload()}
-            className="text-[10px] tracking-widest uppercase px-2 py-1.5 rounded-sm transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-            style={{ border: `1px solid ${accentColor}22`, opacity: 0.45, color: accentColor }}
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            ↺
+            <span className="text-[10px] tracking-widest uppercase px-2 py-1.5 rounded-sm transition-all"
+              style={{ border: `1px solid ${accentColor}22`, opacity: 0.45, color: accentColor }}>
+              ↺
+            </span>
           </button>
           {onSignOut && (
             <button
               onClick={onSignOut}
-              className="text-[10px] tracking-widest uppercase px-2 py-1.5 rounded-sm transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-              style={{ border: "1px solid #ff3b3b22", color: "#ff3b3b", opacity: 0.45 }}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
-              ⎋
+              <span className="text-[10px] tracking-widest uppercase px-2 py-1.5 rounded-sm transition-all"
+                style={{ border: "1px solid #ff3b3b22", color: "#ff3b3b", opacity: 0.45 }}>
+                ⎋
+              </span>
             </button>
           )}
         </div>
