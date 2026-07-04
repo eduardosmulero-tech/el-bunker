@@ -557,8 +557,7 @@ return () => cancelAnimationFrame(raf);
           )}
         </div>
 
-        <div className="flex gap-2">
-          {/* S109 — Chromecast button */}
+        <div className="flex gap-2 justify-end">
           {castState !== "unavailable" && (
             <motion.button
               whileTap={{ scale: 0.9 }}
