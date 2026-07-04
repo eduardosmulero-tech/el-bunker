@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, ListPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, BG, getVibeConfig } from "../tokens";
+import { ACID, BG, PURPLE, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";
@@ -666,7 +666,20 @@ return () => cancelAnimationFrame(raf);
         </motion.button>
         <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" />
         {track && (
-          <WinampBtn label="⊕" color={accentColor} onClick={() => addToQueue?.(track)} title="Añadir a cola" aria-label="Añadir a cola" />
+          <motion.button
+            whileTap={{ scale: 0.85 }}
+            onClick={() => addToQueue?.(track)}
+            title="Añadir a cola"
+            aria-label="Añadir a cola"
+            className="rounded-sm flex items-center justify-center transition-all min-w-[44px] min-h-[44px] w-11 h-11"
+            style={{
+              background: "transparent",
+              border: `1px solid ${withAlpha(accentColor, 0.18)}`,
+              color: withAlpha(accentColor, 0.5),
+            }}
+          >
+            <ListPlus size={17} color={accentColor} strokeWidth={2} />
+          </motion.button>
         )}
       </div>
 
@@ -685,7 +698,7 @@ return () => cancelAnimationFrame(raf);
         />
         <WinampBtn size="sm" label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
         {track && (
-          <WinampBtn size="sm" label="⚡" color={accentColor} onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
+          <WinampBtn size="sm" label="⚡" color={PURPLE} onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
         )}
         <WinampBtn size="sm" label="🔊" active={showVolume} color={accentColor} onClick={() => setShowVolume((p) => !p)} title="Volumen" aria-label="Volumen" />
 

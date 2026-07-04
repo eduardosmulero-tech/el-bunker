@@ -196,14 +196,14 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             whileTap={{ scale: 0.9 }}
-            className="relative flex flex-col items-center gap-1 px-4 py-2 text-xs tracking-widest uppercase transition-all min-h-[44px]"
+            className="relative flex flex-col items-center gap-1 px-2 py-2 text-xs tracking-widest uppercase transition-all min-h-[44px] flex-1 min-w-0"
             style={{
               color: isActive ? accentColor : `${accentColor}88`,
               textShadow: isActive ? `0 0 12px ${accentColor}` : "none",
             }}
           >
             <span className="text-base" style={{ fontSize: 16, lineHeight: 1.2 }}>{tab.icon}</span>
-            <span style={{ fontSize: 11, lineHeight: 1.2 }}>{tab.label}</span>
+            <span style={{ fontSize: 11, lineHeight: 1.2 }} className="truncate max-w-full">{tab.label}</span>
             {isActive && (
               <motion.div
                 layoutId="nav-indicator"
