@@ -1252,7 +1252,7 @@ export default function MusicLab({
               <AnimatePresence>
                 {showDelete && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }} className="flex flex-col gap-2 p-3 rounded-sm"
+                    exit={{ opacity: 0, y: 10 }} className="flex flex-col gap-2 p-3 rounded-sm max-h-[40vh] overflow-y-auto"
                     style={{ background: "rgba(255,68,68,0.04)", border: "1px solid #ff444422", fontFamily: FONT_MONO }}>
                     <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}>◈ ELIMINAR TRACK</p>
                     {rawTracks.length === 0 ? (

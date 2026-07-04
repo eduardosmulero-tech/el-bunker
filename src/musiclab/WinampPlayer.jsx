@@ -22,7 +22,7 @@ function withAlpha(color, alpha) {
 
 
 // ─── WINAMP BUTTON ───────────────────────────────────────────
-const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size = "md", "aria-label": ariaLabel }) => (
+const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size = "md", fullColor = false, "aria-label": ariaLabel }) => (
   <motion.button
     whileTap={{ scale: 0.85 }}
     onClick={onClick}
@@ -33,8 +33,8 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
     }`}
     style={{
       background: active ? withAlpha(color, 0.2) : "transparent",
-      border: `1px solid ${active ? withAlpha(color, 0.65) : withAlpha(color, size === "sm" ? 0.13 : 0.18)}`,
-      color: active ? color : withAlpha(color, size === "sm" ? 0.35 : 0.5),
+      border: `1px solid ${active ? withAlpha(color, 0.65) : withAlpha(color, (size === "sm" && !fullColor) ? 0.13 : 0.18)}`,
+      color: active ? color : withAlpha(color, (size === "sm" && !fullColor) ? 0.35 : 0.5),
       boxShadow: active ? `0 0 10px ${withAlpha(color, 0.4)}` : "none",
     }}
   >
@@ -399,13 +399,14 @@ return () => cancelAnimationFrame(raf);
 
       {/* Title Bar */}
       <div
-        className="flex items-center px-3 py-2"
+        className="grid items-center px-3 py-2"
         style={{
+          gridTemplateColumns: "1fr auto 1fr",
           background: `linear-gradient(90deg, ${withAlpha(accentColor, 0.09)} 0%, transparent 100%)`,
           borderBottom: `1px solid ${withAlpha(accentColor, 0.13)}`,
         }}
       >
-        <div className="flex items-center gap-2 flex-none">
+        <div className="flex items-center gap-2">
           <motion.div
             animate={playing ? { opacity: [1, 0.3, 1] } : { opacity: 0.4 }}
             transition={{ duration: 0.8, repeat: playing ? Infinity : 0 }}
@@ -425,7 +426,7 @@ return () => cancelAnimationFrame(raf);
         </div>
 
         {/* S132: Heart centrado en header — 3 estados: idle ♡ / partner ♥!bocadillo / sesión ♥ Edu+David */}
-        <div className="flex-1 flex items-center justify-center min-w-0 px-1">
+        <div className="flex items-center justify-center min-w-0 px-1">
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={async () => {
@@ -556,7 +557,7 @@ return () => cancelAnimationFrame(raf);
           )}
         </div>
 
-        <div className="flex gap-2 flex-none">
+        <div className="flex gap-2">
           {/* S109 — Chromecast button */}
           {castState !== "unavailable" && (
             <motion.button
@@ -698,7 +699,7 @@ return () => cancelAnimationFrame(raf);
         />
         <WinampBtn size="sm" label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
         {track && (
-          <WinampBtn size="sm" label="⚡" color={PURPLE} onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
+          <WinampBtn size="sm" label="⚡" color={PURPLE} fullColor onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
         )}
         <WinampBtn size="sm" label="🔊" active={showVolume} color={accentColor} onClick={() => setShowVolume((p) => !p)} title="Volumen" aria-label="Volumen" />
 
