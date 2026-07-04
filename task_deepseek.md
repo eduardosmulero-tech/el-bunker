@@ -1,13 +1,14 @@
 # 🟢 Sin tareas activas — S145
 
-> **Estado:** 🟢 Las 3 tareas de S145 completadas (2026-07-05). Detalle archivado en `docs/sesiones/S145_tareas_cerradas.md`.
+> **Estado:** 🟢 Todas las tareas de S145 completadas (2026-07-05). Detalle archivado en `docs/sesiones/S145_tareas_cerradas.md`.
 
-## Tareas cerradas
+## Última tarea cerrada
 
-1. **Fix feedback test humano PLIEGO-237** — 4 correcciones en `WinampPlayer.jsx` + `Layout.jsx`. Build limpio.
-2. **Corregir citas cola_decisiones_fable.md** — 5 citas archivo:línea corregidas y verificadas con grep por Sonnet.
-3. **Completar cola_decisiones_fable.md** — Ítem 5 completado + Ítem 6 (lightbox unificado) + línea de cierre. Archivo final: **110 líneas**.
+**4 bugs reales del reproductor** (test humano round 2) — drop `fullColor`, header peso visual
+reducido, panel de borrado scrolleable, corazón centrado con CSS grid. Verificado por Sonnet vía
+diff real (no solo el hand-off). Build limpio, commit `da6c0e1`, pusheado.
 
 ---
 
-> **Hand-off:** `cola_decisiones_fable.md` listo para revisión de Fable (6 ítems completos, 110 líneas, última línea: `> Generado por deepseek, S145, 2026-07-05 (corregido y completado). Pendiente de revisión por Fable.`).
+> **Pendiente para la próxima sesión:** `docs/operacional/cola_decisiones_fable.md` (6 decisiones
+> de FASE B/C, citas verificadas) sigue esperando revisión de Fable — no es una tarea de DeepSeek.

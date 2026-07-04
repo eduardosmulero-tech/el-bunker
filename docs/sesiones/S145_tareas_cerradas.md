@@ -44,3 +44,24 @@ Citas corregidas:
 - Ítem 5: `VaultGallery.jsx:500-508` → `:780`; `:868` confirmado correcto
 
 Archivo final: 82 líneas, 8.1KB.
+
+---
+
+## Tarea 3: 4 bugs reales del reproductor (test humano round 2, commit `da6c0e1`)
+
+**Resultado:** ✅ Completado, verificado por Sonnet vía diff real (no solo el reporte). 4 fixes:
+
+1. **Drop ⚡ invisible (35% alpha):** causa real — `WinampBtn size="sm"` diluía cualquier color a
+   0.35/0.13 alpha, incluido el `PURPLE` fijo aplicado en la ronda anterior. Fix: prop `fullColor`
+   nueva en `WinampBtn`, fuerza opacidad plena solo en el botón ⚡ sin afectar a loop/shuffle.
+2. **Header recarga/exit "grandes":** preexistente, no causado por ningún pliego. Fix: texto
+   `text-[10px]`, padding menor, opacidad 0.45, "EXIT"→"⎋", `min-w-[44px]` añadido al botón exit
+   (le faltaba) — hitbox 44px intacto en ambos.
+3. **Borrar track fuera de pantalla:** hipótesis confirmada implícitamente (WinampPlayer creció
+   ~48-56px con PLIEGO-237, empujando el panel de borrado). Fix: panel con `max-h-[40vh]
+   overflow-y-auto` en `MusicLab.jsx`, ya no depende de que todo el documento quepa en viewport.
+4. **Corazón "escucha compartida" descentrado:** Title Bar de `WinampPlayer.jsx` pasó de flexbox
+   (`flex-1` entre clusters de ancho desigual) a CSS Grid `1fr auto 1fr` — centrado real
+   independiente del ancho variable del cluster derecho (botón CAST condicional).
+
+Build: 2.29s, limpio. Commit `da6c0e1`, pusheado a `origin/master`.
