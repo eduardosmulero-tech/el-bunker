@@ -28,16 +28,15 @@ const WinampBtn = ({ label, onClick, active = false, color = ACID, title, size =
     onClick={onClick}
     title={title}
     aria-label={ariaLabel ?? title}
-    className={`rounded-sm flex items-center justify-center text-xs font-bold transition-all ${
-      size === "sm" ? "w-11 h-11 min-w-[44px] min-h-[44px]" : "w-11 h-11 min-w-[44px] min-h-[44px]"
+    className={`rounded-sm flex items-center justify-center font-bold transition-all min-w-[44px] min-h-[44px] w-11 h-11 ${
+      size === "sm" ? "text-[11px]" : "text-xs"
     }`}
     style={{
       background: active ? withAlpha(color, 0.2) : "transparent",
-      border: `1px solid ${active ? withAlpha(color, 0.65) : withAlpha(color, 0.18)}`,
-      color: active ? color : withAlpha(color, 0.5),
+      border: `1px solid ${active ? withAlpha(color, 0.65) : withAlpha(color, size === "sm" ? 0.13 : 0.18)}`,
+      color: active ? color : withAlpha(color, size === "sm" ? 0.35 : 0.5),
       boxShadow: active ? `0 0 10px ${withAlpha(color, 0.4)}` : "none",
     }}
-
   >
     {label}
   </motion.button>
@@ -92,6 +91,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   const [duration, setDuration] = useState(0);
   const [currentT, setCurrentT] = useState(0);
   const [showDrop,     setShowDrop]     = useState(false);
+  const [showVolume,   setShowVolume]   = useState(false);
   const [shouldScroll, setShouldScroll] = useState(false);
   const titleRef = useRef(null);
 
@@ -645,74 +645,72 @@ return () => cancelAnimationFrame(raf);
         </div>  
       </div>
 
-      {/* Controls — bg opaco, botones más grandes, ⊕ (add to queue) */}
-      {/* S125: restructurado a 3 clusters con flex-1 en el central — el play queda realmente centrado */}
-      <div className="flex items-center gap-2 px-3 pb-3"
+      {/* PLIEGO-237 FASE B — Fila 1: transporte primario + like, siempre visible, sin scroll (Fable S145) */}
+      <div className="flex items-center justify-center gap-2.5 px-3 pt-3"
         style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
-        {/* Cluster izquierdo: loop + shuffle + ♡ like */}
-        <div className="flex gap-2 flex-none">
-          <WinampBtn
-            label={loopMode === "track" ? "⟳¹" : "⟳"}
-            active={loopMode !== "off"}
-            color={accentColor}
-            onClick={toggleLoopMode}
-            title={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
-            aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
-          />
-          <WinampBtn label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
-          <WinampBtn
-            label={liked ? "♥" : "♡"}
-            active={liked}
-            color={"#ff2d55"}
-            onClick={() => { const next = !liked; setLiked(next); setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS"); }}
-            title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
-            aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
-          />
-        </div>
+        <WinampBtn
+          label={liked ? "♥" : "♡"}
+          active={liked}
+          color={"#ff2d55"}
+          onClick={() => { const next = !liked; setLiked(next); setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS"); }}
+          title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
+          aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
+        />
+        <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" />
+        <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
+          className="rounded-sm flex items-center justify-center text-lg font-bold transition-all"
+          style={{ width: 52, height: 52, background: withAlpha(accentColor, 0.13), border: `2px solid ${withAlpha(accentColor, 0.4)}`, color: accentColor,
+            boxShadow: playing ? `0 0 16px ${withAlpha(accentColor, 0.33)}` : "none", textShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }}
+          aria-label={playing ? "Pausar" : "Reproducir"}>
+          {playing ? <Pause size={20} color={accentColor} strokeWidth={2.5} /> : <Play size={20} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
+        </motion.button>
+        <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" />
+        {track && (
+          <WinampBtn label="⊕" color={accentColor} onClick={() => addToQueue?.(track)} title="Añadir a cola" aria-label="Añadir a cola" />
+        )}
+      </div>
 
-        {/* Cluster central: prev + play + next + ⚡ + ⊕ (flex-1 ocupa el espacio, justify-center centra el play) */}
-        <div className="flex-1 flex items-center justify-center gap-1.5 overflow-x-auto">
-          <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" size="sm" />
-          <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
-            className="w-11 h-11 rounded-sm flex items-center justify-center text-lg font-bold transition-all"
-            style={{ background: withAlpha(accentColor, 0.13), border: `2px solid ${withAlpha(accentColor, 0.4)}`, color: accentColor,
-              boxShadow: playing ? `0 0 16px ${withAlpha(accentColor, 0.33)}` : "none", textShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }}
-            aria-label={playing ? "Pausar" : "Reproducir"}>
-            {playing ? <Pause size={18} color={accentColor} strokeWidth={2.5} /> : <Play size={18} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
-          </motion.button>
-          <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" size="sm" />
-              {/* ⚡ DROP + ⊕ COL — ahora min-h-[44px] */}
-          {track && (
-            <WinampBtn
-              label="⚡"
-              color={accentColor}
-              onClick={() => setShowDrop(true)}
-              title="Lanzar drop"
-              aria-label="Lanzar drop"
-              size="sm"
-            />
-          )}
-          {track && (
-            <WinampBtn
-              label="⊕"
-              color={accentColor}
-              onClick={() => addToQueue?.(track)}
-              title="Añadir a cola"
-              aria-label="Añadir a cola"
-              size="sm"
-            />
-          )}
-        </div>
+      {/* PLIEGO-237 FASE B — Fila 2: secundarios (loop/shuffle/drop) + volumen en popover (Fable S145).
+          Volumen ya no ocupa un slider fijo en la fila: Android gobierna volumen por botones físicos
+          (BUG-22, evento volumechange). El popover cubre el caso de que eso falle en algún dispositivo. */}
+      <div className="relative flex items-center justify-center gap-2 px-3 pb-3 pt-2">
+        <WinampBtn
+          size="sm"
+          label={loopMode === "track" ? "⟳¹" : "⟳"}
+          active={loopMode !== "off"}
+          color={accentColor}
+          onClick={toggleLoopMode}
+          title={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
+          aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
+        />
+        <WinampBtn size="sm" label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
+        {track && (
+          <WinampBtn size="sm" label="⚡" color={accentColor} onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
+        )}
+        <WinampBtn size="sm" label="🔊" active={showVolume} color={accentColor} onClick={() => setShowVolume((p) => !p)} title="Volumen" aria-label="Volumen" />
 
-        {/* Cluster derecho: 🔊 + slider */}
-        <div className="flex items-center gap-1.5 flex-none">
-          <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>
-          {/* S125: vol slider más grande (w-20 h-1.5) + alpha un-filled 22→10 (~6%, más limpio) */}
-          <input type="range" min={0} max={100} value={volume}
-            onChange={(e) => changeVolume(Number(e.target.value))}
-            className="w-20 h-1.5 appearance-none cursor-pointer rounded-full"
-            style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}10 ${volume}%)`, accentColor }} />
-        </div>
+        <AnimatePresence>
+          {showVolume && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 z-10"
+                onClick={() => setShowVolume(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }}
+                className="absolute bottom-full right-3 mb-2 px-3 py-2.5 rounded-sm flex items-center gap-2 z-20"
+                style={{ background: "#0a0a0a", border: `1px solid ${withAlpha(accentColor, 0.3)}`, boxShadow: `0 0 16px ${withAlpha(accentColor, 0.2)}` }}
+              >
+                <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>
+                <input type="range" min={0} max={100} value={volume}
+                  onChange={(e) => changeVolume(Number(e.target.value))}
+                  className="w-24 h-1.5 appearance-none cursor-pointer rounded-full"
+                  style={{ background: `linear-gradient(90deg, ${accentColor} ${volume}%, ${accentColor}10 ${volume}%)`, accentColor }} />
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* PLIEGO-230: ⚡ LANZAR DROP movido a la botonera central (entre ▶▶ y ⊕).
