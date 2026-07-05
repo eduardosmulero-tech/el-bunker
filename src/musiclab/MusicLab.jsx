@@ -1121,13 +1121,26 @@ export default function MusicLab({
                       const willOpen = !showSortMenu;
                       if (willOpen && sortMenuRef.current) {
                         const rect = sortMenuRef.current.getBoundingClientRect();
-                        setSortDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                        // Boundary-aware: default left-aligned, flip if off-screen
+                        const MENU_W = 140;
+                        const MENU_H = 160;
+                        let top = rect.bottom + 4;
+                        let left = rect.left;
+                        if (left + MENU_W > window.innerWidth - 8) {
+                          left = rect.right - MENU_W;
+                        }
+                        if (top + MENU_H > window.innerHeight - 8) {
+                          top = rect.top - MENU_H - 4;
+                        }
+                        left = Math.max(8, Math.min(left, window.innerWidth - MENU_W - 8));
+                        top = Math.max(8, Math.min(top, window.innerHeight - MENU_H - 8));
+                        setSortDropdownPos({ top, left });
                       }
                       setShowSortMenu((v) => !v);
                     }}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
                     aria-label="Cambiar ordenación"
-                    className="h-11 flex-shrink-0 flex items-center justify-center"
+                    className="w-11 h-11 flex-shrink-0 flex items-center justify-center"
                   >
                     <span className="text-[10px] px-2 py-1.5 rounded-sm transition-all flex items-center gap-1"
                       style={{
@@ -1152,7 +1165,7 @@ export default function MusicLab({
                         style={{
                           position: "fixed",
                           top: sortDropdownPos.top,
-                          right: sortDropdownPos.right,
+                          left: sortDropdownPos.left,
                           zIndex: 9999,
                           display: "flex",
                           flexDirection: "column",

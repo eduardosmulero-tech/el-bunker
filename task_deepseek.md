@@ -60,3 +60,26 @@ de renderizado para que escape del árbol de componentes.
 
 Reporta archivo:línea de los 2 cambios (dropdown + modal) y qué hiciste con el botón "desigual".
 Sonnet verifica con grep puntual + build.
+
+---
+
+## ✅ RESULTADO DEEPSEEK — 2026-07-05 01:50
+
+**Hallazgo:** El `createPortal` ya estaba aplicado en ambas secciones (commit anterior `S145: dropdown de orden y modal de borrar via createPortal`). No era necesario convertir — ya usaban portal.
+
+**Bugs residuales encontrados y corregidos:**
+
+1. **Dropdown sin boundary detection** — `MusicLab.jsx:1124-1136`
+   - El cálculo de posición no verificaba bordes del viewport.
+   - Fix: algoritmo de boundary detection con flipeo left↔right, bottom→top, clamp a 8px del borde.
+   - Cambio de `right` a `left` en el CSS del portal para simplificar el cálculo.
+
+2. **Botón de orden visualmente desigual** — `MusicLab.jsx:1143`
+   - Faltaba `w-11` en el className. Los demás botones del toolbar tienen `w-11 h-11`.
+   - Fix: añadido `w-11` → ahora mide 44px fijo como el resto.
+
+3. **Modal de borrar** — Ya usaba `createPortal` correctamente (`MusicLab.jsx:1289`). Sin cambios necesarios.
+
+**Build:** ✅ 3.01s | **Code review:** ✅ limpio
+
+**Hand-off a Sonnet:** verifica con `grep -n "sortDropdownPos.left\|w-11 h-11 flex-shrink-0\|MENU_W = 140" src/musiclab/MusicLab.jsx`
