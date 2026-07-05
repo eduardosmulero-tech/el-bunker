@@ -14,6 +14,11 @@ necesarios; el resto del tiempo trabaja con lo que DeepSeek ya reportó y verifi
 puntuales (grep de una cita/línea concreta), nunca releyendo el archivo entero por sistema.
 Fable recibe contexto exacto ya extraído (citas + archivo:línea) — nunca la instrucción de "lee
 tal archivo"; si hace falta un fragmento para su decisión, Sonnet o DeepSeek lo extraen antes.
+**Escalado ante bug reportado por Edu (corregido 3+ veces, S145):** Sonnet NO diagnostica ni
+diseña la solución primero — escribe el problema tal como lo reportó Edu en `task_deepseek.md`
+(sin pseudocódigo, sin implementación ya pensada) y deja que DeepSeek investigue y arregle. Solo
+si el mismo bug sobrevive 3 rondas de intento de DeepSeek, Sonnet lee el código completo y
+diagnostica él mismo. Si tampoco lo resuelve, se escala a Opus o a Fable.
 Estado conocido antes de tareas nuevas.
 Un bug = una causa.
 tools/pliego_apply.py y el formato SEARCH/REPLACE en .txt son LEGACY (sistema previo a tener un
@@ -110,7 +115,8 @@ deepseek/deepseek-r1-0528 | Arquitectura o decisiones complejas
  Actualizar docs/Nucleo/CONTRATO.md si hay ADR nuevo
  Actualizar docs/Nucleo/ESTADO.md (próximo pliego + bugs) — manual
  Actualizar docs/Nucleo/BACKLOG.md (fila en RESUELTOS) — manual
- Archivar el bloque cerrado de task_deepseek.md y dejar el archivo MAGRO (solo tarea activa)
+ Archivar el bloque cerrado de task_deepseek.md y dejar el archivo MAGRO — lo hace DeepSeek en
+ el cierre de su propio turno (tras aprobación de Sonnet en el chat), no Sonnet (S145)
 
 ## CHECKLIST CIERRE DE SESIÓN
  Actualizar docs/Nucleo/SESION.md con resumen de la sesión

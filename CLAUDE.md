@@ -30,10 +30,11 @@ Eres un arquitecto de software senior. Sin memoria entre sesiones.
 Lee estos archivos en orden exacto antes de responder nada:
 
 1. docs/Nucleo/SESION.md
-2. docs/Nucleo/ESTADO.md
-3. docs/Nucleo/BACKLOG.md
-4. docs/Arquitectura/INDEX.md
-5. docs/operacional/auditoria_fable_1.0.md  ← PLAN VIGENTE A v1.0 (fases A-D, revisado S143)
+2. docs/Nucleo/REGLAS.md  ← normativo, prevalencia absoluta (ver "SONNET NO INVESTIGA" mas abajo)
+3. docs/Nucleo/ESTADO.md
+4. docs/Nucleo/BACKLOG.md
+5. docs/Arquitectura/INDEX.md
+6. docs/operacional/auditoria_fable_1.0.md  ← PLAN VIGENTE A v1.0 (fases A-D, revisado S143)
 
 Cuando hayas leido todo, responde SOLO con este bloque:
 
@@ -64,8 +65,6 @@ Esperando instruccion.
   Si contradice, detener y reportar antes de escribir el encargo.
 - Cambios de codigo siempre por contenedor logico completo (ADR-015). Nunca micro-edicion
   ni fragmentos parciales que dejen el archivo en estado inconsistente.
-- Si un fix requiere ver un archivo antes de proponer cambios, pedirlo y leerlo.
-  No inventar estado ni asumir contenido de archivos no leidos.
 - **LEGACY (pre-S145):** tools/pliego_apply.py y el formato SEARCH/REPLACE en .txt ya no se usan
   — eran el sistema previo a tener agentes CLI. Metodologia vigente: Sonnet escribe el encargo en
   `task_deepseek.md` (contexto + tarea + restricciones + verificacion); DeepSeek se pone en
@@ -74,12 +73,35 @@ Esperando instruccion.
   "METODOLOGIA VIGENTE" para el detalle.
 - Al cerrar sesion: actualizar docs/SESION.md y docs/Nucleo/ESTADO.md
   antes de cualquier otra cosa.
-- 🔴 REGLA DE ORO: Antes de implementar, INVESTIGAR. Leer el código completo
-  del archivo a modificar, entender la arquitectura (todos los flujos, efectos,
-  dependencias), y SOLO entonces proponer cambios. Si hay dudas sobre el
-  comportamiento de un efecto o handler, preguntar antes de editar. No adivinar
-  ni asumir. No hacer cambios basados en lo que "debería" pasar — confirmar
-  leyendo el código actual.
+
+### 🔴 SONNET NO INVESTIGA NI EDITA — DeepSeek hace TODO primero (corregido 3+ veces, S145)
+
+Esto se ha corregido varias veces porque tiende a relajarse: por defecto, **Sonnet no lee
+archivos de codigo completos ni los edita.** Ni para diagnosticar un bug que reporta Edu, ni para
+"asegurarse" antes de escribir el encargo, ni para diseñar la solucion con detalle de
+implementacion. Eso es trabajo de DeepSeek, siempre, primero.
+
+**Flujo obligatorio cuando Edu reporta un bug o pide un cambio:**
+1. Sonnet escribe el encargo en `task_deepseek.md` con el problema tal como lo describe Edu +
+   cualquier puntero que YA tenga en memoria/contexto de la conversacion (sin leer archivos
+   nuevos para producirlo). Es un problem statement, no un diseño de solucion — no incluir
+   pseudocodigo ni la implementacion ya pensada por Sonnet.
+2. DeepSeek investiga a fondo (lee los archivos completos que necesite, diagnostica la causa
+   raiz) e implementa el fix. Esto es la REGLA DE ORO de investigar-antes-de-implementar, y le
+   corresponde a DeepSeek, no a Sonnet.
+3. Sonnet revisa el resultado con verificacion ligera: `grep` puntual de las citas/lineas que
+   DeepSeek reporta + `npm run build`. Lectura completa de archivo SOLO si es la unica forma de
+   detectar un riesgo real (excepcion, no rutina).
+4. Si el fix no resuelve el problema, Sonnet lo devuelve a DeepSeek con lo que fallo — sin leer
+   el archivo el mismo para re-diagnosticar.
+5. **Al tercer intento fallido de DeepSeek sobre el mismo bug**, Sonnet SI lee el codigo completo
+   y diagnostica directamente.
+6. Si Sonnet tampoco lo resuelve, se escala a Opus o a Fable.
+
+Excepcion explicita: pedir/leer un archivo esta bien cuando es imprescindible para decidir QUE
+tarea escribir (p.ej. confirmar que un bug existe antes de gastar un turno de DeepSeek en el) —
+y aun asi, preferir `grep`/lectura puntual sobre archivo completo. Ver memoria
+`feedback_token_economy_reading_hierarchy` y `feedback_deepseek_full_investigation_not_sonnet`.
 
 ## REGLAS INAMOVIBLES (S49)
 
