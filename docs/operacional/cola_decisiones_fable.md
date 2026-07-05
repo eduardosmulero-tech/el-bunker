@@ -1,7 +1,105 @@
 # COLA DE DECISIONES FABLE — el_bunker
 
 > Decisiones de diseño/producto no resueltas por el plan `auditoria_fable_1.0.md` §7 (FASE B y C).
-> Generado por deepseek, S145, 2026-07-05 (corregido). Pendiente de revisión por Fable.
+> Generado por deepseek, S145, 2026-07-05 (corregido).
+> ✅ **RESUELTO POR FABLE (S145, 2026-07-05)** — las 6 decisiones abajo en "RESOLUCIÓN FABLE".
+> Evidencia reverificada contra código real antes de decidir (Regla de Oro). Los 6 planteamientos
+> originales de deepseek se conservan más abajo como contexto.
+
+---
+
+## ✅ RESOLUCIÓN FABLE (S145, 2026-07-05)
+
+Criterio único aplicado: **"¿esto hace que Edu y David dejen Spotify/Google Photos?"**
+Cada verdicto incluye notas de implementación vinculantes para el pliego que lo ejecute.
+
+### 1. Carátula-first → **OPCIÓN B**: carátula como capa base permanente, visualizador encima
+
+- La carátula (`track.thumbnail`, resolver R2 key → URL absoluta con el patrón ya existente en
+  `PlayerContext.jsx:1121`) es el fondo permanente del área del visualizador (~250px), `object-cover`,
+  con scrim oscuro inferior para legibilidad del canvas.
+- Reproduciendo: las barras se pintan encima (canvas transparente sobre la imagen). En pausa el canvas
+  se limpia — el comportamiento actual de `AudioVisualizer.jsx:158` pasa de bug a feature: queda la
+  carátula limpia. Sin transición brusca (rechazo de A) y con paridad Spotify (rechazo de C).
+- **Sin thumbnail** (campo nullable en schema): fallback degradado del color de vibe + icono de vibe.
+  Nunca más negro vacío.
+- Ajuste fino (atenuar carátula a ~0.5-0.7 mientras suena si las barras no se leen) queda a criterio
+  visual en implementación, verificado en dispositivo real.
+- Nota: el contenedor ya es opaco `#0a0a0a` (PLIEGO-230, `WinampPlayer.jsx:608`) — la carátula vive
+  dentro de él; no reintroduce el problema de transparencia que ese pliego arregló.
+
+### 2. CRT sobre el arte → **OPCIÓN B**: CRT global reducido + arte grande en portales (limpio)
+
+- **Hallazgo técnico que invalida la opción A tal como estaba planteada:** `<main>` es
+  `relative z-20` (`Layout.jsx:603-604`) → crea stacking context. Subir el z-index de nada dentro de
+  `<main>` puede escapar de los overlays z-40/z-50 que están a nivel raíz. La única vía limpia es
+  `createPortal` a `document.body` (patrón ya establecido: `TrackCard.jsx:68`).
+- Verdicto en dos piezas:
+  1. **Global:** bajar scanlines de `rgba(0,0,0,0.25)` a **~0.10-0.12** (`Layout.jsx:22`). El CRT
+     sigue en toda la app (identidad intacta) pero deja de ensuciar. Noise (0.03) no se toca.
+  2. **Arte grande** (lightbox unificado de la decisión 6, zoom modals): se renderiza vía
+     `createPortal` + z ≥ 60 → queda automáticamente libre de CRT, gratis.
+- La carátula in-player (decisión 1) convive con scanlines al 0.10. Si tras verlo en dispositivo
+  sigue ensuciando → plan B: portal solo para el contenedor de carátula.
+- Rechazo de C (no tocar nada): P2.8 está confirmado con capturas reales; el arte es justo lo que
+  esta app vende.
+
+### 3. Cola peek → **OPCIÓN A** + mantener el gesto swipe-up existente
+
+- Línea "A CONTINUACIÓN: [título — artista]" bajo la seek bar, ~20px, truncada, **tappable** →
+  dispara el mismo `bunker_swipe_up_queue` (`WinampPlayer.jsx:257`) que abre la cola completa.
+  Peek pasivo (paridad Spotify) + acceso deliberado (gesto ya existente). B sola no es un peek.
+- **Vinculante:** el "siguiente" mostrado debe salir de la MISMA lógica que `skipDir(1)` en
+  `PlayerContext.jsx` (cola manual primero, luego contexto). Exponer un `peekNextTrack` desde
+  PlayerContext — NO duplicar la lógica en WinampPlayer. Un peek que miente es peor que ninguno.
+- Rechazo de C (drawer ~120px): caveat abierto del ADDENDUM S145 — el player ya creció ~48px con
+  PLIEGO-237; en pantallas de ~640px de alto un drawer arriesga empujar el player fuera de viewport.
+
+### 4. WALL como museo → **OPCIÓN B**: agrupación curatorial por eras ("salas")
+
+- Headers de sección por era (nombre + rango de fechas + color de era como acento) separando el
+  masonry actual en "salas". Dentro de cada sala se conserva todo lo maduro: masonry, 3 densidades
+  con pinch-zoom, stagger. Las eras son los capítulos de la relación — esa ES la curaduría.
+- La opción C (modo inmersivo al tap) **no se descarta: es exactamente el detalle full-bleed de
+  FASE C**, resuelto en la decisión 6. Elegirla aquí duplicaría esa pieza.
+- Rechazo de A (marcos + fichas): baja la densidad, y la ficha técnica ya existe como
+  `LongPressPreview` (`WallView.jsx:210`) — no hace falta pegarla debajo de cada thumbnail.
+- Badges legibles (tamaño/contraste) es tarea del plan, no decisión — va en el mismo pliego.
+- **Caveat técnico vinculante:** WALL está virtualizado — los headers de sección deben integrarse
+  sin romper la virtualización (agrupar por era ANTES de la ventana de render).
+
+### 5. DEMO_ENTRIES_GEO → **OPCIÓN A**: cero demo en producción
+
+- Quitar el default `entries = DEMO_ENTRIES_GEO` (`VaultGallery.jsx:868`). Sin coordenadas →
+  estado vacío elegante que ya existe.
+- **Mismo criterio para `DEMO_TRACKS` (`MusicLab.jsx:60`) y `DEMO_ERAS` (`Vault.jsx:31`)** — cierra
+  P3.11 entero, no solo el mapa. Si se quieren conservar para desarrollo, gate `import.meta.env.DEV`;
+  si no, borrarlos.
+- Rechazo de B (demo como onboarding): esta app tiene exactamente 2 usuarios reales que ya pasaron
+  el onboarding para siempre. Pines falsos de Madrid/Lisboa en una bóveda de memoria real es lo
+  contrario del propósito emocional del producto.
+
+### 6. Lightbox unificado → **OPCIÓN B acotada**: un `EntryLightbox` único vía portal; la identidad de cada modo vive FUERA del lightbox
+
+- **Un** componente: full-bleed, swipe horizontal sobre la lista que el modo le pasa
+  (`entries` + `startIndex`), pinch-zoom, metadata emocional (quién/era/fecha/nota), cierre por
+  swipe-down/tap, `createPortal` a body + z-[100] (→ libre de CRT gratis, por decisión 2).
+- Sin sistema de slots: props simples. Es la B con la simplicidad de la A — la "variante por modo"
+  es qué lista pasa cada modo y cuándo lo abre, no lógica dentro del lightbox.
+- Lo adoptan: **WALL** (sustituye `ZoomModal`, `WallView.jsx:292`), **DIALOGUE** (sustituye su modal
+  `zoomImage`, `VaultGallery.jsx:269` — que además hoy está dentro del stacking context de main),
+  **EXHIBITION** y **REEL**. **CINEMA no se toca por dentro** (Ken Burns + auto-avance ES el modo,
+  no un lightbox); su prop `onZoom` existente abre el mismo `EntryLightbox`.
+- `LongPressPreview` de WALL se queda tal cual (es un peek, no un lightbox).
+- Este componente **ES** el "detalle de foto full-bleed" de FASE C — una sola pieza cubre dos
+  bullets del plan. Orden recomendado dentro de FASE C: construir `EntryLightbox` primero.
+
+### Orden de ejecución recomendado
+
+- **FASE B** (un pliego, `WinampPlayer.jsx` + `AudioVisualizer.jsx` + `Layout.jsx` overlay +
+  `PlayerContext.jsx` peekNext): decisiones 1 + 2(global) + 3.
+- **FASE C** (dos pliegos): primero `EntryLightbox` + adopción (decisión 6 + 2-arte), después
+  WALL museo + cero DEMO (decisiones 4 + 5).
 
 ---
 

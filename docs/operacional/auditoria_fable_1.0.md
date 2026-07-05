@@ -170,3 +170,20 @@ viewport tras crecer ~48px; y verificar en dispositivo real si `volumechange` di
 físicos de Chrome Android — si no dispara, el popover pasa de "nice" a "necesario".
 
 Ejecutado como **PLIEGO-237** sobre `WinampPlayer.jsx` (ver `tools/PLIEGO-237.txt`).
+
+---
+
+## ADDENDUM S145-b (2026-07-05) — Decisiones Fable: las 6 ambigüedades de FASE B/C resueltas
+
+Deepseek identificó 6 frases del plan §7 que eran decisiones de producto sin resolver, no tareas.
+Fable las resolvió todas (evidencia reverificada contra código real antes de decidir). Verdictos:
+
+1. **Carátula-first = B**: carátula capa base permanente, visualizador encima; en pausa queda la carátula limpia. Fallback vibe-gradient si no hay thumbnail.
+2. **CRT sobre arte = B**: scanlines globales 0.25 → ~0.10-0.12; arte grande (lightbox/modals) vía `createPortal` queda libre de CRT. (Ojo: `<main>` es stacking context `z-20` — subir z-index dentro NO escapa de los overlays; portal es la única vía.)
+3. **Cola peek = A**: línea "A CONTINUACIÓN: …" bajo la seek bar, tappable → gesto swipe-up existente. El next debe salir de un `peekNextTrack` en PlayerContext (misma lógica que `skipDir`).
+4. **WALL museo = B**: salas curatoriales por era (headers con nombre/fechas/color), masonry intacto dentro. Sin romper virtualización.
+5. **DEMO en prod = A**: cero. Aplica también a DEMO_TRACKS y DEMO_ERAS (cierra P3.11 entero).
+6. **Lightbox = B acotada**: un `EntryLightbox` (portal, full-bleed, swipe+pinch, metadata) adoptado por WALL/DIALOGUE/EXHIBITION/REEL; CINEMA lo abre vía su `onZoom` pero no cambia por dentro. Es a la vez el "detalle full-bleed" de FASE C.
+
+Detalle completo con notas de implementación vinculantes: `docs/operacional/cola_decisiones_fable.md`
+(sección "RESOLUCIÓN FABLE"). FASE B y FASE C quedan desbloqueadas.

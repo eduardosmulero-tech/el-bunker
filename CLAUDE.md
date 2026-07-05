@@ -134,7 +134,7 @@ NUNCA dejar que la mano de obra decida arquitectura ni toque ADRs 🔒.
   wrangler.toml               Config Cloudflare: D1 + R2 bindings.
   docs/sesiones/              Registros de sesiones (S49-S54).
   docs/operacional/auditoria_fable_1.0.md  ⭐ AUDITORIA TOTAL — score real, P1-P3, plan a v1.0.
-  docs/operacional/cola_decisiones_fable.md  Decisiones de diseño abiertas, pendientes de Fable (puede no existir).
+  docs/operacional/cola_decisiones_fable.md  Decisiones de diseño para Fable. Las 6 de FASE B/C: ✅ RESUELTAS (S145) — notas de implementacion vinculantes ahi.
   task_deepseek.md            Encargo vigente para DeepSeek (analisis/investigacion). NO es un pliego:
                                los pliegos (tools/PLIEGO-*.txt) son el unico vehiculo para cambios de codigo.
                                task_deepseek.md es para tareas de lectura/analisis/informe. Formato:
@@ -154,8 +154,10 @@ NUNCA dejar que la mano de obra decida arquitectura ni toque ADRs 🔒.
 - Score real recalculado: **~52%** (vs ~74% declarado). 2 hallazgos de produccion viva: RECAP roto (404
   `/api/stats/recap` sin desplegar) + `/api/config` filtra presencia sin auth. Bug estetico en todas las
   pantallas: header "EL BUNKER" solapado.
-- Primer pliego recomendado: **PLIEGO-235 (FASE A.1)** — Layout.jsx (header + padding + tag_id→label) +
-  config.js (cerrar leak) + wrangler deploy. Ver seccion 8 del informe.
+- **Progreso:** FASE A completada (S144, PLIEGO-235/236 — 6 P1 cerrados). Las 6 decisiones de
+  diseño que bloqueaban FASE B/C fueron resueltas por Fable (S145, ADDENDUM S145-b del informe +
+  detalle vinculante en `docs/operacional/cola_decisiones_fable.md`). **Proximo: FASE B**
+  (reproductor premium: caratula capa base + CRT global a ~0.10 + cola peek con peekNextTrack).
 - Al revisar: aplicar la REGLA DE ORO (reverificar cada hallazgo contra codigo real + produccion, no confiar).
 
 ---
