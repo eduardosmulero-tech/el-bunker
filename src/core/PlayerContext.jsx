@@ -29,7 +29,7 @@
 // Refactorizar requiere dividir PlayerContext en sub-componentes — tarea de
 // Fase 9+, fuera del scope del fix TDZ.
 
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getStreamUrl } from "./GoogleDriveService";
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";

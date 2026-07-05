@@ -85,3 +85,21 @@ Nota operativa: el archivo llegó con line endings LF (el resto del repo usa CRL
 por Sonnet antes de commitear para evitar diff-noise de ~1850 líneas fantasma.
 
 Build: 3.01s, limpio. Commit `898b9f9`, pusheado a `origin/master`.
+
+---
+
+## Tarea 5 — FASE B: reproductor premium + correcciones — 2026-07-05
+
+**Qué se hizo:**
+- Carátula como capa base del visualizador (`WinampPlayer.jsx`): thumbnail R2 como fondo con scrim degradado, fallback vibe.
+- CRT global reducido (`Layout.jsx`): scanlines 0.25→0.12.
+- Cola peek (`PlayerContext.jsx` + `WinampPlayer.jsx`): `peekNextTrack` useMemo espejo de skip(1), línea "A CONTINUACIÓN" tappable.
+- `useMemo` no estaba en el import de PlayerContext.jsx (P0 en producción) — añadido.
+
+**Correcciones:**
+- Formato de WinampPlayer.jsx (indentación, líneas fusionadas) arreglado.
+- Dropdown de orden: onClick explícito (toggle→open/close) para evitar race condition con `AnimatePresence` + `createPortal`.
+- Toolbar overflow: `overflow-x-auto` en fila de botones para viewports estrechos.
+- Scope creep corregido: `AnimatePresence` restaurados (31/31) tras borrado accidental con sed.
+
+**Commits:** `5e30272` (FASE B completa), commit siguiente (P0 fix).
