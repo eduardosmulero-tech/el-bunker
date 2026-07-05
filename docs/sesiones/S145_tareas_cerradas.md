@@ -65,3 +65,23 @@ Archivo final: 82 líneas, 8.1KB.
    independiente del ancho variable del cluster derecho (botón CAST condicional).
 
 Build: 2.29s, limpio. Commit `da6c0e1`, pusheado a `origin/master`.
+
+---
+
+## Tarea 4: Round 4 — createPortal dropdown orden + modal borrar (commit `898b9f9`)
+
+**Resultado:** ✅ Completado, verificado por Sonnet (grep + build + diff real). El `createPortal`
+ya estaba aplicado en ambas secciones desde la ronda anterior (commit `7093187`) — no hacía falta
+convertir nada. DeepSeek encontró y corrigió 2 bugs residuales:
+
+1. **Dropdown sin boundary detection** (`MusicLab.jsx:1121-1136`): el cálculo de posición no
+   verificaba bordes del viewport. Fix: algoritmo de boundary detection (flip left↔right,
+   bottom→top, clamp a 8px del borde), cambio de `right` a `left` en el CSS del portal.
+2. **Botón de orden desigual** (`MusicLab.jsx:1143`): faltaba `w-11` en el className — medía menos
+   que sus vecinos del toolbar (todos `w-11 h-11`). Fix: añadido `w-11`.
+3. Modal de borrar (`MusicLab.jsx:1302`): ya usaba `createPortal` correctamente, sin cambios.
+
+Nota operativa: el archivo llegó con line endings LF (el resto del repo usa CRLF) — normalizado
+por Sonnet antes de commitear para evitar diff-noise de ~1850 líneas fantasma.
+
+Build: 3.01s, limpio. Commit `898b9f9`, pusheado a `origin/master`.
