@@ -61,6 +61,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     // Fase C — Escucha Compartida (S123)
     sessionId, partnerListening, partnerTrack, partnerName, partnerTrackVibe, userId,
     joinPendingSession, leaveSession,
+    // FASE B: peek del siguiente track (decisión 3)
+    peekNextTrack,
   } = usePlayer();
   // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
   // Se resetea al cambiar de track para que el corazón no quede "pegado".
@@ -603,11 +605,31 @@ return () => cancelAnimationFrame(raf);
           <span className="opacity-40 ml-2" style={{ color: accentColor }}>eliminado de la cola</span>
         </motion.div>
       )}
-
-      {/* PLIEGO-230: Visualizer opaco — antes rgba(0,0,0,0.4) dejaba ver contenido de abajo */}
-      <div className="px-3 pt-3 pb-1" style={{ background: "#0a0a0a" }}>
-        <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
-      </div>
+          {/* FASE B: Visualizer con carátula como capa base (decisión 1, OPCIÓN B) */}
+          <div className="relative px-3 pt-3 pb-1" style={{ background: "#0a0a0a" }}>
+            {/* Carátula de fondo o fallback vibe */}
+            {(() => {
+              const thumbUrl = track?.thumbnail
+                ? (track.thumbnail.startsWith("http") ? track.thumbnail : `${import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev"}/${track.thumbnail}`)
+                : null;
+              if (thumbUrl) {
+                return (
+                  <>
+                    <img src={thumbUrl} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ opacity: 0.55 }} />
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(10,10,10,0.85) 25%, rgba(10,10,10,0.4) 60%, rgba(10,10,10,0.15) 100%)" }} />
+                  </>
+                );
+              }
+              return (
+                <div className="absolute inset-0 flex items-center justify-center" style={{ background: `radial-gradient(ellipse at center, ${accentColor}10, transparent 70%)` }}>
+                  <span style={{ color: accentColor, opacity: 0.08, fontSize: 72, textShadow: `0 0 60px ${accentColor}22` }}>
+                    {vibeConf?.icon || "◎"}
+                  </span>
+                </div>
+              );
+            })()}
+            <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
+          </div>
 
       {/* PLIEGO-230: Track info opaco — antes rgba(0,0,0,0.3) colapsaba el texto sobre el fondo */}
       <div className="px-3 py-2 overflow-hidden" style={{ background: "#0a0a0a" }}>
@@ -642,10 +664,21 @@ return () => cancelAnimationFrame(raf);
               style={{ left: `calc(${progress}% - 6px)`, borderColor: accentColor, background: BG, boxShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }} />
           </div>
           <span className="text-xs tabular-nums opacity-50" style={{ color: accentColor }}>{fmtTime(duration)}</span>
-        </div>  
-      </div>
+        </div>
+        </div>
 
-      {/* PLIEGO-237 FASE B — Fila 1: transporte primario + like, siempre visible, sin scroll (Fable S145) */}
+          {/* FASE B: Cola peek — "A CONTINUACIÓN" (decisión 3, OPCIÓN A) */}
+          {peekNextTrack && (
+            <div
+              className="px-3 pb-1 text-xs opacity-50 truncate cursor-pointer hover:opacity-80 transition-opacity"
+              style={{ color: accentColor, fontSize: 10, letterSpacing: "0.12em" }}
+              onClick={() => window.dispatchEvent(new CustomEvent("bunker_swipe_up_queue"))}
+            >
+              A CONTINUACIÓN: {peekNextTrack.title} — {peekNextTrack.artist}
+            </div>
+          )}
+
+          {/* PLIEGO-237 FASE B — Fila 1: transporte primario + like, siempre visible, sin scroll (Fable S145) */}
       <div className="flex items-center justify-center gap-2.5 px-3 pt-3"
         style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
         <WinampBtn

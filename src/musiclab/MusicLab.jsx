@@ -1112,31 +1112,26 @@ export default function MusicLab({
                     [{String(filteredTracks.length).padStart(2, "0")}]
                   </span>
                 </div>
-                <div className="flex">
+                <div className="flex overflow-x-auto">
                   {/* S145-R4: dropdown via createPortal con posición calculada desde el trigger */}
                   <motion.button
                     ref={sortMenuRef}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => {
-                      const willOpen = !showSortMenu;
-                      if (willOpen && sortMenuRef.current) {
+                      if (showSortMenu) { setShowSortMenu(false); return; }
+                      if (sortMenuRef.current) {
                         const rect = sortMenuRef.current.getBoundingClientRect();
-                        // Boundary-aware: default left-aligned, flip if off-screen
                         const MENU_W = 140;
                         const MENU_H = 160;
                         let top = rect.bottom + 4;
                         let left = rect.left;
-                        if (left + MENU_W > window.innerWidth - 8) {
-                          left = rect.right - MENU_W;
-                        }
-                        if (top + MENU_H > window.innerHeight - 8) {
-                          top = rect.top - MENU_H - 4;
-                        }
+                        if (left + MENU_W > window.innerWidth - 8) left = rect.right - MENU_W;
+                        if (top + MENU_H > window.innerHeight - 8) top = rect.top - MENU_H - 4;
                         left = Math.max(8, Math.min(left, window.innerWidth - MENU_W - 8));
                         top = Math.max(8, Math.min(top, window.innerHeight - MENU_H - 8));
                         setSortDropdownPos({ top, left });
+                        setShowSortMenu(true);
                       }
-                      setShowSortMenu((v) => !v);
                     }}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
                     aria-label="Cambiar ordenación"

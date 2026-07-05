@@ -887,6 +887,31 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // playbackContext — computed desde localQueue para compatibilidad con consumidores externos
   const playbackContext = localQueue.filter((t) => !t._manual);
 
+  // FASE B: peekNextTrack — espejo de solo lectura de skip(1), sin mutar cola/refs
+  const peekNextTrack = useMemo(() => {
+    if (!activeTrack) return null;
+    // L1: loop track → se repite a sí mismo
+    if (loopMode === "track") return activeTrack;
+    // Q1: cola manual primero (mismo algoritmo que skip(1) dir=1)
+    if (localQueue.length > 0) {
+      const next = localQueue.find((t) => t.id !== activeTrack.id);
+      return next || null;
+    }
+    // Fallback: lista de contexto/tracks
+    const list = contextTracksRef.current ?? tracks;
+    const idx = list.findIndex((t) => t.id === activeTrack.id);
+    const base = idx < 0 ? 0 : idx;
+    if (shuffle) {
+      const arr = shuffledListRefStable.current;
+      const si = shuffleIndexRefStable.current;
+      if (!arr || arr.length === 0 || si >= arr.length) return null;
+      return arr[si] || null;
+    }
+    if (loopMode === "list" && base >= list.length - 1) return list[0] || null;
+    if (loopMode === "off" && base >= list.length - 1) return null;
+    return list[(base + 1) % list.length] || null;
+  }, [activeTrack, localQueue, loopMode, shuffle, tracks]);
+
   // S77 Q16/Q17: soft delete from queue (mark _deleted)
   const [softDeletedIds, setSoftDeletedIds] = useState(() => new Set());
 
@@ -1633,7 +1658,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       resolveVibeAccent,
       masterVolume, setMasterVolume,
       audioRef,
-      skip, addToQueue, addNext, removeFromQueue, playTrack,
+      skip, addToQueue, addNext, peekNextTrack, removeFromQueue, playTrack,
       // S141: sincronizar lista filtrada por tag activo (MusicLab) → PlayerContext
       setContextTracks,
       playbackContext, setPlaybackContext,
