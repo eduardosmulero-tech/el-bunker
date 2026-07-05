@@ -5,6 +5,7 @@
 // ============================================================
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { PlaylistModal, PlaylistNameInput, PlaylistDetailModal } from "./PlaylistManager";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, PURPLE_BG, PURPLE_BORDER, stringToColor } from "../tokens";
@@ -290,11 +291,15 @@ export default function MusicLab({
   // PLIEGO-237: dropdown de sort (antes era un row de 5 botones inline)
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortMenuRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [sortDropdownPos, setSortDropdownPos] = useState(null);
   // Code-reviewer fix: outside-click + Escape cierran el popover
   useEffect(() => {
     if (!showSortMenu) return;
     const onClick = (e) => {
-      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target)) setShowSortMenu(false);
+      if (sortMenuRef.current?.contains(e.target)) return;
+      if (dropdownRef.current?.contains(e.target)) return;
+      setShowSortMenu(false);
     };
     const onKey = (e) => { if (e.key === "Escape") setShowSortMenu(false); };
     document.addEventListener("mousedown", onClick);
@@ -1107,33 +1112,53 @@ export default function MusicLab({
                     [{String(filteredTracks.length).padStart(2, "0")}]
                   </span>
                 </div>
-                <div className="flex relative" ref={sortMenuRef}>
-                  {/* PLIEGO-237: dropdown de sort — antes era row de 5 botones inline ("horrible" per ESTADO P2) */}
+                <div className="flex">
+                  {/* S145-R4: dropdown via createPortal con posición calculada desde el trigger */}
                   <motion.button
+                    ref={sortMenuRef}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => setShowSortMenu((v) => !v)}
+                    onClick={() => {
+                      const willOpen = !showSortMenu;
+                      if (willOpen && sortMenuRef.current) {
+                        const rect = sortMenuRef.current.getBoundingClientRect();
+                        setSortDropdownPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                      }
+                      setShowSortMenu((v) => !v);
+                    }}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
                     aria-label="Cambiar ordenación"
-                    className="text-[10px] px-2 py-2.5 rounded-sm transition-all flex-shrink-0 flex items-center gap-1"
-                    style={{
-                      color: accentColor,
-                      border: `1px solid ${accentColor}33`,
-                      background: `${accentColor}08`,
-                      fontFamily: FONT_MONO,
-                    }}
+                    className="h-11 flex-shrink-0 flex items-center justify-center"
                   >
-                    {SORT_OPTIONS.find((o) => o.id === trackSort)?.icon ?? "⇅"}
-                    <span style={{ fontSize: 8, opacity: 0.6 }}>▾</span>
+                    <span className="text-[10px] px-2 py-1.5 rounded-sm transition-all flex items-center gap-1"
+                      style={{
+                        color: accentColor,
+                        border: `1px solid ${accentColor}33`,
+                        background: `${accentColor}08`,
+                        fontFamily: FONT_MONO,
+                      }}
+                    >
+                      {SORT_OPTIONS.find((o) => o.id === trackSort)?.icon ?? "⇅"}
+                      <span style={{ fontSize: 8, opacity: 0.6 }}>▾</span>
+                    </span>
                   </motion.button>
                   <AnimatePresence>
-                    {showSortMenu && (
+                    {showSortMenu && sortDropdownPos && createPortal(
                       <motion.div
+                        ref={dropdownRef}
                         initial={{ opacity: 0, y: -4 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -4 }}
                         transition={{ duration: 0.12 }}
-                        className="absolute top-full mt-1 right-0 z-50 flex flex-col gap-0.5 p-1 rounded-sm"
                         style={{
+                          position: "fixed",
+                          top: sortDropdownPos.top,
+                          right: sortDropdownPos.right,
+                          zIndex: 9999,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "2px",
+                          padding: 4,
+                          borderRadius: 2,
                           background: "#0a0a0a",
                           border: `1px solid ${accentColor}44`,
                           fontFamily: FONT_MONO,
@@ -1154,7 +1179,8 @@ export default function MusicLab({
                             <span>{opt.label}</span>
                           </button>
                         ))}
-                      </motion.div>
+                      </motion.div>,
+                      document.body
                     )}
                   </AnimatePresence>
                   <span style={{ width: 1, background: `${accentColor}15`, margin: "2px 2px" }} />
@@ -1260,7 +1286,7 @@ export default function MusicLab({
               </AnimatePresence>
 
               <AnimatePresence>
-                {showDelete && (
+                {showDelete && createPortal(
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     className="fixed inset-0 z-[999] flex items-center justify-center p-6"
                     style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
@@ -1292,7 +1318,8 @@ export default function MusicLab({
                         ))
                       )}
                     </motion.div>
-                  </motion.div>
+                  </motion.div>,
+                  document.body
                 )}
               </AnimatePresence>
 

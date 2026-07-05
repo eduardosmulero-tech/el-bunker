@@ -1,67 +1,62 @@
-# 🔴 S145 — Round 3: la causa real es que el hitbox 44px ES el box visible (no solo el texto)
+# 🔴 S145 — Round 4: usar createPortal (patrón ya existente en el código) para dropdown y modal
 
-> **Estado:** 🔴 Reabierta 2026-07-05. Edu sigue viendo los botones grandes pese al fix anterior
-> (que solo redujo texto/opacidad/padding). Sonnet investigó más a fondo y encontró la causa real:
-> el fix anterior nunca separó "tamaño del hitbox" de "tamaño de la caja visible" — son la misma
-> caja, con borde y fondo visibles a 44x44px completos. Reducir el texto de dentro no encoge la
-> caja. Esta vez el fix es estructural, no cosmético.
+> **Estado:** 🔴 Reabierta 2026-07-05. Edu reporta: el botón de ordenar tracks se ve desigual, y
+> tanto su desplegable como el modal de "eliminar track" (el que se acaba de convertir a modal en
+> la ronda anterior) se salen de pantalla. Sonnet investigó y encontró que el codebase YA tiene el
+> patrón correcto para esto — `createPortal(..., document.body)`, usado en
+> `src/musiclab/TrackCard.jsx:68-115` y `:190-237` para menús contextuales — pero ni el dropdown de
+> orden ni el modal de borrar lo usan. Ambos usan `position: absolute`/`fixed` anidados dentro del
+> árbol normal de componentes, lo cual puede quedar recortado o mal posicionado si algún ancestro
+> con animación de framer-motion tiene un `transform` activo (afecta el contexto de posicionamiento
+> de cualquier `fixed`/`absolute` descendiente — gotcha conocido de CSS).
 > **Contrato:** editar código directamente como agente. Nunca pliego.
 > **Verificación:** Sonnet revisa con grep puntual + build.
 
-## Causa real confirmada (no re-investigar, ya está verificado leyendo el código)
+## 1. Dropdown de orden de tracks — convertir a createPortal + posición calculada
 
-Todos estos botones tienen su PROPIA caja (`className` con `w-11 h-11` o `min-w/min-h-[44px]`)
-con `border` y `background` visibles aplicados directamente a esa caja de 44x44px. El fix anterior
-(S145 round 2) solo cambió el texto/icono de dentro (tamaño, opacidad) — pero el borde y el fondo
-siguen trazando un cuadrado de 44x44px completo, así que visualmente se sigue viendo "grande"
-sin importar cuán pequeño sea el texto interior. Para que un botón se vea genuinely más pequeño
-manteniendo el hitbox táctil de 44px (obligatorio, no tocar), hace falta separar:
-- **Hitbox** (área clicable, 44x44px, invisible — sin borde ni fondo propios).
-- **Caja visible** (más pequeña, p.ej. 28-32px, con el borde/fondo/icono dentro, centrada dentro
-  del hitbox).
+**Dónde:** `src/musiclab/MusicLab.jsx:1110-1158` (`sortMenuRef`, botón `onClick={() =>
+setShowSortMenu(...)}`, dropdown `AnimatePresence`/`motion.div` con `className="absolute top-full
+mt-1 right-0 z-50..."`).
 
-## Tarea — aplicar el patrón hitbox/visual a estos botones
+**Problema:** `position: absolute` relativo a `sortMenuRef` (un div normal, no portal) — si el
+botón está cerca del borde derecho/inferior del viewport, el desplegable puede desbordar fuera de
+pantalla (no hay boundary detection). Además puede sufrir el mismo problema de `transform` de
+ancestro framer-motion que el modal de abajo.
 
-1. **`src/layout/Layout.jsx:148-165`** — botones ↺ (reload) y ⎋ (exit) del header. Ya tienen
-   `min-h-[44px] min-w-[44px]` con `border`/`background` en la misma caja — sepáralos: hitbox
-   `min-h-[44px] min-w-[44px] flex items-center justify-center` sin borde propio, con un `<span>`
-   o div interior de ~28px con el borde/color/icono actual.
+**Fix:** sigue el patrón de `TrackCard.jsx` — usa `createPortal(..., document.body)` con
+`position: fixed`, calculando la posición desde `sortMenuRef.current.getBoundingClientRect()`
+cuando se abre (guarda `top`/`right` o `left` en un state y úsalo en el style del portal). Así
+queda siempre visible sin depender del árbol de componentes ni de dónde esté el scroll.
 
-2. **`src/musiclab/MusicLab.jsx:1161-1195`** — 5 botones del toolbar de tracks: vista (`cycleViewMode`),
-   buscar (⌕), añadir (+), editar (✎), eliminar-toggle (−). Todos `w-11 h-11` con borde/fondo en
-   la misma caja de 44px. Mismo patrón: hitbox 44px transparente + caja visible interior ~28-32px
-   con el estilo actual (border/background/color condicionales según estado activo — no cambies
-   esa lógica, solo la estructura de la caja).
+**Sobre "el botón se ve desigual":** compáralo visualmente con el resto de botones del toolbar
+(los que ya tienen hitbox 44px / caja visible ~28px de la ronda anterior). Si el botón de orden
+usa un padding/altura distinto (`px-2 py-2.5`, ancho automático por icono+flecha) que no encaja
+con el resto de la fila "TRACKS [count] · botón orden", ajusta su altura/alineación vertical para
+que quede consistente con sus vecinos en esa misma fila. Usa tu criterio visual, no hay una única
+respuesta correcta aquí — repórtalo si lo cambias.
 
-3. **`src/musiclab/MusicLab.jsx:1268-1272`** — botón ✕ de borrar cada track dentro del panel de
-   confirmación. Mismo patrón hitbox/visual.
+## 2. Modal de "eliminar track" — convertir a createPortal (ronda anterior no lo usó)
 
-## Tarea — el panel "ELIMINAR TRACK" debe ser un modal fijo, no un panel inline
+**Dónde:** `src/musiclab/MusicLab.jsx`, el bloque `{showDelete && (...)}` que se convirtió a modal
+`fixed inset-0 z-[999]` en la ronda anterior (commit `6adbdf2`).
 
-**Dónde:** `src/musiclab/MusicLab.jsx:1253-1275` aprox (`{showDelete && (...)}`). Hoy es un
-`<motion.div>` que se expande INLINE en el flujo normal de la página (con `max-h-[40vh]
-overflow-y-auto` ya añadido en la ronda anterior). El problema persiste porque el panel puede
-abrirse muy abajo en la página (tras el reproductor de 2 filas + toolbar + búsqueda), y aunque su
-contenido interno scrollee, el panel entero puede quedar fuera del área visible sin que el usuario
-sepa que tiene que hacer scroll de página para encontrarlo — percibido como "se sale de pantalla".
-
-**Fix:** conviértelo en un modal fijo centrado en viewport, igual patrón que
-`DropComposeModal` en `src/musiclab/DropsManager.jsx:74` (`className="fixed inset-0 z-[999] flex
-items-center justify-center p-6"` + backdrop). Así el panel de borrar siempre aparece centrado y
-visible sin depender de dónde esté el scroll de la página, y su lista interna de tracks mantiene
-el `max-h` + `overflow-y-auto` ya existente pero ahora dentro de un contenedor de modal con ancho
-acotado (similar a como ya hace `DropComposeModal`).
+**Fix:** envuelve ese modal completo en `createPortal(..., document.body)`, exactamente como
+`TrackCard.jsx:68-115`. Mantén el mismo contenido/estructura (backdrop + panel centrado +
+max-h-[60vh] overflow-y-auto + botones ✕ con hitbox/visual separados) — solo cambia el mecanismo
+de renderizado para que escape del árbol de componentes.
 
 ## Restricciones
 
-- No cambies la lógica de qué track se borra ni las confirmaciones existentes — solo estructura
-  visual (hitbox/caja) y el contenedor (inline → modal).
-- No bajes ningún hitbox de 44px.
+- Sigue el patrón exacto de `TrackCard.jsx` (mismo import `createPortal` de `react-dom`, mismo
+  target `document.body`).
+- No cambies la lógica de ordenación ni de borrado, solo el mecanismo de posicionamiento/render.
 - `npm run build` debe pasar antes de reportar hecho.
-- Verifica visualmente (o razona explícitamente) que cada caja visible ahora es más pequeña que
-  el hitbox que la contiene — esa es la prueba de que el fix funcionó esta vez.
+- Si tras investigar encuentras que la causa NO es el problema de `transform`/ancestro que
+  planteo, dilo explícitamente con evidencia — no fuerces el portal si no hace falta, pero el
+  patrón ya establecido en el código (`TrackCard.jsx`) es la referencia a seguir por consistencia
+  aunque la causa exacta sea otra.
 
 ## Hand-off a Sonnet
 
-Reporta archivo:línea de cada uno de los 4 cambios (3 hitbox/visual + 1 modal). Sonnet verifica
-con grep puntual + build, no relee los archivos completos.
+Reporta archivo:línea de los 2 cambios (dropdown + modal) y qué hiciste con el botón "desigual".
+Sonnet verifica con grep puntual + build.
