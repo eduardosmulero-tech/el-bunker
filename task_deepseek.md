@@ -1,49 +1,47 @@
 # task_deepseek.md — encargo activo (turno: deepseek)
 
-## RONDA 5 — YA NO MÁS TEORÍAS. INSTRUMENTAR Y MEDIR.
+## RONDA 6 — menú de sort se abre pero queda flotando, no sigue el scroll
 
-Historial verificado (no especulación, `git log`/`git show`):
-1. `7093187`: versión original — `position: absolute; right: 0` sobre contenedor `relative`,
-   SIN portal. Funcionaba ("el menú se veía al principio", confirmado por Edu).
-2. Se migró a `createPortal(document.body) + position: fixed` porque un ancestro con
-   `motion.div animate={{x:0}}` (el tab "tracks") rompía clipping/posición (razón dada en el
-   propio commit).
-3. `898b9f9` (R4): boundary-detection clamps (`left`/`top` acotados a innerWidth/innerHeight).
-4. `5e30272`: fix de race condition en el toggle + `overflow-x-auto` en el toolbar (esto sí
-   arregló el toolbar — confirmado por Edu).
-5. Ronda de hoy: quitado `AnimatePresence`.
+**RONDA 5 (instrumentación + intento onTap/touchAction) — resultado confirmado por Edu:**
+Toast disparado: `SORT pos:151,457 vw:392x811 ref:OK`. El menú **ya se abre** (esto resuelve el bug
+original de las rondas 1-5: el tap no abría el menú). Progreso real, no descartar el cambio
+`onClick`→`onTap` + `touchAction: manipulation` de `MusicLab.jsx` — quedó commiteado en `1a6f2b1`.
 
-Cada ronda "arregló" una teoría distinta y NINGUNA se verificó con datos reales del dispositivo
-de Edu. Sigue fallando (confirmado: el botón da feedback de tap, el menú nunca aparece). Edu ya
-dijo explícitamente: no más teorías. Así que esta ronda NO es "prueba otro fix" — es instrumentar
-para obtener evidencia real antes de tocar nada más.
+**Bug nuevo, reportado por Edu tal cual, en el móvil real:**
+> "El menú desplegable aparece debajo del botón. Ahora, si desplazo hacia abajo o arriba, el menú
+> se queda flotando estático en el mismo sitio mientras el resto de la app se desplaza."
 
-## Tarea única de esta ronda
+Es decir: el menú abre en la posición correcta la primera vez, pero al hacer scroll del contenido
+no se mueve con él — se queda "pegado" en coordenadas de viewport fijas mientras todo lo demás
+(incluido presumiblemente el propio botón) se desplaza por debajo.
 
-En el `onClick` del botón de sort (`MusicLab.jsx:1120-1135`), **inmediatamente después** de
-calcular `top`/`left` y antes/junto a `setShowSortMenu(true)`, añade una llamada temporal a
-`showToast` (ya está disponible en el scope del componente, se usa en todo el archivo, ej. línea
-173) que muestre los valores reales calculados, algo como:
+## Contexto ya conocido (no releer todo, ya verificado en rondas previas)
+- El menú se renderiza vía `createPortal(document.body)` con `position: fixed`, en
+  `MusicLab.jsx` (zona del botón de sort, ~línea 1117-1195).
+- `top`/`left` se calculan una sola vez en el momento del click a partir de
+  `sortMenuRef.current.getBoundingClientRect()` + clamps de boundary.
+- El toast ya deja el valor real confirmado: `pos:151,457` con viewport `392x811`.
+- `AnimatePresence` fue quitado en la ronda 5 (ya no envuelve el dropdown).
 
-```js
-showToast({ msg: `pos:${Math.round(left)},${Math.round(top)} vw:${window.innerWidth}x${window.innerHeight} ref:${!!sortMenuRef.current}` }, 4000);
-```
+## Tarea
+Investiga por qué el menú no seguiría el scroll de la app y corrígelo, de forma que el
+desplegable permanezca anclado visualmente al botón de sort mientras el usuario hace scroll
+(igual que se espera de cualquier dropdown "anclado"), o se cierre automáticamente al hacer
+scroll si esa es la solución más simple y coherente con el resto de la UI — decide tú cuál encaja
+mejor, investigando primero cómo se comporta el resto de menús/dropdowns de la app (si los hay)
+antes de inventar un patrón nuevo.
 
-También añade un log/toast equivalente si `sortMenuRef.current` es falsy en el momento del click
-(rama que hoy no hace nada visible — confirma si esa rama se está colando).
-
-No toques nada más: ni el AnimatePresence, ni el toolbar, ni la lógica de toggle. Solo instrumenta.
+## Restricciones
+- Un bug = una causa: no toques la lógica de apertura/cierre (`onTap`, `touchAction`) que ya
+  quedó arreglada en la ronda 5, solo el problema de posición-en-scroll.
+- Cambio por contenedor lógico completo (ADR-015), no micro-edición.
+- Quita el toast de diagnóstico (`showToast` con `pos:...`) de la ronda 5 una vez confirmes que
+  el fix de scroll funciona — ya cumplió su propósito.
 
 ## Entregable
 - `npm run build` limpio.
-- El toast debe dispararse de forma fiable cada vez que se pulsa el botón (abriendo o no).
+- Explicar en el reporte qué causaba el desanclaje (causa raíz, no parche).
 
-## Qué hace Edu después (no es parte de tu tarea, es el siguiente paso)
-Edu pulsa el botón en el móvil, lee el toast con los números reales, y los reporta. Con esos
-datos reales (¿el ref existe? ¿los valores de pos están dentro de rango de pantalla? ¿vw/vh son
-razonables?) se decide el fix real — no antes.
-
-## Restricciones
-- Cambio mínimo y quirúrgico: solo añadir la instrumentación, cero refactor.
-- No quitar el toast hasta que Edu confirme que ya reportó los datos (así no hay que repetir la
-  ronda si hace falta releer valores).
+## Qué hace Edu después (no es parte de tu tarea)
+Edu prueba en el móvil real tras el commit/push: abre el menú, hace scroll, confirma si el menú
+ahora sigue al botón (o se cierra correctamente) y reporta.

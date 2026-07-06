@@ -293,7 +293,7 @@ export default function MusicLab({
   const sortMenuRef = useRef(null);
   const dropdownRef = useRef(null);
   const [sortDropdownPos, setSortDropdownPos] = useState(null);
-  // Code-reviewer fix: outside-click + Escape cierran el popover
+  // Code-reviewer fix: outside-click + Escape + scroll cierran el popover
   useEffect(() => {
     if (!showSortMenu) return;
     const onClick = (e) => {
@@ -302,9 +302,18 @@ export default function MusicLab({
       setShowSortMenu(false);
     };
     const onKey = (e) => { if (e.key === "Escape") setShowSortMenu(false); };
+    // R6: cerrar dropdown al hacer scroll. El portal con position:fixed usa
+    // coordenadas calculadas una sola vez al abrir; al hacer scroll, el boton
+    // se mueve pero el menu queda congelado. Solucion: cerrar al hacer scroll.
+    const onScroll = () => { setShowSortMenu(false); };
     document.addEventListener("mousedown", onClick);
     document.addEventListener("keydown", onKey);
-    return () => { document.removeEventListener("mousedown", onClick); document.removeEventListener("keydown", onKey); };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [showSortMenu]);
   // S85d Q15: pull-to-reveal extended history — mostrar últimos 3 por defecto,
   // expande con toggle si playHistory.length > 3
@@ -1130,11 +1139,8 @@ export default function MusicLab({
                         if (top + MENU_H > window.innerHeight - 8) top = rect.top - MENU_H - 4;
                         left = Math.max(8, Math.min(left, window.innerWidth - MENU_W - 8));
                         top = Math.max(8, Math.min(top, window.innerHeight - MENU_H - 8));
-                        showToast({ msg: `SORT pos:${Math.round(left)},${Math.round(top)} vw:${window.innerWidth}x${window.innerHeight} ref:OK` }, 4000);
                         setSortDropdownPos({ top, left });
                         setShowSortMenu(true);
-                      } else {
-                        showToast({ msg: `SORT ERROR: sortMenuRef.current es null` }, 4000);
                       }
                     }}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
