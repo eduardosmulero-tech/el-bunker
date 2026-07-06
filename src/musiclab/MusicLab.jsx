@@ -1117,7 +1117,8 @@ export default function MusicLab({
                   <motion.button
                     ref={sortMenuRef}
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => {
+                    style={{ touchAction: "manipulation" }}
+                    onTap={() => {
                       if (showSortMenu) { setShowSortMenu(false); return; }
                       if (sortMenuRef.current) {
                         const rect = sortMenuRef.current.getBoundingClientRect();
@@ -1129,8 +1130,11 @@ export default function MusicLab({
                         if (top + MENU_H > window.innerHeight - 8) top = rect.top - MENU_H - 4;
                         left = Math.max(8, Math.min(left, window.innerWidth - MENU_W - 8));
                         top = Math.max(8, Math.min(top, window.innerHeight - MENU_H - 8));
+                        showToast({ msg: `SORT pos:${Math.round(left)},${Math.round(top)} vw:${window.innerWidth}x${window.innerHeight} ref:OK` }, 4000);
                         setSortDropdownPos({ top, left });
                         setShowSortMenu(true);
+                      } else {
+                        showToast({ msg: `SORT ERROR: sortMenuRef.current es null` }, 4000);
                       }
                     }}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
@@ -1149,14 +1153,12 @@ export default function MusicLab({
                       <span style={{ fontSize: 8, opacity: 0.6 }}>▾</span>
                     </span>
                   </motion.button>
-                  <AnimatePresence>
-                    {showSortMenu && sortDropdownPos && createPortal(
-                      <motion.div
-                        ref={dropdownRef}
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.12 }}
+                  {showSortMenu && sortDropdownPos && createPortal(
+                    <motion.div
+                      ref={dropdownRef}
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.12 }}
                         style={{
                           position: "fixed",
                           top: sortDropdownPos.top,
@@ -1189,8 +1191,7 @@ export default function MusicLab({
                         ))}
                       </motion.div>,
                       document.body
-                    )}
-                  </AnimatePresence>
+                  )}
                   <span style={{ width: 1, background: `${accentColor}15`, margin: "2px 2px" }} />
                   <motion.button whileTap={{ scale: 0.9 }} title={`Vista: ${viewMode}`}
                     onClick={cycleViewMode}

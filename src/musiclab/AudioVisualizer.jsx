@@ -429,6 +429,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
 
     return () => {
       cancelled = true;
+      drawStarted = false;
       cancelAnimationFrame(animFrameRef.current);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", handleVisibility);
