@@ -3,8 +3,13 @@
 
 **Próximo pliego:** FASE B — Reproductor premium (carátula grande, controles limpios, sin CRT sobre arte).
 **Plan vigente:** `docs/operacional/auditoria_fable_1.0.md` §7. FASE A completada S144.
-**Última sesión:** S144 — DeepSeek · PLIEGO-235 + PLIEGO-236 · 2 Jul 2026.
+**Última sesión:** S145 — DeepSeek+Sonnet · RONDA 6 menú sort (scroll cierra dropdown) · 6 Jul 2026.
 **Rama:** `master`
+
+## ⚠️ Pendiente de confirmar (S145)
+Menú de sort (MusicLab): ronda 6 hace que se cierre al hacer scroll en vez de reposicionarse
+(commits `1a6f2b1`, `d0dc42c`). **Edu no ha probado esto en el móvil todavía.** Confirmar si el
+comportamiento (cerrar vs seguir al botón) es aceptable antes de dar el bug por cerrado.
 
 ## Build/Lint
 ✅ Build 2.30s · Lint 0/0
