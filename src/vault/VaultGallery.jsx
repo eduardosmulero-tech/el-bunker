@@ -3,11 +3,12 @@
 //  Galería del VAULT: 6 modos (ADR-021)
 //  Fase 1 — WALL delegado a WallView.jsx (virtualizado + pinch + badges)
 // ============================================================
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
 import { usePlayer } from "../core/PlayerContext"; // VB9: vibe accent propagation
 import WallView from "./WallView"; // Fase 1: WALL virtualizado
+import EntryLightbox from "./EntryLightbox"; // FASE C.1: lightbox unificado
 
 // S130-A — MAP mode: Leaflet real + clustering + CartoDB Dark tiles (Sub-fase 1)
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
@@ -36,11 +37,13 @@ const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.catego
 
 
 // ─── UTILIDADES ────────────────────────────────────────────
+// FASE D.1: img.url (firmada server-side, Option B) tiene prioridad sobre r2_key cruda.
 const getImageUrl = (entry) => {
   const images = entry.content?.images;
   if (!images?.length) return null;
   const img = images[0];
-  if (img.r2_key) return `${R2_PUBLIC_BASE}/${img.r2_key}`;
+  if (img.url) return img.url;
+  if (img.r2_key) return img.r2_key.startsWith("http") ? img.r2_key : `${R2_PUBLIC_BASE}/${img.r2_key}`;
   if (img.dataUrl) return img.dataUrl;
   return null;
 };
@@ -263,18 +266,16 @@ const CinemaView = ({ entries, eras, onZoom }) => {
 // ─── ORIGINAL RENDERS ────────────────────────────────────────
 
 // ─── DIALOGUE VIEW (S122-B: emparejamiento temporal + hilos conectores + asimetría) ──
-const DialogueView = ({ entries, eras }) => {
+// FASE C.1: zoomImage modal reemplazado por onOpenLightbox
+const DialogueView = ({ entries, eras, onOpenLightbox }) => {
   const [filterMode, setFilterMode] = useState("all"); // "all" | "conversations"
-  // Fase 9: tap-to-zoom — fullscreen image modal
-  const [zoomImage, setZoomImage] = useState(null); // { src, title }
 
-  // Escape key to close zoom modal
-  useEffect(() => {
-    if (!zoomImage) return;
-    const onKey = (e) => { if (e.key === 'Escape') setZoomImage(null); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [zoomImage]);
+  // FASE C.1: handler unificado para abrir lightbox desde cualquier bubble
+  const handleImageTap = useCallback((entry) => {
+    if (!entry || !onOpenLightbox) return;
+    const idx = entries.findIndex(e => e.id === entry.id);
+    if (idx >= 0) onOpenLightbox(entries, idx);
+  }, [entries, onOpenLightbox]);
 
   // S122-B: Emparejamiento temporal — fotos tomadas <5min de diferencia
   const pairs = useMemo(() => {
@@ -426,7 +427,7 @@ const DialogueView = ({ entries, eras }) => {
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${ACID}33` }}>
                         {eduImg ? (
-                          <img src={eduImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => setZoomImage({ src: eduImg, title: pair.edu?.title })} />
+                          <img src={eduImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.edu)} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}>📷</div>
                         )}
@@ -483,7 +484,7 @@ const DialogueView = ({ entries, eras }) => {
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${PURPLE}33` }}>
                         {davidImg ? (
-                          <img src={davidImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => setZoomImage({ src: davidImg, title: pair.david?.title })} />
+                          <img src={davidImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.david)} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}>📷</div>
                         )}
@@ -515,38 +516,14 @@ const DialogueView = ({ entries, eras }) => {
         </p>
       )}
 
-      {/* Fase 9: Fullscreen zoom modal */}
-      {zoomImage && (
-        <div
-          onClick={() => setZoomImage(null)}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.92)", backdropFilter: "blur(12px)" }}>
-          <div className="relative max-w-full max-h-full">
-            <img
-              src={zoomImage.src}
-              alt={zoomImage.title || ""}
-              className="max-w-full max-h-[85vh] object-contain rounded-sm"
-              style={{ boxShadow: "0 0 60px rgba(180,130,255,0.15)" }} />
-            {zoomImage.title && (
-              <p className="text-xs text-center mt-3 opacity-50" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
-                {zoomImage.title}
-              </p>
-            )}
-            <button
-              onClick={(e) => { e.stopPropagation(); setZoomImage(null); }}
-              className="absolute top-2 right-2 text-sm w-10 h-10 flex items-center justify-center rounded-full"
-              style={{ color: PURPLE, border: "1px solid rgba(180,130,255,0.3)", background: "rgba(0,0,0,0.5)" }}>
-              ✕
-            </button>
-          </div>
-        </div>
-      )}
+      {/* FASE C.1: zoomImage modal eliminado — sustituido por EntryLightbox vía onOpenLightbox */}
     </div>
   );
 };
 
 // ─── EXHIBITION VIEW (S122-C: agrupación por Era + vibe breakdown + layout museo) ──
-const ExhibitionView = ({ entries, eras }) => {
+// FASE C.1: tap-to-open lightbox en entries expandidas
+const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
   // Fase 9: expansion — tap era card to expand and show all entries
   const [expandedEra, setExpandedEra] = useState(null);
 
@@ -613,7 +590,8 @@ const ExhibitionView = ({ entries, eras }) => {
                   {eraEntries.map((e) => {
                     const url = getImageUrl(e);
                     return (
-                      <div key={e.id} className="aspect-square rounded-sm overflow-hidden" style={{ border: `1px solid ${eraColor}22` }}>
+                      <div key={e.id} className="aspect-square rounded-sm overflow-hidden cursor-pointer" style={{ border: `1px solid ${eraColor}22` }}
+                        onClick={(ev) => { ev.stopPropagation(); const idx = entries.findIndex(en => en.id === e.id); if (idx >= 0) onOpenLightbox?.(entries, idx); }}>
                         {url ? (
                           <img src={url} alt={e.title || ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
@@ -636,7 +614,8 @@ const ExhibitionView = ({ entries, eras }) => {
 };
 
 // ─── REEL VIEW (S122-D: auto-generación secuencias por día + pinning) ──
-const ReelView = ({ entries, eras }) => {
+// FASE C.1: tap-to-open lightbox en entries del reel activo
+const ReelView = ({ entries, eras, onOpenLightbox }) => {
   // Fase 8: REEL soundtrack — ambient volume when viewing REEL detail
   const { masterVolume, setMasterVolume } = usePlayer();
   const reelVolRef = useRef(null);
@@ -698,7 +677,8 @@ const ReelView = ({ entries, eras }) => {
                   {[...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((entry, i) => {
                     const img = getImageUrl(entry);
                     return (
-                      <div key={entry.id} className="flex gap-3 p-2 rounded-sm items-center" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}22` }}>
+                      <div key={entry.id} className="flex gap-3 p-2 rounded-sm items-center cursor-pointer" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}22` }}
+                        onClick={() => { const idx = entries.findIndex(e => e.id === entry.id); if (idx >= 0) onOpenLightbox?.(entries, idx); }}>
                         <span className="text-[10px] font-bold opacity-40 w-5" style={{ color: eraColor }}>{i + 1}</span>
                         <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}33` }}>
                           {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: eraColor }}>📷</div>}
@@ -776,19 +756,6 @@ const makePinIcon = (color) => L.divIcon({
   popupAnchor: [0, -12],
 });
 
-// S130-A: 9 entries demo hardcoded (Madrid + 5 ciudades España + Lisboa + París + Roma). Sub-fase 4 las reemplaza por geocoder real.
-const DEMO_ENTRIES_GEO = [
-  { id: "demo-m1",  title: "Atocha al atardecer",   era_id: 1, era_name: "RUTINA",      color: "#bfff00", type: "place",  lat: 40.4068, lng: -3.6903,  date: "2024-03-15T19:30:00Z", from_user: "edu"   },
-  { id: "demo-m2",  title: "Cena en Malasaña",      era_id: 1, era_name: "RUTINA",      color: "#bfff00", type: "place",  lat: 40.4258, lng: -3.7058,  date: "2024-05-22T22:00:00Z", from_user: "david" },
-  { id: "demo-bcn", title: "Búnker del Carmel",     era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 41.4178, lng:  2.1525,  date: "2024-07-08T20:15:00Z", from_user: "edu"   },
-  { id: "demo-gr",  title: "Alhambra",             era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 37.1761, lng: -3.5881,  date: "2023-11-12T11:00:00Z", from_user: "david" },
-  { id: "demo-sv",  title: "Plaza de España",       era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 37.3773, lng: -5.9869,  date: "2024-04-01T16:30:00Z", from_user: "edu"   },
-  { id: "demo-vlc", title: "Ciudad de las Artes",  era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "place",  lat: 39.4549, lng: -0.3517,  date: "2023-06-20T13:45:00Z", from_user: "david" },
-  { id: "demo-lis", title: "Alfama al amanecer",    era_id: 2, era_name: "VIAJE",       color: "#ff8c42", type: "travel", lat: 38.7113, lng: -9.1305,  date: "2024-09-14T08:00:00Z", from_user: "edu"   },
-  { id: "demo-par", title: "Sena en Nochevieja",    era_id: 3, era_name: "CELEBRACIÓN", color: "#a96fff", type: "travel", lat: 48.8589, lng:  2.2935,  date: "2023-12-31T23:55:00Z", from_user: "edu"   },
-  { id: "demo-rm",  title: "Fontana di Trevi",      era_id: 3, era_name: "CELEBRACIÓN", color: "#a96fff", type: "travel", lat: 41.9009, lng: 12.4833,  date: "2024-02-18T18:00:00Z", from_user: "david" },
-];
-
 // S130-A: Auto-fit bounds a todos los pines (sin esto mapa arranca en Madrid center y hay que panear)
 // lives at module scope porque useMap requiere contexto de MapContainer (no funciona dentro del JSX conditional de MapView)
 const FitBoundsToMarkers = ({ positions }) => {
@@ -864,8 +831,9 @@ const normalizeEntry = (e, eras) => {
   };
 };
 
-// S130-A: MapView real con capas (Fase 2). Si `entries` prop viene vacío, usa DEMO_ENTRIES_GEO hardcoded.
-const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
+// S130-A: MapView real con capas (Fase 2).
+// FASE C.2.1 (veredicto V1 Fable S147): fallback demo geo eliminado, entries=[] → estado vacío elegante.
+const MapView = ({ entries = [], eras = [] }) => {
   const normalized = useMemo(() => entries.map((e) => normalizeEntry(e, eras)), [entries, eras]);
   const geocoded = useMemo(
     () => normalized.filter((e) => typeof e.lat === "number" && typeof e.lng === "number"),
@@ -1086,7 +1054,8 @@ const MapView = ({ entries = DEMO_ENTRIES_GEO, eras = [] }) => {
                           .map(ge => {
                             const imgs = ge.content?.images;
                             if (!imgs?.length) return null;
-                            const src = imgs[0].r2_key ? `${R2_PUBLIC_BASE}/${imgs[0].r2_key}` : imgs[0].dataUrl;
+                            // FASE D.1: preferir img.url firmada si el servidor la inyectó.
+                            const src = imgs[0].url ?? (imgs[0].r2_key ? (imgs[0].r2_key.startsWith("http") ? imgs[0].r2_key : `${R2_PUBLIC_BASE}/${imgs[0].r2_key}`) : imgs[0].dataUrl);
                             return src ? { src, title: ge.title || "", id: ge.id } : null;
                           })
                           .filter(Boolean);
@@ -1152,6 +1121,13 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const vibeAccent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
+  // FASE C.1: shared lightbox state — lifted here so all 5 modes share one instance
+  const [lightboxState, setLightboxState] = useState(null);
+  const openLightbox = (entries, startIndex) => {
+    setLightboxState({ entries, startIndex });
+  };
+  const closeLightbox = () => setLightboxState(null);
+
   // S95: mostrar todas las entradas con imagen/media, no solo photo.
   // El filtro por categoría lo aplica el padre (Vault.jsx) — entries ya vienen filtradas.
   const entriesWithMedia = useMemo(() =>
@@ -1160,6 +1136,7 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
   );
 
   // Fase 1: WALL delegado a WallView.jsx (virtualización + pinch zoom + badges + stagger)
+  // FASE C.1: onOpenLightbox reemplaza ZoomModal interno
   const renderWall = () => (
     <WallView
       entries={entriesWithMedia}
@@ -1168,30 +1145,42 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
       setDensity={setDensity}
       filterCategory={filterCategory}
       accentColor={vibeAccent}
+      onOpenLightbox={openLightbox}
     />
   );
 
   // S122-A: CINEMA delegado a componente separado CinemaView (hooks propios, swipe + Ken Burns)
+  // FASE C.1: onZoom → openLightbox
   const renderCinema = () => (
-    <CinemaView entries={entriesWithMedia} eras={eras} />
+    <CinemaView
+      entries={entriesWithMedia}
+      eras={eras}
+      onZoom={(entry) => {
+        const idx = entriesWithMedia.findIndex(e => e.id === entry?.id);
+        if (idx >= 0) openLightbox(entriesWithMedia, idx);
+      }}
+    />
   );
 
   // S122-B: DIALOGUE delegado a componente con emparejamiento temporal + chat layout
+  // FASE C.1: onOpenLightbox en lugar del modal zoomImage interno
   const renderDialogue = () => (
-    <DialogueView entries={entriesWithMedia} eras={eras} />
+    <DialogueView entries={entriesWithMedia} eras={eras} onOpenLightbox={openLightbox} />
   );
 
   // S122-C: EXHIBITION delegado a componente con agrupación por Era + vibe breakdown
+  // FASE C.1: onOpenLightbox para tap en entries expandidas
   const renderExhibition = () => (
-    <ExhibitionView entries={entriesWithMedia} eras={eras} />
+    <ExhibitionView entries={entriesWithMedia} eras={eras} onOpenLightbox={openLightbox} />
   );
 
   // S122-D: REEL delegado a componente con auto-generación secuencias por día
+  // FASE C.1: onOpenLightbox para tap en entries del reel activo
   const renderReel = () => (
-    <ReelView entries={entriesWithMedia} eras={eras} />
+    <ReelView entries={entriesWithMedia} eras={eras} onOpenLightbox={openLightbox} />
   );
 
-  // S130-D: MAP con entries reales. MapView normaliza lat/lng desde content.* (backward compat con DEMO_ENTRIES_GEO).
+  // S130-D: MAP con entries reales. MapView normaliza lat/lng desde content.*.
   const renderMap = () => <MapView entries={entriesWithMedia} eras={eras} />;
 
   return (
@@ -1227,6 +1216,17 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
       </AnimatePresence>
 
       {/* Fase 1: Preview + Zoom now handled inside WallView.jsx */}
+
+      {/* FASE C.1: EntryLightbox unificado — renderizado aquí (único, compartido por los 5 modos) */}
+      {lightboxState && (
+        <EntryLightbox
+          entries={lightboxState.entries}
+          startIndex={lightboxState.startIndex}
+          onClose={closeLightbox}
+          eras={eras}
+          accentColor={vibeAccent}
+        />
+      )}
     </div>
   );
 }
