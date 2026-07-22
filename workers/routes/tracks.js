@@ -5,6 +5,22 @@
 
 import { json, err } from "../utils/response.js";
 
+// FASE D.2 (veredicto V5 Fable S147): helper local para emitir eventos de track.
+// Contrato explícito: POST emite track_created, DELETE emite track_deleted,
+// PATCH es mudo (un cambio de metadata no es una memoria — V5). El helper vive
+// en este mismo archivo (dependencia cero, ADR-015 contenedor completo).
+async function emitTrackEvent(env, eventType, userId, trackId, payload = null) {
+  if (payload !== null) {
+    await env.DB.prepare(
+      "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'track',?3,?4)"
+    ).bind(eventType, userId, trackId, JSON.stringify(payload)).run();
+  } else {
+    await env.DB.prepare(
+      "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'track',?3)"
+    ).bind(eventType, userId, trackId).run();
+  }
+}
+
 export default async function handleTracks(request, env, url, userId) {
   const method = request.method;
   const path = url.pathname;
@@ -71,9 +87,8 @@ export default async function handleTracks(request, env, url, userId) {
       const stmt = env.DB.prepare("INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES (?1,?2)");
       await env.DB.batch(body.tags.map(tid => stmt.bind(id, tid)));
     }
-    await env.DB.prepare(
-      "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'track',?3,?4)"
-    ).bind("track_created", userId, id, JSON.stringify({ title: body.title })).run();
+    // FASE D.2: POST emite track_created vía helper local.
+    await emitTrackEvent(env, "track_created", userId, id, { title: body.title });
     return json({ id, ...body, added_by: addedBy }, 201);
   }
 
@@ -92,9 +107,10 @@ export default async function handleTracks(request, env, url, userId) {
     binds.push(trackId);
     sets.push("updated_at = datetime('now')");
     await env.DB.prepare(`UPDATE tracks SET ${sets.join(", ")} WHERE id = ?${binds.length}`).bind(...binds).run();
-    await env.DB.prepare(
-      "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'track',?3,?4)"
-    ).bind("track_updated", userId, trackId, JSON.stringify(body)).run();
+    // FASE D.2 (V5): PATCH es mudo — un cambio de metadata no es una memoria.
+    // El histórico de eventos previos NO se borra (🔒-3 append-only); Timeline filtra
+    // el ruido en lectura (RECAP no agregaba este tipo de evento). POST y DELETE
+    // siguen emitiendo vía emitTrackEvent.
     return json({ id: trackId, ...body, updated_by: userId });
   }
 
@@ -105,9 +121,8 @@ export default async function handleTracks(request, env, url, userId) {
     await env.DB.prepare(
       "UPDATE tracks SET is_deleted = 1, deleted_at = ?1, deleted_by = ?2, updated_at = ?1 WHERE id = ?3"
     ).bind(now, userId, trackId).run();
-    await env.DB.prepare(
-      "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'track',?3)"
-    ).bind("track_deleted", userId, trackId).run();
+    // FASE D.2: DELETE emite track_deleted vía helper local (sin payload).
+    await emitTrackEvent(env, "track_deleted", userId, trackId);
     return json({ ok: true, id: trackId });
   }
 

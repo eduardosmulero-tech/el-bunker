@@ -10,6 +10,19 @@ import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, PURPLE } from "../tokens";
 
 const PAGE_SIZE = 50;
 
+// FASE D.2 (veredicto V5 Fable S147): lista blanca de event_type de track
+// visibles en el feed. Un cambio de metadata de track no es una memoria —
+// el ruido histórico queda en D1 (🔒-3 append-only) pero desaparece de la vista.
+// Lista blanca > lista negra: si un futuro event_type de track legítimo aparece,
+// basta añadirlo aquí. Los event_types de track NO listados aquí se ocultan.
+const VISIBLE_TRACK_EVENTS = new Set([
+  "track_play",
+  "track_pause",
+  "track_skip",
+  "track_created",
+  "track_deleted",
+]);
+
 const EVENT_ICONS = {
   track_play: "▶", track_pause: "⏸", track_skip: "⏭",
   entry_created: "✎", entry_updated: "✏", entry_deleted: "✕",
@@ -32,7 +45,11 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
 
   // S72: Filtered & sorted events
   const filteredEvents = useMemo(() => {
-    let result = events;
+    // FASE D.2: ocultar event_type de track que no estén en la lista blanca.
+    // El histórico no se borra (🔒-3); solo se filtra en lectura (V5).
+    let result = events.filter(
+      (e) => !e.event_type?.startsWith("track_") || VISIBLE_TRACK_EVENTS.has(e.event_type)
+    );
     if (filterModule !== "all") {
       result = result.filter(e => {
         if (filterModule === "vault") return e.event_type?.startsWith("entry_") || e.event_type === "era_created";
@@ -72,9 +89,18 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
     });
   }, [filteredEvents]);
 
-  // Unique event types for filter
+  // FASE D.2: Unique event types for filter — derived from raw `events` with only
+  // the track-whitelist applied inline (NOT from filteredEvents, which already applies
+  // filterType and would collapse the dropdown to a single entry when a type is selected).
+  // This keeps the dropdown stable across filter selections while excluding the
+  // removed track event type from the chips.
   const eventTypes = useMemo(() =>
-    [...new Set(events.map(e => e.event_type).filter(Boolean))].sort(),
+    [...new Set(
+      events
+        .filter(e => !e.event_type?.startsWith("track_") || VISIBLE_TRACK_EVENTS.has(e.event_type))
+        .map(e => e.event_type)
+        .filter(Boolean)
+    )].sort(),
     [events]
   );
 
