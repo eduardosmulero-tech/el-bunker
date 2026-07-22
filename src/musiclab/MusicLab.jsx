@@ -27,14 +27,10 @@ const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 // Sin hardcodeos — el usuario los crea/modifica/elimina desde TagManager.
 const ALL_TAG = { id: "all", label: "ALL", icon: "◈", color: "#ffffff" };
 
-// ─── DEMO DATA ───────────────────────────────────────────────
-const DEMO_TRACKS = [
-  { id: "t1", title: "Knife Party – LRAD",         artist: "Knife Party",  url: "", tag: "dnb",         note: "Para cuando llegamos a casa.",    era_id: null, added_at: new Date().toISOString() },
-  { id: "t2", title: "RL Grime – UCLA",             artist: "RL Grime",     url: "", tag: "gaming",      note: "El himno de las noches largas.", era_id: null, added_at: new Date().toISOString() },
-  { id: "t3", title: "Cigarettes After Sex – Crush",artist: "CAS",          url: "", tag: "romantiqueo", note: "Te la dedico.",                  era_id: null, added_at: new Date().toISOString() },
-  { id: "t4", title: "Tycho – Awake",               artist: "Tycho",        url: "", tag: "420_chill",   note: "Flotando.",                      era_id: null, added_at: new Date().toISOString() },
-  { id: "t5", title: "Chase & Status – Flashing Lights", artist: "Chase & Status", url: "", tag: "dnb", note: "La que suena en el carro.",      era_id: null, added_at: new Date().toISOString() },
-];
+// FASE C.2.1 (veredicto V1 Fable S147): fallback demo eliminado, estado vacío elegante.
+// Referencia estable a nivel módulo (no literal [] en render) para no romper exhaustive-deps
+// de los hooks que dependen de rawTracks (mismo patrón que EMPTY_ARR más abajo).
+const EMPTY_TRACKS = [];
 
 // ─── HELPERS ─────────────────────────────────────────────────
 const uuid = () =>
@@ -58,7 +54,7 @@ export default function MusicLab({
   onUpdateTag,
   onDeleteTag,
 }) {
-  const rawTracks = db?.music_lab?.tracks ?? DEMO_TRACKS;
+  const rawTracks = db?.music_lab?.tracks ?? EMPTY_TRACKS;
   const EMPTY_ARR = useMemo(() => [], []);
   const rawDrops  = db?.music_lab?.drops  ?? EMPTY_ARR;
   const userDrops = useMemo(() =>

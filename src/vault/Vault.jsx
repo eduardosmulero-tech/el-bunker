@@ -26,12 +26,7 @@ const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString
 
 // S96 — ENTRY_CATEGORY desde ENTRY_TYPES, CATEGORY_FILTERS importado de AddEntryForm
 const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
-// S97 — Lookup rápido de categoría → { icon, label } para badges en EraDetailPanel
-const DEMO_ERAS = [
-  { id: "demo-1", _index: 0, name: "ORIGEN",       description: "El inicio de todo. Días de descubrimiento.",           start_date: new Date(Date.now() - 365*2*86400000).toISOString(), color: ACID,   cover_image: null },
-  { id: "demo-2", _index: 1, name: "TORMENTA",      description: "Cuando todo cambió. Caos y belleza entrelazados.",    start_date: new Date(Date.now() - 200*86400000).toISOString(),  color: PURPLE, cover_image: null },
-  { id: "demo-3", _index: 2, name: "RENACIMIENTO",  description: "Construyendo algo nuevo desde las cenizas.",          start_date: new Date(Date.now() - 80*86400000).toISOString(),   color: "#ff6b35", cover_image: null },
-];
+// FASE C.2.1 (veredicto V1 Fable S147): fallback demo de eras eliminado, estado vacío elegante.
 
 // ─── HELPERS ─────────────────────────────────────────────────
 
@@ -740,8 +735,8 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
     if (sliderRef.current) sliderRef.current.style.cursor = "grab";
   };
 
-  // ── Demo data if DB is null ───────────────────────────────
-  const displayEras = eras_arr.length > 0 ? eras_arr : DEMO_ERAS;
+  // FASE C.2.1: sin fallback de eras demo. eras_arr vacío → estado vacío elegante downstream.
+  const displayEras = eras_arr;
 
   const activeDisplayEra = displayEras.find((e) => e.id === activeEraId) ?? displayEras[0];
 
