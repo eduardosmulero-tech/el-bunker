@@ -259,7 +259,9 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
     if (!entry?.content?.images?.length) return null;
     const img = entry.content.images[0];
     if (img.dataUrl) return img.dataUrl;
-    if (img.r2_key) return `${R2_PUBLIC_BASE}/${img.r2_key}`;
+    // FASE D.1: preferir img.url firmada si el servidor la inyectó.
+    if (img.url) return img.url;
+    if (img.r2_key) return img.r2_key.startsWith("http") ? img.r2_key : `${R2_PUBLIC_BASE}/${img.r2_key}`;
     return null;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);

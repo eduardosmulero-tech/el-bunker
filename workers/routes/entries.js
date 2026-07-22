@@ -4,6 +4,39 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { isSensitiveR2Key, signR2Read } from "../utils/r2-sign.js";
+
+// FASE D.1 (V4): para entries con imágenes en prefijos sensibles
+// (vault/docs/, vault/audio/), inyecta `url` firmada HMAC en cada imagen.
+// El frontend prefiere `img.url` sobre `${R2_PUBLIC_BASE}/${img.r2_key}`.
+// Si no hay R2_SIGN_SECRET configurado, no inyecta nada (compat hacia atrás).
+// MUTA el entry in-place (no devuelve nuevo objeto) — así los callers no
+// necesitan reasignar (entry es const en el handler de detalle).
+async function signEntryImages(entry, env, url) {
+  if (!env?.R2_SIGN_SECRET) return;
+  const content = typeof entry.content === "string" ? safeParseContent(entry.content) : entry.content;
+  const images = content?.images;
+  if (!Array.isArray(images) || !images.length) return;
+  const origin = url.origin;
+  let mutated = false;
+  const signedImages = await Promise.all(
+    images.map(async (img) => {
+      if (!img?.r2_key || !isSensitiveR2Key(img.r2_key)) return img;
+      const signed = await signR2Read(img.r2_key, env);
+      if (!signed) return img;
+      mutated = true;
+      return { ...img, url: `${origin}/${img.r2_key}?t=${signed.token}` };
+    })
+  );
+  if (!mutated) return;
+  const newContent = { ...content, images: signedImages };
+  entry.content = typeof entry.content === "string" ? JSON.stringify(newContent) : newContent;
+}
+
+const safeParseContent = (c) => {
+  if (typeof c !== "string") return c;
+  try { return JSON.parse(c); } catch { return c; }
+};
 
 export default async function handleEntries(request, env, url, userId) {
   const method = request.method;
@@ -58,6 +91,10 @@ export default async function handleEntries(request, env, url, userId) {
         entry.tags = tagsByEntry[entry.id] || [];
         entry.files = filesByEntry[entry.id] || [];
       }
+      // FASE D.1: firmar imágenes en prefijos sensibles (paralelo, best-effort, muta in-place).
+      if (env?.R2_SIGN_SECRET) {
+        await Promise.all(results.map((e) => signEntryImages(e, env, url)));
+      }
     }
     return json(results);
   }
@@ -81,6 +118,8 @@ export default async function handleEntries(request, env, url, userId) {
       "SELECT id, r2_key, prefix, filename, mime_type, size_bytes FROM files WHERE entry_id = ?1"
     ).bind(entryId).all();
     entry.files = files;
+    // FASE D.1: firmar imágenes en prefijos sensibles (muta entry in-place, sin reasignar).
+    await signEntryImages(entry, env, url);
     return json(entry);
   }
 
