@@ -187,3 +187,72 @@ Fable las resolvió todas (evidencia reverificada contra código real antes de d
 
 Detalle completo con notas de implementación vinculantes: `docs/operacional/cola_decisiones_fable.md`
 (sección "RESOLUCIÓN FABLE"). FASE B y FASE C quedan desbloqueadas.
+
+---
+
+## ADDENDUM CIERRE v1.0 (2026-07-08) — Decisión de Edu: cerrar el Búnker
+
+Decidido por Edu (conversación 08-jul con Opus). **Este addendum MANDA sobre cualquier
+"próximo paso" anterior.** El plan A-D no cambia de fondo; se ACOTA para cerrarse y no ampliarse.
+
+### Decisiones marco (no re-litigar sin dato nuevo)
+1. **el-bunker se queda en Cloudflare a propósito.** Es la ÚNICA pieza NO-local del ecosistema
+   Promethe-os. Razón: sirve a David (no técnico) que necesita acceso always-on desde su móvil,
+   independiente de que el PC de Edu esté encendido o en qué SO esté arrancado. Hosting gestionado
+   = fiabilidad para el usuario que no puede depurar nada. NO se migra a self-hosted. Reconcilia
+   con `promethe-os-base/NORTE.md` §5-F5: el-bunker NO se fusiona como servicio local — se
+   documenta como la excepción hosted del ecosistema.
+2. **Reproductor + estética: CONGELADOS.** FASE B cerró el reproductor a nivel premium y Edu quiere
+   conservarlo TAL CUAL. Ningún pliego de cierre toca `src/musiclab/WinampPlayer.jsx`,
+   `AudioVisualizer.jsx`, el motor de `PlayerContext.jsx`, `tokens.js` ni el look Cyber-Vandal,
+   salvo bug que rompa producción. La estética es un activo a preservar, no a rediseñar.
+3. **v1.0 = FASE C + FASE D. Y se acabó.** Nada de nice-to-haves nuevos. Cerrar, no ampliar.
+
+### Estado real verificado (08-jul, contra código, no docs)
+- **FASE A ✅** (S144, PLIEGO-235/236): 6 P1 cerrados (header, clipping, UUID tag, filtro
+  duplicado, RECAP 404 desplegado, leak `/api/config`).
+- **FASE B ✅** (S145, reverificado en código 08-jul): `peekNextTrack` (`PlayerContext.jsx:891`),
+  "A CONTINUACIÓN" (`WinampPlayer.jsx:670`), CRT global 0.12 (`Layout.jsx:22` = decisión 2B),
+  carátula base. `ESTADO.md` estaba STALE diciendo "próximo FASE B" — corregido este 08-jul.
+- **FASE C ❌ pendiente. FASE D ❌ pendiente.**
+
+### FASE C — Galería premium (frontend; decisiones YA resueltas en `cola_decisiones_fable.md`). Esf: M-L.
+- **`EntryLightbox`** (decisión 6-B acotada): portal, full-bleed, swipe+pinch, metadata emocional.
+  Adoptado por WALL/DIALOGUE/EXHIBITION/REEL; CINEMA lo abre vía su `onZoom` sin cambiar por dentro.
+  **NO existe hoy** (grep 08-jul: cero). Es el "detalle full-bleed" y el mayor salto premium que queda.
+- **WALL museo** (decisión 4-B): salas curatoriales por era (headers nombre/fechas/color), masonry
+  intacto dentro, sin romper virtualización.
+- **Cero DEMO en prod** (decisión 5A): eliminar fallbacks `DEMO_TRACKS` (`MusicLab.jsx:61`),
+  `DEMO_ERAS` (`Vault.jsx:744`), `DEMO_ENTRIES_GEO` (`VaultGallery.jsx:867`) → estado vacío honesto.
+- **Verificar** que el filtro de categoría duplicado (P2.6) quedó realmente cerrado en PLIEGO-236
+  antes de darlo por bueno (REGLA DE ORO — `ESTADO` lo da por hecho, hay que comprobarlo).
+
+### FASE D — Cierre y endurecimiento (backend + housekeeping). Esf: S-M.
+- **Privacidad mínima para merecer "caja fuerte" (cierra P3.12):** `workers/routes/r2.js` exige
+  token/JWT para prefijos sensibles (`/vault/docs/`, `/vault/photos/`, `/vault/videos/`). Hoy sirve
+  cualquier `r2_key` por GET sin auth. **Es el único hueco de privacidad que bloquea v1.0.**
+- **Bajar ruido `track_updated`:** no emitir evento en cada micro-PATCH (`workers/routes/tracks.js:97`)
+  o filtrarlo en la query de Timeline/RECAP.
+- **Housekeeping:** borrar los `.bak` de `src/` (MusicLab, WinampPlayer, Vault, SmokeSession);
+  resync `Arquitectura/INDEX.md` + `technical-debt.md` (TD-1 stale); corregir conteos en
+  CLAUDE.md/PROYECTO.md (17 tablas, 16 prefijos ROUTES).
+
+### PARKING — POST-v1.0, OPCIONAL, NO bloquea cierre
+- Cifrado en cliente del vault (defensa en profundidad más allá del R2 auth).
+- Sustituir Google OAuth por auth propio (passkey/magic-link).
+- Consolidar Vercel → Cloudflare Pages.
+Con R2 con auth, la caja fuerte ya está cerrada para el caso real (2 usuarios). Reabrir esto es
+decisión futura de Edu, no parte del cierre.
+
+### Criterio de cierre v1.0 (binario, verificable)
+- [ ] `EntryLightbox` vivo y adoptado por los 4 modos; foto full-bleed con swipe+pinch en móvil.
+- [ ] WALL se ve como museo por eras, no file browser.
+- [ ] Cero DEMO en prod (grep sin fallbacks activos).
+- [ ] R2 no sirve prefijos sensibles sin auth (`curl` anónimo → 401/403).
+- [ ] Timeline/RECAP sin inundación de "TRACK UPDATED".
+- [ ] `.bak` fuera, docs de arquitectura sin stale, build+lint verdes.
+- [ ] Reproductor y estética intactos (el diff del cierre NO toca los archivos congelados).
+
+### Primer pliego del cierre
+**FASE C.1 — `EntryLightbox`** (componente nuevo + adopción en WallView/DIALOGUE/EXHIBITION/REEL).
+Es el mayor salto de "sensación premium" que queda y no depende de backend.

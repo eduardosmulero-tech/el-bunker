@@ -36,7 +36,7 @@ PWA instalada en Android de Edu y David. Testing activo con feedback humano real
 
 | Tecnología | Rol | Estado |
 |---|---|---|
-| Cloudflare D1 | Base de datos SQL (SQLite-compatible) | ✅ Desplegado — 16 tablas |
+| Cloudflare D1 | Base de datos SQL (SQLite-compatible) | ✅ Desplegado — 17 tablas |
 | Cloudflare R2 | Almacenamiento de archivos (MP3, fotos, vídeos, docs) | ✅ Desplegado |
 | Cloudflare Workers | API REST (22 endpoints) + JWT auth | ✅ Desplegado |
 
@@ -108,7 +108,7 @@ src/
 
 workers/
   worker.js                  — Worker CF: 22 endpoints REST + JWT auth
-  schema.sql                 — Schema D1: 16 tablas normalizadas
+  schema.sql                 — Schema D1: 17 tablas normalizadas
 
 tools/
   pliego_apply.py            — Script para aplicar pliegos SEARCH/REPLACE

@@ -10,8 +10,11 @@ App privada tipo boveda de memoria y reproductor musical para una pareja (Edu y 
 Serverless -- todo persiste en Cloudflare D1 (SQL) + R2 (archivos). Google OAuth2 solo auth.
 PWA instalable en Android exclusivamente.
 Produccion: https://el-bunker-beige.vercel.app
-Stack: React + Vite + Tailwind. Sin backend externo.
-Stack futuro: Cloudflare Workers + D1 + R2.
+Stack frontend: React + Vite + Tailwind (PWA, desplegada en Vercel).
+Stack backend: Cloudflare Workers + D1 + R2 (serverless, YA desplegado — ver INFRAESTRUCTURA).
+Es la unica pieza hosted del ecosistema Promethe-os, a proposito: sirve tambien a David (no
+tecnico) y necesita acceso always-on independiente de que el PC de Edu este encendido. Sin
+servidor propio. (Decision de cierre 08-jul — ver ADDENDUM CIERRE v1.0 del informe de auditoria.)
 
 ## INFRAESTRUCTURA (S54)
 
@@ -65,6 +68,17 @@ Esperando instruccion.
   Si contradice, detener y reportar antes de escribir el encargo.
 - Cambios de codigo siempre por contenedor logico completo (ADR-015). Nunca micro-edicion
   ni fragmentos parciales que dejen el archivo en estado inconsistente.
+
+---
+
+## LECTURA OBLIGATORIA (system prompt transversal — toda IA)
+
+**Reglas de Oro para toda IA que trabaje con Edu** →
+`/mnt/c/proyectos/documentos/REGLAS_DE_ORO_IA_2026-07-12.md`
+
+Léela antes de cualquier otra cosa y ciñe tu comportamiento a sus reglas (R1-R22).
+Es la capa normativa transversal: prevalece salvo que este proyecto la endurezca.
+Contradicción → detener y reportar.
 - **LEGACY (pre-S145):** tools/pliego_apply.py y el formato SEARCH/REPLACE en .txt ya no se usan
   — eran el sistema previo a tener agentes CLI. Metodologia vigente: Sonnet escribe el encargo en
   `task_deepseek.md` (contexto + tarea + restricciones + verificacion); DeepSeek se pone en
@@ -73,6 +87,20 @@ Esperando instruccion.
   "METODOLOGIA VIGENTE" para el detalle.
 - Al cerrar sesion: actualizar docs/SESION.md y docs/Nucleo/ESTADO.md
   antes de cualquier otra cosa.
+
+### 🔴 PENDIENTE: Importacion carpeta PRUEBA (Edu, manual, no codea agente)
+- Runbook en `tools/import-prueba-pendiente.txt` (comandos copy-paste, NO requiere
+  pegar el JWT a nadie — Edu lo pasa a su propia terminal).
+- Carpeta: `D:\bunker-import-review\PRUEBA` (590 archivos: 527 JPG + 63 MP4, ~4,1 GB,
+  16 subcarpetas anho-mes 2021-06 a 2022-08). Ya preparada (staging-manifest.json
+  copiado dentro, 13-jul S148).
+- Flujo: PASO 0 obtener JWT del localStorage -> PASO 1 `--staged ... --token` (dry-run,
+  no sube) -> PASO 2 añadir `--commit` (pide 'si' interactivo).
+- Estado real: 0 fotos subidas. `import-manifest.json` no existe = prueba objetiva.
+- Sube a prefijos PUBLICOS `vault/photos/`+`vault/videos/` (NO afectados por el R2
+  HMAC gate de FASE D, que solo cubre `vault/docs/`+`vault/audio/`).
+- REGLA: el agente NUNCA ejecuta `--commit` sin JWT de Edu + su 'si' interactivo.
+  Tampoco pide el token al chat — Edu lo pone en su terminal.
 
 ### 🔴 SONNET NO INVESTIGA NI EDITA — DeepSeek hace TODO primero (corregido 3+ veces, S145)
 
@@ -176,11 +204,19 @@ NUNCA dejar que la mano de obra decida arquitectura ni toque ADRs 🔒.
 - Score real recalculado: **~52%** (vs ~74% declarado). 2 hallazgos de produccion viva: RECAP roto (404
   `/api/stats/recap` sin desplegar) + `/api/config` filtra presencia sin auth. Bug estetico en todas las
   pantallas: header "EL BUNKER" solapado.
-- **Progreso:** FASE A completada (S144, PLIEGO-235/236 — 6 P1 cerrados). Las 6 decisiones de
-  diseño que bloqueaban FASE B/C fueron resueltas por Fable (S145, ADDENDUM S145-b del informe +
-  detalle vinculante en `docs/operacional/cola_decisiones_fable.md`). **Proximo: FASE B**
-  (reproductor premium: caratula capa base + CRT global a ~0.10 + cola peek con peekNextTrack).
-- Al revisar: aplicar la REGLA DE ORO (reverificar cada hallazgo contra codigo real + produccion, no confiar).
+- 🎯 **MODO CIERRE v1.0 (08-jul, decision de Edu).** Manda el **ADDENDUM CIERRE v1.0** al final del
+  informe. Resumen: el-bunker se cierra a v1.0 = **FASE C + FASE D y se acaba**. Se queda en
+  Cloudflare a proposito (unica pieza no-local; sirve a David, no tecnico, always-on).
+  **Reproductor + estetica CONGELADOS** — no se tocan (`WinampPlayer.jsx`, `AudioVisualizer.jsx`,
+  motor `PlayerContext.jsx`, `tokens.js`, look Cyber-Vandal) salvo bug de produccion.
+- **Progreso:** FASE A ✅ (S144). FASE B ✅ (S145, reverificado en codigo 08-jul: peekNextTrack,
+  "A CONTINUACION", CRT 0.12, caratula base). FASE C.1 ✅ (S146: `EntryLightbox` creado y
+  adoptado por WALL/DIALOGUE/EXHIBITION/REEL/CINEMA; ⚠️ pendiente confirmacion de Edu en movil).
+  **Proximo: FASE C.2 — WALL museo por eras + cero DEMO fallbacks.** Luego resto de FASE C y
+  FASE D (R2 auth prefijos sensibles, ruido track_updated, housekeeping). Soberania profunda
+  (cifrado cliente / quitar Google) = PARKING post-v1.0. ⏸ OJO: produccion PAUSADA por Edu
+  (09-jul) hasta que cierre M0 de Promethe-os — no ejecutar pliegos sin su orden.
+- Al ejecutar: aplicar la REGLA DE ORO (reverificar cada cosa contra codigo real + produccion, no confiar).
 
 ---
 

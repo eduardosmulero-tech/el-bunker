@@ -2,24 +2,27 @@
 > Dispatcher. Leer primero. Max 40 líneas.
 > Historial completo → `git log --oneline docs/Nucleo/SESION.md`
 
-## S145 — RONDA 6: menú sort se cierra al hacer scroll (6 Jul 2026 · DeepSeek + Sonnet)
-Bug arrastrado 6 rondas (menú de sort en MusicLab no abría en móvil). Ronda 5 (onTap +
-touchAction) lo resolvió — confirmado por Edu con toast de diagnóstico (`ref:OK`, pos válida).
-Apareció bug nuevo: menú se quedaba flotando estático al hacer scroll (portal `position:fixed`
-con coords calculadas una sola vez). Ronda 6 (DeepSeek): listener de scroll que cierra el menú,
-mismo patrón que click-fuera/Escape. Build limpio, commiteado y pusheado (`1a6f2b1`, `d0dc42c`).
+## S148 — CIERRE v1.0 EN CÓDIGO: FASE C.2 + FASE D (13 Jul 2026 · GLM + Sonnet workflow)
+Ejecutado contra veredictos V1-V8 de Fable (`docs/operacional/auditoria_pasada_2_2026-07-08.md`).
 
-**⚠️ PENDIENTE — sin confirmar por Edu:** no se ha probado en el móvil tras el push de la ronda 6.
-Además, "cerrar al hacer scroll" es una decisión de comportamiento (no "seguir" al botón) que
-Edu no ha validado explícitamente — puede que prefiera que el menú se reposicione en vez de
-cerrarse. Próxima sesión: preguntar/probar antes de dar el bug por cerrado.
+**FASE C.2 — Galería premium + cero DEMO:**
+- DEMO purge total: `DEMO_TRACKS`/`DEMO_ERAS`/`DEMO_ENTRIES_GEO` eliminados (def + fallbacks + comentarios) → grep 0 hits. Estado vacío honesto.
+- WALL museo por eras: `WallView.jsx` reescrito con `groupEntriesByEra` (useMemo antes de ventana de render) + `EraSectionHeader` (nombre/fechas/vibe count) + `SinEraDivider`. Virtualización intacta (lazy-mount per-item via `IntersectionObserver`), stagger global acumulativo, pinch/LongPressPreview/onOpenLightbox preservados.
 
-## S144 — PLIEGO-235: FASE A.1 (2 Jul 2026 · DeepSeek)
-PLIEGO-235 aplicado: StatusBar 2 filas, main paddingTop, MiniPlayer tag_id→label, config whitelist, filtro duplicado VAULT.
-Edu: npx wrangler deploy (confirmado). RECAP responde 401 (antes 404), config sin leak.
-Build 2.31s · Lint 0/0 · 4 archivos: Layout.jsx, VaultGallery.jsx, config.js.
+**FASE D — Endurecimiento:**
+- D.1 R2 HMAC gate: nuevo `workers/utils/r2-sign.js` (signR2Read/verifyR2Read HMAC-SHA256, TTL reusa JWT_EXPIRY, CryptoKey cache). `workers/routes/r2.js` exige token para `vault/docs/`+`vault/audio/` (omisión si no hay secret = compat). `workers/routes/entries.js` firma server-side (campo `img.url`) en GET list+detail. Frontend (`WallView`/`VaultGallery`/`EntryLightbox`/`AddEntryForm`) prefiere `img.url` firmada.
+- D.2 `track_updated` silenciado: helper `emitTrackEvent` en `tracks.js` (POST=`track_created`, DELETE=`track_deleted`); PATCH mudo. Histórico NO borrado (🔒-3). `Timeline.jsx` whitelist `VISIBLE_TRACK_EVENTS` filtra en lectura; `eventTypes` deriva de `events` raw con whitelist inline (no colapsa al seleccionar tipo).
+- D.3 Housekeeping: 4 `.bak` borrados · `eslint.config.js` override Node globals para `tools/` · `checklist_data.js` `_C` · 4 docs arquitectura resincronizados (INDEX/architecture/rendering-flow/technical-debt).
 
-**6 P1 cerrados:** header solapado, contenido recortado, UUID como tag, filtro duplicado, RECAP 404, leak /api/config.
+**Congelados intactos:** `WinampPlayer.jsx`/`AudioVisualizer.jsx`/`PlayerContext.jsx`/`tokens.js` — diff S148 no los toca.
+**Verificación:** build verde, lint 0/0 global, code-reviewer-glm por sub-entrega (C.2.1, C.2.2, D.1, D.1-fix, D.2, D.2-dropdown-fix, D.3). Bugs críticos encontrados y cerrados in-loop (const reassign entries.js, dropdown collapse Timeline).
+**⏸ Pendiente de Edu:** `wrangler secret put R2_SIGN_SECRET` + `wrangler deploy` · confirmar EntryLightbox+WALL en móvil · prod pausada hasta M0 Promethe-os.
 
-**Próximo:** FASE B (reproductor premium) → FASE C (galería premium) → FASE D (endurecimiento).
-Plan completo: `docs/operacional/auditoria_fable_1.0.md` §7.
+## S146 — FASE C.1 + herramienta importación (8 Jul 2026)
+`EntryLightbox` creado y adoptado por 5 modos. `tools/import-vault.mjs` (staging). Pendiente móvil + Takeout en curso. Detalle → `git log`.
+
+## S145 — RONDA 6: menú sort se cierra al scroll (6 Jul 2026)
+Detalle → `git log --oneline docs/Nucleo/SESION.md`.
+
+## S144 — PLIEGO-235: FASE A.1 (2 Jul 2026)
+6 P1 cerrados. Detalle → `git log`.

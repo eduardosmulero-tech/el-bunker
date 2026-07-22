@@ -1,6 +1,6 @@
 ---
 describe: App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, ToastContext.jsx, src/core/ui/*
-sincronizado_con: S132 — ToastProvider + Design System + Escucha Compartida SC1-SC14
+sincronizado_con: S148 — FASE C.2+D cierre v1.0 (EntryLightbox unificado, WALL museo por eras, DEMO purge, R2 HMAC gate, track_updated silenciado)
 stale_si_pliego_toca: App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx
 ---
 
@@ -23,10 +23,13 @@ App.jsx
 │                   ├── AnimatePresence: NetworkStatusToast (offline indicator)
 │                   ├── Main content (z-20, pt-10 pb-20)
 │                   │   ├── [vault]   → VaultPage
-│                   │   │   └── Vault.jsx (useVault() propietario)
-│                   │   │       ├── AddEntryForm.jsx (FileUploadService + Worker API)
-│                   │   │       └── VaultGallery.jsx (lazy, jwt implied)
-│                   │   │           └── MapView (react-leaflet + cluster, S131 Sub-fase 4)
+│                   │   │   └── Vault.jsx (useVault() propietario, sin DEMO_ERAS desde S148)
+│                   │   │       ├── AddEntryForm.jsx (FileUploadService + Worker API, prefiere img.url firmada)
+│                   │   │       └── VaultGallery.jsx (lazy, jwt implied, sin DEMO_ENTRIES_GEO desde S148)
+│                   │   │           ├── WallView.jsx (S148: museo por eras — EraSectionHeader + lazy-mount per-item via IntersectionObserver)
+│                   │   │           ├── MapView (react-leaflet + cluster, S131 Sub-fase 4)
+│                   │   │           ├── CinemaView / DialogueView / ExhibitionView / ReelView
+│                   │   │           └── EntryLightbox.jsx (S148: lightbox unificado — portal + swipe + pinch, abierto por los 6 modos vía onOpenLightbox)
 │                   │   ├── [music]   → MusicPage
 │                   │   │   └── MusicLab.jsx (useVault() + usePlayer())
 │                   │   │       ├── WinampPlayer.jsx (único <audio>, corazón header S132)
@@ -38,7 +41,7 @@ App.jsx
 │                   │   │       └── AudioVisualizer.jsx (Web Audio)
 │                   │   └── [capsules] → CapsulesPage
 │                   │       └── Capsules.jsx (ToastContext useToast())
-│                   │           ├── Timeline.jsx (filtros Era/module/tipo, viewMode toggle)
+│                   │           ├── Timeline.jsx (filtros Era/module/tipo, viewMode toggle; S148: whitelist VISIBLE_TRACK_EVENTS filtra track_updated histórico)
 │                   │           ├── SmokeSession.jsx (timer + fade, emits events)
 │                   │           ├── TimeCapsules.jsx (S74 opening animation)
 │                   │           └── Recaps.jsx
@@ -83,7 +86,9 @@ App.jsx
 | Componente | Props recibidas | Origen |
 |---|---|---|
 | Vault.jsx | db, user, jwtToken, myEntries, myMessages | useVault() |
-| VaultGallery.jsx | entries, eras, galleryMode, jwtToken | Vault.jsx props |
+| VaultGallery.jsx | entries, eras, galleryMode, jwtToken, onOpenLightbox | Vault.jsx props |
+| WallView.jsx | entries, eras, density, setDensity, filterCategory, accentColor, onOpenLightbox | VaultGallery.jsx (S148: museo por eras, lazy-mount per-item) |
+| EntryLightbox.jsx | entries, startIndex, onClose, eras, accentColor | VaultGallery (portal global, S146/S148) |
 | MusicLab.jsx | db, user, jwtToken, masterVolume | useVault() |
 | Capsules.jsx | jwtToken, masterVolume, activeTrack | App.jsx props |
 | AddEntryForm.jsx | eras, tags, onCreated | Vault.jsx props |

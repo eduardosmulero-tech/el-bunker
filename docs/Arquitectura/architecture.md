@@ -1,6 +1,6 @@
 ---
 describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, core/ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx, core/ui/index.js, core/ColorPicker.jsx
-sincronizado_con: S132 — ToastProvider unificado + Escucha Compartida + Design System
+sincronizado_con: S148 — FASE C.2+D cierre v1.0 (EntryLightbox unificado, WALL museo por eras, DEMO purge, R2 HMAC gate, track_updated silenciado)
 stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx, core/ui/index.js
 ---
 
@@ -17,7 +17,7 @@ Producción: https://el-bunker-beige.vercel.app · Worker API: https://el-bunker
 Responsable de: eras, entries, documentos, fotos, tags de contexto, galería 6 modos.
 Dueño del dato de contenido. Sin audio propio.
 Carga de datos: Worker API (entries, eras) con fallback Drive JSON.
-Archivos: `src/vault/Vault.jsx`, `src/vault/VaultGallery.jsx`, `src/vault/AddEntryForm.jsx`
+Archivos: `src/vault/Vault.jsx`, `src/vault/VaultGallery.jsx`, `src/vault/WallView.jsx`, `src/vault/EntryLightbox.jsx` (S148: lightbox unificado — portal+swipe+pinch, adoptado por los 6 modos), `src/vault/AddEntryForm.jsx`. Sin DEMO fallbacks desde S148 (estado vacío honesto).
 
 ### MUSIC LAB — Motor de audio
 Responsable de: tracks, playlists, drops, tags de vibe, reproducción, escucha compartida.
@@ -37,14 +37,16 @@ Archivos: `src/capsules/Capsules.jsx`, `src/capsules/Timeline.jsx`, `src/capsule
 - `VaultContext._refreshWorkerData(token)`: mergea datos del Worker en `db` state. Fallback silencioso a Drive.
 
 ### Stats Engine
-Tabla `events` en D1 — append-only. Todos los módulos emiten eventos vía `StatsEngine.js`.
+Tabla `events` en D1 — append-only (🔒-3). Todos los módulos emiten eventos vía `StatsEngine.js`.
 Wired en S58-S59: `trackPlay/trackPause/trackSkip` desde PlayerContext, `entryCreated` desde Vault, `dropSent` desde useMusicActions.
 Archivos: `src/core/StatsEngine.js`
+**S148 FASE D:** `track_updated` deja de emitirse en PATCH (`workers/routes/tracks.js` — helper `emitTrackEvent` para POST/DELETE). El histórico previo NO se borra (🔒-3 append-only); `Timeline.jsx` filtra con whitelist `VISIBLE_TRACK_EVENTS` en lectura. POST (`track_created`) y DELETE (`track_deleted`) siguen emitiendo.
 
-### FileUploadService
+### FileUploadService + R2 Auth Gate (S148 FASE D)
 Subida unificada a R2 con pre-signed keys. Consumido por MusicLab (MP3) y VAULT (fotos, vídeos, docs).
 Token JWT inyectado vía `setUploadToken()` desde VaultContext.
 Archivos: `src/core/FileUploadService.js`
+**S148 FASE D — R2 gate:** prefijos sensibles (`vault/docs/`, `vault/audio/`) exigen token HMAC en GET (`workers/routes/r2.js` + helper `workers/utils/r2-sign.js`). `entries.js` firma server-side las URLs sensibles (campo `img.url`) y el frontend prefiere esa URL firmada sobre construir `${R2_PUBLIC_BASE}/${r2_key}` manualmente. Si `env.R2_SIGN_SECRET` no está configurado, el gate se omite (compat).
 
 ---
 
@@ -117,8 +119,12 @@ Archivos: `src/core/FileUploadService.js`
 - `src/core/ui/index.js` — barrel export design system
 - `src/vault/GeocoderService.js` — Photon + Nominatim fallback
 - `src/vault/LocationSearch.jsx` — debounced search + dropdown
+- `src/vault/EntryLightbox.jsx` — lightbox unificado (S146/S148: portal+swipe+pinch, adoptado por los 6 modos vía `onOpenLightbox`)
 - `public/sw-assets.json` — generado por swAssetManifest plugin
 - `workers/routes/config.js` — GET /api/config (app_config table)
+- `workers/utils/r2-sign.js` — helper HMAC-SHA256 para firmar lecturas R2 sensibles (S148 FASE D)
+
+> S148: `DEMO_TRACKS`/`DEMO_ERAS`/`DEMO_ENTRIES_GEO` eliminados — ya no hay fallbacks hardcoded. Estado vacío honesto cuando no hay datos reales.
 
 ### Nuevas tablas D1 desde S64
 

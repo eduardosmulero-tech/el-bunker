@@ -350,3 +350,18 @@ Nota: demasiadas iteraciones en fix scroll — localizar causa raíz con DevTool
 - **Pliegos:** PLIEGO-235 (FASE A.1 "Cero pantallas rotas"), PLIEGO-236 (correcciones post-revision)
 - **Archivos:** Layout.jsx, VaultGallery.jsx, config.js, Vault.jsx
 - **Hitos:** 6 P1 cerrados (header, contenido, UUID tag, filtro duplicado, RECAP 404, leak config). Build 2.31s, Lint 0/0. FASE A completada.
+
+## S145 — 2026-07-06 (DeepSeek + Sonnet)
+- **Tipo:** Bug arrastrado 6 rondas — menú de sort en MusicLab (móvil)
+- **Commits:** `1a6f2b1`, `d0dc42c`
+- **Archivos:** MusicLab.jsx
+- **Hitos:** Ronda 5 resolvió apertura (onTap+touchAction). Ronda 6: listener de scroll cierra el dropdown (no seguía al botón). Build limpio. **Sin confirmar por Edu en móvil al cierre de sesión.**
+
+## S146 — 2026-07-08 (DeepSeek + Sonnet)
+- **Tipo:** FASE C.1 del cierre v1.0 + herramienta aparte de importación masiva VAULT (2 rondas)
+- **Archivos:** EntryLightbox.jsx (nuevo), VaultGallery.jsx, WallView.jsx, tools/import-vault.mjs (nuevo), tools/README-import-vault.md (nuevo)
+- **Hitos:**
+  - `EntryLightbox` (portal, swipe, pinch-zoom, metadata) creado y adoptado por WALL/DIALOGUE/EXHIBITION/REEL/CINEMA — primer pliego del plan de cierre. Verificado por Sonnet: build limpio, congelados (reproductor/estética) intactos, WALL sigue virtualizado. **Pendiente: Edu confirmar en móvil.**
+  - A petición de Edu, fuera del plan de cierre: script CLI `tools/import-vault.mjs` para importar fotos/vídeos en lote desde Google Takeout + DCIM del móvil. Dedupe multi-señal (hash parcial + fecha + GPS + nombre + tamaño), sube vía `/api/upload`+`/api/entries` ya existentes, `from_user="edu"` fijo, sin `era_id`. Ronda 2: fase de staging (`--stage <D:\...>` copia candidatos a una carpeta para revisión manual de Edu — quitar lo que no quiere que vea David + capturas de ruido — antes de `--staged <carpeta> --commit`). Dry-run por defecto, manifiesto de resumibilidad.
+- **Sin commitear:** todos los cambios de S146 quedan pendientes de OK de Edu.
+- **Estado al cierre:** exportación de Google Takeout de Edu en curso (grande) — script sin usar aún en real. Próxima sesión retoma ahí.

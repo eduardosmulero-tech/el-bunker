@@ -1,0 +1,186 @@
+================================================================================
+RESUMEN FINAL — EL BUNKER PZ SERVER SETUP
+Fecha: 2026-06-14
+Usuario: eduar  |  PC: Windows 11
+================================================================================
+
+RESULTADO: PLAN DE 7 PASOS EJECUTADO COMPLETO. CODE REVIEW: GO (condicional a
+3 acciones manuales del usuario).
+
+
+================================================================================
+ARCHIVOS CREADOS
+================================================================================
+
+1) C:\Users\eduar\Zomboid\Server\elbunker.ini
+   - Copia de servertest.ini con 11 sed-modificaciones aplicadas.
+   - 18 086 bytes.
+
+2) C:\Users\eduar\Zomboid\Server\elbunker_SandboxVars.lua
+   - Copia de servertest_SandboxVars.lua con 20+ sed-modificaciones.
+   - 23 050 bytes.
+
+3) C:\Users\eduar\Zomboid\Server\elbunker_spawnregions.lua
+   - Archivo nuevo. Solo West Point, KY.
+   - Funcion SpawnRegions() que retorna { { name=, file= } }.
+
+4) C:\Users\eduar\Zomboid\Server\SCHEDULE_DIFICULTAD.md
+   - Guia de dificultad con enums reales rellenados.
+
+5) C:\Program Files (x86)\Steam\steamapps\common\Project Zomboid Dedicated Server\IniciarBunker.ps1
+   - Launcher PowerShell con bucle while-true de auto-reinicio.
+   - Logs a crash_log.txt.
+   - Diferencia crash <30s (reintenta 15s) vs cierre limpio (reintenta 5s).
+   - 1 042 bytes.
+
+6) C:\Users\eduar\Desktop\ConfigurarFirewall.ps1
+   - Script para crear 4 reglas de firewall (UDP 16261/16262 in/out).
+   - REQUIERE EJECUCION COMO ADMINISTRADOR.
+   - 841 bytes.
+
+
+================================================================================
+VALORES CLAVE FINALES (despues de fixes)
+================================================================================
+
+elbunker.ini:
+    PublicName              = El Bunker
+    MaxPlayers              = 2
+    PVP                     = false
+    PauseEmpty              = true
+    SleepAllowed            = true
+    SleepNeeded             = true
+    Map                     = Muldraugh, KY;West Point, KY
+    AnnounceDeath           = true
+    SaveWorldEveryMinutes   = 10
+    BackupsCount            = 10
+    Open                    = true
+    Password                = CAMBIAR_ESTO              <-- PENDIENTE
+    RCONPassword            = CAMBIAR_ESTO_RCON         <-- PENDIENTE
+
+elbunker_SandboxVars.lua (campos raiz):
+    Zombies                 = 5    (Bajo)
+    DayLength               = 2    (30 minutos)
+    StartMonth              = 3    (Marzo)
+
+ZombieLore:
+    Speed                   = 3    (Tambaleantes)
+    Memory                  = 1    (Larga)
+
+ZombieConfig:
+    PopulationMultiplier        = 0.35
+    PopulationStartMultiplier   = 0.25   (25% en dia 1)
+    PopulationPeakMultiplier    = 2.5    (250% en dia 365)
+    PopulationPeakDay           = 365
+    RespawnHours                = 0.0    (sin respawn)
+    RespawnUnseenHours          = 0.0    (sin respawn)
+    RespawnMultiplier           = 0.0    (sin respawn)  <-- FIJADO en fix
+
+Loot:
+    FoodLoot              = 2    (Demencialmente raro)
+    CannedFoodLoot        = 2    (Demencialmente raro)
+    WeaponLoot            = 2    (Demencialmente raro)
+    RangedWeaponLoot      = 2    (Demencialmente raro)
+    AmmoLoot              = 2    (Demencialmente raro)
+    MedicalLoot           = 3    (Extremadamente raro)
+    LiteratureLoot        = 5    (Normal)
+    SurvivalGearsLoot     = 4    (Raro, sin cambios)
+    MechanicsLoot         = 4    (Raro, sin cambios)
+    OtherLoot             = 4    (Raro, sin cambios)
+
+elbunker_spawnregions.lua:
+    function SpawnRegions()
+        return {
+            { name = "West Point, KY", file = "media/maps/West Point, KY/spawnpoints.lua" },
+        }
+    end
+
+
+================================================================================
+FIXES APLICADOS TRAS CODE REVIEW
+================================================================================
+
+[CRITICO 1] Louisville, KY no existe en media/maps/
+    ANTES:  Map=Muldraugh, KY;West Point, KY;Louisville, KY
+    AHORA:  Map=Muldraugh, KY;West Point, KY
+    (Louisville map no instalado. Map= hubiera roto el arranque del server.)
+
+[CRITICO 2] RespawnMultiplier no se habia aplicado a 0.0
+    ANTES:  RespawnMultiplier = 0.1,  (sed original no matcheo el decimal 0.10)
+    AHORA:  RespawnMultiplier = 0.0,  (forzado con doble patron 0.10 y 0.1)
+    (Sin este fix los zombis hubieran respawneado rompiendo la curva planeada.)
+
+
+================================================================================
+CODE REVIEW FINAL: GO CONDICIONAL
+================================================================================
+
+El code-reviewer-minimax-m3 valido:
+  - Sintaxis PowerShell de IniciarBunker.ps1: OK
+  - Lua de elbunker_spawnregions.lua: OK
+  - SandboxVars: formato y comentarios preservados
+  - elbunker.ini: 11/11 sed aplicados, estructura intacta
+  - ConfigurarFirewall.ps1: seguro, solo crea reglas Allow
+
+Issues residuales menores (no bloqueantes):
+  - "Bunker" sin tilde en IniciarBunker.ps1 vs "El Bunker" con tilde
+    en elbunker.ini. Cosmetico.
+  - crash_log.txt se escribe en la carpeta de Steam, no en
+    Zomboid/Server/. Contamina el dir del juego.
+
+
+================================================================================
+ACCIONES MANUALES REQUERIDAS ANTES DE ARRANCAR
+================================================================================
+
+  [ ] 1. Cambiar Password en elbunker.ini antes de arrancar
+            (reemplazar CAMBIAR_ESTO por tu password real)
+
+  [ ] 2. Cambiar RCONPassword en elbunker.ini antes de arrancar
+            (reemplazar CAMBIAR_ESTO_RCON por tu rcon real)
+
+  [ ] 3. Ejecutar ConfigurarFirewall.ps1 como administrador
+            (click derecho en C:\Users\eduar\Desktop\ConfigurarFirewall.ps1
+             -> "Ejecutar con PowerShell como administrador"
+             El intento directo fallo por falta de elevacion.)
+
+  [ ] 4. Arrancar el servidor con:
+            powershell -ExecutionPolicy Bypass -File "C:\Users\eduar\Desktop\IniciarBunker.ps1"
+
+Sin los pasos 1-3 el server queda INSEGURO (cualquiera entra o toma control
+por RCON) o INACCESIBLE desde fuera (firewall bloquea UDP 16261/16262).
+
+
+================================================================================
+CONEXION DESDE PC2 / DAVID
+================================================================================
+
+LAN:
+    IP: 192.168.1.111   Puerto: 16261
+    (Password: el que pongas en elbunker.ini)
+
+Tailscale (si David esta fuera de casa):
+    Usar la IP de Tailscale de este PC en lugar de 192.168.1.111
+
+
+================================================================================
+CURVA DE DIFICULTAD (resumen de SCHEDULE_DIFICULTAD.md)
+================================================================================
+
+DayLength = 30 min reales.
+
+  Dia 1     -> 0h real     -> 25% poblacion (West Point manejable)
+  Dia 90    -> ~45h real   -> ~55% poblacion (presion creciente)
+  Dia 180   -> ~90h real   -> ~105% poblacion (Louisville accesible)
+  Dia 365   -> ~182h real  -> 250% poblacion PICO (zona de guerra)
+
+ZombieLore.Speed actualmente: 3 = Tambaleantes
+Para subir dificultad cuando esten listos:
+    Speed = 2  -> Tambaleantes veloces (antes de Louisville)
+    Speed = 1  -> Velocistas (endgame extremo)
+(Editando ZombieLore.Speed en elbunker_SandboxVars.lua y reiniciando.)
+
+
+================================================================================
+FIN DEL RESUMEN
+================================================================================
