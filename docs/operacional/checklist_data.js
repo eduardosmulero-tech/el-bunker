@@ -1,5 +1,5 @@
 // CHECKLIST DATA — el_búnker exhaustive testing checklist
-const C=`### 🔐 AUTENTICACIÓN
+const _C=`### 🔐 AUTENTICACIÓN
 - [ ] Login thebunker.admin@gmail.com → entra
 - [ ] Login bansovi.py@gmail.com → entra
 - [ ] Login dcgdozt@gmail.com → entra

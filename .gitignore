@@ -39,3 +39,7 @@ tools/*.txt
 .wrangler/
 *.bak_*
 docs.zip
+
+# Python cache
+__pycache__/
+tools/__pycache__/

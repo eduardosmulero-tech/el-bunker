@@ -27,4 +27,13 @@ export default defineConfig([
       'react-hooks/refs': 'off',
     },
   },
+  {
+    // S148: scripts Node CLI bajo tools/ (watchdog.js usa require/__dirname).
+    // globals.browser no define globals de Node; este override los añade sin
+    // tocar las reglas de src/ (React hooks/refresh siguen aplicando a src/).
+    files: ['tools/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

@@ -1,6 +1,6 @@
 import os
 
-RAIZ = r"C:\Proyectos\el-bunker"
+RAIZ = r"C:\proyectos\dev\el-bunker"
 
 # Archivos que siempre se cargan (contexto base)
 ARCHIVOS_BASE = [
