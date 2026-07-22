@@ -54,3 +54,9 @@ Este archivo NO almacena estado de tareas.
 ESTADO.md/BACKLOG.md están en transición a kanban.
 
 Para re-entrar: (1) leer AGENTS.md, (2) `hermes kanban list`, (3) primera tarjeta ready.
+
+## ▶ RETOMAR
+
+Pipeline Promethe-os activa. Kanban vivo.
+Pendientes: bug canciones repetidas (triage), subir PRUEBA (triage), deploy frontend Vercel (triage).
+8 commits ahead of origin. Build ✅ Lint ✅.
