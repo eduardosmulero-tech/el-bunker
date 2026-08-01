@@ -16,12 +16,13 @@ Board `el-bunker` activo. Este archivo es snapshot documental, no fuente de esta
   Pliego login HECHO y DESPLEGADO: scope `drive.readonly` quitado del OAuth (0 tracks legacy
   verificados en D1). Push a origin (master sincronizado). Auditoría línea base:
   `docs/operacional/auditoria_reentrada_2026-08-01.md` (BORRADOR).
+- **1-ago (confirmado por Edu):** consola Google — scope Drive quitado de la pantalla de
+  consentimiento + David como test user. Login de David fluido (Gate 1 OK).
+- **1-ago (pliego P1):** bug canciones repetidas RESUELTO — 30 duplicados exactos soft-deleted
+  (529 activos, 0 grupos duplicados) + D1 migrada (`deleted_at`/`deleted_by` en tracks).
+  Commits `66b0a85` + `d5e1e9c` pusheados.
 
 ## ▶ Pendientes
-- Consola Google (Edu): quitar scope Drive de la pantalla de consentimiento + David como test user
-- Confirmar con David que el login nuevo va fluido (Gate 1)
-- **ARREGLADO (1-ago):** D1 migrada — `ALTER TABLE tracks ADD COLUMN deleted_at/deleted_by` (remoto, verificado con PRAGMA + simulación del UPDATE del worker). schema.sql y D1 vuelven a coincidir (barrido 17/17 tablas).
-- Bug canciones repetidas (t_725f1797) — **RESUELTO 1-ago**: 30 duplicados exactos activos soft-deleted (529 activos, 0 grupos duplicados). Detalle + backup: `docs/operacional/duplicados_d1_revisar_2026-08-01.md`
 - Subir PRUEBA a vault (t_c316b835)
 - Confirmar EntryLightbox en móvil (t_9badd928)
 
