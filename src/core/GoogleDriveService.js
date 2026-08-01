@@ -11,7 +11,6 @@ const CONFIG = {
   SCOPES: [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
-    "https://www.googleapis.com/auth/drive.readonly",
   ].join(" "),
 
   DB_FILENAME: "the_vault_database.json",
