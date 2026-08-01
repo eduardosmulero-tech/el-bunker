@@ -20,7 +20,7 @@ Board `el-bunker` activo. Este archivo es snapshot documental, no fuente de esta
 ## ▶ Pendientes
 - Consola Google (Edu): quitar scope Drive de la pantalla de consentimiento + David como test user
 - Confirmar con David que el login nuevo va fluido (Gate 1)
-- **HALLAZGO SCHEMA (1-ago):** D1 remota NO tiene `deleted_at`/`deleted_by` — el DELETE de `workers/routes/tracks.js:122` falla en producción (SQLITE_ERROR). Alinear schema.sql con D1 o quitar columnas del worker.
+- **ARREGLADO (1-ago):** D1 migrada — `ALTER TABLE tracks ADD COLUMN deleted_at/deleted_by` (remoto, verificado con PRAGMA + simulación del UPDATE del worker). schema.sql y D1 vuelven a coincidir (barrido 17/17 tablas).
 - Bug canciones repetidas (t_725f1797) — **RESUELTO 1-ago**: 30 duplicados exactos activos soft-deleted (529 activos, 0 grupos duplicados). Detalle + backup: `docs/operacional/duplicados_d1_revisar_2026-08-01.md`
 - Subir PRUEBA a vault (t_c316b835)
 - Confirmar EntryLightbox en móvil (t_9badd928)

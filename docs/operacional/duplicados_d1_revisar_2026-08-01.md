@@ -15,12 +15,12 @@
 #   1. La consulta inicial NO filtró is_deleted=0 → incluía tracks ya borrados.
 #      De los 93 BORRAR propuestos, 63 ya estaban soft-deleted (purga previa);
 #      solo 30 estaban activos y fueron los realmente borrados en esta sesión.
-#   2. HALLAZGO SCHEMA: D1 remota NO tiene columnas `deleted_at`/`deleted_by`
-#      (solo is_deleted, updated_at). El DELETE de workers/routes/tracks.js:122 usa
-#      deleted_at → falla con SQLITE_ERROR "no such column" en producción.
-#      El soft delete real se ejecutó con: UPDATE tracks SET is_deleted=1,
-#      updated_at=datetime('now') WHERE id IN (...). PENDIENTE: alinear schema.sql
-#      con D1 (migración) o quitar columnas del DELETE del worker.
+#   2. HALLAZGO SCHEMA (RESUELTO en esta sesión): D1 remota NO tenía columnas
+#      `deleted_at`/`deleted_by` (solo is_deleted, updated_at) — el DELETE de
+#      workers/routes/tracks.js:122 fallaba con SQLITE_ERROR "no such column".
+#      MIGRADO: ALTER TABLE tracks ADD COLUMN deleted_at TEXT / deleted_by TEXT
+#      (verificado: PRAGMA 20 cols + simulación del UPDATE del worker sin error).
+#      Barrido schema.sql vs D1 remota: 17/17 tablas coinciden tras la migración.
 #   3. Las 30 playlist_tracks que apuntaban a duplicados se eliminaron (KEEP ya
 #      estaba en las playlists → DEL, sin re-apuntado). 4 playlists con tracks, 513 refs.
 #   4. Backup reversible: docs/operacional/backup_duplicados_2026-08-01.json (93 filas
