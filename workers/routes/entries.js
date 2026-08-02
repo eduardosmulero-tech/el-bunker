@@ -49,12 +49,17 @@ export default async function handleEntries(request, env, url, userId) {
     const era = url.searchParams.get("era_id");
     const type = url.searchParams.get("type");
     const from = url.searchParams.get("from_user");
+    // S151: límite configurable con tope alto. El frontend carga /api/entries
+    // sin paginar (VaultContext), y con contenido real (>200 entries) el viejo
+    // LIMIT 200 fijo ocultaba entradas: 527 en D1, solo 200 visibles.
+    const limit = Math.min(parseInt(url.searchParams.get("limit") || "2000"), 5000);
     let q = "SELECT * FROM entries WHERE is_deleted = 0";
     const binds = [];
     if (era) { q += " AND era_id = ?1"; binds.push(era); }
     if (type) { q += ` AND type = ?${binds.length + 1}`; binds.push(type); }
     if (from) { q += ` AND from_user = ?${binds.length + 1}`; binds.push(from); }
-    q += " ORDER BY created_at DESC LIMIT 200";
+    q += ` ORDER BY created_at DESC LIMIT ?${binds.length + 1}`;
+    binds.push(limit);
     const { results } = binds.length
       ? await env.DB.prepare(q).bind(...binds).all()
       : await env.DB.prepare(q).all();
