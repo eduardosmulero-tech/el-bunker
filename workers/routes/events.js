@@ -30,7 +30,13 @@ export default async function handleEvents(request, env, url, userId) {
     const until = url.searchParams.get("until");
     let q = "SELECT * FROM events WHERE 1=1";
     const binds = [];
-    if (type) { q += " AND event_type = ?1"; binds.push(type); }
+    if (type) {
+      q += " AND event_type = ?1";
+      binds.push(type);
+    } else {
+      // ADR-028: la auditoría de login no es feed. Solo sale si se pide por ?type=.
+      q += " AND event_type NOT LIKE 'auth\\_%' ESCAPE '\\'";
+    }
     if (since) { q += ` AND created_at >= ?${binds.length + 1}`; binds.push(since); }
     if (until) { q += ` AND created_at <= ?${binds.length + 1}`; binds.push(until); }
     q += ` ORDER BY created_at DESC LIMIT ?${binds.length + 1}`;
