@@ -2,7 +2,7 @@
 > ADRs vigentes. Normativo — prevalencia absoluta.
 > Contradicción con este doc → Claude detiene y reporta antes de generar pliego.
 > Solo crece con nuevas decisiones. Los ADRs revertidos nunca desaparecen: se marcan ⛔.
-> Última actualización: S49 — Entrevista de refundación del producto (Junio 2026).
+> Última actualización: S150 — ADR-028 acceso test/admin (2-ago-2026). Base: S49, refundación del producto.
 
 ---
 
@@ -15,7 +15,7 @@
 | 🔒-3 | **Motor de audio único.** Solo MusicLab instancia `<audio>`. Nunca en VAULT ni CAPSULES. | ADR-018 |
 | 🔒-4 | **3 tabs definitivos.** VAULT · MUSIC LAB · CAPSULES. Timeline fusionada en CAPSULES. | ADR-017 |
 | 🔒-5 | **Stats engine único.** Todos los eventos pasan por la tabla `events` de D1. Sin excepciones ni agregadores paralelos. | ADR-019 |
-| 🔒-6 | **Google OAuth2 solo para auth.** Google Drive deprecado como BD (ADR-024). Ni una línea nueva de persistencia sobre Drive. Solo código de transición. | ADR-025 |
+| 🔒-6 | **Drive nunca como persistencia.** Google Drive deprecado como BD (ADR-024). Ni una línea nueva de persistencia sobre Drive. Solo código de transición. El login puede ser Google (ADR-025) o clave de acceso (ADR-028); lo inamovible es Drive, no el mecanismo de auth. | ADR-025, ADR-028 |
 | 🔒-7 | **SEARCH contenedor lógico completo.** Nunca micro-edición. | ADR-015 |
 | ⛔ 🔒-LEGACY-1 | ~~**YouTube nunca con `<audio>` nativo.**~~ SUPERSEDIDA — YouTube Engine eliminado en M1. | — |
 | ⛔ 🔒-LEGACY-2 | ~~**Div YT nunca en JSX React.**~~ SUPERSEDIDA — YouTube Engine eliminado en M1. | — |
@@ -127,14 +127,27 @@ Stack de persistencia definitivo:
 - **API:** Cloudflare Workers (thin REST layer con binding nativo a D1 y R2)
 Google Drive JSON deprecado como base de datos. Se mantiene solo el JSON durante la transición.
 
-### ✅ ADR-025 — Google OAuth2 solo para auth (NUEVO S49)
-Google OAuth2 se mantiene exclusivamente como método de autenticación. No se usa Google Drive para almacenar datos ni archivos. Hasta decidir un método de auth definitivo, Google es suficiente para 3 usuarios con whitelist.
+### ✅ ADR-025 — Google OAuth2 para auth (ENMENDADO S150)
+**Original (S49):** Google OAuth2 se mantiene exclusivamente como método de autenticación. No se usa Google Drive para almacenar datos ni archivos. Hasta decidir un método de auth definitivo, Google es suficiente para 3 usuarios con whitelist.
+**Enmienda S150:** Google deja de ser el ÚNICO mecanismo de login — ADR-028 añade el canje de clave de acceso para test y admin. Lo que NO cambia (🔒-6): Drive no se usa para almacenar datos ni archivos, ni una línea nueva de persistencia sobre Drive. Google sigue siendo el login de los usuarios humanos habituales (David en exclusiva, Edu a voluntad).
 
 ### ✅ ADR-026 — RECAP como 4ª cápsula (NUEVO S49)
 Los resúmenes (semanales, mensuales, anuales) no son infraestructura de stats — son una experiencia temporal que consume el motor de eventos. Viven en CAPSULES como 4ª sub-tab. El RECAP anual es guardable como entrada del VAULT.
 
 ### ✅ ADR-027 — DIALOGUE: perspectiva dual en galería (NUEVO S49)
 Modo de galería que intercala las fotos de Edu y David como una conversación visual. Fotos con <5min de diferencia se emparejan con conector visual. Asimetría (un usuario sin fotos en un período) se maneja con eco visual poético, sin vacío ni culpa.
+
+### ✅ ADR-028 — Acceso por clave para test y admin (NUEVO S150)
+> Decisión aprobada por Edu el 2-ago-2026. **Implementación pendiente** —
+> spec: `docs/spec/SPEC_ACCESO_TEST_ADMIN_2026-08-02.md` ·
+> plan: `docs/planes/PLAN_ACCESO_TEST_ADMIN_2026-08-02.md` ·
+> contrato origen: `docs/operacional/CONTRATO_ACCESO_TEST_ADMIN_2026-08-02.md`.
+
+Además del login de Google, el worker acepta canjear una **clave de acceso** de alta entropía por el mismo JWT: `POST /api/auth/token`. Cada clave es un secret del worker atado a un usuario de la whitelist (ADR-006): `ADMIN_ACCESS_KEY`→`admin`, `EDU_ACCESS_KEY`→`edu`. **No hay clave para David** — su flujo por Google no se toca.
+
+`authenticate()` NO cambia: la API sigue aceptando exclusivamente JWT firmados con `JWT_SECRET`. Lo que hay son **dos emisores del mismo JWT**, no dos formas de entrar a la API. El JWT lleva `method: "google" | "access_key"` y la caducidad de siempre (`JWT_EXPIRY`, 24 h).
+
+Toda emisión escribe `auth_login` en la tabla `events` (ADR-019); los intentos fallidos van a los logs del worker (`events.user_id` tiene FK a `users`). Revocación = borrar o rotar el secret. Manual de uso, rotación y auditoría: `docs/operacional/ACCESO_TEST_ADMIN.md`.
 
 ---
 
@@ -166,8 +179,9 @@ Modo de galería que intercala las fotos de Edu y David como una conversación v
 | ADR-022 | FileUploadService unificado | ✅ NUEVO S49 |
 | ADR-023 | Namespaces tags separados | ✅ NUEVO S49 |
 | ADR-024 | Migración D1+Workers+R2 | ✅ NUEVO S49 |
-| ADR-025 | Google OAuth2 solo auth | ✅ NUEVO S49 🔒 |
+| ADR-025 | Google OAuth2 para auth | ✅ ENMENDADO S150 🔒 |
 | ADR-026 | RECAP 4ª cápsula | ✅ NUEVO S49 |
 | ADR-027 | DIALOGUE perspectiva dual | ✅ NUEVO S49 |
+| ADR-028 | Acceso por clave test/admin | ✅ NUEVO S150 |
 
-**Total: 27 ADRs · 7 🔒 inamovibles · 3 ⛔ revertidos**
+**Total: 28 ADRs · 7 🔒 inamovibles · 3 ⛔ revertidos**
