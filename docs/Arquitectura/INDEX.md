@@ -10,7 +10,7 @@
 | Doc | sincronizado_con | stale_si_pliego_toca | Estado |
 |---|---|---|---|
 | architecture.md | S148 — FASE C.2+D cierre v1.0 | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, core/ui/*, EntryLightbox.jsx, WallView.jsx, VaultGallery.jsx, AddEntryForm.jsx, workers/routes/r2.js, workers/routes/entries.js, workers/utils/r2-sign.js, workers/routes/tracks.js, src/capsules/Timeline.jsx | ✅ OK |
-| data-flow.md | S132 — sync long-polling + queue bidireccional + adventures_start_date real | PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, ToastContext.jsx | ✅ OK |
+| data-flow.md | S132 — sync long-polling + queue bidireccional + adventures_start_date real | PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, ToastContext.jsx | ⚠️ STALE S150 — auth: ADR-028 añade POST /api/auth/token + sessionKind en VaultContext (ver docs/operacional/ACCESO_TEST_ADMIN.md) |
 | event-lifecycle.md | S132 — Escucha Compartida wired SC1-SC14 | PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, workers/routes/sync.js, ToastContext.jsx | ✅ OK |
 | ownership-map.md | S132 — shared_sessions new owner | PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, workers/routes/sync.js | ✅ OK |
 | rendering-flow.md | S148 — FASE C.2+D cierre v1.0 | App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, ToastContext.jsx, core/ui/*, EntryLightbox.jsx, WallView.jsx, VaultGallery.jsx, src/capsules/Timeline.jsx | ✅ OK |

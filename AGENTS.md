@@ -17,10 +17,11 @@
 
 | Doc | Cuándo |
 |-----|--------|
-| docs/Nucleo/CONTRATO.md | Normativo: 27 ADRs vigentes |
+| docs/Nucleo/CONTRATO.md | Normativo: 28 ADRs vigentes |
 | docs/Nucleo/REGLAS.md | Workflow legacy, normativo |
 | docs/Nucleo/ESTADO.md | Estado actual (transicionando a kanban) |
 | docs/Nucleo/SESION.md | Historial de sesiones |
+| docs/operacional/ACCESO_TEST_ADMIN.md | Acceso test/admin sin Google (ADR-028) |
 | docs/operacional/auditoria_fable_1.0.md | Plan v1.0 |
 | docs/Arquitectura/ | Docs técnicos |
 | MANUAL_PIPELINE_TRABAJO.md | Canon del pipeline Promethe-os |

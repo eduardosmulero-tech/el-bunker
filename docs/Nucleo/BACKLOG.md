@@ -33,3 +33,4 @@
 | S130-A6 | FitBoundsToMarkers helper (auto-fit bounds + maxZoom 6 + padding 40px) + L.Icon.Default fix + fallback elegante preservado | VaultGallery.jsx | 2026-06-17 |
 | PLIEGO-237 | FASE B — controles del reproductor en 2 filas (tra… | WinampPlayer.jsx | 2026-07-04 |
 | FASE C.1 | `EntryLightbox` (portal, swipe, pinch, metadata) creado y adoptado por WALL/DIALOGUE/EXHIBITION/REEL/CINEMA | EntryLightbox.jsx, VaultGallery.jsx, WallView.jsx | 2026-07-08 |
+| ADR-028 | Acceso test/admin sin Google: POST /api/auth/token + sessionKind + panel en LoginScreen + filtro auth_ en events | workers/routes/auth.js, workers/utils/access-keys.js, VaultContext.jsx, LoginScreen.jsx, App.jsx | 2026-08-02 |

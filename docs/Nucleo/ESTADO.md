@@ -23,8 +23,14 @@ Board `el-bunker` activo. Este archivo es snapshot documental, no fuente de esta
   Commits `66b0a85` + `d5e1e9c` pusheados.
 
 ## ▶ Pendientes
-- Subir PRUEBA a vault (t_c316b835)
+- Subir PRUEBA a vault (t_c316b835) — **selección lista**: `D:\bunker-import-review\PRUEBA`
+  (590 archivos: 527 jpg + 63 mp4, 4,1 GB, 15 carpetas mensuales 2021-06→2022-08, fotos
+  Takeout + staging-manifest.json). Prompt de sesión: `C:\proyectos\.trabajo\prompt_subida_prueba_vault_2026-08-01.md`
 - Confirmar EntryLightbox en móvil (t_9badd928)
+- **ADR-028 (2-ago):** acceso test/admin sin Google IMPLEMENTADO en código (POST
+  /api/auth/token + sessionKind + panel LoginScreen + filtro auth_ en events). Pendiente
+  de Edu: secrets (ADMIN_ACCESS_KEY/EDU_ACCESS_KEY) + `wrangler deploy` + verificación
+  DoD (tarea 5 del plan). Tras deploy → desbloquea la subida de PRUEBA.
 
 ## Infra
 - Worker desplegado v `aa502226`, R2 gate vivo
