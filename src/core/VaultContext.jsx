@@ -125,6 +125,10 @@ export function VaultProvider({ children }) {
     catch { return null; }
   });
 
+  // ADR-028: cómo se entró — Google o clave de acceso.
+  const [sessionKind, setSessionKind] = useState(null);
+  const sessionKindRef = useRef(null);
+
   // Cache de capacidad por biblioteca { [libraryId]: { used_gb, used_pct, near_full } }
   const [libraryCapacity, setLibraryCapacity] = useState({});
 
@@ -202,6 +206,40 @@ export function VaultProvider({ children }) {
     [myEntries]
   );
 
+  // ── ADR-028: helpers de sesión ─────────────────────────────
+  const _setSessionKind = useCallback((kind) => {
+    sessionKindRef.current = kind;
+    setSessionKind(kind);
+    try {
+      if (kind) sessionStorage.setItem("bunker_session_kind", kind);
+      else sessionStorage.removeItem("bunker_session_kind");
+    } catch { /* modo privado */ }
+  }, []);
+
+  /** ¿Hay sesión? Google O clave. Se lee del ref: los callbacks tienen deps []. */
+  const _hasSession = useCallback(
+    () => isAuthenticated() || sessionKindRef.current === "access_key",
+    []
+  );
+
+  /** Aplica un JWT a todos los clientes que lo necesitan. */
+  const _applyJwt = useCallback((token) => {
+    setJwtToken(token);
+    try { sessionStorage.setItem("bunker_jwt", token); } catch { /* modo privado */ }
+    workerClient.setToken(token);
+    setUploadToken(token);
+    setStatsToken(token);
+  }, []);
+
+  /** Guarda el usuario de la sesión y, si Edu lo pidió, la clave en este dispositivo. */
+  const _persistAccessSession = useCallback((fullUser, keyToRemember) => {
+    try {
+      sessionStorage.setItem("bunker_user", JSON.stringify(fullUser));
+      if (keyToRemember) localStorage.setItem("bunker_access_key", keyToRemember);
+      else localStorage.removeItem("bunker_access_key");
+    } catch { /* modo privado */ }
+  }, []);
+
   // ── Step 1: Init Google Services on mount ─────────────────
   useEffect(() => {
     let cancelled = false;
@@ -209,6 +247,10 @@ export function VaultProvider({ children }) {
     const boot = async () => {
       setBootPhase(BOOT.INIT_SERVICES);
       try {
+        // ADR-028: camino sin Google. Si prende, no se toca gapi en absoluto.
+        if (await _tryRestoreAccessSession()) return;
+        if (cancelled) return;
+
         await initGoogleServices();
         if (cancelled) return;
 
@@ -259,21 +301,15 @@ export function VaultProvider({ children }) {
         return null;
       }
       const { token } = await res.json();
-      if (token) {
-        setJwtToken(token);
-        sessionStorage.setItem("bunker_jwt", token);   // S116: sessionStorage (no persiste al cerrar tab)
-        workerClient.setToken(token);
-        setUploadToken(token);
-        setStatsToken(token);
-        console.info("[Búnker] JWT obtenido ✓");
-        return token;
-      }
-      return null;
+      if (!token) return null;
+      _applyJwt(token);
+      console.info("[Búnker] JWT obtenido ✓");
+      return token;
     } catch (e) {
       console.warn("[Búnker] JWT fetch error:", e.message);
       return null;
     }
-  }, []);
+  }, [_applyJwt]);
 
   // ── S64: Worker API como fuente PRIMARIA ───────────────────
 
@@ -339,6 +375,31 @@ export function VaultProvider({ children }) {
   }, []);
 
   /**
+   * _completeSession(fullUser, jwt)
+   * Cola común a los dos logins: fija el usuario, construye la db desde D1
+   * y deja la app en READY. No sabe nada de cómo se consiguió el JWT.
+   */
+  const _completeSession = useCallback(async (fullUser, jwt) => {
+    setUser(fullUser);
+    let data = jwt ? await _buildDbFromWorker(jwt) : null;
+    if (data) {
+      data.libraries = [];
+      data.heartbeat = new Date().toISOString();
+      data.adventures_start_date = data.adventures_start_date ?? DEFAULT_ADVENTURE_DATE;
+      console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
+    } else {
+      console.info("[Búnker] Worker no disponible, usando DB vacía como fallback...");
+      data = EMPTY_DB();
+    }
+    setDb(data);
+    setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
+    setDbStatus("ONLINE");
+    setBootPhase(BOOT.READY);
+    _scheduleHeartbeat();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_buildDbFromWorker]);
+
+  /**
    * _loadDriveComplement(db)
    * Carga desde Drive JSON SOLO los campos que Worker no tiene:
    * libraries, heartbeat, adventures_start_date.
@@ -374,6 +435,21 @@ export function VaultProvider({ children }) {
       // stats emit → 401 → re-auth → mismo JWT muerto → loop de D1 writes.
       if (Date.now() - lastJwtExpiredRef.current < 30_000) return;
       lastJwtExpiredRef.current = Date.now();
+
+      // ADR-028: sesión por clave — re-canjear si Edu la recordó; si no, volver al login.
+      if (sessionKindRef.current === "access_key") {
+        let savedKey = null;
+        try { savedKey = localStorage.getItem("bunker_access_key"); } catch { /* modo privado */ }
+        if (savedKey) {
+          console.info("[Búnker] ♻ Re-canjeando clave de acceso (JWT expirado)...");
+          await loginWithAccessKey(savedKey, { remember: true });
+          return;
+        }
+        console.warn("[Búnker] Sesión por clave caducada — hay que reintroducir la clave");
+        _onSignedOut();
+        setBootError("Sesión caducada — vuelve a introducir la clave de acceso.");
+        return;
+      }
 
       const googleToken = window.gapi?.client?.getToken?.()?.access_token;
       if (!user?.email || !googleToken) {
@@ -412,7 +488,6 @@ export function VaultProvider({ children }) {
         id:   bunkerProfile.id,
         name: bunkerProfile.name,
       };
-      setUser(fullUser);
 
       // Obtener JWT del Worker API
       const googleToken = token ?? window.gapi?.client?.getToken?.()?.access_token;
@@ -421,31 +496,8 @@ export function VaultProvider({ children }) {
         jwt = await _fetchJwt(fullUser.email, googleToken) || jwt;
       }
 
-      // S64: Worker API como fuente PRIMARIA
-      let data = null;
-      if (jwt) {
-        data = await _buildDbFromWorker(jwt);
-      }
-
-      if (data) {
-        // S115-D5: sin _loadDriveComplement — D1 es source of truth única
-        data.libraries = [];
-        data.heartbeat = new Date().toISOString();
-        // S130-B: adventures_start_date ya viene de D1 via _buildDbFromWorker.
-        // Este ?? solo cubre el caso teórico de que el worker devuelva null.
-        data.adventures_start_date = data.adventures_start_date ?? DEFAULT_ADVENTURE_DATE;
-        console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
-      } else {
-        console.info("[Búnker] Worker no disponible, usando DB vacía como fallback...");
-        data = EMPTY_DB();
-        console.info("[Búnker] DB vacía creada (fallback) ✓");
-      }
-
-      setDb(data);
-      setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
-      setDbStatus("ONLINE");
-      setBootPhase(BOOT.READY);
-      _scheduleHeartbeat();
+      _setSessionKind("google");
+      await _completeSession(fullUser, jwt);
     } catch (err) {
       console.error("[Búnker] DB init failed:", err);
       setDbStatus("ERROR");
@@ -465,6 +517,11 @@ export function VaultProvider({ children }) {
     setDb(null);
     setJwtToken(null);
     sessionStorage.removeItem("bunker_jwt");   // S116: sessionStorage
+    _setSessionKind(null);
+    try {
+      sessionStorage.removeItem("bunker_user");
+      localStorage.removeItem("bunker_access_key");
+    } catch { /* modo privado */ }
     workerClient.clearToken();
     setUploadToken(null);
     setStatsToken(null);
@@ -531,6 +588,82 @@ export function VaultProvider({ children }) {
 
   // ── PUBLIC ACTIONS: Auth ──────────────────────────────────
 
+  /**
+   * loginWithAccessKey(key, { remember })
+   * ADR-028 — entra sin Google canjeando la clave por un JWT.
+   * Devuelve { ok, error } en vez de lanzar: la pantalla de login pinta el error.
+   */
+  const loginWithAccessKey = useCallback(async (key, { remember = false } = {}) => {
+    const cleanKey = (key ?? "").trim();
+    if (!cleanKey) return { ok: false, error: "Introduce la clave de acceso." };
+
+    setBootPhase(BOOT.INIT_SERVICES);
+    setBootError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: cleanKey }),
+      });
+      if (!res.ok) {
+        const msg =
+          res.status === 401 ? "Clave de acceso no válida." :
+          res.status === 429 ? "Demasiados intentos. Espera un minuto." :
+          res.status === 503 ? "El acceso por clave no está configurado en el worker." :
+          `Error de acceso (${res.status}).`;
+        setBootPhase(BOOT.IDLE);
+        setBootError(msg);
+        return { ok: false, error: msg };
+      }
+
+      const { token, user: apiUser } = await res.json();
+      const fullUser = { ...apiUser, avatar: null };
+      _applyJwt(token);
+      _persistAccessSession(fullUser, remember ? cleanKey : null);
+      _setSessionKind("access_key");
+      setBootPhase(BOOT.INIT_DB);
+      setDbStatus("SYNCING");
+      await _completeSession(fullUser, token);
+      return { ok: true };
+    } catch (e) {
+      const msg = "No se pudo contactar con el worker: " + (e?.message ?? e);
+      console.error("[Búnker] Access key login error:", e);
+      setBootPhase(BOOT.IDLE);
+      setBootError(msg);
+      return { ok: false, error: msg };
+    }
+  }, [_applyJwt, _persistAccessSession, _setSessionKind, _completeSession]);
+
+  /**
+   * _tryRestoreAccessSession()
+   * Sesión por clave restaurada desde el navegador. Se intenta ANTES que Google:
+   * en un navegador embebido o con accounts.google.com bloqueado,
+   * initGoogleServices() manda la app a ERROR y no llegaríamos a ofrecer nada.
+   */
+  const _tryRestoreAccessSession = useCallback(async () => {
+    let savedJwt = null, savedUser = null, savedKind = null, savedKey = null;
+    try {
+      savedJwt  = sessionStorage.getItem("bunker_jwt");
+      savedKind = sessionStorage.getItem("bunker_session_kind");
+      savedUser = JSON.parse(sessionStorage.getItem("bunker_user") || "null");
+      savedKey  = localStorage.getItem("bunker_access_key");
+    } catch { /* modo privado */ }
+
+    if (savedKind === "access_key" && savedJwt && savedUser) {
+      _applyJwt(savedJwt);
+      _setSessionKind("access_key");
+      setBootPhase(BOOT.INIT_DB);
+      setDbStatus("SYNCING");
+      await _completeSession(savedUser, savedJwt);
+      return true;
+    }
+    if (savedKey) {
+      const { ok } = await loginWithAccessKey(savedKey, { remember: true });
+      return ok;
+    }
+    return false;
+  }, [_applyJwt, _setSessionKind, _completeSession, loginWithAccessKey]);
+
   const login = useCallback(async () => {
     setBootPhase(BOOT.INIT_SERVICES);
     try {
@@ -553,7 +686,7 @@ export function VaultProvider({ children }) {
   }, [_onSignedOut]);
 
   const refreshDb = useCallback(async () => {
-    if (!isAuthenticated()) return;
+    if (!_hasSession()) return;
     setDbStatus("SYNCING");
     try {
       let data = null;
@@ -570,7 +703,7 @@ export function VaultProvider({ children }) {
       console.error("[Búnker] refreshDb failed:", err);
       setDbStatus("ERROR");
     }
-  }, [jwtToken, _buildDbFromWorker]);
+  }, [jwtToken, _buildDbFromWorker, _hasSession]);
 
   /**
    * patchDb(updater)
@@ -578,7 +711,7 @@ export function VaultProvider({ children }) {
    * updater = (currentDb) => newDb
    */
   const patchDb = useCallback(async (updater) => {
-    if (!isAuthenticated()) return;
+    if (!_hasSession()) return;
     setDbStatus("SYNCING");
     try {
       setDb((prev) => updater(prev));
@@ -587,7 +720,7 @@ export function VaultProvider({ children }) {
       console.error("[Búnker] patchDb failed:", err);
       setDbStatus("ERROR");
     }
-  }, []);
+  }, [_hasSession]);
 
   const heartbeat = useCallback(async () => {
     setLastHeartbeat(new Date().toISOString());
@@ -759,6 +892,9 @@ export function VaultProvider({ children }) {
     // Worker API JWT
     jwtToken,
 
+    // ADR-028: cómo se entró (google | access_key | null)
+    sessionKind,
+
     // Navegación
     activeTab,
     setActiveTab,
@@ -780,6 +916,7 @@ export function VaultProvider({ children }) {
 
     // Acciones core
     login,
+    loginWithAccessKey,
     logout,
     refreshDb,
     patchDb,

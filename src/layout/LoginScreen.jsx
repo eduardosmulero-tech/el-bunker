@@ -350,6 +350,115 @@ const AccessButton = ({ onClick, loading, disabled }) => {
   );
 };
 
+// ─── ACCESS PANEL (ADR-028) ──────────────────────────────────
+/**
+ * Entrada alternativa sin Google: canjea una clave de acceso por un JWT.
+ * Discreta a propósito — no es la puerta principal de la app.
+ */
+const AccessPanel = ({ onSubmit }) => {
+  const [open, setOpen]         = useState(false);
+  const [accessKey, setKey]     = useState("");
+  const [remember, setRemember] = useState(false);
+  const [busy, setBusy]         = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (busy || !accessKey.trim()) return;
+    setBusy(true);
+    await onSubmit?.(accessKey.trim(), { remember });
+    setBusy(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="text-xs tracking-[0.25em] uppercase opacity-30 hover:opacity-70 transition-opacity min-h-[44px] px-4"
+        style={{ color: ACID, fontFamily: FONT }}
+      >
+        › ACCESO TEST / ADMIN
+      </button>
+    );
+  }
+
+  return (
+    <motion.form
+      onSubmit={submit}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="w-full max-w-md mx-auto flex flex-col gap-3 px-4 py-4 rounded-sm"
+      style={{
+        background: "rgba(191,255,0,0.03)",
+        border: `1px solid ${ACID}22`,
+        fontFamily: FONT,
+      }}
+    >
+      <label
+        htmlFor="bunker-access-key"
+        className="text-xs tracking-[0.3em] uppercase opacity-40"
+        style={{ color: ACID }}
+      >
+        CLAVE DE ACCESO
+      </label>
+
+      <input
+        id="bunker-access-key"
+        type="password"
+        autoComplete="off"
+        spellCheck="false"
+        value={accessKey}
+        onChange={(e) => setKey(e.target.value)}
+        disabled={busy}
+        className="w-full px-3 py-3 text-sm rounded-sm outline-none"
+        style={{
+          background: "rgba(0,0,0,0.4)",
+          border: `1px solid ${ACID}33`,
+          color: ACID,
+          fontFamily: FONT,
+          letterSpacing: "0.15em",
+        }}
+      />
+
+      <label className="flex items-center gap-2 text-xs opacity-40 cursor-pointer" style={{ color: ACID }}>
+        <input
+          type="checkbox"
+          checked={remember}
+          onChange={(e) => setRemember(e.target.checked)}
+          disabled={busy}
+        />
+        <span className="tracking-widest uppercase">RECORDAR EN ESTE DISPOSITIVO</span>
+      </label>
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={busy || !accessKey.trim()}
+          className="flex-1 text-xs tracking-[0.3em] uppercase py-3 min-h-[44px] rounded-sm"
+          style={{
+            color: ACID,
+            border: `1px solid ${ACID}${busy || !accessKey.trim() ? "22" : "66"}`,
+            background: `${ACID}0a`,
+            fontFamily: FONT,
+            cursor: busy || !accessKey.trim() ? "not-allowed" : "pointer",
+          }}
+        >
+          {busy ? "VERIFICANDO..." : "ENTRAR →"}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setKey(""); }}
+          disabled={busy}
+          className="text-xs tracking-[0.3em] uppercase py-3 px-4 min-h-[44px] opacity-40"
+          style={{ color: ACID, fontFamily: FONT }}
+        >
+          ✕
+        </button>
+      </div>
+    </motion.form>
+  );
+};
+
 // ─── ERROR BANNER ────────────────────────────────────────────
 const ErrorBanner = ({ message }) => (
   <motion.div
@@ -373,11 +482,12 @@ const ErrorBanner = ({ message }) => (
  * LoginScreen
  *
  * Props:
- *   onLogin   — () => Promise<void>  triggers Google OAuth2 flow
- *   isLoading — boolean
- *   error     — string | null
+ *   onLogin           — () => Promise<void>  triggers Google OAuth2 flow
+ *   onAccessKeyLogin  — (key, {remember}) => Promise<{ok, error}>  ADR-028 (opcional)
+ *   isLoading         — boolean
+ *   error             — string | null
  */
-export default function LoginScreen({ onLogin, isLoading = false, error = null }) {
+export default function LoginScreen({ onLogin, onAccessKeyLogin, isLoading = false, error = null }) {
   const [bootDone, setBootDone] = useState(false);
   const [showContent, setShowContent] = useState(false);
 
@@ -468,6 +578,8 @@ export default function LoginScreen({ onLogin, isLoading = false, error = null }
                 loading={isLoading}
                 disabled={false}
               />
+
+              {onAccessKeyLogin && <AccessPanel onSubmit={onAccessKeyLogin} />}
 
               {error && <ErrorBanner message={error} />}
             </motion.div>

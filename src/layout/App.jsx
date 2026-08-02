@@ -66,7 +66,7 @@ class GlobalErrorBoundary extends Component {
 
 // ─── APP CORE (consumes VaultContext) ────────────────────────
 const AppCore = () => {
-  const { authStatus, bootPhase, bootError, isLoading, login, user, db, jwtToken } = useVault();
+  const { authStatus, bootPhase, bootError, isLoading, login, loginWithAccessKey, user, db, jwtToken } = useVault();
 
   if (isLoading) return <GlobalLoadingScreen phase={bootPhase} />;
 
@@ -79,7 +79,14 @@ const AppCore = () => {
   }
 
   if (authStatus !== "authenticated") {
-    return <LoginScreen onLogin={login} isLoading={false} error={bootError} />;
+    return (
+      <LoginScreen
+        onLogin={login}
+        onAccessKeyLogin={loginWithAccessKey}
+        isLoading={false}
+        error={bootError}
+      />
+    );
   }
 
   const tracks = db?.music_lab?.tracks ?? [];
