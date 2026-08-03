@@ -4,6 +4,7 @@
 import { useVault } from "../core/VaultContext";
 import { dropSent } from "../core/StatsEngine";
 import { workerClient } from "../core/WorkerClient";
+import { removeUploadedFile, uploadFile } from "../core/FileUploadService";
 
 export function useMusicActions() {
   // S115-D3: jwtToken ya no se necesita — WorkerClient maneja auth
@@ -17,25 +18,48 @@ export function useMusicActions() {
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, tracks: [...(prev.music_lab?.tracks ?? []), trackData] } }));
       return trackData;
     }
+
+    const trackId = trackData.id || crypto.randomUUID();
+    let created = null;
+    let uploaded = null;
     try {
-      const created = await workerClient.post(`/api/tracks`, {
-        id: trackData.id || crypto.randomUUID(),
+      // Crear primero el track: files.track_id tiene FK a tracks.id.
+      created = await workerClient.post(`/api/tracks`, {
+        id: trackId,
         title: trackData.title,
         artist: trackData.artist ?? "",
         note: trackData.note ?? "",
         tag_id: trackData.tag ?? trackData.vibe ?? trackData.tag_id ?? null,
+        r2_key: trackData.r2_key ?? null,
         added_by: userId,
         created_at: trackData.added_at || new Date().toISOString(),
       });
+      if (trackData.file) {
+        uploaded = await uploadFile(trackData.file, "music", { track_id: trackId });
+        await workerClient.patch(`/api/tracks/${trackId}`, { r2_key: uploaded.r2_key });
+        created = { ...created, r2_key: uploaded.r2_key };
+      }
       // CRÍTICO: D1 devuelve tag_id, frontend lee t.tag. Merge para que `tag` siempre exista.
       const normalized = {
         ...trackData,
         ...created,
+        file: undefined,
+        r2_key: created.r2_key ?? uploaded?.r2_key ?? null,
         tag: created.tag_id ?? trackData.tag ?? trackData.vibe,
       };
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, tracks: [...(prev.music_lab?.tracks ?? []), normalized] } }));
       return normalized;
     } catch (err) {
+      if (uploaded) {
+        await removeUploadedFile(uploaded).catch((cleanupError) => {
+          console.warn("[Búnker] cleanup de upload falló:", cleanupError);
+        });
+      }
+      if (created?.id) {
+        await workerClient.del(`/api/tracks/${created.id}`).catch((cleanupError) => {
+          console.warn("[Búnker] cleanup de track falló:", cleanupError);
+        });
+      }
       console.warn("[Búnker] addTrack falló:", err);
       throw err;
     }

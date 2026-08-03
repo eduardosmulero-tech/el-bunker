@@ -40,15 +40,33 @@ export async function uploadFile(file, prefix, metadata = {}) {
   });
 
   // Paso 2: subir el binario directamente via fetch (necesita PUT sin Content-Type: application/json)
-  const uploadRes = await workerClient.fetch(`/api/upload/${encodeURIComponent(r2_key)}`, {
-    method: "PUT",
-    body: file,
-  });
-  if (!uploadRes.ok) {
-    throw new Error(`Binary upload failed: ${uploadRes.status}`);
+  try {
+    const uploadRes = await workerClient.fetch(`/api/upload/${encodeURIComponent(r2_key)}`, {
+      method: "PUT",
+      body: file,
+    });
+    if (!uploadRes.ok) {
+      throw new Error(`Binary upload failed: ${uploadRes.status}`);
+    }
+  } catch (error) {
+    await removeUploadedFile({ r2_key, file_id }).catch((cleanupError) => {
+      console.warn("[FileUploadService] rollback de reserva falló:", cleanupError);
+    });
+    throw error;
   }
 
   return { r2_key, file_id };
+}
+
+/**
+ * Removes an upload reservation and its R2 object after a later operation fails.
+ * This is intentionally best-effort: the original error remains the one exposed
+ * to the caller, while the Worker performs the authenticated cleanup.
+ */
+export async function removeUploadedFile({ r2_key, file_id } = {}) {
+  if (!r2_key || !workerClient.hasToken()) return;
+  const key = encodeURIComponent(r2_key);
+  await workerClient.del(`/api/upload/${key}${file_id ? `?file_id=${encodeURIComponent(file_id)}` : ""}`);
 }
 
 /**
@@ -68,4 +86,4 @@ export function getStreamUrl(r2_key) {
  */
 export const VALID_PREFIXES = ["music", "vault/photos", "vault/videos", "vault/docs", "vault/audio"];
 
-export default { uploadFile, getStreamUrl, setUploadToken, VALID_PREFIXES };
+export default { uploadFile, removeUploadedFile, getStreamUrl, setUploadToken, VALID_PREFIXES };

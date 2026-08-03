@@ -33,7 +33,26 @@ export default async function handleUpload(request, env, url, userId) {
     return json({ r2_key, file_id: fileId }, 201);
   }
 
+  // DELETE /api/upload/:key — rollback de una reserva de upload
+  // Se usa cuando crear la entidad posterior (por ejemplo, un track) falla.
+  if (method === "DELETE" && path.startsWith("/api/upload/")) {
+    const r2_key = decodeURIComponent(path.split("/api/upload/")[1]);
+    if (!r2_key) return err("r2_key required", 400);
+    if (!VALID_UPLOAD_PREFIXES.some(p => r2_key.startsWith(p + "/"))) {
+      return err("Forbidden — invalid r2_key prefix", 403);
+    }
+    const fileId = url.searchParams.get("file_id");
+    const file = await env.DB.prepare(
+      `SELECT id FROM files WHERE r2_key = ?1 AND uploaded_by = ?2${fileId ? " AND id = ?3" : ""}`
+    ).bind(...(fileId ? [r2_key, userId, fileId] : [r2_key, userId])).first();
+    if (!file) return err("Upload reservation not found", 404);
+    await env.BUNKER.delete(r2_key);
+    await env.DB.prepare("DELETE FROM files WHERE id = ?1").bind(file.id).run();
+    return json({ ok: true, r2_key, file_id: file.id });
+  }
+
   // PUT /api/upload/:key — subir binario a R2
+
   if (method === "PUT" && path.startsWith("/api/upload/")) {
     const r2_key = decodeURIComponent(path.split("/api/upload/")[1]);
     if (!r2_key) return err("r2_key required", 400);

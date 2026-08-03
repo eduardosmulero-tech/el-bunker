@@ -12,7 +12,6 @@ import { workerClient } from "../core/WorkerClient";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
 import { ColorPicker } from "../core/ColorPicker";
-import { entryCreated } from "../core/StatsEngine";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 import { Button } from "../core/ui";
@@ -640,19 +639,36 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
   };
 
   const handleAddEntry = async (entryData) => {
+    if (!workerClient.hasToken()) {
+      throw new Error("No hay una sesión persistente disponible para guardar la entrada.");
+    }
+
+    const id = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+    const created = await workerClient.post("/api/entries", {
+      ...entryData,
+      id,
+      from_user: user?.id ?? "user",
+      created_at: createdAt,
+    });
     const newEntry = {
       ...entryData,
-      id: crypto.randomUUID(),
-      from_user: user?.id ?? "user",
-      created_at: new Date().toISOString(),
+      ...created,
+      id: created.id ?? id,
+      from_user: created.from_user ?? user?.id ?? "user",
+      from: created.from ?? created.from_user ?? user?.id ?? "user",
+      to: created.to ?? created.to_user ?? entryData.to_user ?? "both",
+      created_at: created.created_at ?? createdAt,
       is_deleted: false,
+      content: typeof created.content === "string"
+        ? (() => { try { return JSON.parse(created.content); } catch { return created.content; } })()
+        : created.content,
     };
     await patchDb((prev) => ({
       ...prev,
       entries: [...(prev.entries ?? []), newEntry],
     }));
-    // Emitir evento de entrada creada
-    entryCreated(newEntry.id, newEntry.type, newEntry.title);
+    // El Worker ya registra `entry_created` dentro del POST transaccional.
     setShowAddEntry(false);
   };
 

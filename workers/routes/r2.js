@@ -2,18 +2,44 @@
 //  EL BÚNKER — workers/routes/r2.js
 //  Fallback: servir archivos binarios públicos desde R2
 //  GET /:r2_key (sin /api/ prefix)
-//
-//  FASE D.1 (veredicto V4 Fable S147): gate HMAC para prefijos
-//  sensibles `vault/docs/` y `vault/audio/`. Sin token válido → 404
-//  (no 401/403: no revelar existencia). El resto de prefijos
-//  (music/, vault/photos/, vault/videos/) sigue público sin gate.
-//  Si R2_SIGN_SECRET no está configurado, el gate se omite (compat
-//  hacia atrás mientras Edu no levante la pausa de deploy).
 // ============================================================
 
 import { CORS_HEADERS } from "../config.js";
 import { err } from "../utils/response.js";
 import { isSensitiveR2Key, verifyR2Read } from "../utils/r2-sign.js";
+
+/**
+ * Parse a single RFC 7233 byte range against a known object size.
+ * Returns an R2 range or null when the header is malformed/unsatisfiable.
+ * Multiple ranges are intentionally rejected because this endpoint returns
+ * one stream and does not implement multipart/byteranges.
+ */
+export function parseByteRange(header, size) {
+  if (typeof header !== "string" || !Number.isSafeInteger(size) || size < 0) return null;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!match || size === 0) return null;
+
+  const [, startText, endText] = match;
+  if (!startText && !endText) return null;
+
+  if (!startText) {
+    const suffixLength = Number(endText);
+    if (!Number.isSafeInteger(suffixLength) || suffixLength <= 0) return null;
+    const length = Math.min(suffixLength, size);
+    return { offset: size - length, length };
+  }
+
+  const offset = Number(startText);
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset >= size) return null;
+  const requestedEnd = endText ? Number(endText) : size - 1;
+  if (!Number.isSafeInteger(requestedEnd) || requestedEnd < offset) return null;
+  const end = Math.min(requestedEnd, size - 1);
+  return { offset, length: end - offset + 1 };
+}
+
+function rangeHeader(range, size) {
+  return `bytes ${range.offset}-${range.offset + range.length - 1}/${size}`;
+}
 
 export default async function handleR2(request, env, path) {
   if (request.method !== "GET") return err("Method not allowed", 405);
@@ -22,10 +48,6 @@ export default async function handleR2(request, env, path) {
   if (!r2_key) return err("Not found", 404);
 
   // FASE D.1: gate HMAC para prefijos sensibles.
-  // Si el secret no está configurado (env.R2_SIGN_SECRET vacío), verifyR2Read
-  // devuelve false y bloquearía TODO el acceso sensible. Para no romper el
-  // arranque mientras Edu no setee el secret, comprobamos su presencia aquí:
-  // sin secret → el gate se omite y el comportamiento es el de antes.
   if (env?.R2_SIGN_SECRET && isSensitiveR2Key(r2_key)) {
     const url = new URL(request.url);
     const token = url.searchParams.get("t");
@@ -33,15 +55,35 @@ export default async function handleR2(request, env, path) {
     if (!ok) return err("Not found", 404); // no revela existencia
   }
 
-  const obj = await env.BUNKER.get(r2_key);
+  const metadata = await env.BUNKER.head(r2_key);
+  if (!metadata) return err("Not found", 404);
+
+  const requestedRange = request.headers.get("Range");
+  const range = requestedRange ? parseByteRange(requestedRange, metadata.size) : null;
+  if (requestedRange && !range) {
+    return new Response(null, {
+      status: 416,
+      headers: {
+        ...CORS_HEADERS,
+        "Accept-Ranges": "bytes",
+        "Content-Range": `bytes */${metadata.size}`,
+      },
+    });
+  }
+
+  const obj = await env.BUNKER.get(r2_key, range ? { range } : undefined);
   if (!obj) return err("Not found", 404);
 
+  const headers = new Headers(CORS_HEADERS);
+  if (typeof obj.writeHttpMetadata === "function") obj.writeHttpMetadata(headers);
+  headers.set("Content-Type", obj.httpMetadata?.contentType || metadata.httpMetadata?.contentType || "application/octet-stream");
+  headers.set("Content-Length", String(range ? range.length : metadata.size));
+  headers.set("Accept-Ranges", "bytes");
+  if (obj.httpEtag || metadata.httpEtag) headers.set("ETag", obj.httpEtag || metadata.httpEtag);
+  if (range) headers.set("Content-Range", rangeHeader(range, metadata.size));
+
   return new Response(obj.body, {
-    headers: {
-      "Content-Type": obj.httpMetadata?.contentType || "application/octet-stream",
-      "Content-Length": obj.size,
-      "Accept-Ranges": "bytes",
-      ...CORS_HEADERS,
-    },
+    status: range ? 206 : 200,
+    headers,
   });
 }

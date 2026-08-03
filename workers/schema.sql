@@ -211,7 +211,7 @@ CREATE INDEX idx_capsules_unlock ON time_capsules(unlock_at);
 CREATE TABLE capsule_items (
   id          TEXT PRIMARY KEY,
   capsule_id  TEXT NOT NULL REFERENCES time_capsules(id) ON DELETE CASCADE,
-  type        TEXT NOT NULL DEFAULT 'note',   -- note|photo|track_ref|entry_ref
+  type        TEXT NOT NULL DEFAULT 'note',   -- note|photo|track_ref|entry_ref|playlist_ref
   content     TEXT NOT NULL DEFAULT '{}',     -- JSON blob
   sort_order  INTEGER DEFAULT 0,
   created_by  TEXT NOT NULL REFERENCES users(id),

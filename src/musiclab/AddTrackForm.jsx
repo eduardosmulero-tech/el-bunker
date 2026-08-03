@@ -28,7 +28,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
 
   const submit = () => {
     if (!form.title.trim() || !form.tag) return;
-    onAdd({ ...initialData, ...form });
+    onAdd({ ...initialData, ...form, file: selectedFile });
   };
 
   return (
