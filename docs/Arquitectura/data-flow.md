@@ -10,7 +10,7 @@ stale_si_pliego_toca: PlayerContext.jsx, GoogleAuthService.js, GoogleDriveServic
 1. Usuario selecciona track → `playTrack(track)` en `PlayerContext`.
 2. Contexto actualiza `activeTrack`, dispara `autoPlaySignal`, emite evento `trackPlay` vía StatsEngine.
 3. `audioRef.current.src = getStreamUrl(r2_key)` → streaming desde R2 con byte-range.
-4. Solo MusicLab/WinampPlayer instancia `<audio>`. Sin iframes ni APIs externas.
+4. Solo PlayerProvider/MusicLab posee playback: mantiene el `<audio>` principal y el preload silencioso gapless. VAULT/CAPSULES no reproducen audio; no hay iframes ni APIs externas.
 
 ## Flujo Queue → Playback
 - `addToQueue(track)` → mutación local en PlayerContext → persistencia en `queue_items` (D1 vía Worker API `PUT /api/queue/:user`).

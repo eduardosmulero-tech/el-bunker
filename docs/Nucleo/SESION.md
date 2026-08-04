@@ -23,3 +23,8 @@ deploy frontend (t_1afa45b1). Este bloque conserva el estado de aquella sesión.
 Se completaron contenedores locales G0–G5 y G7. Se extrajeron fronteras puras de MusicLab, sesión/JWT, carga D1, cola y Timeline; se sustituyeron iconos funcionales por `Icon` y se añadió contrato PWA/SW. G6 tiene layout/overflow comprobados en móvil/desktop, pero la aceptación visual completa quedó inconclusa por falta de artefacto legible del navegador. G8 sincronizó manual, estado, informe, acta y registro.
 
 **Validación:** 114/114 tests, lint, build, sintaxis SW/Worker y diff-check verdes. Sin deploy, commit/push ni mutación D1/R2 en esta reanudación. Pendientes: aceptación humana reproducible, Cloudflare 7403/huérfano G2 y decisión sobre retirada del facade Drive.
+
+## S153 — Bloque de auditoría: cola, audio del vault y docs (4 ago 2026 · Buffy)
+Continuación del bloque de auditoría (no del refactor). Reordenamiento drag & drop de la cola corregido para usar IDs estables (`reorderQueueByIds` en QueueTransforms), sin mezclar manuales/contexto ni depender de índices de vistas filtradas; `TrackTransforms.js` extrae la ordenación pura. Vídeos del vault silenciados permanentemente (`muted` + `onPlay`/`onVolumeChange` → muted/volume 0 en VaultGallery y EntryLightbox); el playback sigue centralizado en PlayerProvider (ADR-018). Documentación alineada: CONTRATO, REGLAS, data-flow, PROYECTO, architecture, rendering-flow, technical-debt e INDEX (audio principal vs preload técnico, límites runtime).
+
+**Validación:** 124/124 tests, lint, build OK. Sin deploy ni cambios D1/R2. Pendiente explícito de la auditoría: aceptación visual reproducible (desktop 1440 / tablet 1024 / móvil 390) y prueba real de instalación/offline/update PWA.

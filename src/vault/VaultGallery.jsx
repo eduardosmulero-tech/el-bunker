@@ -5,7 +5,7 @@
 // ============================================================
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
+import { ACID, PURPLE, FONT_MONO } from "../tokens";
 import { usePlayer } from "../core/PlayerContext"; // VB9: vibe accent propagation
 import { Icon } from "../core/ui";
 import WallView from "./WallView"; // Fase 1: WALL virtualizado
@@ -15,7 +15,8 @@ import EntryLightbox from "./EntryLightbox"; // FASE C.1: lightbox unificado
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
-import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
+import { CATEGORY_FILTERS } from "./AddEntryForm";
+import { ENTRY_CATEGORY, getImageUrl, getMediaType } from "./VaultHelpers";
 
 // ─── MODES ──────────────────────────────────────────────────
 const MODES = [
@@ -33,29 +34,7 @@ const MODES = [
 const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
 const CAT_ICON  = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
 
-// S95 — ENTRY_CATEGORY: lookup type→category desde ENTRY_TYPES (single source of truth)
-const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
-
-
 // ─── UTILIDADES ────────────────────────────────────────────
-// FASE D.1: img.url (firmada server-side, Option B) tiene prioridad sobre r2_key cruda.
-const getImageUrl = (entry) => {
-  const images = entry.content?.images;
-  if (!images?.length) return null;
-  const img = images[0];
-  if (img.url) return img.url;
-  if (img.r2_key) return img.r2_key.startsWith("http") ? img.r2_key : `${R2_PUBLIC_BASE}/${img.r2_key}`;
-  if (img.dataUrl) return img.dataUrl;
-  return null;
-};
-
-// PLIEGO-239: getMediaType helper — extrae el multimedia subtype
-const getMediaType = (entry) => {
-  const images = entry.content?.images;
-  if (images?.length && images[0].media_type) return images[0].media_type;
-  return entry.type ?? "note";
-};
-
 // ─── CINEMA VIEW (S122-A: full-bleed + swipe + Ken Burns + overlay emocional) ──
 const CinemaView = ({ entries, eras, onZoom }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -150,7 +129,14 @@ const CinemaView = ({ entries, eras, onZoom }) => {
             className="absolute inset-0 flex items-center justify-center">
             {imgUrl ? (
               getMediaType(entry) === "video" ? (
-                <video src={imgUrl} controls className="w-full h-full object-contain" />
+                <video
+                  src={imgUrl}
+                  controls
+                  muted
+                  onPlay={(event) => { event.currentTarget.muted = true; event.currentTarget.volume = 0; }}
+                  onVolumeChange={(event) => { event.currentTarget.muted = true; event.currentTarget.volume = 0; }}
+                  className="w-full h-full object-contain"
+                />
               ) : getMediaType(entry) === "audio" ? (
                 <div className="flex flex-col items-center gap-4 p-8">
                   <Icon name="music" size={54} label="Audio" />
@@ -1050,10 +1036,7 @@ const MapView = ({ entries = [], eras = [] }) => {
                         const groupEntries = locationGroups[groupKey] || [];
                         const images = groupEntries
                           .map(ge => {
-                            const imgs = ge.content?.images;
-                            if (!imgs?.length) return null;
-                            // FASE D.1: preferir img.url firmada si el servidor la inyectó.
-                            const src = imgs[0].url ?? (imgs[0].r2_key ? (imgs[0].r2_key.startsWith("http") ? imgs[0].r2_key : `${R2_PUBLIC_BASE}/${imgs[0].r2_key}`) : imgs[0].dataUrl);
+                            const src = getImageUrl(ge);
                             return src ? { src, title: ge.title || "", id: ge.id } : null;
                           })
                           .filter(Boolean);

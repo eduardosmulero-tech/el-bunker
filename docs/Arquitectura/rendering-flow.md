@@ -1,10 +1,14 @@
 ---
 describe: App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, ToastContext.jsx, src/core/ui/*
-sincronizado_con: S148 — FASE C.2+D cierre v1.0 (EntryLightbox unificado, WALL museo por eras, DEMO purge, R2 HMAC gate, track_updated silenciado)
-stale_si_pliego_toca: App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx
+sincronizado_con: S153 — drag de cola por IDs + audio/preload + responsive desktop + VaultHelpers (EntryLightbox unificado, WALL museo por eras, DEMO purge, R2 HMAC gate, track_updated silenciado)
+stale_si_pliego_toca: App.jsx, VaultContext.jsx, PlayerContext.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, ToastContext.jsx, src/core/QueueTransforms.js, src/vault/VaultHelpers.js
 ---
 
 # Rendering Flow (post-S64)
+
+> Estado vigente S153: las tres superficies mantienen una sola columna en móvil y usan composición responsive en desktop; el player sigue siendo el único propietario de `<audio>`. `src/vault/VaultHelpers.js` centraliza fechas, clasificación y resolución de media para Vault/Gallery/Lightbox.
+>
+> Composición desktop: Vault separa detalle de era y galería; Music Lab fija el player en una columna lateral y deja tabs/contenido en la principal; Capsules separa subnavegación y contenido. Los formularios y overlays conservan sus límites propios.
 
 ## Jerarquía de componentes
 
@@ -32,7 +36,7 @@ App.jsx
 │                   │   │           └── EntryLightbox.jsx (S148: lightbox unificado — portal + swipe + pinch, abierto por los 6 modos vía onOpenLightbox)
 │                   │   ├── [music]   → MusicPage
 │                   │   │   └── MusicLab.jsx (useVault() + usePlayer())
-│                   │   │       ├── WinampPlayer.jsx (único <audio>, corazón header S132)
+│                   │   │       ├── WinampPlayer.jsx (controles del único motor de playback; corazón header S132)
 │                   │   │       ├── TrackCard.jsx
 │                   │   │       ├── PlaylistManager.jsx (modals)
 │                   │   │       ├── TagManager.jsx (Design System Button)
@@ -54,7 +58,7 @@ App.jsx
 
 1. **`GlobalErrorBoundary`** (Class) — captura cualquier throw no manejado. Renderiza pantalla de reinicio.
 2. **`VaultProvider`** — init Google, boot phase, db state, jwt, libraries, mutations.
-3. **`PlayerProvider`** — audio único (`<audio>`), trackVibe, queue, session escucha compartida, masterVolume, presence detection.
+3. **`PlayerProvider`** — único motor de playback: un `<audio>` principal y un `<audio>` silencioso de precarga gapless, ambos encapsulados en PlayerProvider; trackVibe, queue, sesión compartida, masterVolume y presence detection.
 4. **`ToastProvider`** (NEW S132) — global toast state + `useToast()` hook. Wrapper de `AuthenticatedApp` (no de PlayerProvider — los toasts son UI shell).
 5. **`AuthenticatedApp` / `UnauthorizedScreen`** (TabShell) — selecciona qué renderizar.
 
@@ -73,7 +77,7 @@ App.jsx
 
 ## Flujo de renderizado
 
-1. **Boot**: App monta VaultProvider → Google OAuth2 → perfil → whitelist → JWT → Drive JSON → Worker API (progresivo).
+1. **Boot**: App monta VaultProvider → Google OAuth2 → perfil → whitelist → JWT → Worker API (D1/R2) → `EMPTY_DB()` seguro si falla la API; no se consulta Drive para persistencia.
 2. **Hidratación**: PlayerProvider recibe `tracks[]` desde `db.music_lab.tracks` (Worker-enriched).
 3. **Layout**: consume `trackVibe` de PlayerContext → propaga `--vibe-accent` en `:root`.
 4. **AnimatePresence**: envuelve cada tab para transiciones suaves.
@@ -97,6 +101,8 @@ App.jsx
 ## Optimizaciones
 
 - `mountedRef` en PlayerProvider para evitar updates en componentes desmontados.
+- Precarga gapless encapsulada en PlayerProvider; solo el audio principal emite playback/stats y el audio de precarga permanece silencioso.
+- Aceptación runtime pendiente: instalación PWA, offline/update y consola en viewport 390/1024/1440 requieren navegador/dispositivo reproducible.
 - Progreso de reproducción local en WinampPlayer (no en Context global).
 - `loading="lazy"` y `decoding="async"` en imágenes de galería.
 - `_jwtToken` naming en componentes forward-compat para evitar lint warnings.

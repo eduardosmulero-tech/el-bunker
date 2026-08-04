@@ -12,9 +12,10 @@
 // ============================================================
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
+import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { Icon } from "../core/ui";
-import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
+import { CATEGORY_FILTERS } from "./AddEntryForm";
+import { ENTRY_CATEGORY, getImageUrl } from "./VaultHelpers";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const LONG_PRESS_MS = 500;
@@ -23,7 +24,6 @@ const OBSERVER_MARGIN = "400px";
 
 const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
 const CAT_ICON  = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
-const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
 
 const DENSITY_CONFIG = {
   compact:  { columns: 4, gap: 6,  minCol: "100px", label: "COMPACT", intrinsicH: 120 },
@@ -34,19 +34,6 @@ const DENSITY_CONFIG = {
 const DENSITY_ORDER = ["compact", "normal", "expanded"];
 
 // ─── UTILITIES ──────────────────────────────────────────────
-// FASE D.1: img.url (firmada server-side, Option B) tiene prioridad sobre r2_key cruda.
-// Si la imagen está en un prefijo sensible (vault/docs/, vault/audio/), el servidor
-// inyecta url=...&t=HMAC; el frontend la usa sin reconstruir la URL manualmente.
-const getImageUrl = (entry) => {
-  const images = entry.content?.images;
-  if (!images?.length) return null;
-  const img = images[0];
-  if (img.url) return img.url;
-  if (img.r2_key) return img.r2_key.startsWith("http") ? img.r2_key : `${R2_PUBLIC_BASE}/${img.r2_key}`;
-  if (img.dataUrl) return img.dataUrl;
-  return null;
-};
-
 const buildMasonryColumns = (items, columnCount) => {
   const columns = Array.from({ length: columnCount }, () => []);
   items.forEach((item, i) => {

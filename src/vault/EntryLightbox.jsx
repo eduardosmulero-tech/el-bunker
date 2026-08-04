@@ -7,9 +7,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
+import { ACID, PURPLE, FONT_MONO } from "../tokens";
 import { Icon } from "../core/ui";
-import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
+import { CATEGORY_FILTERS } from "./AddEntryForm";
+import { ENTRY_CATEGORY, getImageUrl, getMediaType } from "./VaultHelpers";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const SWIPE_THRESHOLD = 60;
@@ -20,29 +21,8 @@ const MIN_SCALE = 1;
 
 const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
 const CAT_ICON = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
-const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
 
 // ─── UTIL ────────────────────────────────────────────────────
-// FASE D.1: img.url (firmada server-side, Option B) tiene prioridad sobre r2_key cruda.
-const getImageUrl = (entry) => {
-  const images = entry.content?.images;
-  if (!images?.length) return null;
-  const img = images[0];
-  if (img.url) return img.url;
-  if (img.r2_key) return img.r2_key.startsWith("http") ? img.r2_key : `${R2_PUBLIC_BASE}/${img.r2_key}`;
-  if (img.dataUrl) return img.dataUrl;
-  return null;
-};
-
-// BUG #4 FIX (auditoría S148): extrae el multimedia subtype — necesario para
-// renderizar <video> en entries de vídeo (antes siempre caía a <img src=".mp4">).
-// Espejo exacto de getMediaType de VaultGallery.jsx (CinemaView lo usa igual).
-const getMediaType = (entry) => {
-  const images = entry.content?.images;
-  if (images?.length && images[0].media_type) return images[0].media_type;
-  return entry.type ?? "note";
-};
-
 const getDistance = (t1, t2) => {
   const dx = t1.clientX - t2.clientX;
   const dy = t1.clientY - t2.clientY;
@@ -262,6 +242,9 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
                   <video
                     src={imgUrl}
                     controls
+                    muted
+                    onPlay={(event) => { event.currentTarget.muted = true; event.currentTarget.volume = 0; }}
+                    onVolumeChange={(event) => { event.currentTarget.muted = true; event.currentTarget.volume = 0; }}
                     className="max-w-full max-h-full object-contain select-none"
                     style={{ maxWidth: "95vw", maxHeight: "90vh", boxShadow: `0 0 80px ${eraColor}15` }}
                   />

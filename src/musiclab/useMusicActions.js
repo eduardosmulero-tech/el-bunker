@@ -60,42 +60,6 @@ export function useMusicActions() {
     }
   };
 
-  // ─── onDeleteTrack — DELETE /api/tracks/:id (soft delete) ──
-  const onDeleteTrack = async (trackId) => {
-    if (!workerClient.hasToken()) {
-      console.warn("[Búnker] onDeleteTrack sin jwtToken — local-only");
-      await patchDb((prev) => ({
-        ...prev,
-        music_lab: {
-          ...prev.music_lab,
-          tracks: (prev.music_lab?.tracks ?? []).map((t) =>
-            t.id === trackId
-              ? { ...t, is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: userId }
-              : t
-          ),
-        },
-      }));
-      return { ok: true, id: trackId };
-    }      try {
-      await workerClient.del(`/api/tracks/${trackId}`);
-      await patchDb((prev) => ({
-        ...prev,
-        music_lab: {
-          ...prev.music_lab,
-          tracks: (prev.music_lab?.tracks ?? []).map((t) =>
-            t.id === trackId
-              ? { ...t, is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: userId }
-              : t
-          ),
-        },
-      }));
-      return { ok: true, id: trackId };
-    } catch (err) {
-      console.warn("[Búnker] deleteTrack falló:", err);
-      throw err;
-    }
-  };
-
   // ─── onEditTrack — PATCH /api/tracks/:id (S111 FIX + S115-D3) ────
   const onEditTrack = async (updatedTrack) => {
     if (!workerClient.hasToken()) {
@@ -198,5 +162,5 @@ export function useMusicActions() {
     }
   };
 
-  return { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen };
+  return { onAddTrack, onEditTrack, onAddDrop, onMarkDropSeen };
 }

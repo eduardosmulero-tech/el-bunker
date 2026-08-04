@@ -1677,7 +1677,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       userId, sessionId, isHost, partnerId, partnerTrack, partnerListening, partnerName, partnerTrackVibe,
       createSession, joinSession, joinPendingSession, leaveSession, syncAction, checkPresence,
       sessionToast, setSessionToast,
-      sharedListening: !!sessionId, setSharedListening: () => {},
+      sharedListening: !!sessionId,
     }}>
       {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
       <audio

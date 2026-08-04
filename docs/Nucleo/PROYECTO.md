@@ -89,7 +89,7 @@ src/
     VaultGallery.jsx         — Galería 6 modos (ADR-021)
   musiclab/
     MusicLab.jsx             — Orquestación principal Music Lab
-    WinampPlayer.jsx         — Reproductor visual (único <audio>)
+    WinampPlayer.jsx         — Controles visuales; el playback vive en PlayerContext
     AudioVisualizer.jsx      — Visualizador de audio
     TrackCard.jsx            — Card de track + VibeTagBar
     TagManager.jsx           — Gestor de tags/vibes

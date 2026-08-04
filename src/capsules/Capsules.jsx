@@ -70,11 +70,12 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
   }, [toast]);
 
   return (
-    <div className="w-full px-4 py-6 max-w-md lg:max-w-6xl mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="w-full px-4 py-6 max-w-6xl mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       {null}
+      <div className="lg:grid lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
       {/* Sub-tab bar — swipeable en móvil, sin scrollbar */}
       <nav
-        className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none"
+        className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none lg:max-w-sm"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -130,6 +131,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       <AnimatePresence mode="wait">
         <motion.div
           key={subTab}
+          className="min-w-0 lg:max-w-5xl lg:w-full lg:self-end"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
@@ -153,6 +155,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
           {subTab === "recap" && <Recaps accentColor={accent} />}
         </motion.div>
       </AnimatePresence>
+      </div>
     </div>
   );
 }

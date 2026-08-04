@@ -5,12 +5,13 @@
 // ============================================================
 
 import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
-import { Icon, Skeleton } from "../core/ui";
+import { ConfirmDialog, Icon, Skeleton } from "../core/ui";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { motion, AnimatePresence } from "framer-motion";
-import AddEntryForm, { ENTRY_TYPES, CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
+import AddEntryForm, { CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
+import { ENTRY_CATEGORY, monthsSince, timeSince, timeUntil } from "./VaultHelpers";
 import { ColorPicker } from "../core/ColorPicker";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
@@ -23,46 +24,7 @@ const VaultGallery = lazy(() => import("./VaultGallery"));
 // ─── CONSTANTS ───────────────────────────────────────────────
 const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
 
-// S96 — ENTRY_CATEGORY desde ENTRY_TYPES, CATEGORY_FILTERS importado de AddEntryForm
-const ENTRY_CATEGORY = Object.fromEntries(ENTRY_TYPES.map((t) => [t.id, t.category]));
 // FASE C.2.1 (veredicto V1 Fable S147): fallback demo de eras eliminado, estado vacío elegante.
-
-// ─── HELPERS ─────────────────────────────────────────────────
-
-/** Returns { years, months, days } since a given ISO date string */
-const timeSince = (isoDate) => {
-  if (!isoDate) return { years: 0, months: 0, days: 0, totalDays: 0 };
-  const start = new Date(isoDate);
-  const now   = new Date();
-  let years   = now.getFullYear() - start.getFullYear();
-  let months  = now.getMonth()    - start.getMonth();
-  let days    = now.getDate()     - start.getDate();
-  if (days   < 0) { months--; days   += new Date(now.getFullYear(), now.getMonth(), 0).getDate(); }
-  if (months < 0) { years--;  months += 12; }
-  const totalDays = Math.floor((now - start) / 86400000);
-  return { years, months, days, totalDays };
-};
-
-/** Returns time remaining until a future ISO date */
-const timeUntil = (isoDate) => {
-  if (!isoDate) return null;
-  const target = new Date(isoDate);
-  const now    = new Date();
-  const diff   = target - now;
-  if (diff <= 0) return { unlocked: true };
-  const days    = Math.floor(diff / 86400000);
-  const hours   = Math.floor((diff % 86400000) / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  return { unlocked: false, days, hours, minutes };
-};
-
-/** Months since a given ISO date */
-const monthsSince = (isoDate) => {
-  if (!isoDate) return 0;
-  const start = new Date(isoDate);
-  const now   = new Date();
-  return (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-};
 
 // ─── ADVENTURE COUNTER ───────────────────────────────────────
 /**
@@ -566,12 +528,12 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
  * Props:
  *   db               — VaultDB object (from fetchData)
  *   onAddEra         — () => void
- *   onOpenEra        — (era) => void
  */
-export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () => {} }) {
+export default function Vault({ db = null, onAddEra = () => {} }) {
   const [activeEraId, setActiveEraId] = useState(null);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [pendingDeleteEntryId, setPendingDeleteEntryId] = useState(null);
   const [showAddEra, setShowAddEra] = useState(false);
   const [newEraName, setNewEraName] = useState("");
   const [newEraColor, setNewEraColor] = useState(ACID);
@@ -684,13 +646,15 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
   };
 
   // S65: eliminar entrada vía Worker API
-  const handleDeleteEntry = async (entryId) => {
-    if (!window.confirm("¿Eliminar esta entrada? Se marcará como eliminada.")) return;
+  const handleDeleteEntry = async () => {
+    const entryId = pendingDeleteEntryId;
+    setPendingDeleteEntryId(null);
+    if (!entryId) return;
     try {
       await deleteEntry(entryId);
     } catch (e) {
       console.warn("[Vault] deleteEntry failed:", e);
-      toast({ msg: "NO SE PUDO ELIMINAR", duration: 2500 })
+      toast({ msg: "NO SE PUDO ELIMINAR", duration: 2500 });
     }
   };
 
@@ -758,9 +722,17 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
 
   return (
     <>
-      {null}
+      <ConfirmDialog
+        open={Boolean(pendingDeleteEntryId)}
+        title="Eliminar entrada"
+        message="La entrada se marcará como eliminada y dejará de aparecer en la vista normal."
+        confirmLabel="ELIMINAR"
+        onClose={() => setPendingDeleteEntryId(null)}
+        onConfirm={handleDeleteEntry}
+        accentColor="#ff3b3b"
+      />
     <div
-      className="flex flex-col gap-6 px-4 py-6 max-w-md mx-auto"
+      className="flex flex-col gap-6 px-4 py-6 w-full max-w-6xl mx-auto"
       style={{ fontFamily: FONT_MONO }}
     >
 
@@ -769,7 +741,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-2 gap-3"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
       >
         <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date ?? DEFAULT_ADVENTURE_DATE} />
         <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
@@ -868,7 +840,6 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
               isActive={era.id === (activeEraId ?? displayEras[0]?.id)}
               onClick={() => {
                 setActiveEraId(era.id);
-                onOpenEra(era);
               }}
             />
           ))}
@@ -944,53 +915,58 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
             style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO }}
           />
         </div>
-          {showAddEntry && (
-            <AddEntryForm
-              eras={displayEras}
-              onAdd={handleAddEntry}
-              onCancel={() => setShowAddEntry(false)}
-            />
-          )}
-          <EraDetailPanel
-            era={activeDisplayEra}
-            entries={filteredEntries}
-            onEditEntry={setEditingEntry}
-            onDeleteEntry={handleDeleteEntry}
-          />
-          {/* S65: Modal de edición */}
-          <AnimatePresence>
-            {editingEntry && (
-              <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
-                style={{ background: "rgba(0,0,0,0.85)" }}
-                onClick={() => setEditingEntry(null)}
-              >
+          <div className="lg:grid lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
+            <div className="min-w-0 flex flex-col gap-4">
+              {showAddEntry && (
+                <AddEntryForm
+                  eras={displayEras}
+                  onAdd={handleAddEntry}
+                  onCancel={() => setShowAddEntry(false)}
+                />
+              )}
+              <EraDetailPanel
+                era={activeDisplayEra}
+                entries={filteredEntries}
+                onEditEntry={setEditingEntry}
+                onDeleteEntry={(entryId) => setPendingDeleteEntryId(entryId)}
+              />
+            </div>
+            {/* S65: Modal de edición */}
+            <AnimatePresence>
+              {editingEntry && (
                 <motion.div
-                  initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-                  className="w-full max-w-md"
-                  onClick={(e) => e.stopPropagation()}
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
+                  style={{ background: "rgba(0,0,0,0.85)" }}
+                  onClick={() => setEditingEntry(null)}
                 >
-                  <AddEntryForm
-                    eras={displayEras}
-                    entry={editingEntry}
-                    onUpdate={handleEditEntry}
-                    onCancel={() => setEditingEntry(null)}
-                  />
+                  <motion.div
+                    initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+                    className="w-full max-w-md"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <AddEntryForm
+                      eras={displayEras}
+                      entry={editingEntry}
+                      onUpdate={handleEditEntry}
+                      onCancel={() => setEditingEntry(null)}
+                    />
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {/* Galería de la Era activa — lazy loaded */}
-          <div className="mt-4">
-            <ChunkErrorBoundary>
-              <Suspense fallback={<Skeleton.VaultGallery />}>
-              <VaultGallery
-                entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
-                eras={displayEras}
-                filterCategory={filterCategory}                />
-              </Suspense>
-            </ChunkErrorBoundary>
+              )}
+            </AnimatePresence>
+            {/* Galería de la Era activa — lazy loaded */}
+            <div className="min-w-0 mt-4 lg:mt-0">
+              <ChunkErrorBoundary>
+                <Suspense fallback={<Skeleton.VaultGallery />}>
+                  <VaultGallery
+                    entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
+                    eras={displayEras}
+                    filterCategory={filterCategory}
+                  />
+                </Suspense>
+              </ChunkErrorBoundary>
+            </div>
           </div>
         </motion.section>
       )}

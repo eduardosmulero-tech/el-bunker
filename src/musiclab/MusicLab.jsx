@@ -18,7 +18,9 @@ import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
 import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
-import { Icon } from "../core/ui";
+import { Icon, TextPromptDialog } from "../core/ui";
+import { sortTracks, TRACK_SORT_OPTIONS } from "./TrackTransforms";
+import { reorderQueueByIds } from "../core/QueueTransforms";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
@@ -46,10 +48,8 @@ export default function MusicLab({
   userId = null,
   onAddTrack,
   onEditTrack,
-  _onDeleteTrack,
   onAddDrop,
   onMarkDropSeen,
-  _onMasterVolumeChange,
   patchDb,
   onAddTag,
   onUpdateTag,
@@ -266,13 +266,7 @@ export default function MusicLab({
     try { return localStorage.getItem(`bunker_tracksort_${db?.currentUser?.id ?? "default"}`) ?? "alpha"; }
     catch { return "alpha"; }
   });
-  const SORT_OPTIONS = [
-    { id: "alpha", label: "A-Z", icon: "arrowUp" },
-    { id: "artist", label: "ARTISTA", icon: "circle" },
-    { id: "vibe", label: "VIBE", icon: "target" },
-    { id: "plays", label: "PLAYS", icon: "play" },
-    { id: "recent", label: "RECIENTE", icon: "timer" },
-  ];
+  const SORT_OPTIONS = TRACK_SORT_OPTIONS;
   const handleSortChange = (sortId) => {
     setTrackSort(sortId);
     try { localStorage.setItem(`bunker_tracksort_${db?.currentUser?.id ?? "default"}`, sortId); } catch { /* noop */ }
@@ -285,6 +279,7 @@ export default function MusicLab({
   const [confirmClearQueue, setConfirmClearQueue] = useState(false);
   // EC-C3: Bottom sheet para reemplazar vs añadir contexto cuando hay cola manual activa
   const [contextSheet, setContextSheet] = useState(null); // { plTracks, plName } | null
+  const [showQueuePlaylistPrompt, setShowQueuePlaylistPrompt] = useState(false);
   // PLIEGO-237: dropdown de sort (antes era un row de 5 botones inline)
   const [showSortMenu, setShowSortMenu] = useState(false);
   const sortMenuRef = useRef(null);
@@ -365,33 +360,41 @@ export default function MusicLab({
   };
 
   // S76: Crear playlist vía WorkerClient (D1)
-  const handleCreatePlaylist = async (name) => {
+  const handleCreatePlaylist = async (name, trackIds = null) => {
     if (!name?.trim() || !userId || !workerClient.hasToken()) return;
+    let createdPlaylistId = null;
     try {
       const newPl = await workerClient.post('/api/playlists', { name: name.trim(), created_by: userId });
+      createdPlaylistId = newPl.id;
       // Actualizar estado local inmediatamente (sin esperar refreshDb)
-      patchDb((prev) => ({
+      const normalizedTrackIds = Array.isArray(trackIds)
+        ? [...new Set(trackIds.filter(Boolean))]
+        : [];
+      if (Array.isArray(trackIds)) {
+        if (normalizedTrackIds.length) {
+          await workerClient.put(`/api/playlists/${newPl.id}/tracks`, { track_ids: normalizedTrackIds });
+        }
+      } else if (pendingTrack) {
+        await workerClient.post(`/api/playlists/${newPl.id}/tracks`, { track_id: pendingTrack.id });
+        normalizedTrackIds.push(pendingTrack.id);
+      }
+      await patchDb((prev) => ({
         ...prev,
         music_lab: {
           ...prev.music_lab,
-          playlists: [...(prev.music_lab?.playlists ?? []), { ...newPl, track_ids: [] }],
+          playlists: [...(prev.music_lab?.playlists ?? []), { ...newPl, track_ids: normalizedTrackIds }],
         },
       })).catch(() => {});
-      if (pendingTrack) {
-        await workerClient.post(`/api/playlists/${newPl.id}/tracks`, { track_id: pendingTrack.id });
-        // Actualizar estado local: track añadido a la nueva playlist
-        patchDb((prev) => ({
-          ...prev,
-          music_lab: {
-            ...prev.music_lab,
-            playlists: (prev.music_lab?.playlists ?? []).map((pl) =>
-              pl.id === newPl.id ? { ...pl, track_ids: [...(pl.track_ids ?? []), pendingTrack.id] } : pl
-            ),
-          },
-        })).catch(() => {});
-      }
       showToast({ msg: "PLAYLIST CREADA" }, 2500);
-    } catch (err) { console.warn("[Búnker] createPlaylist (Worker):", err); }
+    } catch (err) {
+      if (createdPlaylistId) {
+        await workerClient.del(`/api/playlists/${createdPlaylistId}`).catch((cleanupError) => {
+          console.warn("[Búnker] cleanup de playlist falló:", cleanupError);
+        });
+      }
+      console.warn("[Búnker] createPlaylist (Worker):", err);
+      showToast({ msg: "NO SE PUDO CREAR PLAYLIST" }, 2500);
+    }
     finally { setShowPlaylistModal(false); setPendingTrack(null); }
   };
 
@@ -405,33 +408,8 @@ export default function MusicLab({
         const q = trackSearch.toLowerCase();
         return t.title?.toLowerCase().includes(q) || t.artist?.toLowerCase().includes(q);
       });
-    // Fase 6.4 EC-TR7: Ordenación configurable
-    switch (trackSort) {
-      case "alpha":
-        result = [...result].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
-        break;
-      case "artist":
-        result = [...result].sort((a, b) => (a.artist ?? "").localeCompare(b.artist ?? ""));
-        break;
-      case "vibe":
-        result = [...result].sort((a, b) => {
-          const va = a.tag ?? a.vibe ?? "";
-          const vb = b.tag ?? b.vibe ?? "";
-          return va.localeCompare(vb) || (a.title ?? "").localeCompare(b.title ?? "");
-        });
-        break;
-      case "plays":
-        result = [...result].sort((a, b) => (b.play_count ?? 0) - (a.play_count ?? 0));
-        break;
-      case "recent":
-        result = [...result].sort((a, b) => {
-          const da = new Date(a.last_played ?? a.added_at ?? 0).getTime();
-          const db = new Date(b.last_played ?? b.added_at ?? 0).getTime();
-          return db - da;
-        });
-        break;
-    }
-    return result;
+    // Fase 6.4 EC-TR7: Ordenación configurable (transformación pura R7).
+    return sortTracks(result, trackSort);
   }, [rawTracks, libraryFilter, trackSearch, trackSort]);
 
   const [listTagFilter, setListTagFilter] = useState("all");
@@ -535,10 +513,7 @@ export default function MusicLab({
       // S85c Q6: sugerencia de guardar como playlist al alcanzar 75 tracks
       showToast({
         msg: "COLA LLENA (75)",
-        action: () => {
-          const name = prompt("Nombre para la playlist con la cola actual:");
-          if (name?.trim()) handleCreatePlaylist(name.trim());
-        },
+        action: () => setShowQueuePlaylistPrompt(true),
         actionLabel: "GUARDAR COMO PLAYLIST",
       }, 4000);
     } else {
@@ -551,29 +526,25 @@ export default function MusicLab({
   };
 
   // drag&drop cola (provisional — pendiente revisión sesión diseño)
-  const dragIdx = useRef(null);
+  const dragId = useRef(null);
   // S85d: debounce/queue ref — previene reordenamientos concurrentes durante
   // operaciones in-flight. Si el usuario arrastra y suelta varias veces
   // rápido, solo procesamos el primer drop. El resto se ignora.
   const dragInFlight = useRef(false);
-  const handleDragStart = (i) => { dragIdx.current = i; };
+  const handleDragStart = (trackId) => { dragId.current = trackId; };
   const handleDragOver  = (e) => { e.preventDefault(); };
-  const handleDrop      = (i) => {
+  const handleDrop      = (targetId) => {
     if (dragInFlight.current) return;
-    if (dragIdx.current === null || dragIdx.current === i) return;
+    const sourceId = dragId.current;
+    dragId.current = null;
+    if (!sourceId || !targetId || sourceId === targetId) return;
     dragInFlight.current = true;
     // S85d Q17: capturar snapshot ANTES del reorder para que el UNDO del
     // toast pueda restaurar la cola a su estado previo. Se dispatcha el
     // evento `bunker_cola_reordered` con la snapshot y MusicLab muestra
     // toast con acción DESHACER (5s).
     const previousQueue = localQueue;
-    setLocalQueue((q) => {
-      const next = q.filter((t) => t.id !== activeTrack?.id);
-      const [moved] = next.splice(dragIdx.current, 1);
-      next.splice(i, 0, moved);
-      dragIdx.current = null;
-      return activeTrack ? [activeTrack, ...next] : next;
-    });
+    setLocalQueue((q) => reorderQueueByIds(q, sourceId, targetId, activeTrack?.id));
     try {
       window.dispatchEvent(new CustomEvent("bunker_cola_reordered", {
         detail: { snapshot: previousQueue }
@@ -730,6 +701,21 @@ export default function MusicLab({
         )}
       </AnimatePresence>
 
+      <TextPromptDialog
+        key={showQueuePlaylistPrompt ? "queue-prompt-open" : "queue-prompt-closed"}
+        open={showQueuePlaylistPrompt}
+        title="Guardar cola como playlist"
+        label="Nombre de la playlist"
+        placeholder="Mi selección"
+        onClose={() => setShowQueuePlaylistPrompt(false)}
+        onConfirm={(name) => {
+          setShowQueuePlaylistPrompt(false);
+          handleCreatePlaylist(name, localQueue.map((track) => track.id));
+        }}
+        accentColor={accentColor}
+      />
+
+
       {/* Playlist Modal */}
       <AnimatePresence>
         {showPlaylistModal && (
@@ -781,10 +767,11 @@ export default function MusicLab({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-5 px-4 py-6 max-w-md mx-auto" style={{ fontFamily: FONT_MONO }}>
+      <div className="flex flex-col gap-5 px-4 py-6 w-full max-w-6xl mx-auto" style={{ fontFamily: FONT_MONO }}>
 
+        <div className="lg:grid lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
         {/* ══ Player ══ */}
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="lg:sticky lg:top-6 lg:self-start">
           <WinampPlayer
             track={activeTrack}
             tracks={filteredTracks}
@@ -799,6 +786,7 @@ export default function MusicLab({
           />
         </motion.section>
 
+        <div className="min-w-0 flex flex-col gap-5">
         {/* ══ Tab Bar ══ */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}
           className="flex gap-0 rounded-sm overflow-hidden" style={{ border: `1px solid ${GLASS_BORDER}` }}>
@@ -850,11 +838,7 @@ export default function MusicLab({
                       <Icon name="search" size={15} decorative />
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} title="Guardar cola como playlist"
-                      onClick={() => {
-                        const name = prompt("Nombre de la nueva playlist:");
-                        if (!name?.trim()) return;
-                        handleCreatePlaylist(name.trim());
-                      }}
+                      onClick={() => setShowQueuePlaylistPrompt(true)}
                       className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${accentColor}33`, background: `${accentColor}06` }}>
                       <Icon name="archive" size={14} decorative />
@@ -984,9 +968,9 @@ export default function MusicLab({
                       return (
                         <div key={manualKey}
                           draggable
-                          onDragStart={() => handleDragStart(i)}
+                          onDragStart={() => handleDragStart(track.id)}
                           onDragOver={handleDragOver}
-                          onDrop={() => handleDrop(i)}
+                          onDrop={() => handleDrop(track.id)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${trackColor}33`, fontFamily: FONT_MONO, cursor: "grab" }}>
                           <Icon name="more" size={13} decorative className="flex-shrink-0" />
@@ -1067,9 +1051,9 @@ export default function MusicLab({
                       return (
                         <div key={ctxKey}
                           draggable
-                          onDragStart={() => handleDragStart(i)}
+                          onDragStart={() => handleDragStart(track.id)}
                           onDragOver={handleDragOver}
-                          onDrop={() => handleDrop(i)}
+                          onDrop={() => handleDrop(track.id)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
                           <Icon name="more" size={13} decorative className="flex-shrink-0" />
@@ -1744,6 +1728,8 @@ export default function MusicLab({
             );
           })()}
         </AnimatePresence>
+        </div>
+        </div>
 
         {/* Footer */}
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}

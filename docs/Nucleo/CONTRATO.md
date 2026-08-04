@@ -12,7 +12,7 @@
 |---|---|---|
 | 🔒-1 | **Loop triestado.** `loopMode: "off" \| "list" \| "track"`. Nunca boolean. | ADR-007 |
 | 🔒-2 | **Sin backend externo.** Todo persiste en Cloudflare D1 (SQL) y R2 (archivos). Sin servidores propios. | ADR-001, ADR-024 |
-| 🔒-3 | **Motor de audio único.** Solo MusicLab instancia `<audio>`. Nunca en VAULT ni CAPSULES. | ADR-018 |
+| 🔒-3 | **Motor de audio único.** Solo PlayerProvider/MusicLab posee playback: un `<audio>` principal y un `<audio>` silencioso de precarga gapless, encapsulados en el provider. Nunca en VAULT ni CAPSULES. | ADR-018 |
 | 🔒-4 | **3 tabs definitivos.** VAULT · MUSIC LAB · CAPSULES. Timeline fusionada en CAPSULES. | ADR-017 |
 | 🔒-5 | **Stats engine único.** Todos los eventos pasan por la tabla `events` de D1. Sin excepciones ni agregadores paralelos. | ADR-019 |
 | 🔒-6 | **Drive nunca como persistencia.** Google Drive deprecado como BD (ADR-024). Ni una línea nueva de persistencia sobre Drive. Solo código de transición. El login puede ser Google (ADR-025) o clave de acceso (ADR-028); lo inamovible es Drive, no el mecanismo de auth. | ADR-025, ADR-028 |
@@ -88,7 +88,7 @@ Timeline ya no es tab independiente — está fusionada en CAPSULES.
 Cada módulo es dueño de sus datos. Las experiencias en CAPSULES son clientes, no owners.
 
 ### ✅ ADR-018 — MusicLab absorbe todo el audio (NUEVO S49)
-MusicLab es el ÚNICO motor de audio de la app. VAULT nunca instancia `<audio>`. Las grabaciones del VAULT se reproducen vía el mini-player persistente de MusicLab. Sin reproductores paralelos.
+MusicLab/PlayerProvider es el ÚNICO motor de playback de la app. VAULT nunca reproduce audio: sus vídeos se muestran silenciados y sus audios se delegan al mini-player persistente de MusicLab. El segundo `<audio>` del provider solo precarga el siguiente track y no reproduce de forma independiente.
 
 ### ✅ ADR-019 — Motor único de estadísticas (NUEVO S49)
 Tabla `events` inmutable en D1. Append-only. Todos los módulos emiten eventos a esta tabla. Un agregador común consume y genera: stats de escucha, RECAPs, Timeline feed, rachas, resúmenes. Sin agregadores paralelos ni duplicación de lógica de stats.

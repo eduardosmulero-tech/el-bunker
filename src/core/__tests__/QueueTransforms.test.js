@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { enforceQueueLimit, fisherYatesInPlace } from "../QueueTransforms.js";
+import { enforceQueueLimit, fisherYatesInPlace, reorderQueueByIds } from "../QueueTransforms.js";
 
 const tracks = (count, manual = false) => (
   Array.from({ length: count }, (_, index) => ({ id: `${manual ? "m" : "c"}-${index}`, _manual: manual }))
@@ -21,6 +21,23 @@ describe("QueueTransforms", () => {
 
   it("keeps only the newest manual tracks when manuals exceed the limit", () => {
     expect(enforceQueueLimit(tracks(4, true), 2).map((track) => track.id)).toEqual(["m-2", "m-3"]);
+  });
+
+  it("reorders by stable IDs within the same queue group", () => {
+    const queue = [
+      { id: "active", _manual: false },
+      { id: "ctx-a", _manual: false },
+      { id: "manual-a", _manual: true },
+      { id: "ctx-b", _manual: false },
+      { id: "manual-b", _manual: true },
+    ];
+    expect(reorderQueueByIds(queue, "ctx-b", "ctx-a", "active").map((track) => track.id)).toEqual([
+      "active", "ctx-b", "manual-a", "ctx-a", "manual-b",
+    ]);
+    expect(reorderQueueByIds(queue, "ctx-b", "manual-a", "active")).toBe(queue);
+    expect(reorderQueueByIds(queue, "ctx-b", "ctx-a").map((track) => track.id)).toEqual([
+      "active", "ctx-b", "manual-a", "ctx-a", "manual-b",
+    ]);
   });
 
   it("shuffles in place using Fisher-Yates and remains deterministic under mocked random", () => {

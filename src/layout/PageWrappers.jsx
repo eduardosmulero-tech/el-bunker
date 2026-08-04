@@ -31,17 +31,14 @@ export const VaultPage = () => {
           console.warn("[App] onAddEra refresh failed:", e);
         }
       }}
-      onOpenEra={(era) => {
-        console.log("[App] Opening era:", era.name);
-      }}
     />
   );
 };
 
 // ─── MUSIC LAB PAGE ────────────────────────────────────────
 export const MusicPage = () => {
-  const { db, user, setMasterVolume, patchDb } = useVault();
-  const { onAddTrack, onDeleteTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
+  const { db, user, patchDb } = useVault();
+  const { onAddTrack, onEditTrack, onAddDrop, onMarkDropSeen } = useMusicActions();
 
   const handleAddTag = async (tagData) => {
     const newTag = {
@@ -101,9 +98,7 @@ export const MusicPage = () => {
           userId={user?.id ?? null}
           onAddTrack={onAddTrack}
           onAddDrop={onAddDrop}
-          onDeleteTrack={onDeleteTrack}
           onEditTrack={onEditTrack}
-          onMasterVolumeChange={setMasterVolume}
           onMarkDropSeen={onMarkDropSeen}
           patchDb={patchDb}
           onAddTag={handleAddTag}

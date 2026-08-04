@@ -1,0 +1,43 @@
+import { describe, expect, it } from "vitest";
+import { ENTRY_CATEGORY, getImageUrl, getMediaType, monthsSince, timeSince, timeUntil } from "../VaultHelpers";
+
+const NOW = new Date("2026-08-04T12:00:00.000Z");
+
+describe("VaultHelpers", () => {
+  it("calculates elapsed calendar time and total days deterministically", () => {
+    expect(timeSince("2025-06-04T12:00:00.000Z", NOW)).toEqual({ years: 1, months: 2, days: 0, totalDays: 426 });
+  });
+
+  it("handles empty dates and countdown boundaries", () => {
+    expect(timeSince(null, NOW)).toEqual({ years: 0, months: 0, days: 0, totalDays: 0 });
+    expect(timeUntil(null, NOW)).toBeNull();
+    expect(timeUntil("2026-08-04T11:59:00.000Z", NOW)).toEqual({ unlocked: true });
+    expect(timeUntil("2026-08-05T13:30:00.000Z", NOW)).toEqual({ unlocked: false, days: 1, hours: 1, minutes: 30 });
+  });
+
+  it("calculates calendar months independently of the day", () => {
+    expect(monthsSince("2025-12-31T00:00:00.000Z", NOW)).toBe(8);
+    expect(monthsSince(null, NOW)).toBe(0);
+  });
+
+  it("normalizes invalid dates without throwing", () => {
+    expect(timeSince("not-a-date", NOW)).toEqual({ years: 0, months: 0, days: 0, totalDays: 0 });
+    expect(monthsSince("not-a-date", NOW)).toBe(0);
+    expect(timeUntil("not-a-date", NOW)).toBeNull();
+  });
+
+  it("prefers signed URLs and supports R2 keys and data URLs", () => {
+    expect(getImageUrl({ content: { images: [{ url: "https://signed.test/image" }] } })).toBe("https://signed.test/image");
+    expect(getImageUrl({ content: { images: [{ r2_key: "vault/photos/image.jpg" }] } })).toContain("vault/photos/image.jpg");
+    expect(getImageUrl({ content: { images: [{ dataUrl: "data:image/png;base64,abc" }] } })).toBe("data:image/png;base64,abc");
+    expect(getImageUrl({ content: {} })).toBeNull();
+  });
+
+  it("resolves media subtype and keeps the taxonomy lookup centralized", () => {
+    expect(getMediaType({ type: "photo", content: { images: [{ media_type: "video" }] } })).toBe("video");
+    expect(getMediaType({ type: "note" })).toBe("note");
+    expect(ENTRY_CATEGORY.photo).toBeDefined();
+    expect(ENTRY_CATEGORY.note).toBeDefined();
+    expect(Object.keys(ENTRY_CATEGORY).length).toBeGreaterThan(10);
+  });
+});

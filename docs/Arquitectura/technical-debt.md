@@ -1,6 +1,6 @@
 ---
 describe: cualquier refactor estructural
-sincronizado_con: G3-1 — D1/R2 source of truth, Google OAuth only, TD-1/TD-2 actualizados
+sincronizado_con: S153 — D1/R2 source of truth, Google OAuth only, reorder/audio-preload/VaultHelpers y responsive desktop actualizados
 stale_si_pliego_toca: cualquier refactor estructural
 ---
 
@@ -68,22 +68,23 @@ stale_si_pliego_toca: cualquier refactor estructural
 **Plan (resto STAT-M9):** Cliente emite `track_play` con `payload.session_id` y `payload.credit_to` cuando track termina en sesión compartida. Endpoint `/api/stats/shared` agrega play counts por usuarios con crédito. UI: badge "compartido" en tracks escuchados en sesión (MusicLab + Recap).
 
 ### TD-7: Sin manejo de archivos corruptos en R2
+**Estado:** diferido; el reproductor ya limita reintentos y evita loops de skip, pero la galería aún no muestra un placeholder de archivo dañado con reintento visual.
 **Impacto:** BAJO. Fallback estético Cyber-Vandal previsto en spec.
 **Riesgo:** Experiencia rota si R2 falla para un archivo específico.
 **Plan:** Glitch visual + reintento 3s + skip (mismo patrón que P2).
 
 ## Deuda diferida (Fase C)
 
-- DRAG-GLOBAL-C: Unificar animaciones de drag & drop.
+- DRAG-GLOBAL-C: Unificar animaciones de drag & drop; el reorder de cola ya usa IDs estables y queda funcional, pero playlist/tags conservan patrones propios.
 - Soporte HEIC/RAW en galería.
 - FLAC + OPUS en reproductor.
-- Escucha compartida (sharedListening stub exists).
+- Escucha compartida: sincronización HTTP/long-polling activa; WebSocket nativo sigue diferido.
 - Modo offline ampliado con Service Worker caching: actualmente existe shell/cache de assets y fallback; `/api/` no se cachea y no hay sincronización automática de cambios.
 
 ## Estado de higiene G0–G8 — 3 ago 2026
 
 - G4 seguro: fronteras puras extraídas sin duplicar estado ni audio.
 - G5: iconografía funcional canónica; aliases legacy preservan contenido persistido.
-- G6: responsive/overflow comprobados en navegador, pero aceptación visual final y PWA instalada requieren artefacto reproducible.
-- G7: SW contractualmente protegido; falta prueba runtime offline/update en dispositivo real.
-- TD-1/TD-2: Drive queda como facade/fallback de transición; no retirarlo sin evidencia externa y decisión de compatibilidad.
+- G6: composición responsive desktop/móvil implementada en las tres tabs; la aceptación visual final y PWA instalada requieren artefacto reproducible.
+- G7: SW contractualmente protegido; falta prueba runtime de instalación/offline/update en dispositivo real.
+- TD-1/TD-2: Drive queda como facade/fallback histórico de transición; no retirarlo sin evidencia externa y decisión de compatibilidad.

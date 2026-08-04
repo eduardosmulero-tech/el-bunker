@@ -41,7 +41,7 @@ Loop es triestado.
 **🔑 SUDO = PEDIR:** Si un comando requiere sudo/contraseña, Claude debe pedir a Edu que lo ejecute manualmente. Nunca intentar sudo sin avisar.
 
 ## REGLAS NUEVAS (S49)
-- **Motor de audio único:** Nunca instanciar `<audio>` fuera de MusicLab (ADR-018, 🔒-3).
+- **Motor de audio único:** Nunca instanciar playback fuera de PlayerProvider/MusicLab. El provider encapsula el `<audio>` principal y el preload silencioso gapless; VAULT/CAPSULES no reproducen audio (ADR-018, 🔒-3).
 - **3 tabs definitivos:** VAULT · MUSIC LAB · CAPSULES. No crear nuevas tabs sin ADR (ADR-017, 🔒-4).
 - **Stats engine único:** Todos los eventos emiten a tabla `events` en D1 (ADR-019, 🔒-5).
 - **No duplicar uploaders:** Usar FileUploadService unificado a R2 (ADR-022).
@@ -59,7 +59,7 @@ Loop es triestado.
 | `src/core/VaultContext.jsx` | Estado global de BD y autenticación |
 | `src/core/GoogleDriveService.js` | Auth OAuth2 + API Drive (transición a D1) |
 | `src/musiclab/MusicLab.jsx` | Orquestación principal Music Lab |
-| `src/musiclab/WinampPlayer.jsx` | Reproductor visual — ÚNICO `<audio>` de la app |
+| `src/musiclab/WinampPlayer.jsx` | Controles visuales del único motor de playback; los elementos `<audio>` viven en `PlayerContext` |
 | `src/musiclab/TrackCard.jsx` | Card de track + VibeTagBar |
 | `src/musiclab/TagManager.jsx` | Gestor de tags/vibes (reutilizable para vault.tags) |
 | `src/musiclab/PlaylistManager.jsx` | Modales de playlist |

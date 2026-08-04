@@ -1,7 +1,7 @@
 ---
-describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, core/ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx, core/ui/index.js, core/ColorPicker.jsx
-sincronizado_con: S148 — FASE C.2+D cierre v1.0 (EntryLightbox unificado, WALL museo por eras, DEMO purge, R2 HMAC gate, track_updated silenciado)
-stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx, core/ui/index.js
+describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, core/ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx, core/ui/index.js, core/ColorPicker.jsx, src/core/QueueTransforms.js, src/vault/VaultHelpers.js
+sincronizado_con: S153 — drag de cola por IDs + audio/preload + VaultHelpers (EntryLightbox unificado, WALL museo por eras, DEMO purge, R2 HMAC gate, track_updated silenciado)
+stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, core/ui/Button.jsx, core/ui/Card.jsx, core/ui/Input.jsx, core/ui/Skeleton.jsx, core/ui/index.js, src/core/QueueTransforms.js, src/vault/VaultHelpers.js
 ---
 
 # Architecture
@@ -19,11 +19,11 @@ Producción: https://el-bunker-beige.vercel.app · Worker API: https://el-bunker
 Responsable de: eras, entries, documentos, fotos, tags de contexto, galería 6 modos.
 Dueño del dato de contenido. Sin audio propio.
 Carga de datos: Worker API (D1/R2), sin fallback Drive JSON.
-Archivos: `src/vault/Vault.jsx`, `src/vault/VaultGallery.jsx`, `src/vault/WallView.jsx`, `src/vault/EntryLightbox.jsx` (S148: lightbox unificado — portal+swipe+pinch, adoptado por los 6 modos), `src/vault/AddEntryForm.jsx`. Sin DEMO fallbacks desde S148 (estado vacío honesto).
+Archivos: `src/vault/Vault.jsx`, `src/vault/VaultGallery.jsx`, `src/vault/WallView.jsx`, `src/vault/EntryLightbox.jsx` (S148: lightbox unificado — portal+swipe+pinch, adoptado por los 6 modos), `src/vault/AddEntryForm.jsx`, `src/vault/VaultHelpers.js` (S152: fechas, categorías y media compartidas; S153: reorder y contrato de playback). Sin DEMO fallbacks desde S148 (estado vacío honesto).
 
 ### MUSIC LAB — Motor de audio
 Responsable de: tracks, playlists, drops, tags de vibe, reproducción, escucha compartida.
-ÚNICO módulo que instancia `<audio>`. Mini-player persistente sobre todas las tabs.
+ÚNICO módulo que posee el motor de playback. PlayerProvider mantiene un `<audio>` principal y un `<audio>` silencioso de precarga gapless; ambos permanecen encapsulados y ningún otro módulo reproduce audio.
 Carga de tracks: Worker API (D1/R2), sin fallback Drive JSON.
 Archivos: `src/musiclab/*`, `src/core/PlayerContext.jsx`
 
@@ -101,6 +101,16 @@ Archivos: `src/core/FileUploadService.js`
 - **Safe areas:** `env(safe-area-inset-*)` en StatusBar (top), BottomNav (bottom), MiniPlayer (bottom). Android edge-to-edge respetado.
 - **VAULT MAP Sub-fases 2-4:** `VaultGallery.jsx` ahora con MapView real (react-leaflet + react-leaflet-cluster + CartoDB Dark tiles). `JourneyPolylines` animados entre entries misma Era. Dual-range date slider temporal. `GeocoderService` con Photon API + Nominatim fallback. `LocationSearch` component con dropdown + manual override. `AddEntryForm` con location fields.
 - **Botones gratuitos sin min-h:** corregidos ≥44 elementos en layout shell + reproductor.
+
+### S153 — Reorder de cola y contrato de playback
+- El drag de la cola usa IDs estables y solo reordena dentro del grupo manual/contexto; no depende de índices de una vista filtrada.
+- Los vídeos del Vault se muestran silenciados y no compiten con el motor de playback de MusicLab.
+- `PlayerProvider` mantiene un audio principal y un preload silencioso gapless encapsulados; el preload nunca reproduce de forma independiente.
+
+### S152 — Responsive desktop + helpers Vault
+- Vault usa una columna de detalle y otra de galería en desktop; Music Lab separa player y contenido; Capsules separa subnavegación y contenido. En móvil se conserva el flujo vertical y el scroll horizontal de navegación.
+- `VaultHelpers.js` es la fuente única para `timeSince`, `timeUntil`, `monthsSince`, `ENTRY_CATEGORY`, `getImageUrl` y `getMediaType`; tests en `src/vault/__tests__/VaultHelpers.test.js`.
+- El player sigue siendo el único propietario del playback; el segundo elemento `<audio>` es exclusivamente precarga silenciosa y no representa una segunda reproducción.
 
 ### S132 — Escucha Compartida (Fase C, SC1-SC14)
 - **ToastProvider unificado:** NUEVO `src/core/ToastContext.jsx` con `useToast()` hook + `toast()` API. Consolida **5 implementaciones dispersas** de toast en `Vault.jsx` + `TagManager.jsx` + `Capsules.jsx` + `Timeline.jsx` + `TimeCapsules.jsx`. Tipos: `info`/`error` + acciones (`OK` + dismiss). Render único en `Layout.jsx` (consumidor + renderer, no listado entre los 5 anteriores).

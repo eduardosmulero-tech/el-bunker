@@ -1,11 +1,13 @@
 # EL BÚNKER — Roadmap de Desarrollo v6
 > **Generado:** S66 — Junio 2026 · Post-auditoría completa (specs ↔ código ↔ D1)
-> **Actualizado:** S105 — Cierre Fase 9 (Pulido + UX). Fases 0-9 completas (50 sesiones).
+> **Actualizado:** S152 — cierre del bloque de higiene R5-R8 y responsive desktop. El roadmap histórico S50-S115 se conserva debajo como referencia.
 > **Formato:** Sesiones Codebuff de ~45-60 min cada una
 
 ---
 
 ## 📋 Estado del Proyecto
+
+> **Nota de sincronización S152:** la implementación actual ya superó el estado S105 descrito por este documento; los porcentajes y fases históricas no se usan como fuente operativa. El estado vigente está en `docs/Arquitectura/INDEX.md` y `docs/Arquitectura/technical-debt.md`.
 
 | Métrica | Valor |
 |---|---|
