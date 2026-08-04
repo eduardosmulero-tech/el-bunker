@@ -5,7 +5,7 @@
 // ============================================================
 
 import { useState, useRef, useEffect, useMemo, lazy, Suspense } from "react";
-import { Skeleton } from "../core/ui";
+import { Icon, Skeleton } from "../core/ui";
 import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
@@ -85,7 +85,7 @@ const AdventureCounter = ({ startDate, accentColor = ACID }) => {
 
       {/* Label — G3: vibe-aware */}
       <p className="text-xs tracking-[0.35em] uppercase mb-3 opacity-40" style={{ color: accentColor }}>
-        ◈ AVENTURA EN CURSO
+        <Icon name="archive" size={14} decorative /> AVENTURA EN CURSO
       </p>
 
       {/* Ticker */}
@@ -183,7 +183,7 @@ const HeartbeatWidget = ({ lastHeartbeat }) => {
           className="text-xs tracking-[0.3em] uppercase font-bold"
           style={{ color, textShadow: `0 0 8px ${color}66` }}
         >
-          {atRisk ? "⚠ EN RIESGO" : "● SEGURO"}
+          <Icon name={atRisk ? "alert" : "circle"} size={14} decorative /> {atRisk ? "EN RIESGO" : "SEGURO"}
         </p>
         {atRisk && (
           <motion.p
@@ -229,7 +229,7 @@ const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE 
           className="text-xs tracking-[0.3em] uppercase font-bold"
           style={{ color: isLocked ? PURPLE : ACID }}
         >
-          {isLocked ? "⧖" : "◈"} {title}
+          <Icon name={isLocked ? "timer" : "archive"} size={14} decorative /> {title}
         </p>
         {isLocked && (
           <motion.div
@@ -356,7 +356,7 @@ const EraCard = ({ era, isActive, onClick }) => {
               className="text-xs"
               style={{ color: era.color ?? ACID }}
             >
-              ◈ ACTIVA
+              <Icon name="archive" size={14} decorative /> ACTIVA
             </motion.span>
           )}
         </div>
@@ -415,7 +415,7 @@ const EXTRA_BADGE_FORMAT = {
   event_date: (val) => {
     if (!val || isNaN(Date.parse(val))) return null;
     const d = new Date(val);
-    return { icon: "📅", label: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase() };
+    return { icon: "calendar", label: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase() };
   },
   location:  (val) => val ? { icon: "📍", label: val } : null,
   rating:    (val) => val && val !== "—" ? { icon: "⭐", label: val } : null,
@@ -487,7 +487,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
             >
               {/* S126: badge categoría (S97) removido — el filtro activo arriba ya indica la categoría */}
               <span className="text-xs opacity-70" style={{ color: era.color ?? ACID }}>
-                {entry.type === "photo" || entry.content?.images?.length ? "◎" : "◉"}
+                <Icon name={entry.type === "photo" || entry.content?.images?.length ? "circle" : "target"} size={14} decorative />
               </span>
               <div className="flex flex-col flex-1 min-w-0">
                 <span
@@ -507,14 +507,14 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                     <span className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
                       {visible.map((b) => (
                         <span key={b.key} className="text-[8px] opacity-40 whitespace-nowrap" style={{ color: era.color ?? ACID }}>
-                          {b.icon && <span className="mr-0.5">{b.icon}</span>}{b.label}
+                          {b.icon && <Icon name={b.icon} size={10} decorative />}{b.label}
                         </span>
                       ))}
                       {overflow > 0 && (
                         <span
                           className="text-[8px] opacity-25 whitespace-nowrap"
                           style={{ color: era.color ?? ACID }}
-                          title={badges.slice(2).map(b => (b.icon ? b.icon + " " : "") + b.label).join(" · ")}
+                          title={badges.slice(2).map(b => b.label).join(" · ")}
                         >
                           +{overflow}
                         </span>
@@ -534,7 +534,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                   style={{ color: era.color ?? ACID }}
                   title="Editar entrada"
                 >
-                  ✎
+                  <Icon name="edit" size={14} decorative />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeleteEntry?.(entry.id); }}
@@ -542,7 +542,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                   style={{ color: "#ff3b3b" }}
                   title="Eliminar entrada"
                 >
-                  ✕
+                  <Icon name="close" size={14} decorative />
                 </button>
               </span>
             </motion.div>
@@ -783,8 +783,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <span style={{ color: accent }}>◈</span>
+          <div className="flex items-center gap-2">                      <Icon name="archive" size={14} decorative />
             <h2
               className="text-xs tracking-[0.35em] uppercase font-bold"
               style={{ color: accent }}
@@ -888,7 +887,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
         >
           <div className="flex items-center justify-between mb-3 px-1">
             <div className="flex items-center gap-2">
-              <span style={{ color: activeDisplayEra.color ?? ACID }}>◉</span>
+              <Icon name="target" size={14} decorative />
               <h2
                 className="text-xs tracking-[0.35em] uppercase font-bold"
                 style={{ color: activeDisplayEra.color ?? ACID }}
@@ -925,7 +924,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
               }}
               title={`${cat.label}${count > 0 ? ` (${count})` : ""}`}
             >
-              <span>{cat.icon}</span>
+              <Icon name={cat.icon} size={12} decorative />
               {count > 0 && (
                 <span className="text-[7px] opacity-60 tabular-nums" style={{ fontFamily: FONT_MONO }}>
                   {count}
@@ -1029,7 +1028,7 @@ export default function Vault({ db = null, onAddEra = () => {}, onOpenEra = () =
          transition={{ duration: 3, repeat: Infinity }}
          className="text-xs tracking-widest uppercase"
          style={{ color: accent }}
-       >       ◈ ENCRYPTED
+       ><Icon name="lock" size={14} decorative /> ENCRYPTED
        </motion.span>
      </div>
    </motion.footer>

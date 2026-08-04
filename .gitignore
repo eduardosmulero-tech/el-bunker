@@ -33,6 +33,7 @@ tools/*.bak_*
 tools/ingest_music.py
 tools/inject_tracks.py
 tools/*.txt
+tools/snapshots/
 
 # Temp / local state
 .tmp.driveupload/

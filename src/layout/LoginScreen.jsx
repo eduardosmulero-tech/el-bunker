@@ -5,9 +5,10 @@
 //  Estética: Terminal abandonado / Graffiti digital / CRT
 // ============================================================
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../tokens";
+import { Icon } from "../core/ui";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const RED     = "#ff3b3b";
@@ -21,12 +22,12 @@ const BOOT_LINES = [
   { text: "SCANNING MEMORY PARTITIONS...",       delay: 480,  color: ACID   },
   { text: "[!!] ANONYMOUS ACCESS DETECTED",      delay: 700,  color: RED    },
   { text: "DEPLOYING IDENTITY FIREWALL...",      delay: 900,  color: PURPLE },
-  { text: "VAULT INTEGRITY: VERIFIED ✓",         delay: 1150, color: ACID   },
+  { text: "VAULT INTEGRITY: VERIFIED",             delay: 1150, color: ACID   },
   { text: "AWAITING BIOMETRIC CONFIRMATION...",  delay: 1400, color: ACID   },
 ];
 
 // ─── GLITCH TEXT ─────────────────────────────────────────────
-const GLITCH_CHARS = "!@#$%^&*◈◉◎⧖⚡░▒▓█▄▀■□▪▫";
+const GLITCH_CHARS = "!@#$%^&*+-=<>[]{}";
 
 const useGlitch = (text, interval = 80, glitchDuration = 600) => {
   const [display, setDisplay] = useState(text);
@@ -169,17 +170,22 @@ const BootTerminal = ({ onComplete }) => {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    const timers = [];
     BOOT_LINES.forEach(({ text, delay, color }, i) => {
-      setTimeout(() => {
-        setVisibleLines((prev) => [...prev, { text, color, id: i }]);
+      timers.push(setTimeout(() => {
+        setVisibleLines((prev) => {
+          if (prev.some((line) => line.id === i)) return prev;
+          return [...prev, { text, color, id: i }];
+        });
         if (i === BOOT_LINES.length - 1) {
-          setTimeout(() => {
+          timers.push(setTimeout(() => {
             setDone(true);
             onComplete?.();
-          }, 500);
+          }, 500));
         }
-      }, delay);
+      }, delay));
     });
+    return () => timers.forEach(clearTimeout);
   }, [onComplete]);
 
   return (
@@ -302,7 +308,7 @@ const AccessButton = ({ onClick, loading, disabled }) => {
               className="text-lg"
               style={{ color: ACID }}
             >
-              ◈
+              <Icon name="archive" size={18} decorative />
             </motion.span>
             <span
               className="text-sm tracking-[0.35em] uppercase font-bold"
@@ -452,7 +458,7 @@ const AccessPanel = ({ onSubmit }) => {
           className="text-xs tracking-[0.3em] uppercase py-3 px-4 min-h-[44px] opacity-40"
           style={{ color: ACID, fontFamily: FONT }}
         >
-          ✕
+          <Icon name="close" size={14} decorative />
         </button>
       </div>
     </motion.form>
@@ -473,7 +479,7 @@ const ErrorBanner = ({ message }) => (
       textShadow: `0 0 8px ${RED}66`,
     }}
   >
-    ⚠ {message}
+    <Icon name="alert" size={14} decorative /> {message}
   </motion.div>
 );
 
@@ -490,6 +496,7 @@ const ErrorBanner = ({ message }) => (
 export default function LoginScreen({ onLogin, onAccessKeyLogin, isLoading = false, error = null }) {
   const [bootDone, setBootDone] = useState(false);
   const [showContent, setShowContent] = useState(false);
+  const handleBootComplete = useCallback(() => setBootDone(true), []);
 
   useEffect(() => {
     if (bootDone) {
@@ -541,7 +548,7 @@ export default function LoginScreen({ onLogin, onAccessKeyLogin, isLoading = fal
           transition={{ delay: 0.4, duration: 0.6 }}
         >
           <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${ACID}30)` }} />
-          <span className="text-xs tracking-widest" style={{ color: ACID, opacity: 0.3 }}>◈</span>
+          <Icon name="archive" size={14} decorative />
           <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, ${ACID}30, transparent)` }} />
         </motion.div>
 
@@ -552,7 +559,7 @@ export default function LoginScreen({ onLogin, onAccessKeyLogin, isLoading = fal
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <BootTerminal onComplete={() => setBootDone(true)} />
+          <BootTerminal onComplete={handleBootComplete} />
         </motion.div>
 
         {/* ══ CTA + Error ════════════════════════════════════════ */}

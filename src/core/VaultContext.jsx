@@ -1,6 +1,6 @@
 // ============================================================
 //  EL BÚNKER — VaultContext.jsx
-//  Global State Provider · Google Drive Sync · Heartbeat Engine
+//  Global State Provider · D1/R2 data · local heartbeat compatibility
 //  v3.0.0 — Multi-usuario · Bibliotecas · Alertas de capacidad
 // ============================================================
 
@@ -24,17 +24,25 @@ import {
   restoreToken,
   signOut,
   isAuthenticated,
+  getAccessToken,
   onAuthChange,
   resolveUser,
   isAuthorizedEmail,
-  listLibraryContents,
-  checkLibraryCapacity,
   _calcLibraryStatus,
   EMPTY_DB,
-} from "./GoogleDriveService";
+} from "./GoogleAuthService";
 import { setUploadToken } from "./FileUploadService";
 import { setStatsToken } from "./StatsEngine";
 import { workerClient } from "./WorkerClient";
+import { buildDbFromWorker } from "./WorkerDataService";
+import {
+  applyJwt as applySessionJwt,
+  clearSession,
+  persistAccessSession,
+  readAccessSession,
+  readStoredJwt,
+  setSessionKind as persistSessionKind,
+} from "./SessionBridge";
 
 // ─── WORKER API URL ─────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
@@ -119,11 +127,8 @@ export function VaultProvider({ children }) {
   const [masterVolume,  setMasterVolume]  = useState(80);
   const [bootError,     setBootError]     = useState(null);
   const [pendingDrop,   setPendingDrop]   = useState(null);
-  // JWT para Worker API (ADR-024) — persistido en localStorage
-  const [jwtToken,      setJwtToken]      = useState(() => {
-    try { return sessionStorage.getItem("bunker_jwt") || null; }
-    catch { return null; }
-  });
+  // JWT para Worker API (ADR-024) — persistido en sessionStorage
+  const [jwtToken,      setJwtToken]      = useState(() => readStoredJwt());
 
   // ADR-028: cómo se entró — Google o clave de acceso.
   const [sessionKind, setSessionKind] = useState(null);
@@ -210,10 +215,7 @@ export function VaultProvider({ children }) {
   const _setSessionKind = useCallback((kind) => {
     sessionKindRef.current = kind;
     setSessionKind(kind);
-    try {
-      if (kind) sessionStorage.setItem("bunker_session_kind", kind);
-      else sessionStorage.removeItem("bunker_session_kind");
-    } catch { /* modo privado */ }
+    persistSessionKind(kind);
   }, []);
 
   /** ¿Hay sesión? Google O clave. Se lee del ref: los callbacks tienen deps []. */
@@ -224,20 +226,17 @@ export function VaultProvider({ children }) {
 
   /** Aplica un JWT a todos los clientes que lo necesitan. */
   const _applyJwt = useCallback((token) => {
-    setJwtToken(token);
-    try { sessionStorage.setItem("bunker_jwt", token); } catch { /* modo privado */ }
-    workerClient.setToken(token);
-    setUploadToken(token);
-    setStatsToken(token);
+    applySessionJwt(token, {
+      setJwtToken,
+      workerClient,
+      setUploadToken,
+      setStatsToken,
+    });
   }, []);
 
   /** Guarda el usuario de la sesión y, si Edu lo pidió, la clave en este dispositivo. */
   const _persistAccessSession = useCallback((fullUser, keyToRemember) => {
-    try {
-      sessionStorage.setItem("bunker_user", JSON.stringify(fullUser));
-      if (keyToRemember) localStorage.setItem("bunker_access_key", keyToRemember);
-      else localStorage.removeItem("bunker_access_key");
-    } catch { /* modo privado */ }
+    persistAccessSession(fullUser, keyToRemember);
   }, []);
 
   // ── Step 1: Init Google Services on mount ─────────────────
@@ -317,62 +316,13 @@ export function VaultProvider({ children }) {
    * _buildDbFromWorker(token)
    * Construye el objeto db completo desde Worker API (D1).
    * Fetch en paralelo de entries, eras, tracks, tags, playlists, drops.
-   * Retorna null si falla (el caller usa Drive JSON como fallback).
+   * Retorna null si falla (el caller usa una DB vacía como fallback).
    */
   // S115-D3: usa workerClient singleton (token via setToken en _fetchJwt)
-  const _buildDbFromWorker = useCallback(async (_token) => {
-    if (!workerClient.hasToken()) return null;
-    try {
-      // S115-D3: migrar 7 fetches paralelos a WorkerClient.get()
-      const [entries, eras, tracks, tags, playlists, drops, files] = await Promise.all([
-        workerClient.get('/api/entries').catch(e => Promise.reject(`entries: ${e.message}`)),
-        workerClient.get('/api/eras').catch(e => Promise.reject(`eras: ${e.message}`)),
-        workerClient.get('/api/tracks').catch(e => Promise.reject(`tracks: ${e.message}`)),
-        workerClient.get('/api/tags').catch(e => Promise.reject(`tags: ${e.message}`)),
-        workerClient.get('/api/playlists').catch(e => Promise.reject(`playlists: ${e.message}`)),
-        workerClient.get('/api/drops').catch(e => Promise.reject(`drops: ${e.message}`)),
-        workerClient.get('/api/files').catch((e) => { console.warn("[Búnker] /api/files failed (non-fatal):", e); return []; }),
-      ]);
-      const safeParse = (v) => {
-        if (typeof v !== "string") return v;
-        try { return JSON.parse(v); } catch { return v; }
-      };
-      const parsedEntries = (entries || []).map((e) => ({
-        ...e,
-        content: safeParse(e.content),
-        // S64 audit: mapear from_user→from, to_user→to para compatibilidad frontend
-        from: e.from_user || e.from,
-        to: e.to_user || e.to,
-      }));
-      // S130-B: fetch app_config desde D1 para adventures_start_date real
-      const appConfig = await workerClient.get('/api/config').catch(() => null);
-      const realAdventureDate = appConfig?.adventures_start_date || DEFAULT_ADVENTURE_DATE;
-
-      console.info("[Búnker] Worker DB built:", { entries: entries.length, eras: eras.length, tracks: tracks.length, tags: tags.length, playlists: playlists.length, drops: drops.length, files: files.length });
-      return {
-        entries: parsedEntries,
-        eras: eras || [],
-        music_lab: {
-          tracks: tracks || [],
-          tags: tags || [],
-          playlists: playlists || [],
-          // S64 audit: mapear from_user→from, to_user→to en drops
-          drops: (drops || []).map(d => ({ ...d, from: d.from_user || d.from, to: d.to_user || d.to })),
-        },
-        // S64 audit: añadir files al export (top-level, junto a entries/eras).
-        // Antes faltaba — el JSON de backup nunca capturó file metadata de R2.
-        files: files || [],
-        libraries: [],
-        schema_version: "5.0.0",
-        heartbeat: new Date().toISOString(),
-        // S130-B: usar fecha real desde D1 en vez del hardcoded 500d
-        adventures_start_date: realAdventureDate,
-      };
-    } catch (e) {
-      console.warn("[Búnker] Worker DB build failed:", e);
-      return null;
-    }
-  }, []);
+  const _buildDbFromWorker = useCallback(
+    (_token) => buildDbFromWorker(workerClient, DEFAULT_ADVENTURE_DATE),
+    [],
+  );
 
   /**
    * _completeSession(fullUser, jwt)
@@ -408,11 +358,9 @@ export function VaultProvider({ children }) {
   // _loadDriveComplement ELIMINADO (S115-D5) — D1 es source of truth única.
 
   // ── S116: Restaurar JWT de sessionStorage al montar ───────
+  // SessionBridge tolera navegadores privados o storage bloqueado.
   useEffect(() => {
-    const saved = (() => {
-      try { return sessionStorage.getItem("bunker_jwt") || null; }
-      catch { return null; }
-    })();
+    const saved = readStoredJwt();
     if (saved) {
       // También inicializar WorkerClient si hay token previo
       workerClient.setToken(saved);
@@ -425,7 +373,7 @@ export function VaultProvider({ children }) {
   // WorkerClient dispara 'bunker_jwt_expired' cuando recibe 401 del Worker.
   // Esto ocurre en PWAs abiertas días sin recarga: JWT_EXPIRY (24h) se cumple
   // y sessionStorage retiene el token inválido. Si Google sigue vivo
-  // (window.gapi), intentamos re-autenticar silenciosamente y todo vuelve a
+  // (token OAuth en memoria), intentamos re-autenticar silenciosamente y todo vuelve a
   // postear (StatsEngine, drops, entries). Si Google también murió,
   // dejamos que el usuario recargue manualmente.
   useEffect(() => {
@@ -438,6 +386,7 @@ export function VaultProvider({ children }) {
 
       // ADR-028: sesión por clave — re-canjear si Edu la recordó; si no, volver al login.
       if (sessionKindRef.current === "access_key") {
+        // La clave solo existe en localStorage si el usuario eligió recordarla.
         let savedKey = null;
         try { savedKey = localStorage.getItem("bunker_access_key"); } catch { /* modo privado */ }
         if (savedKey) {
@@ -451,7 +400,7 @@ export function VaultProvider({ children }) {
         return;
       }
 
-      const googleToken = window.gapi?.client?.getToken?.()?.access_token;
+      const googleToken = getAccessToken();
       if (!user?.email || !googleToken) {
         console.warn("[Búnker] JWT expirado sin Google token — recarga manual necesaria");
         return;
@@ -490,7 +439,7 @@ export function VaultProvider({ children }) {
       };
 
       // Obtener JWT del Worker API
-      const googleToken = token ?? window.gapi?.client?.getToken?.()?.access_token;
+      const googleToken = token ?? getAccessToken();
       let jwt = jwtToken;
       if (googleToken && fullUser.email) {
         jwt = await _fetchJwt(fullUser.email, googleToken) || jwt;
@@ -516,15 +465,8 @@ export function VaultProvider({ children }) {
     setUser(null);
     setDb(null);
     setJwtToken(null);
-    sessionStorage.removeItem("bunker_jwt");   // S116: sessionStorage
     _setSessionKind(null);
-    try {
-      sessionStorage.removeItem("bunker_user");
-      localStorage.removeItem("bunker_access_key");
-    } catch { /* modo privado */ }
-    workerClient.clearToken();
-    setUploadToken(null);
-    setStatsToken(null);
+    clearSession({ workerClient, setUploadToken, setStatsToken });
     setDbStatus("OFFLINE");
     setLastHeartbeat(null);
     setLibraryCapacity({});
@@ -536,7 +478,7 @@ export function VaultProvider({ children }) {
   // ── Google profile helper ─────────────────────────────────
   const _fetchGoogleProfile = async (accessToken) => {
     try {
-      const token = accessToken ?? window.gapi?.client?.getToken?.()?.access_token;
+      const token = accessToken ?? getAccessToken();
       if (!token) throw new Error("No hay token disponible");
 
       // Usar oauth2 userinfo (solo necesita scopes userinfo.email + userinfo.profile)
@@ -641,13 +583,12 @@ export function VaultProvider({ children }) {
    * initGoogleServices() manda la app a ERROR y no llegaríamos a ofrecer nada.
    */
   const _tryRestoreAccessSession = useCallback(async () => {
-    let savedJwt = null, savedUser = null, savedKind = null, savedKey = null;
-    try {
-      savedJwt  = sessionStorage.getItem("bunker_jwt");
-      savedKind = sessionStorage.getItem("bunker_session_kind");
-      savedUser = JSON.parse(sessionStorage.getItem("bunker_user") || "null");
-      savedKey  = localStorage.getItem("bunker_access_key");
-    } catch { /* modo privado */ }
+    const {
+      jwt: savedJwt,
+      kind: savedKind,
+      user: savedUser,
+      key: savedKey,
+    } = readAccessSession();
 
     if (savedKind === "access_key" && savedJwt && savedUser) {
       _applyJwt(savedJwt);
@@ -750,13 +691,6 @@ export function VaultProvider({ children }) {
       ...prev,
       libraries: [...(prev?.libraries ?? []), newLib],
     }));
-    // L1: refrescar capacidad de la nueva biblioteca (Drive read-only)
-    try {
-      const info = await checkLibraryCapacity(newLib);
-      setLibraryCapacity((prev) => ({ ...prev, [newLib.id]: info }));
-    } catch (e) {
-      console.warn("[Búnker] Capacity check for new library failed:", e);
-    }
     return newLib;
   }, []);
 
@@ -806,37 +740,16 @@ export function VaultProvider({ children }) {
   }, []);
 
   /**
-   * getLibraryContents(sharedFolderId)
-   * Lista los archivos de una carpeta compartida.
+   * Library capacity is no longer read from Drive. Keep a compatibility
+   * action that reports the retired boundary instead of making a hidden
+   * network call or presenting stale capacity as authoritative data.
    */
-  const getLibraryContents = useCallback(
-    (sharedFolderId) => listLibraryContents(sharedFolderId),
-    []
-  );
+  const getLibraryContents = useCallback(async () => {
+    throw new Error("Library contents are no longer read from Google Drive; use D1/R2 files.");
+  }, []);
 
-  /**
-   * refreshLibraryCapacity(library)
-   * Calcula el uso actual de una biblioteca y actualiza el cache.
-   * Llama a Drive API — úsalo con moderación.
-   *
-   * @param {{ id, shared_folder_id, capacity_gb }} library
-   * @returns {Promise<{ used_gb, used_pct, near_full, file_count }>}
-   */
-  const refreshLibraryCapacity = useCallback(async (library) => {
-    const info = await checkLibraryCapacity(library);
-    setLibraryCapacity((prev) => ({ ...prev, [library.id]: info }));
-
-    // Si la biblioteca está casi llena, actualizamos su status a "full" localmente
-    if (info.used_pct >= 100) {
-      setDb((prev) => ({
-        ...prev,
-        libraries: (prev?.libraries ?? []).map((l) =>
-          l.id === library.id ? { ...l, status: "full" } : l
-        ),
-      }));
-    }
-
-    return info;
+  const refreshLibraryCapacity = useCallback(async () => {
+    throw new Error("Library capacity is no longer read from Google Drive; use D1/R2 metadata.");
   }, []);
 
   // ── S65: VAULT entry edit/delete via Worker API ──────────
@@ -959,8 +872,7 @@ export function VaultProvider({ children }) {
       }
     }, [patchDb]),
 
-    // Servicio raw para usos avanzados
-    // S115-D4: GoogleDriveService reducido a solo OAuth + bibliotecas
+    // Google OAuth is isolated in GoogleAuthService; persistence is Worker/D1/R2.
   };
 
   return (

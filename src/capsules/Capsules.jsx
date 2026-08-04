@@ -11,16 +11,17 @@ import { ACID, FONT_MONO } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { useToast } from "../core/ToastContext";
+import { Icon } from "../core/ui";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
 import Recaps from "./Recaps";
 
 const SUB_TABS = [
-  { id: "timeline",      label: "TIMELINE",      icon: "◎" },
-  { id: "smoke",         label: "SMOKE",          icon: "⧖" },
-  { id: "timecapsules",  label: "TIME CAPSULES",  icon: "🔮" },
-  { id: "recap",         label: "RECAP",           icon: "📊" },
+  { id: "timeline",      label: "TIMELINE",      icon: "clock" },
+  { id: "smoke",         label: "SMOKE",          icon: "timer" },
+  { id: "timecapsules",  label: "TIME CAPSULES",  icon: "lock" },
+  { id: "recap",         label: "RECAP",           icon: "analytics" },
 ];
 
 export default function Capsules({ db: _db, userId: _userId, activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
@@ -69,7 +70,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
   }, [toast]);
 
   return (
-    <div className="px-4 py-6 max-w-md mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="w-full px-4 py-6 max-w-md lg:max-w-6xl mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       {null}
       {/* Sub-tab bar — swipeable en móvil, sin scrollbar */}
       <nav
@@ -96,7 +97,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
                 minHeight: 44,
               }}
             >
-              {t.icon} {t.label}
+              <Icon name={t.icon} size={14} label={t.label} /> {t.label}
             </motion.button>
           );
         })}
@@ -121,7 +122,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       {/* Error feedback — G4: vibe-aware */}
       {fetchError && !loadingEvents && (
         <div className="py-2 px-3 text-xs opacity-40 text-center" style={{ color: accent, fontFamily: FONT_MONO }}>
-          ⚠ {fetchError}
+          <Icon name="alert" size={14} label="Error" /> {fetchError}
         </div>
       )}
 
@@ -138,7 +139,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
           {subTab === "smoke" && (
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 px-1">
-                <span style={{ color: accent }}>⧖</span>
+                <Icon name="timer" size={16} label="Sesión especial" />
                 <h2 className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accent }}>
                   SESIÓN ESPECIAL
                 </h2>

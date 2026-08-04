@@ -5,6 +5,7 @@ import { ACID, BG, PURPLE, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";
+import { Icon } from "../core/ui";
 
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
@@ -420,10 +421,10 @@ return () => cancelAnimationFrame(raf);
           </span>
           {syncStatus === "syncing" && (
             <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 0.9, repeat: Infinity }}
-              className="text-xs" style={{ color: "#ffcc00", marginLeft: 2 }} title="Sincronizando cola...">◌</motion.span>
+              className="text-xs" style={{ color: "#ffcc00", marginLeft: 2 }} title="Sincronizando cola..."><Icon name="circle" size={12} decorative /></motion.span>
           )}
           {syncStatus === "error" && (
-            <span className="text-xs" style={{ color: "#ff4444" }} title="Error guardando cola">✕</span>
+            <span className="text-xs" style={{ color: "#ff4444" }} title="Error guardando cola"><Icon name="close" size={12} decorative /></span>
           )}
         </div>
 
@@ -494,7 +495,13 @@ return () => cancelAnimationFrame(raf);
                 color: sessionId ? "#ff2d55" : partnerListening ? partnerColor : withAlpha(accentColor, 0.35),
               }}
             >
-              {sessionId || partnerListening ? "♥" : "♡"}
+              <Icon
+                name="heart"
+                size={16}
+                strokeWidth={sessionId ? 2.5 : partnerListening ? 2 : 1.4}
+                fill={sessionId || partnerListening ? "currentColor" : "none"}
+                decorative
+              />
             </motion.span>
 
             {/* Bocadillo Pokémon "!" con boquilla */}
@@ -576,16 +583,16 @@ return () => cancelAnimationFrame(raf);
               }}
             >
               {castState === "connecting" ? (
-                <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>◌</motion.span>
+                <motion.span animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 0.8, repeat: Infinity }}><Icon name="circle" size={12} decorative /></motion.span>
               ) : (
-                <span>{isCasting ? "◼" : "◉"}</span>
+                <span><Icon name={isCasting ? "pause" : "target"} size={13} decorative /></span>
               )}
               <span>{isCasting ? (castDeviceName ?? "CAST") : "CAST"}</span>
             </motion.button>
           )}
           <span className="text-xs tracking-widest uppercase px-2 py-0.5 rounded-sm"
             style={{ color: accentColor, background: withAlpha(accentColor, 0.08), border: `1px solid ${withAlpha(accentColor, 0.2)}` }}>
-            {vibeConf?.icon} {vibeConf?.label}
+            <Icon name={vibeConf?.icon} size={13} decorative /> {vibeConf?.label}
           </span>
         </div>
       </div>
@@ -623,7 +630,7 @@ return () => cancelAnimationFrame(raf);
               return (
                 <div className="absolute inset-0 flex items-center justify-center" style={{ background: `radial-gradient(ellipse at center, ${accentColor}10, transparent 70%)` }}>
                   <span style={{ color: accentColor, opacity: 0.08, fontSize: 72, textShadow: `0 0 60px ${accentColor}22` }}>
-                    {vibeConf?.icon || "◎"}
+                    <Icon name={vibeConf?.icon || "circle"} size={72} decorative />
                   </span>
                 </div>
               );
@@ -641,7 +648,7 @@ return () => cancelAnimationFrame(raf);
             className="text-sm font-bold inline-block"
             style={{ color: accentColor, textShadow: `0 0 10px ${withAlpha(accentColor, 0.4)}` }}
           >
-            {track ? `${track.title} — ${track.artist}` : "◈ SELECT A TRACK ◈"}
+            {track ? `${track.title} — ${track.artist}` : "SELECT A TRACK"}
           </motion.p>
         </div>
         {track?.note && (
@@ -682,14 +689,14 @@ return () => cancelAnimationFrame(raf);
       <div className="flex items-center justify-center gap-2.5 px-3 pt-3"
         style={{ background: "#0a0a0a", borderTop: `1px solid ${withAlpha(accentColor, 0.13)}` }}>
         <WinampBtn
-          label={liked ? "♥" : "♡"}
+          label={<Icon name="heart" size={16} decorative />}
           active={liked}
           color={"#ff2d55"}
           onClick={() => { const next = !liked; setLiked(next); setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS"); }}
           title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
           aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
         />
-        <WinampBtn label="◀◀" color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" />
+        <WinampBtn label={<Icon name="arrowLeft" size={16} decorative />} color={accentColor} onClick={() => skipDir(-1)} title="Prev" aria-label="Anterior" />
         <motion.button whileTap={{ scale: 0.9 }} onClick={togglePlay}
           className="rounded-sm flex items-center justify-center text-lg font-bold transition-all"
           style={{ width: 52, height: 52, background: withAlpha(accentColor, 0.13), border: `2px solid ${withAlpha(accentColor, 0.4)}`, color: accentColor,
@@ -697,7 +704,7 @@ return () => cancelAnimationFrame(raf);
           aria-label={playing ? "Pausar" : "Reproducir"}>
           {playing ? <Pause size={20} color={accentColor} strokeWidth={2.5} /> : <Play size={20} color={accentColor} strokeWidth={2.5} fill={accentColor} />}
         </motion.button>
-        <WinampBtn label="▶▶" color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" />
+        <WinampBtn label={<Icon name="arrowRight" size={16} decorative />} color={accentColor} onClick={() => skipDir(1)} title="Next" aria-label="Siguiente" />
         {track && (
           <motion.button
             whileTap={{ scale: 0.85 }}
@@ -722,18 +729,18 @@ return () => cancelAnimationFrame(raf);
       <div className="relative flex items-center justify-center gap-2 px-3 pb-3 pt-2">
         <WinampBtn
           size="sm"
-          label={loopMode === "track" ? "⟳¹" : "⟳"}
+          label={<Icon name="refresh" size={14} decorative />}
           active={loopMode !== "off"}
           color={accentColor}
           onClick={toggleLoopMode}
           title={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
           aria-label={loopMode === "off" ? "Loop: off" : loopMode === "list" ? "Loop: lista" : "Loop: track"}
         />
-        <WinampBtn size="sm" label="⇄" active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
+        <WinampBtn size="sm" label={<Icon name="shuffle" size={14} decorative />} active={shuffle} color={accentColor} onClick={() => setShuffle((p) => !p)} title="Shuffle" aria-label="Shuffle" />
         {track && (
-          <WinampBtn size="sm" label="⚡" color={PURPLE} fullColor onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
+          <WinampBtn size="sm" label={<Icon name="zap" size={14} decorative />} color={PURPLE} fullColor onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
         )}
-        <WinampBtn size="sm" label="🔊" active={showVolume} color={accentColor} onClick={() => setShowVolume((p) => !p)} title="Volumen" aria-label="Volumen" />
+        <WinampBtn size="sm" label={<Icon name="music" size={14} decorative />} active={showVolume} color={accentColor} onClick={() => setShowVolume((p) => !p)} title="Volumen" aria-label="Volumen" />
 
         <AnimatePresence>
           {showVolume && (
@@ -748,7 +755,7 @@ return () => cancelAnimationFrame(raf);
                 className="absolute bottom-full right-3 mb-2 px-3 py-2.5 rounded-sm flex items-center gap-2 z-20"
                 style={{ background: "#0a0a0a", border: `1px solid ${withAlpha(accentColor, 0.3)}`, boxShadow: `0 0 16px ${withAlpha(accentColor, 0.2)}` }}
               >
-                <span className="text-xs opacity-40" style={{ color: accentColor }}>🔊</span>
+                <Icon name="music" size={13} decorative />
                 <input type="range" min={0} max={100} value={volume}
                   onChange={(e) => changeVolume(Number(e.target.value))}
                   className="w-24 h-1.5 appearance-none cursor-pointer rounded-full"
@@ -759,7 +766,7 @@ return () => cancelAnimationFrame(raf);
         </AnimatePresence>
       </div>
 
-      {/* PLIEGO-230: ⚡ LANZAR DROP movido a la botonera central (entre ▶▶ y ⊕).
+      {/* PLIEGO-230: LANZAR DROP movido a la botonera central (entre avance y añadir).
           El botón full-width separado se eliminó para consolidar la UX. */}
 
       {/* Phase 2.1: Toast efímero al tocar ♡/♥ — confirma que el tap registró */}

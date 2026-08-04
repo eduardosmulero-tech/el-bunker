@@ -13,6 +13,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER, R2_PUBLIC_BASE } from "../tokens";
+import { Icon } from "../core/ui";
 import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
@@ -262,7 +263,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor 
               className="flex items-center justify-center text-3xl opacity-25"
               style={{ minHeight: config.columns === 4 ? 70 : config.columns === 2 ? 200 : 130, color: ac }}
             >
-              📷
+              <Icon name="camera" size={32} label="Sin imagen" />
             </div>
           )}
 
@@ -309,14 +310,14 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor 
               className="text-[8px] px-1 py-0.5 rounded-sm opacity-70"
               style={{ background: "rgba(0,0,0,0.55)", color: ac, fontFamily: FONT_MONO }}
             >
-              {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"}
+              <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative />
             </span>
           </div>
 
           {entry.is_capsule_locked && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
               style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}>
-              <span className="text-lg" style={{ color: ac, opacity: 0.6 }}>⧖</span>
+              <span className="text-lg" style={{ color: ac, opacity: 0.6 }}><Icon name="timer" size={20} label="Cápsula bloqueada" /></span>
             </div>
           )}
 
@@ -378,7 +379,7 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
           </span>
         )}
         <span className="text-[9px] px-1 py-0.5 rounded-sm opacity-60" style={{ background: `${ac}15`, color: ac }}>
-          {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+          <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative /> {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
         </span>
         <span className="text-xs opacity-30 ml-auto" style={{ color: ac }}>
           {dateStr}
@@ -390,7 +391,7 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
           <img src={imgUrl} alt={entry.title || ""} className="w-full object-cover" style={{ maxHeight: 180 }} loading="lazy" decoding="async" />
         </div>
       ) : (
-        <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ac }}>📷</div>
+        <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ac }}><Icon name="camera" size={36} label="Sin imagen" /></div>
       )}
 
       <p className="text-xs font-bold truncate" style={{ color: ac }}>{entry.title || "Sin título"}</p>

@@ -29,7 +29,8 @@
 **Enmienda S49:** Migración a Cloudflare D1 (SQL) para la base de datos y R2 para archivos. Google Drive JSON deprecado como DB. Workers como thin REST layer. Sin servidores propios.
 
 ### ✅ ADR-002 — Colas de reproducción por usuario
-Archivos separados `queue_[userId].json` en Drive. Migrarán a tabla `queue_items` en D1 cuando se ejecute ADR-024.
+**Histórico:** los archivos separados `queue_[userId].json` existían en Drive.
+**Vigente:** la cola usa `queue_items` en D1 mediante Worker API. No se crea ni actualiza JSON de cola en Drive.
 
 ### ⛔ ADR-003 — Arquitectura de tracks (REVERTIDO — S28)
 Tipos `youtube` / `drive` eliminados. Ver ADR-010.
@@ -38,9 +39,10 @@ Tipos `youtube` / `drive` eliminados. Ver ADR-010.
 Estado centralizado en `PlayerContext.jsx`.
 **Enmiendas:** S21 (Audio instanciado en PlayerProvider), S24 (Progreso es local UI), S26 (Protección `mountedRef`), S28 (`trackVibe` ADR-011).
 
-### ✅ ADR-005 — Schema v4.0.0 → v5.0.0 (ENMENDADO S49)
+### ✅ ADR-005 — Schema v4.0.0 → v5.0.0 (ENMENDADO S49 y G3-1)
 **Original:** Campos de track en JSON de Drive.
-**Enmienda S49:** Schema v5.0.0 vigente en Drive JSON durante la transición. El schema definitivo será D1 con tablas normalizadas (ver ADR-024). Hasta la migración completa, el JSON de Drive sigue siendo la fuente de verdad para la BD.
+**Histórico S49:** el JSON de Drive fue fuente de transición.
+**Enmienda G3-1 vigente:** D1 es la fuente única de datos normalizados y R2 la de archivos; el JSON de Drive no es fuente de verdad ni se consulta para persistencia.
 
 ### ✅ ADR-006 — Solo 3 usuarios autorizados
 Whitelist en `CONFIG.USERS`. Edu, David, Admin. Sin registro público.
@@ -72,8 +74,9 @@ PUT binario directo a R2 por CORS. Aplica a MP3, fotos, vídeos, docs.
 ### ✅ ADR-015 — Directivas Anti-Fricción para Pliegos
 Prohibida la micro-edición. Todo bloque `SEARCH` debe abarcar el contenedor lógico completo.
 
-### ✅ ADR-016 — Schema 5.0.0: music_lab.tags en Drive
-Tags personalizables en `music_lab.tags[]`. `"all"` es filtro UI. Tags de sistema `created_by: "system"`.
+### ✅ ADR-016 — Schema 5.0.0: music_lab.tags (histórico Drive, vigente D1)
+**Histórico:** tags personalizables en `music_lab.tags[]` dentro del JSON Drive.
+**Vigente G3-1:** tags de música viven en D1 `tags` con namespace `music`; tags de contexto usan `entry_tags`. `"all"` es filtro UI y tags de sistema conservan `created_by: "system"`.
 
 ### ✅ ADR-017 — Arquitectura de tabs: 3 tabs definitivos (NUEVO S49)
 ```
@@ -120,12 +123,12 @@ Consumido por MusicLab y VAULT. Sin uploaders duplicados.
 ### ✅ ADR-023 — Namespaces de tags separados (NUEVO S49)
 `music_lab.tags[]` (tags de vibe: dnb, romantiqueo, gaming, 420_chill) y `vault.tags[]` (tags de contexto: viaje, playa, barcelona). Mismo componente TagManager UI, distinta fuente de datos. Sin contaminación cruzada.
 
-### ✅ ADR-024 — Migración a D1 + Workers + R2 (NUEVO S49)
-Stack de persistencia definitivo:
+### ✅ ADR-024 — Migración a D1 + Workers + R2 (NUEVO S49, cerrado G3-1)
+Stack de persistencia vigente:
 - **DB:** Cloudflare D1 (SQLite-compatible, sin servidor)
 - **Archivos:** Cloudflare R2 (objetos, byte-range requests nativo)
 - **API:** Cloudflare Workers (thin REST layer con binding nativo a D1 y R2)
-Google Drive JSON deprecado como base de datos. Se mantiene solo el JSON durante la transición.
+Google Drive JSON está deprecado y no se usa como base de datos. El facade legacy no realiza lecturas/escrituras Drive; Google Identity Services queda limitado a autenticación.
 
 ### ✅ ADR-025 — Google OAuth2 para auth (ENMENDADO S150)
 **Original (S49):** Google OAuth2 se mantiene exclusivamente como método de autenticación. No se usa Google Drive para almacenar datos ni archivos. Hasta decidir un método de auth definitivo, Google es suficiente para 3 usuarios con whitelist.
@@ -137,11 +140,9 @@ Los resúmenes (semanales, mensuales, anuales) no son infraestructura de stats �
 ### ✅ ADR-027 — DIALOGUE: perspectiva dual en galería (NUEVO S49)
 Modo de galería que intercala las fotos de Edu y David como una conversación visual. Fotos con <5min de diferencia se emparejan con conector visual. Asimetría (un usuario sin fotos en un período) se maneja con eco visual poético, sin vacío ni culpa.
 
-### ✅ ADR-028 — Acceso por clave para test y admin (NUEVO S150)
-> Decisión aprobada por Edu el 2-ago-2026. **Implementación pendiente** —
-> spec: `docs/spec/SPEC_ACCESO_TEST_ADMIN_2026-08-02.md` ·
-> plan: `docs/planes/PLAN_ACCESO_TEST_ADMIN_2026-08-02.md` ·
-> contrato origen: `docs/operacional/CONTRATO_ACCESO_TEST_ADMIN_2026-08-02.md`.
+### ✅ ADR-028 — Acceso por clave para test y admin (NUEVO S150, implementado G3-1)
+> Decisión aprobada por Edu el 2-ago-2026. Implementación desplegada y verificada; contrato, spec y plan históricos se conservan como trazabilidad.
+> Evidencia operativa: `docs/operacional/ACCESO_TEST_ADMIN.md` y `docs/Nucleo/ESTADO.md`.
 
 Además del login de Google, el worker acepta canjear una **clave de acceso** de alta entropía por el mismo JWT: `POST /api/auth/token`. Cada clave es un secret del worker atado a un usuario de la whitelist (ADR-006): `ADMIN_ACCESS_KEY`→`admin`, `EDU_ACCESS_KEY`→`edu`. **No hay clave para David** — su flujo por Google no se toca.
 

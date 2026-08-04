@@ -1,0 +1,162 @@
+import {
+  AlertTriangle,
+  Archive,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BarChart3,
+  Bell,
+  BookOpen,
+  CalendarDays,
+  Camera,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  CircleHelp,
+  CircleUserRound,
+  Clock3,
+  CloudOff,
+  Compass,
+  FileText,
+  Film,
+  Grid2X2,
+  Heart,
+  Image,
+  KeyRound,
+  LockKeyhole,
+  Mail,
+  MapPin,
+  Menu,
+  Mic,
+  MoreHorizontal,
+  Music2,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Send,
+  Settings,
+  Shuffle,
+  ShieldAlert,
+  Sparkles,
+  Star,
+  Tag,
+  Timer,
+  Trash2,
+  Unlock,
+  Upload,
+  Video,
+  X,
+  Zap,
+  Target,
+} from "lucide-react";
+
+const ICONS = {
+  alert: AlertTriangle,
+  archive: Archive,
+  arrowDown: ArrowDown,
+  arrowLeft: ArrowLeft,
+  arrowRight: ArrowRight,
+  arrowUp: ArrowUp,
+  analytics: BarChart3,
+  bell: Bell,
+  book: BookOpen,
+  calendar: CalendarDays,
+  camera: Camera,
+  circle: Circle,
+  check: Check,
+  chevronDown: ChevronDown,
+  chevronLeft: ChevronLeft,
+  chevronRight: ChevronRight,
+  help: CircleHelp,
+  user: CircleUserRound,
+  clock: Clock3,
+  offline: CloudOff,
+  compass: Compass,
+  document: FileText,
+  film: Film,
+  grid: Grid2X2,
+  heart: Heart,
+  image: Image,
+  key: KeyRound,
+  lock: LockKeyhole,
+  mail: Mail,
+  map: MapPin,
+  menu: Menu,
+  mic: Mic,
+  more: MoreHorizontal,
+  music: Music2,
+  pause: Pause,
+  edit: Pencil,
+  play: Play,
+  plus: Plus,
+  refresh: RefreshCw,
+  reset: RotateCcw,
+  search: Search,
+  send: Send,
+  settings: Settings,
+  shuffle: Shuffle,
+  shield: ShieldAlert,
+  sparkles: Sparkles,
+  star: Star,
+  tag: Tag,
+  timer: Timer,
+  trash: Trash2,
+  unlock: Unlock,
+  upload: Upload,
+  video: Video,
+  close: X,
+  zap: Zap,
+  target: Target,
+};
+
+const LEGACY_ICON_NAMES = {
+  "◎": "circle", "◈": "archive", "◉": "target", "⧖": "timer", "⏳": "timer",
+  "▶": "play", "▷": "play", "▶▶": "arrowRight", "◀◀": "arrowLeft", "⏸": "pause", "⏭": "arrowRight", "◀": "arrowLeft", "◁": "arrowLeft",
+  "✎": "edit", "✕": "close", "✓": "check", "♥": "heart", "♡": "heart", "⚠": "alert",
+  "⚠️": "alert", "↺": "reset", "↻": "refresh", "⌕": "search", "⊞": "plus", "◆": "star",
+  "◇": "star", "♫": "music", "♪": "music", "☰": "menu", "❒": "archive", "⇅": "arrowUp",
+  "▾": "chevronDown", "▴": "arrowUp", "→": "arrowRight", "←": "arrowLeft", "↔": "arrowRight", "⇄": "arrowRight", "⟳": "refresh", "⟳¹": "refresh", "◼": "pause", "🔊": "music", "💿": "music", "⠿": "more",
+  "⌁": "more", "⚡": "zap", "◌": "circle", "☀": "sparkles", "👤": "user",
+  "📷": "camera", "🎬": "film", "🎙": "mic", "🎞": "film", "📱": "image", "📋": "document", "🏛️": "archive", "🔄": "refresh", "💚": "heart", "🎭": "sparkles",
+  "📖": "book", "🔒": "lock", "🙏": "heart", "🌙": "sparkles", "😂": "sparkles", "📧": "mail", "📚": "book", "🍳": "archive", "🪣": "archive", "🎁": "archive",
+  "🏷": "tag", "⚖": "document", "🏥": "document", "💰": "analytics", "💼": "document",
+  "🎓": "book", "🔐": "shield", "📜": "document", "📍": "map", "✈": "compass", "🕊": "heart", "🧠": "analytics", "🧭": "compass", "💝": "heart",
+  "🗺": "map", "⭐": "star", "🔁": "refresh", "⏱": "timer", "🔮": "sparkles",
+  "📊": "analytics", "🎨": "sparkles", "🌈": "sparkles", "🎵": "music", "🖼": "image",
+  "💵": "analytics", "🎯": "target", "📆": "calendar", "🛒": "archive", "🕯": "sparkles",
+  "🎉": "sparkles", "💍": "heart", "🎄": "calendar", "🆘": "alert", "📝": "edit",
+  "🔏": "lock", "🔑": "key", "🔥": "zap", "🌡": "analytics", "📈": "analytics",
+  "🔗": "send", "🎧": "music", "💬": "mail", "🛠": "settings", "📄": "document", "🧾": "document", "🌿": "sparkles", "〰": "more",
+  "📅": "calendar", "🌟": "star", "📔": "book", "🏆": "star", "✨": "sparkles",
+  "📦": "archive", "🔓": "unlock",
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function resolveIconName(name) {
+  return ICONS[name] ? name : LEGACY_ICON_NAMES[name] ?? null;
+}
+
+export default function Icon({ name, size = 16, strokeWidth = 1.8, fill = "none", label, decorative = false, className = "" }) {
+  const resolved = resolveIconName(name);
+  const Component = ICONS[resolved] || CircleHelp;
+  return (
+    <Component
+      size={size}
+      strokeWidth={strokeWidth}
+      fill={fill}
+      className={className}
+      aria-label={decorative ? undefined : label}
+      aria-hidden={decorative || !label ? true : undefined}
+      focusable="false"
+    />
+  );
+}
+
+export { ICONS, LEGACY_ICON_NAMES };

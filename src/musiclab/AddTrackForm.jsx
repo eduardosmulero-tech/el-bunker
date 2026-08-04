@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID } from "../tokens";
-import { Input } from "../core/ui";
+import { Icon, Input } from "../core/ui";
 // S90 EC-TR6: extraer metadatos ID3 al seleccionar MP3
 import jsmediatags from "jsmediatags";
 
@@ -38,7 +38,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
       style={{ background: GLASS_BG, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }}
     >
       <p className="text-xs tracking-[0.3em] uppercase font-bold mb-4" style={{ color: ACID }}>
-        {initialData ? "✎ EDITAR TRACK" : "◈ AÑADIR TRACK"}
+        <Icon name={initialData ? "edit" : "archive"} size={14} decorative /> {initialData ? "EDITAR TRACK" : "AÑADIR TRACK"}
       </p>
 
       <div className="flex flex-col gap-3">
@@ -73,7 +73,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
                   className="text-xs px-3 py-3 rounded-sm"
                   style={{ color: "#ff4444", border: "1px solid #ff444433", background: "#ff444408", fontFamily: FONT_MONO }}
                 >
-                  ✕
+                  <Icon name="close" size={14} decorative />
                 </motion.button>
               )}
             </div>
@@ -121,7 +121,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
                   border: `1px solid ${form.tag === vibe.id ? vibe.color + "55" : vibe.color + "22"}`,
                 }}
               >
-                {vibe.icon} {vibe.label}
+                <Icon name={vibe.icon} size={14} decorative /> {vibe.label}
               </motion.button>
             ))}
           </div>
@@ -142,7 +142,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
             cursor:      form.tag ? "pointer" : "not-allowed",
           }}
         >
-          {initialData ? "✎ GUARDAR" : (selectedFile ? "+ AÑADIR CON MP3" : "+ AÑADIR")}
+          <Icon name={initialData ? "edit" : "plus"} size={14} decorative /> {initialData ? "GUARDAR" : (selectedFile ? "AÑADIR CON MP3" : "AÑADIR")}
         </motion.button>
         <motion.button
           whileTap={{ scale: 0.95 }} onClick={onClose}

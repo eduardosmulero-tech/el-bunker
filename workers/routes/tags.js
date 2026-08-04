@@ -4,6 +4,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { isAdmin } from "../utils/authorization.js";
 
 export default async function handleTags(request, env, url, userId) {
   const method = request.method;
@@ -57,7 +58,16 @@ export default async function handleTags(request, env, url, userId) {
   if (method === "DELETE" && path.startsWith("/api/tags/")) {
     if (!userId) return err("Unauthorized", 401);
     const tagId = path.split("/")[3];
+    if (!isAdmin(userId)) return err("Forbidden — only admin can delete tags", 403);
+    const exists = await env.DB.prepare("SELECT id FROM tags WHERE id = ?1").bind(tagId).first();
+    if (!exists) return err("Tag not found", 404);
+    const { entry_count } = await env.DB.prepare("SELECT COUNT(*) AS entry_count FROM entry_tags WHERE tag_id = ?1").bind(tagId).first();
+    const { track_count } = await env.DB.prepare("SELECT COUNT(*) AS track_count FROM track_tags WHERE tag_id = ?1").bind(tagId).first();
+    if (Number(entry_count) > 0 || Number(track_count) > 0) return err("Tag is in use; detach it before deletion", 409);
     await env.DB.prepare("DELETE FROM tags WHERE id = ?1").bind(tagId).run();
+    await env.DB.prepare(
+      "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'tag',?3)"
+    ).bind("tag_deleted", userId, tagId).run();
     return json({ ok: true, id: tagId });
   }
 

@@ -18,6 +18,7 @@ import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
 import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
+import { Icon } from "../core/ui";
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
@@ -101,7 +102,7 @@ export default function MusicLab({
     setViewMode(next);
     try { localStorage.setItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`, next);    } catch { /* noop */ }
   };
-  const VIEW_MODE_ICON = { list: "☰", grid: "⊞", card: "❒" };
+  const VIEW_MODE_ICON = { list: "menu", grid: "grid", card: "archive" };
   const dbPlaylists = db?.music_lab?.playlists ?? EMPTY_ARR;
   const [showPlaylistModal,  setShowPlaylistModal]  = useState(false);
   const [showPlaylistDetail, setShowPlaylistDetail] = useState(null); // playlist id
@@ -266,11 +267,11 @@ export default function MusicLab({
     catch { return "alpha"; }
   });
   const SORT_OPTIONS = [
-    { id: "alpha", label: "A-Z", icon: "⇅" },
-    { id: "artist", label: "ARTISTA", icon: "◎" },
-    { id: "vibe", label: "VIBE", icon: "◉" },
-    { id: "plays", label: "PLAYS", icon: "▶" },
-    { id: "recent", label: "RECIENTE", icon: "⧖" },
+    { id: "alpha", label: "A-Z", icon: "arrowUp" },
+    { id: "artist", label: "ARTISTA", icon: "circle" },
+    { id: "vibe", label: "VIBE", icon: "target" },
+    { id: "plays", label: "PLAYS", icon: "play" },
+    { id: "recent", label: "RECIENTE", icon: "timer" },
   ];
   const handleSortChange = (sortId) => {
     setTrackSort(sortId);
@@ -802,10 +803,10 @@ export default function MusicLab({
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}
           className="flex gap-0 rounded-sm overflow-hidden" style={{ border: `1px solid ${GLASS_BORDER}` }}>
           {[
-            ...(localQueue.length > 0 ? [{ id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "▶" }] : []),
+            ...(localQueue.length > 0 ? [{ id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "play" }] : []),
             { id: "tracks",    label: "TRACKS",                        icon: "◎" },
             { id: "playlists", label: "LISTS",                         icon: "◈" },
-            ...(userDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${userDrops.length}]`, icon: "⚡" }] : []),
+            ...(userDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${userDrops.length}]`, icon: "zap" }] : []),
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const tabColor = tab.id === "drops" ? PURPLE : accentColor;
@@ -817,7 +818,7 @@ export default function MusicLab({
                   background: isActive ? `${tabColor}10` : "transparent",
                   borderBottom: isActive ? `2px solid ${tabColor}` : "2px solid transparent",
                   textShadow: isActive ? `0 0 8px ${tabColor}88` : "none" }}>
-                {tab.icon} {tab.label}
+                <Icon name={tab.icon} size={14} decorative /> {tab.label}
               </button>
             );
           })}
@@ -835,7 +836,7 @@ export default function MusicLab({
                   onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span style={{ color: accentColor }}>▶</span>
+                    <Icon name="play" size={14} decorative />
                     <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accentColor }}>COLA</span>
                     <span className="text-xs opacity-30 tabular-nums" style={{ color: accentColor }}>
                       [{String(localQueue.length).padStart(2, "0")}]
@@ -846,7 +847,7 @@ export default function MusicLab({
                       onClick={() => { setShowQueueSearch((p) => !p); setQueueSearch(""); }}
                       className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${showQueueSearch ? accentColor + "66" : accentColor + "33"}`, background: showQueueSearch ? `${accentColor}15` : `${accentColor}06` }}>
-                      ⌕
+                      <Icon name="search" size={15} decorative />
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} title="Guardar cola como playlist"
                       onClick={() => {
@@ -856,13 +857,13 @@ export default function MusicLab({
                       }}
                       className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${accentColor}33`, background: `${accentColor}06` }}>
-                      ◈
+                      <Icon name="archive" size={14} decorative />
                     </motion.button>
                     <motion.button whileTap={{ scale: 0.9 }} title="Vaciar cola"
                       onClick={() => setConfirmClearQueue(true)}
                       className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: "#ff4444", border: "1px solid #ff444433", background: "#ff444406" }}>
-                      ✕
+                      <Icon name="close" size={14} decorative />
                     </motion.button>
                   </div>
                 </div>
@@ -919,7 +920,7 @@ export default function MusicLab({
                               style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
                               {track.thumbnail
                                 ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                                : <span style={{ color: hVibe?.color ?? accentColor, fontSize: 10 }}>◎</span>}
+                                : <Icon name={hVibe?.icon || "circle"} size={12} decorative />}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? accentColor }}>{track.title}</p>
@@ -927,7 +928,7 @@ export default function MusicLab({
                             </div>
                             <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                               style={{ color: hVibe?.color ?? accentColor, background: `${hVibe?.color ?? accentColor}15`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
-                              {hVibe?.icon}
+                              <Icon name={hVibe?.icon} size={12} decorative />
                             </span>
                           </div>
                         );
@@ -948,7 +949,7 @@ export default function MusicLab({
                   <span className="text-xs opacity-30 tracking-widest uppercase px-1" style={{ color: accentColor }}>ahora</span>
                   <div className="flex items-center gap-3 p-3 rounded-sm"
                     style={{ background: `${accentColor}10`, border: `1px solid ${accentColor}44`, fontFamily: FONT_MONO }}>
-                    <span style={{ color: accentColor, fontSize: 14 }}>◉</span>
+                    <Icon name="target" size={14} decorative />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold truncate" style={{ color: accentColor }}>{activeTrack.title}</p>
                       <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{activeTrack.artist}</p>
@@ -962,7 +963,7 @@ export default function MusicLab({
                       }}
                       className="ml-3 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px] flex items-center justify-center"
                       style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
-                      ✕
+                      <Icon name="close" size={14} decorative />
                     </motion.button>
                   </div>
                 </div>
@@ -988,12 +989,12 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${trackColor}33`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <Icon name="more" size={13} decorative className="flex-shrink-0" />
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${trackColor}12`, border: `1px solid ${trackColor}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: trackColor, fontSize: 10 }}>⌕</span>}
+                              : <Icon name="search" size={12} decorative />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate flex items-center gap-1" style={{ color: trackColor }}>
@@ -1013,7 +1014,7 @@ export default function MusicLab({
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
-                            {qVibe?.icon}
+                            <Icon name={qVibe?.icon} size={12} decorative />
                           </span>
                           {activePl && (
                             <motion.button whileTap={{ scale: 0.9 }}
@@ -1039,13 +1040,13 @@ export default function MusicLab({
                               }}
                               className="flex-shrink-0 text-xs px-2 py-1 rounded-sm"
                               style={{ color: accentColor, border: `1px solid ${accentColor}44`, background: `${accentColor}12` }}>
-                              ◈
+                              <Icon name="archive" size={14} decorative />
                             </motion.button>
                           )}
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
                             className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
-                            ✕
+                            <Icon name="close" size={14} decorative />
                           </motion.button>
                         </div>
                       );
@@ -1071,12 +1072,12 @@ export default function MusicLab({
                           onDrop={() => handleDrop(i)}
                           className="flex items-center gap-3 p-3 rounded-sm"
                           style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}`, fontFamily: FONT_MONO, cursor: "grab" }}>
-                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <Icon name="more" size={13} decorative className="flex-shrink-0" />
                           <div className="w-8 h-8 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${accentColor}12`, border: `1px solid ${accentColor}33` }}>
                             {track.thumbnail
                               ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: accentColor, fontSize: 10 }}>⌕</span>}
+                              : <Icon name="search" size={12} decorative />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold truncate" style={{ color: accentColor }}>{track.title}</p>
@@ -1084,12 +1085,12 @@ export default function MusicLab({
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33` }}>
-                            {qVibe?.icon}
+                            <Icon name={qVibe?.icon} size={12} decorative />
                           </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
                             className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
                             style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
-                            ✕
+                            <Icon name="close" size={14} decorative />
                           </motion.button>
                         </div>
                       );
@@ -1111,7 +1112,7 @@ export default function MusicLab({
 
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span style={{ color: accentColor }}>◎</span>
+                  <Icon name="circle" size={14} decorative />
                   <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accentColor }}>TRACKS</span>
                   <span className="text-xs opacity-30 tabular-nums" style={{ color: accentColor }}>
                     [{String(filteredTracks.length).padStart(2, "0")}]
@@ -1151,7 +1152,7 @@ export default function MusicLab({
                         fontFamily: FONT_MONO,
                       }}
                     >
-                      {SORT_OPTIONS.find((o) => o.id === trackSort)?.icon ?? "⇅"}
+                      <Icon name={SORT_OPTIONS.find((o) => o.id === trackSort)?.icon ?? "arrowUp"} size={12} decorative />
                       <span style={{ fontSize: 8, opacity: 0.6 }}>▾</span>
                     </span>
                   </motion.button>
@@ -1201,16 +1202,16 @@ export default function MusicLab({
                     <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${accentColor}33`,
                         background: `${accentColor}06`, fontFamily: FONT_MONO }}>
-                      {VIEW_MODE_ICON[viewMode]}
+                      <Icon name={VIEW_MODE_ICON[viewMode]} size={14} decorative />
                     </span>
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.9 }} title="Buscar track"
+                  <motion.button whileTap={{ scale: 0.9 }} title="Buscar track" aria-label="Buscar track"
                     onClick={() => { setShowTrackSearch((p) => !p); setTrackSearch(""); }}
                     className="w-11 h-11 flex items-center justify-center">
                     <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${showTrackSearch ? accentColor + "66" : accentColor + "33"}`,
                         background: showTrackSearch ? `${accentColor}15` : `${accentColor}06` }}>
-                      ⌕
+                      <Icon name="search" size={15} decorative />
                     </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Añadir track"
@@ -1219,7 +1220,7 @@ export default function MusicLab({
                     <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${showAdd ? accentColor + "66" : accentColor + "33"}`,
                         background: showAdd ? `${accentColor}15` : `${accentColor}06` }}>
-                      {showAdd ? "✕" : "+"}
+                      {showAdd ? <Icon name="close" size={14} decorative /> : <Icon name="plus" size={14} decorative />}
                     </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Editar track"
@@ -1228,7 +1229,7 @@ export default function MusicLab({
                     <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: accentColor, border: `1px solid ${showEdit ? accentColor + "66" : accentColor + "33"}`,
                         background: showEdit ? `${accentColor}15` : `${accentColor}06` }}>
-                      {showEdit ? "✕" : "✎"}
+                      {showEdit ? <Icon name="close" size={14} decorative /> : <Icon name="edit" size={14} decorative />}
                     </span>
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Eliminar track"
@@ -1237,7 +1238,7 @@ export default function MusicLab({
                     <span className="w-7 h-7 flex items-center justify-center rounded-sm text-sm transition-all"
                       style={{ color: "#ff4444", border: `1px solid ${showDelete ? "#ff444466" : "#ff444433"}`,
                         background: showDelete ? "#ff444415" : "#ff444406" }}>
-                      {showDelete ? "✕" : "−"}
+                      {showDelete ? <Icon name="close" size={14} decorative /> : <Icon name="minus" size={14} decorative />}
                     </span>
                   </motion.button>
                 </div>
@@ -1280,7 +1281,7 @@ export default function MusicLab({
                     <p
                       className="text-sm tracking-[0.25em] uppercase font-bold"
                       style={{ color: PURPLE, textShadow: `0 0 14px ${PURPLE}` }}>
-                      ✎ MODO EDICIÓN ACTIVO
+                      <Icon name="edit" size={14} decorative /> MODO EDICIÓN ACTIVO
                     </p>
                     <p
                       className="text-xs opacity-50 tracking-[0.15em] uppercase"
@@ -1307,7 +1308,7 @@ export default function MusicLab({
                       className="relative w-full max-w-xs flex flex-col gap-2 p-4 rounded-sm max-h-[60vh] overflow-y-auto"
                       style={{ background: "#0e0e0e", border: "1px solid #ff444433", fontFamily: FONT_MONO }}
                       onClick={(e) => e.stopPropagation()}>
-                      <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}>◈ ELIMINAR TRACK</p>
+                      <p className="text-xs tracking-[0.3em] uppercase font-bold mb-1" style={{ color: "#ff4444" }}><Icon name="trash" size={14} decorative /> ELIMINAR TRACK</p>
                       {rawTracks.length === 0 ? (
                         <p className="text-xs opacity-40" style={{ color: "#ff4444" }}>NO HAY TRACKS</p>
                       ) : (
@@ -1322,7 +1323,7 @@ export default function MusicLab({
                               className="ml-3 flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
                               <span className="w-7 h-7 flex items-center justify-center rounded-sm text-xs"
                                 style={{ color: "#ff4444", border: "1px solid #ff444444", background: "#ff444412" }}>
-                                ✕
+                                <Icon name="close" size={14} decorative />
                               </span>
                             </motion.button>
                           </div>
@@ -1403,26 +1404,26 @@ export default function MusicLab({
                 onOpenTagManager={() => setShowTagManager((p) => !p)} isTagManagerOpen={showTagManager} accentColor={accentColor} />
               <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2">
-                  <span style={{ color: accentColor }}>◈</span>
+                  <Icon name="archive" size={14} decorative />
                   <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accentColor }}>LISTS</span>
                   <span className="text-xs opacity-30 tabular-nums" style={{ color: accentColor }}>
                     [{String(filteredPlaylists.length).padStart(2, "0")}]
                   </span>
                 </div>
                 <div className="flex gap-1">
-                  <motion.button whileTap={{ scale: 0.9 }} title="Buscar lista"
+                  <motion.button whileTap={{ scale: 0.9 }} title="Buscar lista" aria-label="Buscar lista"
                     onClick={() => { setShowListSearch((p) => !p); setListSearch(""); }}
                     className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showListSearch ? accentColor + "66" : accentColor + "33"}`,
                       background: showListSearch ? `${accentColor}15` : `${accentColor}06` }}>
-                    ⌕
+                    <Icon name="search" size={15} decorative />
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} title="Nueva playlist"
                     onClick={() => setShowCreatePlaylist((p) => !p)}
                     className="w-11 h-11 flex items-center justify-center rounded-sm text-sm transition-all"
                     style={{ color: accentColor, border: `1px solid ${showCreatePlaylist ? accentColor + "66" : accentColor + "33"}`,
                       background: showCreatePlaylist ? `${accentColor}15` : `${accentColor}06` }}>
-                    {showCreatePlaylist ? "✕" : "+"}
+                    {showCreatePlaylist ? <Icon name="close" size={14} decorative /> : <Icon name="plus" size={14} decorative />}
                   </motion.button>
                 </div>
               </div>
@@ -1468,7 +1469,7 @@ export default function MusicLab({
                     className="text-2xl"
                     style={{ color: `${accentColor}44` }}
                   >
-                    ◈
+                    <Icon name="archive" size={28} decorative />
                   </motion.div>
                   <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: accentColor, opacity: 0.3 }}>
                     Sin playlists aún
@@ -1511,12 +1512,12 @@ export default function MusicLab({
                         <div className="flex items-center gap-3 p-3"
                           onClick={() => !isRenaming && !isConfirmDel && setShowPlaylistDetail(pl.id)}
                           style={{ cursor: isRenaming || isConfirmDel ? "default" : "pointer" }}>
-                          <span title="Arrastrar para reordenar" aria-label="Arrastrar para reordenar" style={{ color: accentColor, opacity: 0.6, fontSize: 12, flexShrink: 0 }}>⠿</span>
+                          <Icon name="more" size={13} decorative className="flex-shrink-0" />
                           <div className="w-9 h-9 flex-shrink-0 rounded-sm flex items-center justify-center overflow-hidden"
                             style={{ background: `${plVibe?.color ?? accentColor}12`, border: `1px solid ${plVibe?.color ?? accentColor}33` }}>
                             {plTracks[0]?.thumbnail
                               ? <img src={plTracks[0].thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                              : <span style={{ color: plVibe?.color ?? accentColor, fontSize: 12 }}>{isEmpty ? "◌" : "◈"}</span>}
+                              : <Icon name={isEmpty ? "circle" : "archive"} size={14} decorative />}
                           </div>
                           <div className="flex-1 min-w-0">
                             {isRenaming ? (
@@ -1536,7 +1537,7 @@ export default function MusicLab({
                           {plVibe && !isRenaming && (
                             <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                               style={{ color: plVibe.color, background: `${plVibe.color}15`, border: `1px solid ${plVibe.color}33` }}>
-                              {plVibe.icon}
+                              <Icon name={plVibe.icon} size={12} decorative />
                             </span>
                           )}
                           {isRenaming ? (
@@ -1551,20 +1552,20 @@ export default function MusicLab({
                                   onClick={(e) => { e.stopPropagation(); handlePlayPlaylistContext(plTracks, pl.name); }}
                                   className="flex-shrink-0 flex items-center justify-center rounded-sm min-h-[44px] min-w-[44px]"
                                   style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33`, fontSize: 11, fontFamily: FONT_MONO }}>
-                                  ▶
+                                  <Icon name="play" size={14} decorative />
                                 </motion.button>
                               )}
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setRenamingPlId(pl.id); setRenameVal(pl.name); setConfirmDeletePlId(null); }}
                                 className="flex-shrink-0 flex items-center justify-center rounded-sm min-h-[44px] min-w-[44px]"
                                 style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`, fontSize: 11, fontFamily: FONT_MONO }}>
-                                ✎
+                                <Icon name="edit" size={14} decorative />
                               </motion.button>
                               <motion.button whileTap={{ scale: 0.9 }}
                                 onClick={(e) => { e.stopPropagation(); setConfirmDeletePlId(pl.id); setRenamingPlId(null); }}
                                 className="flex-shrink-0 flex items-center justify-center rounded-sm min-h-[44px] min-w-[44px]"
                                 style={{ color: "#ff4444", background: "#ff444408", border: "1px solid #ff444422", fontSize: 11, fontFamily: FONT_MONO }}>
-                                ✕
+                                <Icon name="close" size={14} decorative />
                               </motion.button>
                             </>
                           )}
@@ -1597,8 +1598,7 @@ export default function MusicLab({
             <motion.div key="drops" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.3 }} className="flex flex-col gap-4">
               <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
-                  <span style={{ color: PURPLE }}>⚡</span>
+                <div className="flex items-center gap-2">                        <Icon name="zap" size={14} decorative />
                   <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>THE DROPS</span>
                   <span className="text-xs opacity-30 tabular-nums" style={{ color: PURPLE }}>
                     [{String(userDrops.length).padStart(2, "0")}]
@@ -1607,7 +1607,7 @@ export default function MusicLab({
               </div>
               <div className="p-3 rounded-sm text-xs leading-relaxed opacity-50"
                 style={{ color: PURPLE, background: PURPLE_BG, border: `1px solid ${PURPLE_BORDER}`, fontFamily: FONT_MONO }}>
-                Cuando lanzas un Drop, aparece como una alerta intrusiva la próxima vez que tu persona abra el Búnker. Selecciona un track y toca ⚡ LANZAR DROP.
+                Cuando lanzas un Drop, aparece como una alerta intrusiva la próxima vez que tu persona abra el Búnker. Selecciona un track y toca <Icon name="zap" size={13} decorative /> LANZAR DROP.
               </div>
               <DropsHistory drops={userDrops} tracks={rawTracks} userId={userId}
                 onPlay={(track) => playTrack(track)}
@@ -1751,7 +1751,7 @@ export default function MusicLab({
           <span className="text-xs opacity-15 tracking-widest uppercase" style={{ color: ACID }}>MUSIC LAB v1.0</span>
           <motion.span animate={{ opacity: [0.15, 0.4, 0.15] }} transition={{ duration: 3, repeat: Infinity }}
             className="text-xs tracking-widest uppercase" style={{ color: ACID }}>
-            ◈ WEB AUDIO API
+            <Icon name="music" size={13} decorative /> WEB AUDIO API
           </motion.span>
         </motion.footer>
       </div>

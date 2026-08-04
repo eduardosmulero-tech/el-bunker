@@ -4,6 +4,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { canManageOwned } from "../utils/authorization.js";
 
 // FASE D.2 (veredicto V5 Fable S147): helper local para emitir eventos de track.
 // Contrato explícito: POST emite track_created, DELETE emite track_deleted,
@@ -75,13 +76,13 @@ export default async function handleTracks(request, env, url, userId) {
     const body = await request.json();
     const id = body.id || crypto.randomUUID();
     const now = body.created_at || new Date().toISOString();
-    const addedBy = body.added_by || userId;
+    const addedBy = userId;
     await env.DB.prepare(
       `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, drive_file_id, color, play_count, last_played, added_by, created_at, updated_at)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)`
     ).bind(id, body.era_id || null, body.title, body.artist || "", body.tag_id || null,
            body.r2_key || null, body.format || "mp3", body.note || "", body.duration || null,
-           body.thumbnail || null, body.drive_file_id || null, body.color || null,
+           body.thumbnail || null, null, body.color || null,
            body.play_count || 0, body.last_played || null, addedBy, now, now).run();
     if (Array.isArray(body.tags) && body.tags.length) {
       const stmt = env.DB.prepare("INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES (?1,?2)");
@@ -96,6 +97,9 @@ export default async function handleTracks(request, env, url, userId) {
   if (method === "PATCH" && path.startsWith("/api/tracks/")) {
     const TRACK_FIELDS = new Set(["era_id", "title", "artist", "tag_id", "r2_key", "format", "note", "duration", "thumbnail", "drive_file_id", "color", "play_count", "last_played"]);
     const trackId = path.split("/")[3];
+    const owner = await env.DB.prepare("SELECT id, added_by FROM tracks WHERE id = ?1 AND is_deleted = 0").bind(trackId).first();
+    if (!owner) return err("Track not found", 404);
+    if (!canManageOwned(userId, owner.added_by)) return err("Forbidden", 403);
     const body = await request.json();
     const sets = []; const binds = [];
     for (const [k, v] of Object.entries(body)) {
@@ -117,6 +121,10 @@ export default async function handleTracks(request, env, url, userId) {
   // DELETE /api/tracks/:id (soft delete)
   if (method === "DELETE" && path.startsWith("/api/tracks/")) {
     const trackId = path.split("/")[3];
+    const owner = await env.DB.prepare("SELECT id, added_by, is_deleted FROM tracks WHERE id = ?1").bind(trackId).first();
+    if (!owner) return err("Track not found", 404);
+    if (!canManageOwned(userId, owner.added_by)) return err("Forbidden", 403);
+    if (owner.is_deleted) return err("Track already deleted", 409);
     const now = new Date().toISOString();
     await env.DB.prepare(
       "UPDATE tracks SET is_deleted = 1, deleted_at = ?1, deleted_by = ?2, updated_at = ?1 WHERE id = ?3"

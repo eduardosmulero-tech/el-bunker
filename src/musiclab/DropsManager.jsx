@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, PURPLE_BG, PURPLE_BORDER } from "../tokens";
+import { Icon } from "../core/ui";
 const FONT_MONO     = "'JetBrains Mono', 'Courier New', monospace";
 
 export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, trackDuration = 0 }) => {
@@ -20,11 +21,11 @@ export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, tr
           fontFamily: FONT_MONO }}
         onClick={(e) => e.stopPropagation()}>
         <p className="text-xs tracking-[0.35em] uppercase font-bold mb-1"
-          style={{ color: PURPLE, textShadow: `0 0 12px ${PURPLE}` }}>⚡ THE DROP</p>
+          style={{ color: PURPLE, textShadow: `0 0 12px ${PURPLE}` }}><Icon name="zap" size={14} decorative /> THE DROP</p>
         <p className="text-xs opacity-50 mb-4" style={{ color: PURPLE }}>Lanza esta canción a tu persona</p>
         <div className="flex items-center gap-3 p-3 mb-4 rounded-sm"
           style={{ background: `${PURPLE}10`, border: `1px solid ${PURPLE}22` }}>
-          <span style={{ color: PURPLE, fontSize: 20 }}>◉</span>
+          <Icon name="music" size={20} decorative />
           <div>
             <p className="text-xs font-bold" style={{ color: PURPLE }}>{track?.title}</p>
             <p className="text-xs opacity-50" style={{ color: PURPLE }}>{track?.artist}</p>
@@ -51,11 +52,11 @@ export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, tr
             className="flex-1 py-2.5 min-h-[44px] text-xs tracking-widest uppercase font-bold rounded-sm"
             style={{ background: `${PURPLE}22`, border: `1px solid ${PURPLE}66`, color: PURPLE,
               textShadow: `0 0 10px ${PURPLE}`, boxShadow: `0 0 20px ${PURPLE}33` }}>
-            ⚡ DROP IT
+            <Icon name="zap" size={14} decorative /> DROP IT
           </motion.button>
           <motion.button whileTap={{ scale: 0.95 }} onClick={onClose}
             className="px-4 py-3 text-xs rounded-sm opacity-40 hover:opacity-70"
-            style={{ color: PURPLE, border: `1px solid ${PURPLE}22` }}>✕</motion.button>
+            style={{ color: PURPLE, border: `1px solid ${PURPLE}22` }}><Icon name="close" size={14} decorative /></motion.button>
         </div>
       </motion.div>
     </motion.div>
@@ -92,7 +93,7 @@ export const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
               <div className="flex items-center gap-2">
                 <motion.span animate={{ opacity: [1, 0.2, 1], scale: [1, 1.4, 1] }}
                   transition={{ duration: 0.8, repeat: Infinity }}
-                  style={{ color: PURPLE, fontSize: 18 }}>⚡</motion.span>
+                  style={{ color: PURPLE, fontSize: 18 }}><Icon name="zap" size={18} decorative /></motion.span>
                 <span className="text-sm tracking-[0.3em] uppercase font-bold"
                   style={{ color: PURPLE, textShadow: `0 0 16px ${PURPLE}` }}>INCOMING DROP</span>
               </div>
@@ -105,7 +106,7 @@ export const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
               <div className="mx-5 mt-5 p-4 rounded-sm flex items-center gap-4"
                 style={{ background: `${PURPLE}14`, border: `1px solid ${PURPLE}33`, boxShadow: `0 0 20px ${PURPLE}22` }}>
                 <motion.div animate={{ rotate: [0, 360] }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="text-2xl">💿</motion.div>
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }} className="text-2xl"><Icon name="music" size={24} decorative /></motion.div>
                 <div className="min-w-0">
                   <p className="text-sm font-bold truncate"
                     style={{ color: PURPLE, textShadow: `0 0 8px ${PURPLE}` }}>{track.title}</p>
@@ -125,7 +126,7 @@ export const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
             {drop.minute_mark != null && (
               <div className="px-5 pt-2">
                 <p className="text-xs tracking-widest" style={{ color: `${PURPLE}66`, fontFamily: FONT_MONO }}>
-                  ⏱ {Math.floor(drop.minute_mark/60)}:{String(drop.minute_mark%60).padStart(2,"0")}
+                  <Icon name="timer" size={12} decorative /> {Math.floor(drop.minute_mark/60)}:{String(drop.minute_mark%60).padStart(2,"0")}
                 </p>
               </div>
             )}
@@ -141,8 +142,7 @@ export const DropAlertModal = ({ drop, tracks, onPlay, onDismiss }) => {
                   border: `2px solid ${PURPLE}`, color: PURPLE,
                   textShadow: `0 0 12px ${PURPLE}`, boxShadow: `0 0 20px ${PURPLE}44` }}
                 animate={{ boxShadow: [`0 0 20px ${PURPLE}44`, `0 0 40px ${PURPLE}66`, `0 0 20px ${PURPLE}44`] }}
-                transition={{ duration: 2, repeat: Infinity }}>
-                ▶ PLAY NOW
+                transition={{ duration: 2, repeat: Infinity }}>                  <Icon name="play" size={14} decorative /> PLAY NOW
               </motion.button>
               <motion.button whileTap={{ scale: 0.95 }} onClick={onDismiss}
                 className="px-5 py-4 text-xs tracking-widest uppercase rounded-sm"
@@ -163,7 +163,7 @@ const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }
   <motion.div key={drop.id} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
     className="flex items-start gap-3 p-3 rounded-sm"
     style={{ background: PURPLE_BG, border: `1px solid ${PURPLE_BORDER}`, fontFamily: FONT_MONO }}>
-    <span style={{ color: PURPLE, fontSize: 16 }}>⚡</span>
+    <Icon name="zap" size={16} decorative />
     <div className="flex-1 min-w-0">
       {track && (
         <p className="text-xs font-bold truncate cursor-pointer" style={{ color: PURPLE }}
@@ -186,7 +186,7 @@ const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }
       <p className="text-xs mt-1 opacity-25 tracking-wider" style={{ color: PURPLE }}>
         {new Date(drop.created_at).toLocaleDateString("es", { day: "2-digit", month: "short" })}
         {" · "}{drop.from ?? "DROP"}
-        {drop.minute_mark != null && ` · ⏱ ${Math.floor(drop.minute_mark/60)}:${String(drop.minute_mark%60).padStart(2,"0")}`}
+        {drop.minute_mark != null && <><span> · </span><Icon name="timer" size={11} decorative /> {Math.floor(drop.minute_mark/60)}:{String(drop.minute_mark%60).padStart(2,"0")}</>}
       </p>
     </div>
     <div className="flex flex-col gap-1 flex-shrink-0">
@@ -196,15 +196,15 @@ const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }
           onClick={() => onSave(drop.id, track ? { title: track.title, artist: track.artist, minute_mark: drop.minute_mark } : null)}
           title="Guardar drop"
           className="w-11 h-11 flex items-center justify-center rounded-sm text-xs"
-          style={{ color: PURPLE, border: `1px solid ${PURPLE}44`, background: `${PURPLE}08` }}>★</motion.button>
+          style={{ color: PURPLE, border: `1px solid ${PURPLE}44`, background: `${PURPLE}08` }}><Icon name="star" size={14} decorative /></motion.button>
       )}
       {isSaved && (
-        <span className="w-6 h-6 flex items-center justify-center text-xs" style={{ color: PURPLE }}>★</span>
+        <span className="w-6 h-6 flex items-center justify-center text-xs" style={{ color: PURPLE }}><Icon name="star" size={14} decorative /></span>
       )}
       {onDelete && (
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => onDelete(drop.id)} title="Eliminar drop"
           className="w-11 h-11 flex items-center justify-center rounded-sm text-xs"
-          style={{ color: "#ff444488", border: "1px solid #ff444422", background: "#ff444406" }}>✕</motion.button>
+          style={{ color: "#ff444488", border: "1px solid #ff444422", background: "#ff444406" }}><Icon name="close" size={14} decorative /></motion.button>
       )}
     </div>
   </motion.div>

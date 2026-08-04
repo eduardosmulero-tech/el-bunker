@@ -10,6 +10,7 @@ import { VaultProvider, useVault } from "../core/VaultContext";
 import { PlayerProvider } from "../core/PlayerContext";
 import LoginScreen from "./LoginScreen";
 import { ACID, BG, FONT_MONO as FONT } from "../tokens";
+import { Icon } from "../core/ui";
 import { GlobalLoadingScreen, ErrorScreen } from "./BootScreen";
 import { AuthenticatedApp, UnauthorizedScreen } from "./TabShell";
 
@@ -37,7 +38,7 @@ class GlobalErrorBoundary extends Component {
           style={{ background: BG, fontFamily: FONT }}
         >
           <div className="flex flex-col items-center gap-6 text-center max-w-sm">
-            <p className="text-4xl">⚠</p>
+            <Icon name="alert" size={36} label="Error inesperado" />
             <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#ff3b3b", textShadow: "0 0 12px #ff3b3b" }}>
               ERROR INESPERADO
             </p>
@@ -109,13 +110,7 @@ export default function App() {
         .then((reg) => console.info("[Búnker] SW registered:", reg.scope))
         .catch((err) => console.warn("[Búnker] SW registration failed:", err));
 
-      const handleSWMessage = (event) => {
-        if (event.data?.type === "BUNKER_NAVIGATE" && event.data?.tab) {
-          window.dispatchEvent(new CustomEvent("bunker_navigate", { detail: { tab: event.data.tab } }));
-        }
-      };
-      navigator.serviceWorker.addEventListener("message", handleSWMessage);
-      return () => navigator.serviceWorker.removeEventListener("message", handleSWMessage);
+      return undefined;
     }
   }, []);
 

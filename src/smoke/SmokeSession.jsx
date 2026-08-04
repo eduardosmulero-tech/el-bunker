@@ -10,6 +10,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE } from "../tokens";
 import { workerClient } from "../core/WorkerClient";
+import { Icon } from "../core/ui";
 
 const SMOKE_HISTORY_KEY = "el_bunker_smoke_history";
 
@@ -211,7 +212,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     new Notification("Smoke Session · 1 minuto restante", {
       body: `${name || "Sesión sin nombre"} · El volumen empezará a fundirse`,
-      icon: "/manifest-icon-192.png",
+      icon: "/icons/icon-192.png",
       tag: "smoke-prefade",
       vibrate: [200, 100, 200],
     });
@@ -223,7 +224,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     if (Notification.permission === "granted") {
       new Notification("Smoke Session completada", {
         body: `${name || "Sesión sin nombre"} · ${formatTime(durationSecs)}`,
-        icon: "/manifest-icon-192.png",
+        icon: "/icons/icon-192.png",
         tag: "smoke-complete",
       });
     } else if (Notification.permission === "default") {
@@ -441,7 +442,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
               transition={{ duration: 1.4, repeat: isRunning ? Infinity : 0 }}
               style={{ color: effectiveActiveColor, fontSize: 16 }}
             >
-              ◉
+              <Icon name="circle" size={16} decorative />
             </motion.span>
             <span
               className="text-xs tracking-[0.35em] uppercase font-bold"
@@ -451,9 +452,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             </span>
             {/* S73: Vibe indicator */}
             {vibeAccent && isRunning && (
-              <span className="text-xs opacity-40" style={{ color: vibeAccent }}>
-                ♫
-              </span>
+              <span className="text-xs opacity-40" style={{ color: vibeAccent }}><Icon name="music" size={13} decorative /></span>
             )}
           </div>
 
@@ -461,7 +460,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             {/* S73: Streak counter */}
             {streak >= 2 && (
               <span className="text-xs px-1.5 py-0.5 rounded-sm" style={{ color: ORANGE, background: `${ORANGE}15`, fontFamily: FONT }}>
-                🔥 {streak}
+                <Icon name="zap" size={13} decorative /> {streak}
               </span>
             )}
             {/* S73: History button */}
@@ -475,7 +474,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
                 fontFamily: FONT,
               }}
             >
-              {showHistory ? "✕" : `${history.length} 📋`}
+              {showHistory ? <Icon name="close" size={14} decorative /> : <><Icon name="document" size={14} decorative /> {history.length}</>}
             </motion.button>
             {isRunning && isFading && (
               <motion.span
@@ -484,7 +483,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
                 className="text-xs tracking-widest uppercase"
                 style={{ color: RED, textShadow: `0 0 8px ${RED}` }}
               >
-                ⚠ FADE OUT
+                <Icon name="alert" size={13} decorative /> FADE OUT
               </motion.span>
             )}
           </div>
@@ -525,7 +524,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
                     <div key={h.id || `session-${i}`} className="flex items-center gap-2 text-xs py-1 px-2"
                       style={{ borderBottom: `1px solid ${ACID}0a`, fontFamily: FONT }}>
                       <span style={{ color: h.completed ? PURPLE : `${ACID}33` }}>
-                        {h.completed ? "✓" : "⌁"}
+                        <Icon name={h.completed ? "check" : "more"} size={13} decorative />
                       </span>
                       <span className="truncate flex-1 opacity-50" style={{ color: ACID }}>
                         {h.name || "Sin nombre"}
@@ -567,7 +566,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
                   transition={{ duration: 1.5, repeat: Infinity }}
                   style={{ fontSize: 32, color: PURPLE }}
                 >
-                  ◈
+                  <Icon name="sparkles" size={32} decorative />
                 </motion.span>
                 <span
                   className="text-xs tracking-widest uppercase"
@@ -669,7 +668,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             transition: "background 0.3s ease, box-shadow 0.3s ease, color 0.2s ease",
           }}
         >
-          {isRunning ? "⏸ PAUSAR" : isDone ? "◈ NUEVO" : "▶ ACTIVAR"}
+          {isRunning ? <><Icon name="pause" size={14} decorative /> PAUSAR</> : isDone ? <><Icon name="sparkles" size={14} decorative /> NUEVO</> : <><Icon name="play" size={14} decorative /> ACTIVAR</>}
 
           {/* Shimmer on active */}
           {isRunning && (
@@ -773,7 +772,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
                 border: `1px solid ${PURPLE}${showCustom ? "ff" : "40"}`,
               }}
             >
-              {showCustom ? "✕" : "CUSTOM"}
+              {showCustom ? <Icon name="close" size={14} decorative /> : "CUSTOM"}
             </motion.button>
           </div>
 
@@ -823,7 +822,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
 
       {/* ── Fade-out legend ─────────────────────────────────── */}
       <div className="flex items-center gap-2 text-xs opacity-25" style={{ color: ACID }}>
-        <span>◎</span>
+        <Icon name="circle" size={13} decorative />
         <span className="tracking-widest uppercase">
           Fade out automático en los últimos 2 min
         </span>

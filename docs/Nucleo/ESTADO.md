@@ -6,33 +6,38 @@
 Board `el-bunker` activo. Este archivo es snapshot documental, no fuente de estado.
 
 ## ✅ Cerrado
-- v1.0 en código + prod (S148, 13-jul)
-- 7 commits consolidados (S146-S149)
-- Build ✅ · Lint ✅ · Tests 12/12 (1-ago)
-- AGENTS.md creado · CLAUDE.md reducido a stub
-- task_deepseek.md eliminado (contratos via kanban)
-- FASE C + FASE D → done en kanban
-- **1-ago (re-entrada):** wrangler 4.118.0 devDependency (toolchain Windows nativo, WSL sin distros).
-  Pliego login HECHO y DESPLEGADO: scope `drive.readonly` quitado del OAuth (0 tracks legacy
-  verificados en D1). Push a origin (master sincronizado). Auditoría línea base:
+- v1.0 en código + prod (S148, 13-jul) · G0–G5 higiene/refactor local ✅ · tests 114/114 (3-ago)
+- **1-ago:** wrangler 4.118.0 (toolchain Windows nativo) · login Google sin scope Drive
+  (Gate 1 David OK) · bug canciones repetidas resuelto (P1) · auditoría línea base:
   `docs/operacional/auditoria_reentrada_2026-08-01.md` (BORRADOR).
-- **1-ago (confirmado por Edu):** consola Google — scope Drive quitado de la pantalla de
-  consentimiento + David como test user. Login de David fluido (Gate 1 OK).
-- **1-ago (pliego P1):** bug canciones repetidas RESUELTO — 30 duplicados exactos soft-deleted
-  (529 activos, 0 grupos duplicados) + D1 migrada (`deleted_at`/`deleted_by` en tracks).
-  Commits `66b0a85` + `d5e1e9c` pusheados.
+- **2-ago (ADR-028):** acceso test/admin sin Google IMPLEMENTADO, DESPLEGADO y VERIFICADO:
+  POST /api/auth/token (canje clave→JWT 24h, authenticate() intacto), sessionKind en
+  VaultContext, panel ACCESO TEST/ADMIN en LoginScreen, filtro auth_ en events, rate limit
+  10/min. Secrets ADMIN_ACCESS_KEY+EDU_ACCESS_KEY en worker. Clave del agente en
+  `C:\proyectos\.trabajo\bunker_admin_key.txt` (fuera del repo). Login sin popup OK en
+  navegador embebido. DoD verificado por artefacto (canje 200, eras/entries 200, 401s,
+  upload 201, R2 md5 ok, auditoría auth_login en D1).
+- **2-ago (PRUEBA vault, t_c316b835):** 527 fotos subidas (selección
+  `D:\bunker-import-review\PRUEBA`) → R2 + D1, fusionadas en 2 eras: **2021 (185)** y
+  **2022 (342)**. Verificado 527/527 (D1=estado local, R2 respondiendo).
+- **2-ago (fix S151):** GET /api/entries con límite configurable (antes LIMIT 200 fijo
+  ocultaba entries — 527 en D1, solo 200 visibles). Desplegado (f2277dc).
+- Commits 2-ago pusheados: a2ee907 + f5d8cab + 465534b + 9efcf67 + d2e038b + c97358e +
+  0ee39d6 + f2277dc. Master sincronizado con origin.
 
-## ▶ Pendientes
-- Subir PRUEBA a vault (t_c316b835) — **selección lista**: `D:\bunker-import-review\PRUEBA`
-  (590 archivos: 527 jpg + 63 mp4, 4,1 GB, 15 carpetas mensuales 2021-06→2022-08, fotos
-  Takeout + staging-manifest.json). Prompt de sesión: `C:\proyectos\.trabajo\prompt_subida_prueba_vault_2026-08-01.md`
-- Confirmar EntryLightbox en móvil (t_9badd928)
-- **ADR-028 (2-ago):** acceso test/admin sin Google IMPLEMENTADO en código (POST
-  /api/auth/token + sessionKind + panel LoginScreen + filtro auth_ en events). Pendiente
-  de Edu: secrets (ADMIN_ACCESS_KEY/EDU_ACCESS_KEY) + `wrangler deploy` + verificación
-  DoD (tarea 5 del plan). Tras deploy → desbloquea la subida de PRUEBA.
+## ▶ Estado de gates
+- **G6:** código y overflow desktop verificados; aceptación visual verificada con artefacto navegador (4-ago): login test/admin OK, vault 527 entries reales, 6 modos con iconos SVG confirmados por DOM, consola 0 errores JS, sin overflow horizontal a 1264px. Pendiente: viewport móvil real (el agente headless no emula 390x844) y PWA instalada en dispositivo.
+- **G7:** ✅ cerrado en código: SW sin listeners Push/Sync, `/api/` nunca cacheada, `/music/` delimitado, manifest resoluble (standalone, 5 iconos, 2 shortcuts) y fallback/versionado presentes. SW activated + cachés pobladas verificadas (4-ago).
+- **G8:** ✅ documentación sincronizada en esta sesión; no se reescriben ADRs normativos sin enmienda.
+
+## ▶ Pendientes reales
+- Aceptación móvil real (390x844) y PWA instalada/offline/update en dispositivo físico; revisar modales y controles táctiles. Sin sustituto de navegador headless.
+- Confirmar EntryLightbox en móvil (t_9badd928).
+- **7403 RESUELTO (4-ago):** la query remota D1 funciona (files=527 verificado); el fallo de G2-1J fue transitorio. **Huérfano G2 RESUELTO (4-ago):** `prueba_dod.jpg` (c4c564a9, residuo de DoD 2-ago, sin objeto R2) borrado con OK de Edu; rollback en `C:\proyectos\.trabajo\orphan_rollback.sql`. El residuo R2 `c1f11fad…` pendiente de verificar por API (el CLI no lista objetos).
+- Código Drive facade/fallback: retirada solo tras evidencia externa y decisión de compatibilidad. Verificado 4-ago: 0 tracks con drive_file_id, 0 consumidores del facade en src.
+- Revisión humana del plan completo y gate final antes de deploy.
 
 ## Infra
-- Worker desplegado v `aa502226`, R2 gate vivo
-- Rama: master (7 ahead of origin/master)
-
+- Worker desplegado v `afdf7c2c` (2-ago), R2 gate vivo
+- Rama: master sincronizado con origin/master al inicio; cambios G0–G8 actuales son locales/no desplegados
+- No se ejecutó commit ni push en esta reanudación autónoma

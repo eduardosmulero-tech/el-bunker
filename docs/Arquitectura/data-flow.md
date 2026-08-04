@@ -1,7 +1,7 @@
 ---
-describe: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, StatsEngine.js, ToastContext.jsx
-sincronizado_con: S132 — ToastProvider + Escucha Compartida long-polling + queue bidireccional
-stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, ToastContext.jsx
+describe: PlayerContext.jsx, GoogleAuthService.js, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, StatsEngine.js, ToastContext.jsx
+sincronizado_con: G3-1 — frontera Google OAuth / D1-R2 y Escucha Compartida
+stale_si_pliego_toca: PlayerContext.jsx, GoogleAuthService.js, GoogleDriveService.js, VaultContext.jsx, workers/worker.js, workers/routes/sync.js, StatsEngine.js, ToastContext.jsx
 ---
 
 # Data Flow
@@ -26,10 +26,12 @@ stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx
 - `refreshDb()`: solo Worker refresh (sin Drive refresh).
 - `patchDb(updater)`: **local-only** desde S115-D5. NO escribe a Drive. Mutaciones a D1 requieren llamada explícita Worker API (POST/PATCH/DELETE).
 
-### Google Drive JSON (DEPRECADO para datos)
-- Auth OAuth2 + bibliotecas (`libraries`, `libraryCapacity`, `_calcLibraryStatus`) — único uso restante.
-- `GoogleDriveService` reducido a OAuth + checkLibraryCapacity + listLibraryContents.
-- Datos de contenido (entries/eras/tracks/playlists/drops/tags) — **solo D1**.
+### Google Drive (retirado como fuente de datos)
+- Google Identity Services se usa únicamente para autenticación y perfil (`userinfo.email`, `userinfo.profile`).
+- `GoogleAuthService` no contiene scopes ni lecturas/escrituras Drive.
+- `GoogleDriveService` se conserva solo como facade legacy sin operaciones activas; sus APIs de biblioteca/capacidad fallan explícitamente y no hacen red.
+- Las acciones de biblioteca en `VaultContext` son compatibilidad local y no representan persistencia autorizada.
+- Datos de contenido (entries/eras/tracks/playlists/drops/tags), archivos y reproducción: **solo Worker/D1/R2**.
 
 ### Carga progresiva en boot (S116+S132)
 1. **`App.jsx` mount**: `VaultProvider` arranca → boot phase = INIT_SERVICES.
@@ -39,13 +41,10 @@ stale_si_pliego_toca: PlayerContext.jsx, GoogleDriveService.js, VaultContext.jsx
 5. **`_fetchJwt(email, googleToken)`**: `POST /api/auth/login` Worker API → token JWT → persistido en `sessionStorage("bunker_jwt")` → inyectado en `workerClient.setToken()`, `setUploadToken()`, `setStatsToken()`.
 6. **`_buildDbFromWorker(jwt)`**: 7 fetches paralelos + 1 fetch `/api/config` para adventures_start_date.
 7. **`setDb(data)`** → boot phase = READY → UI renderiza.
-8. **Updates live**: SW `postMessage("BUNKER_NAVIGATE")` desde Background Sync → `window.dispatchEvent("bunker_navigate")`.
+8. **Updates live**: cambios de presencia/escucha compartida via `/api/sync`; el Service Worker no registra Background Sync ni Push y no promete una cola offline durable.
 
-### Carga progresiva en boot (S64)
-1. `_fetchUserAndDb()`: Google OAuth2 → perfil → JWT (Worker API `POST /api/auth/login`).
-2. `initDatabase()`: carga Drive JSON → `setDb(data)` → `setDbStatus("ONLINE")`.
-3. `_refreshWorkerData(jwt)`: fire-and-forget → Worker API entries/eras/tracks → `setDb(prev => ...)` merge.
-4. UI renderiza con Drive data primero, se enriquece con Worker data al completar.
+### Carga progresiva histórica (S64) — supersedida
+El flujo Drive JSON descrito en S64 ya no existe en el código actual. Se conserva aquí como historial arquitectónico, no como comportamiento vigente. La carga actual es la descrita en `Persistencia (D1 Source of Truth)` y no presenta datos Drive antes de D1.
 
 ## Flujo Stats Engine
 - `StatsEngine.js`: módulo con token JWT global (`setStatsToken(token)` desde VaultContext).

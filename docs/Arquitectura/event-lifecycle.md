@@ -1,20 +1,23 @@
 ---
 describe: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, StatsEngine.js, workers/worker.js, workers/routes/sync.js, ToastContext.jsx
-sincronizado_con: S132 — Escucha Compartida wired SC1-SC14 + Toast long-polling
+sincronizado_con: G3-1 — D1/R2 source of truth, Google OAuth only, Escucha Compartida SC1-SC14
 stale_si_pliego_toca: PlayerContext.jsx, WinampPlayer.jsx, VaultContext.jsx, workers/routes/sync.js, ToastContext.jsx
 ---
 
 # Event Lifecycle
 
-## App Startup (post-S64)
+## App Startup (vigente G3-1)
 
-1. **BOOT.INIT_SERVICES**: Carga gapi, validación OAuth2, restaura JWT de localStorage (`bunker_jwt`).
-2. **BOOT.INIT_DB**: 
-   - Fetch perfil Google → validación whitelist (3 usuarios).
-   - `_fetchJwt(email, googleToken)`: `POST /api/auth/login` → JWT (HMAC-SHA256, 24h).
-   - `initDatabase()`: descarga `the_vault_database.json` de Drive.
-   - `_refreshWorkerData(jwt)`: fire-and-forget — fetch entries/eras/tracks de Worker API y merge en `db`.
-3. **BOOT.READY**: Hidratación completada, router expone 3 tabs. Worker data se mergea asíncronamente.
+1. **BOOT.INIT_SERVICES**: carga Google Identity Services para autenticación y restaura la sesión de acceso por clave si existe.
+2. **BOOT.INIT_DB**:
+   - obtiene perfil Google mediante `userinfo.email`/`userinfo.profile` y valida la whitelist;
+   - o canjea `POST /api/auth/token` para la sesión por clave test/admin;
+   - obtiene el JWT común y lo inyecta en `WorkerClient`, `FileUploadService` y `StatsEngine`;
+   - `_buildDbFromWorker(jwt)`: carga entries, eras, tracks, tags, playlists, drops, files y `/api/config` desde Worker/D1.
+3. **BOOT.READY**: la app queda hidratada desde D1/R2; si el Worker falla, usa `EMPTY_DB()` seguro. No se consulta Drive para datos.
+
+### Flujo histórico S64
+El antiguo `initDatabase()`/`_refreshWorkerData()` con Drive JSON queda conservado como historial de migración y no describe el comportamiento actual.
 
 ## Playback Lifecycle
 - **Play**: `playTrack()` → `isPlaying(true)`, WakeLock, MediaSession update, `trackPlay` event → StatsEngine.
@@ -71,7 +74,7 @@ Cada acción emite vía `StatsEngine.emit()` → `POST /api/events` → tabla `e
 - **Delete entry:** soft-delete vía `useVault().deleteEntry(id)` → `workerClient.del(...)` + local `is_deleted=true`.
 - **Era create:** `workerClient.post('/api/eras')` + `patchDb(local)`. Color via `ColorPicker` design system.
 - **AdventureCounter** (Vault.jsx) ahora lee `db.adventures_start_date` desde `app_config` (D1) — antes hardcoded 500d.
-- **MapView Reale (S131):** `react-leaflet` + `react-leaflet-cluster` lazy-loaded en `VaultGallery.jsx`. CartoDB Dark tiles, `DEMO_ENTRIES_GEO` 9 entries hardcoded para validar clustering. `FitBoundsToMarkers` helper con maxZoom 6 + padding 40px.
+- **MapView real (S131):** `react-leaflet` + `react-leaflet-cluster` lazy-loaded en `VaultGallery.jsx`. CartoDB Dark tiles y `FitBoundsToMarkers`; los datos proceden de entries reales, sin fixtures DEMO en producción.
 
 ## Boot lifecycle (S116 + S132)
 - **BOOT.INIT_SERVICES**: gapi + GIS init + restore JWT de `sessionStorage("bunker_jwt")`.
@@ -87,18 +90,19 @@ Cada acción emite vía `StatsEngine.emit()` → `POST /api/events` → tabla `e
 - **RECAP:** agregación desde `GET /api/events` por período (semana/mes/año) con resumen visual.
 
 ## VAULT Lifecycle
-- **Crear entrada**: AddEntryForm → FileUploadService (si hay foto) → Worker API `POST /api/entries` (futuro S65) → evento `entry_created`.
+- **Crear entrada**: AddEntryForm → FileUploadService (si hay foto) → Worker API `POST /api/entries` → evento `entry_created`.
 - **Subir archivo**: FileUploadService → `POST /api/upload` (pre-signed key) → `PUT /api/upload/:key` (binario a R2) → referencia `file_id` en entry.
 - **Ver galería**: 6 modos de navegación. Capa ambiental reactiva por Era. Imágenes reales desde R2 (r2_key) o dataUrl.
 
 ## CAPSULES Lifecycle
 - **Timeline**: `GET /api/events` desde Worker API con JWT → feed visual cronológico.
-- **Smoke Session**: play → timer → fade-out (últimos 2 min) → `smoke_session_end` event (futuro).
-- **Time Capsule**: `POST /api/time_capsules` (sellar) → bloqueo por `unlock_at` → `PATCH /api/time_capsules/:id` (desbloquear).
+- **Smoke Session**: play → timer → fade-out → evento de sesión en `events`.
+- **Time Capsule**: `POST /api/time_capsules` (sellar) → `capsule_items` → bloqueo por `unlock_at` → `PATCH /api/time_capsules/:id`.
 - **RECAP**: agregación desde `GET /api/events` por período (semana/mes/año).
 
-## Persistence Lifecycle (híbrido S64)
-- **Drive JSON**: libraries, playlists, drops, tags — `patchDb(updater)` → `updateData()` → Drive.
-- **Worker API**: entries, eras, tracks, events, queue, capsules — REST endpoints con JWT auth.
-- **Heartbeat**: `triggerHeartbeat()` cada 20 min + al volver de background (Page Visibility API).
-- **Drop polling**: `fetchData()` cada 30s en VaultContext para detectar drops entrantes.
+## Persistence Lifecycle (vigente G3-1)
+- **Worker API/D1/R2**: fuente única para entries, eras, tracks, playlists, drops, tags, queue, cápsulas, eventos y archivos.
+- **Google Identity Services**: solo autenticación y perfil; no persiste datos.
+- **GoogleDriveService**: facade legacy sin operaciones Drive activas; no se permiten imports nuevos.
+- **Heartbeat**: estado local y presencia/escucha compartida vía `/api/sync` autenticado.
+- **Drops**: estado cargado desde Worker/D1 y mutaciones explícitas por Worker API; no hay polling Drive.

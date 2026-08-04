@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 import { VibeTagBar } from "./TrackCard";
+import { Icon } from "../core/ui";
 
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 export const PlaylistNameInput = ({ onConfirm }) => {
@@ -42,7 +43,7 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
             color: ACID, fontSize: 11, letterSpacing: "0.2em", background: "transparent",
             border: "none", borderBottom: `1px solid ${ACID}10`, cursor: "pointer" }}
           onClick={() => onSelectPlaylist(pl.id)}>
-          ◎ {pl.name}
+          <Icon name="music" size={14} decorative /> {pl.name}
           <span style={{ opacity: 0.3, marginLeft: 8 }}>[{pl.track_ids.length}]</span>
         </button>
       ))}
@@ -142,7 +143,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
           display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <p style={{ color: ACID, fontSize: 12, letterSpacing: "0.25em", fontWeight: "bold" }}>
-              ◎ {playlist.name}
+              <Icon name="music" size={14} decorative /> {playlist.name}
             </p>
             <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.15em" }}>
               {searchQuery.trim() ? `${visibleTracks.length}/${plTracks.length}` : plTracks.length} track{plTracks.length !== 1 ? "s" : ""}
@@ -160,14 +161,14 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                 borderRadius: 2, fontSize: 15, transition: "all 0.15s",
                 color: ACID, border: `1px solid ${showSearch ? ACID + "66" : ACID + "33"}`,
                 background: showSearch ? `${ACID}15` : `${ACID}06`, cursor: "pointer" }}>
-              ⌕
+              <Icon name="search" size={15} decorative />
             </motion.button>
             {plTracks.length > 0 && (
               <motion.button whileTap={{ scale: 0.92 }} onClick={handlePlay}
                 style={{ background: `${ACID}18`, border: `1px solid ${ACID}44`, color: ACID,
                   fontSize: 11, padding: "12px 16px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.2em" }}>
-                ▶ PLAY
+                <Icon name="play" size={14} decorative /> PLAY
               </motion.button>
             )}
             {plTracks.length > 0 && onAddAllToQueue && (
@@ -176,11 +177,11 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                 style={{ background: `${ACID}0d`, border: `1px solid ${ACID}33`, color: ACID,
                   fontSize: 10, padding: "12px 14px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
-                ▶▶
+                <Icon name="arrowRight" size={14} decorative />
               </motion.button>
             )}
             <motion.button whileTap={{ scale: 0.9 }} onClick={onClose}
-              style={{ color: `${ACID}44`, fontSize: 14, padding: "12px 16px", background: "none", border: "none", cursor: "pointer" }}>✕</motion.button>
+              style={{ color: `${ACID}44`, fontSize: 14, padding: "12px 16px", background: "none", border: "none", cursor: "pointer" }}><Icon name="close" size={14} decorative /></motion.button>
           </div>
         </div>
 
@@ -232,7 +233,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                   borderBottom: `1px solid ${dragOverIdx === i ? ACID : ACID + "08"}`,
                   borderStyle: dragOverIdx === i ? "dashed" : "solid",
                   cursor: "grab" }}>
-                <span style={{ color: ACID, opacity: 0.6, fontSize: 11, flexShrink: 0 }}>⠿</span>
+                <Icon name="more" size={13} decorative />
                 <div
                   style={{ flex: 1, minWidth: 0, cursor: "pointer" }}
                   onClick={() => handlePlayFromTrack(track, plTracks.indexOf(track))}
@@ -259,8 +260,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
             style={{ padding: "8px 16px", borderTop: `1px solid #ff6b3522`,
               background: "rgba(255,107,53,0.06)", display: "flex", alignItems: "center", gap: 8,
               fontFamily: FONT_MONO, fontSize: 10, letterSpacing: "0.1em" }}
-          >
-            <span style={{ color: "#ff6b35" }}>⚠</span>
+          >                <Icon name="alert" size={14} decorative />
             <span style={{ color: "#ff6b3588", flex: 1 }}>
               {missingIds.length} track{missingIds.length !== 1 ? "s" : ""} no disponible{missingIds.length !== 1 ? "s" : ""}
             </span>

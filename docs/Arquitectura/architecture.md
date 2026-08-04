@@ -6,9 +6,11 @@ stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx
 
 # Architecture
 
+> **Estado vigente G3:** Google Identity Services se usa solo para autenticación. D1/R2 son la única fuente de persistencia y reproducción. Las menciones históricas a Drive JSON que sigan apareciendo en este documento están marcadas como supersedidas.
+
 ## Objetivo del sistema
 PWA serverless tipo bóveda de memoria y reproductor musical colaborativo para una pareja (Edu y David).
-Estética Cyber-Vandal. Persistencia híbrida: Cloudflare D1+R2 (entries/eras/tracks) + Google Drive JSON (libraries/playlists/drops/tags en transición).
+Estética Cyber-Vandal. Persistencia: Cloudflare D1 + R2 para datos y archivos; Google Identity Services solo para autenticación. Google Drive no es fuente de persistencia.
 Producción: https://el-bunker-beige.vercel.app · Worker API: https://el-bunker-api.thebunker-admin.workers.dev
 
 ## Módulos principales (post-S64)
@@ -16,13 +18,13 @@ Producción: https://el-bunker-beige.vercel.app · Worker API: https://el-bunker
 ### VAULT — Motor de contenido
 Responsable de: eras, entries, documentos, fotos, tags de contexto, galería 6 modos.
 Dueño del dato de contenido. Sin audio propio.
-Carga de datos: Worker API (entries, eras) con fallback Drive JSON.
+Carga de datos: Worker API (D1/R2), sin fallback Drive JSON.
 Archivos: `src/vault/Vault.jsx`, `src/vault/VaultGallery.jsx`, `src/vault/WallView.jsx`, `src/vault/EntryLightbox.jsx` (S148: lightbox unificado — portal+swipe+pinch, adoptado por los 6 modos), `src/vault/AddEntryForm.jsx`. Sin DEMO fallbacks desde S148 (estado vacío honesto).
 
 ### MUSIC LAB — Motor de audio
 Responsable de: tracks, playlists, drops, tags de vibe, reproducción, escucha compartida.
 ÚNICO módulo que instancia `<audio>`. Mini-player persistente sobre todas las tabs.
-Carga de tracks: Worker API con fallback Drive JSON.
+Carga de tracks: Worker API (D1/R2), sin fallback Drive JSON.
 Archivos: `src/musiclab/*`, `src/core/PlayerContext.jsx`
 
 ### CAPSULES — Capa de experiencias temporales
@@ -31,10 +33,11 @@ Cliente de VAULT y MusicLab — no dueño del dato.
 Fetch de datos: Worker API (`/api/events`, `/api/time_capsules`) vía jwtToken.
 Archivos: `src/capsules/Capsules.jsx`, `src/capsules/Timeline.jsx`, `src/capsules/TimeCapsules.jsx`, `src/capsules/Recaps.jsx`, `src/smoke/SmokeSession.jsx`
 
-### Persistence Engine (híbrido S64)
-- **Worker API** (D1 + R2): fuente primaria para entries, eras, tracks, events, time_capsules, queue.
-- **Google Drive JSON**: fuente para libraries, playlists, drops, tags (en transición a D1).
-- `VaultContext._refreshWorkerData(token)`: mergea datos del Worker en `db` state. Fallback silencioso a Drive.
+### Persistence Engine (D1/R2 — vigente)
+- **Worker API** (D1 + R2): fuente única para entries, eras, tracks, playlists, drops, tags, events, time_capsules, queue y archivos.
+- **Google Identity Services**: solo OAuth de autenticación y perfil; no es almacenamiento.
+- `VaultContext._buildDbFromWorker(token)`: carga datos desde Worker/D1 y usa `EMPTY_DB()` como fallback seguro; no consulta Drive.
+- `GoogleDriveService`: facade legacy no operativo para consumidores históricos; no se permite añadir imports nuevos.
 
 ### Stats Engine
 Tabla `events` en D1 — append-only (🔒-3). Todos los módulos emiten eventos vía `StatsEngine.js`.
@@ -66,7 +69,7 @@ Archivos: `src/core/FileUploadService.js`
 
 ---
 
-## Cambios S49-S64
+## Cambios S49-S64 (histórico)
 
 - **S49:** YouTube Engine eliminado. Motor exclusivo HTMLAudioElement + R2. 3 tabs definitivos.
 - **S54:** D1 schema (16 tablas) + Workers init + Wrangler config.
@@ -77,7 +80,7 @@ Archivos: `src/core/FileUploadService.js`
 - **S61:** jwtToken threading: App → Vault → VaultGallery + MusicLab.
 - **S62:** Worker CRUD entries: 5 endpoints con tags+files, validación 404.
 - **S63:** Worker CRUD eras (5 endpoints) + files GET.
-- **S64:** VaultContext → Worker API: carga híbrida Drive+Worker para entries/eras/tracks.
+- **S64:** VaultContext → Worker API: primera migración; el flujo híbrido quedó supersedido por S115-D5.
 
 ## Cambios S115-S132 (consolidación D1 + escucha compartida + design system)
 
@@ -89,7 +92,7 @@ Archivos: `src/core/FileUploadService.js`
 
 ### S130-B — VaultContext precisión
 - `_buildDbFromWorker`: añade `/api/files` en fetch paralelo, mapea `from_user→from`/`to_user→to` para compatibilidad con componentes existentes.
-- `_refreshWorkerData` ahora también consulta `/api/config` → `app_config.adventures_start_date` real (antes hardcoded a 500 días).
+- **Histórico S130-B:** `_refreshWorkerData` consultaba `/api/config` → `app_config.adventures_start_date` real. El flujo actual usa `_buildDbFromWorker`; se conserva esta línea como historial de migración.
 - `AdventureCounter` (Vault.jsx) lee fecha real desde db. Era ~500d morto → fecha real configurable en `app_config`.
 
 ### S131 — Cimientos (Fase 0)

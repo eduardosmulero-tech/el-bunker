@@ -10,9 +10,9 @@
 
 ## QUÉ ES ESTO
 
-El Búnker es nuestra app. Privada, encriptada y sin anuncios. No existe en ninguna tienda, no la puede descargar nadie más, y todo lo que guardemos aquí vive en nuestro Google Drive, no en ningún servidor de terceros. Es literalmente nuestra cápsula del tiempo digital.
+El Búnker es nuestra app. Privada y sin anuncios. No existe en ninguna tienda, no la puede descargar nadie más, y los datos de la app se guardan en Cloudflare D1 + R2. Google se usa únicamente para autenticar (también existe acceso por clave autorizado).
 
-Está dividida en cuatro zonas, accesibles desde la barra de abajo. Te las explico una a una.
+Está dividida en tres zonas principales, accesibles desde la barra de abajo: VAULT, MUSIC LAB y CAPSULES. Te las explico una a una.
 
 ---
 
@@ -42,12 +42,6 @@ Aquí está todo lo importante. Es la primera pantalla que ves al entrar.
 
 ---
 
-### ◎ TIMELINE — Próximamente
-
-Esta sección aún está en construcción. Cuando la active verás aquí la línea de tiempo completa de nuestras Eras. Por ahora solo hay un placeholder animado — no está rota, está reservada.
-
----
-
 ### ◉ MUSIC LAB — El reproductor
 
 Aquí vive nuestra música. El reproductor tiene estética Winamp (sí, el de los 2000, adrede).
@@ -65,7 +59,7 @@ Aquí vive nuestra música. El reproductor tiene estética Winamp (sí, el de lo
 
 ---
 
-### ⧖ CAPSULES — La Smoke Session
+### ⧖ CAPSULES — Cápsulas y Smoke Session
 
 Esta es la zona especial. El temporizador circular de neón.
 
@@ -80,30 +74,20 @@ El texto que aparece en el centro del anillo durante los últimos minutos dice c
 
 ---
 
-## LAS BIBLIOTECAS — Cómo guardamos los archivos grandes
+## CÓMO SE GUARDAN LOS DATOS
 
-Esto es algo que gestiono yo entre bastidores, pero quiero que lo entiendas por si alguna vez ves algo raro en la app.
+Las fotos, entradas y canciones se gestionan mediante la API de la aplicación: metadatos en Cloudflare D1 y archivos en R2. Google no es el almacén de la app; solo interviene en el login cuando se usa ese método. El acceso por clave test/admin es una superficie restringida y no debe compartirse.
 
-La música y las fotos que vamos acumulando no caben en un solo sitio para siempre. Para organizarlo, tengo creadas varias cuentas Google que actúan como bibliotecas — algo así como discos duros en la nube, cada uno con su función. La app sabe cuáles existen, cuánto espacio tienen y, lo más importante, si están en buen estado.
-
-**Lo que puedes ver tú** es una lista de esas bibliotecas con su estado. Cada una tiene un indicador de color:
-
-- **Verde · ACTIVE** — todo bien, la cuenta está viva
-- **Naranja · AT RISK** — llevamos más de 18 meses sin entrar a esa cuenta. No es urgente pero hay que atenderlo pronto
-- **Rojo · LOST** — han pasado casi dos años. Google podría haber cerrado esa cuenta ya
-
-**Por qué existe ese riesgo:** Google cierra las cuentas Gmail que llevan demasiado tiempo sin actividad. No los archivos — la cuenta entera. Para evitarlo, de vez en cuando toca entrar a esas cuentas y hacer algo, aunque sea mirar el correo. Cuando yo lo hago, marco en la app que acabo de entrar y el contador se reinicia.
-
-**Lo que tú no tienes que hacer:** nada. Esto lo llevo yo. Si alguna vez ves un indicador naranja o rojo, dímelo para que no se me haya pasado, pero no es algo que tú tengas que resolver.
+La app puede mostrar estados de sincronización o carga mientras habla con la API. Si una operación falla, espera al mensaje visible y no repitas muchas veces una subida sin comprobar antes si se creó el elemento.
 
 ---
 
 ## COSAS QUE PASAN SOLAS (Y SON NORMALES)
 
 - **El boot terminal** al abrir la app — es decorativo, no significa que algo esté cargando lento.
-- **El Heartbeat automático** — cada 20 minutos que estés dentro, la app hace un ping silencioso a Google Drive para que sepa que el vault sigue activo. No lo verás, ocurre en segundo plano.
-- **Modo offline** — si pierdes conexión a mitad de una sesión, la app sigue funcionando con lo que ya cargó. Cuando vuelvas a tener señal, sincroniza sola.
-- **El estado ◈ SYNCING** en la barra de arriba — aparece un segundo cuando está guardando algo en Drive. Es normal. Si se queda ahí mucho tiempo, cierra y vuelve a abrir la app.
+- **El heartbeat automático** — mientras estás dentro, la app puede comprobar el estado de la sesión y la API en segundo plano. No contacta con Google Drive para guardar datos.
+- **Modo offline limitado** — el Service Worker conserva el shell y algunos recursos ya solicitados; no almacena respuestas de `/api/` ni garantiza sincronización automática de cambios. Las operaciones de datos necesitan conexión.
+- **El estado de carga/sincronización** — indica comunicación con la API D1/R2. Si se queda mucho tiempo, comprueba la conexión y vuelve a abrir la app.
 
 ---
 
@@ -128,4 +112,4 @@ Cuídala un poco. Y entra de vez en cuando aunque sea para ver el corazón verde
 
 *EL BÚNKER · ENCRYPTED · PRIVATE · YOURS ALONE*
 
-`v1.1 · Sistema de Memoria Encriptada`
+`v1.2 · D1/R2, Google solo auth · Service Worker sin sync automática`

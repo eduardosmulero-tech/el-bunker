@@ -1,7 +1,7 @@
 ---
-describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, ToastContext.jsx
-sincronizado_con: S132 — ToastProvider + shared_sessions new owner
-stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, workers/routes/sync.js
+describe: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Capsules.jsx, Layout.jsx, ToastContext.jsx, GoogleAuthService.js, GoogleDriveService.js
+sincronizado_con: G3-1 — D1/R2 source of truth, Google OAuth only
+stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx, Vault.jsx, Layout.jsx, ToastContext.jsx, GoogleAuthService.js, GoogleDriveService.js, workers/routes/sync.js
 ---
 
 # Ownership Map (post-S64)
@@ -24,9 +24,10 @@ stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx
 | shared_sessions | MUSIC LAB + Escucha Compartida (PlayerContext sync.js) | D1 `shared_sessions` table (S132) ✅ |
 | presence_{user} | MUSIC LAB (PlayerContext heartbeats) | D1 `app_config` table (presence_* keys) ✅ (S132) |
 | toasts[] | UI Shell (Layout.jsx via ToastContext) | React state en `ToastContext` (transient) ✅ (S132) |
-| libraries[] | VAULT (VaultContext) | Drive JSON (sin migración planeada) — S115-D5: dep |
+| libraries[] | VAULT (VaultContext) | Estado local de compatibilidad; no hay persistencia Drive autorizada |
 | files (R2) | FileUploadService | R2 bucket + D1 `files` table ✅ |
-| jwtToken | VaultContext (_fetchJwt) | **sessionStorage** (`bunker_jwt`) + Worker API (S116 migración desde localStorage) |
+| jwtToken | VaultContext (_fetchJwt) | **sessionStorage** (`bunker_jwt`) + Worker API (S116) |
+| Google auth token | GoogleAuthService | Memoria/localStorage de token OAuth; solo Google Identity Services, nunca Drive |
 
 ## Clientes (CONSUMERS, no owners)
 
@@ -53,10 +54,10 @@ stale_si_pliego_toca: PlayerContext.jsx, VaultContext.jsx, App.jsx, MusicLab.jsx
 | TagManager UI | MusicLab (vibe tags) + VAULT (context tags) | Distintos namespaces |
 | Design System (`src/core/ui/*`) | Layout + Vault (Button en +ERA) + cualquier page | import directo |
 | ColorPicker (`src/core/ColorPicker.jsx`) | TagManager + VAULT (Era color) | import directo |
-| VaultContext._refreshWorkerData | Boot + refreshDb | jwtToken de sessionStorage |
+| VaultContext._buildDbFromWorker | Boot + refreshDb | jwtToken de sessionStorage |
 | WorkerClient (`src/core/WorkerClient.js`) | Todos los módulos que llaman D1 API | singleton con `setToken(jwt)` |
 
-## Flujo de ownership en boot (S116 + S132)
+## Flujo de ownership en boot (G3-1, S116 + S132)
 
 1. VaultProvider arranca → gapi + GIS init → `onAuthChange` listeners.
 2. Si usuario ya autenticado (restaurado): `_fetchUserAndDb(tokenAcceso)`.

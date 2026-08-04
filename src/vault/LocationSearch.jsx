@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, FONT_MONO, PURPLE } from "../tokens";
 import { searchLocation } from "./GeocoderService";
+import { Icon } from "../core/ui";
 
 export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
   const [query, setQuery] = useState(value || "");
@@ -60,9 +61,9 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
   return (
     <div ref={rootRef} className="relative flex flex-col gap-1" style={{ fontFamily: FONT_MONO }}>
       <div className="flex items-center gap-1">
-        <span className="text-[9px] tracking-[0.25em] uppercase" style={{ color: ACID, opacity: 0.3 }}>📍 UBICACIÓN</span>
+        <span className="text-[9px] tracking-[0.25em] uppercase" style={{ color: ACID, opacity: 0.3 }}><Icon name="map" size={11} decorative /> UBICACIÓN</span>
         {hasCoords && (
-          <span className="text-[8px] opacity-30 ml-auto" style={{ color: ACID }}>✓ {lat?.toFixed(4)}, {lng?.toFixed(4)}</span>
+          <span className="text-[8px] opacity-30 ml-auto" style={{ color: ACID }}><Icon name="check" size={10} decorative /> {lat?.toFixed(4)}, {lng?.toFixed(4)}</span>
         )}
       </div>
       <div className="flex gap-1">
@@ -71,7 +72,7 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
           className="bg-transparent text-xs p-3 min-h-[44px] flex-1 outline-none"
           style={{ color: ACID, border: `1px solid ${hasCoords ? `${ACID}55` : `${ACID}33`}`, fontFamily: FONT_MONO }} />
         {query && (
-          <button onClick={handleClear} className="text-xs px-3 py-2.5 opacity-30 hover:opacity-60" style={{ color: ACID }}>✕</button>
+          <button onClick={handleClear} className="text-xs px-3 py-2.5 opacity-30 hover:opacity-60" style={{ color: ACID }}><Icon name="close" size={14} decorative /></button>
         )}
         <button onClick={() => setShowManual((p) => !p)} className="text-xs px-3 py-2.5 tracking-widest uppercase opacity-30 hover:opacity-60"
           style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }}>°°</button>
@@ -90,7 +91,7 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
                 style={{ color: ACID, borderBottom: i < results.length - 1 ? `1px solid ${ACID}0d` : "none" }}
                 onMouseEnter={(e) => e.currentTarget.style.background = `${PURPLE}0d`}
                 onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
-                <span className="opacity-30 text-[9px]">📍</span>
+                <Icon name="map" size={11} decorative />
                 <span className="truncate flex-1">{r.label}</span>
                 <span className="text-[7px] opacity-20">{r.lat.toFixed(3)}, {r.lng.toFixed(3)}</span>
               </div>
@@ -110,7 +111,7 @@ export default function LocationSearch({ value, lat, lng, onSelect, onClear }) {
               className="bg-transparent text-xs p-3 min-h-[44px] flex-1 outline-none"
               style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }} />
             <button onClick={handleApplyManual} className="text-xs px-3 py-2.5 tracking-widest uppercase"
-              style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>↲</button>
+              style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}><Icon name="check" size={14} decorative /></button>
           </motion.div>
         )}
       </AnimatePresence>

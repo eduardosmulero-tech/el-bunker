@@ -4,6 +4,7 @@
 // ============================================================
 import { motion } from "framer-motion";
 import { ACID, BG, FONT_MONO as FONT } from "../tokens";
+import { Icon } from "../core/ui";
 
 // Suspense fallback compartido
 export const PageLoader = () => (
@@ -109,7 +110,7 @@ export const ErrorScreen = ({ message, onRetry }) => (
         transition={{ duration: 1.4, repeat: Infinity }}
         className="text-4xl"
       >
-        ⚠
+        <Icon name="alert" size={36} label="Error de sistema" />
       </motion.p>
       <p className="text-xs tracking-[0.4em] uppercase" style={{ color: "#ff3b3b", textShadow: "0 0 12px #ff3b3b" }}>
         ERROR DE SISTEMA

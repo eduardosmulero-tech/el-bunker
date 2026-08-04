@@ -16,8 +16,7 @@
     <link rel="stylesheet" href="/vendor/MarkerCluster.css" />
     <link rel="stylesheet" href="/vendor/MarkerCluster.Default.css" />
     <title>El Búnker</title>
-    <!-- Chromecast SDK (S109) -->
-    <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+    <!-- Chromecast SDK se carga bajo demanda desde PlayerContext (G7); no bloquear el login ni inyectar HTTP desde el head. -->
   </head>
   <body>
     <div id="root"></div>

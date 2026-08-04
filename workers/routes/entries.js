@@ -5,6 +5,7 @@
 
 import { json, err } from "../utils/response.js";
 import { isSensitiveR2Key, signR2Read } from "../utils/r2-sign.js";
+import { canManageOwned } from "../utils/authorization.js";
 
 // FASE D.1 (V4): para entries con imágenes en prefijos sensibles
 // (vault/docs/, vault/audio/), inyecta `url` firmada HMAC en cada imagen.
@@ -137,7 +138,7 @@ export default async function handleEntries(request, env, url, userId) {
     }
     const id = body.id || crypto.randomUUID();
     const now = body.created_at || new Date().toISOString();
-    const fromUser = body.from_user || userId;
+    const fromUser = userId;
     await env.DB.prepare(
       `INSERT INTO entries (id, era_id, type, title, content, from_user, to_user, created_at, updated_at)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?8)`
@@ -161,10 +162,11 @@ export default async function handleEntries(request, env, url, userId) {
   if (method === "PATCH" && path.startsWith("/api/entries/")) {
     const ENTRY_FIELDS = new Set(["era_id", "type", "title", "content", "to_user"]);
     const entryId = path.split("/")[3];
-    const exists = await env.DB.prepare(
-      "SELECT id FROM entries WHERE id = ?1 AND is_deleted = 0"
+    const owner = await env.DB.prepare(
+      "SELECT id, from_user FROM entries WHERE id = ?1 AND is_deleted = 0"
     ).bind(entryId).first();
-    if (!exists) return err("Entry not found", 404);
+    if (!owner) return err("Entry not found", 404);
+    if (!canManageOwned(userId, owner.from_user)) return err("Forbidden", 403);
     const body = await request.json();
     const { tags, file_ids, ...fields } = body;
     const sets = []; const binds = [];
@@ -198,10 +200,11 @@ export default async function handleEntries(request, env, url, userId) {
   // DELETE /api/entries/:id
   if (method === "DELETE" && path.startsWith("/api/entries/")) {
     const entryId = path.split("/")[3];
-    const exists = await env.DB.prepare(
-      "SELECT id FROM entries WHERE id = ?1 AND is_deleted = 0"
+    const owner = await env.DB.prepare(
+      "SELECT id, from_user FROM entries WHERE id = ?1 AND is_deleted = 0"
     ).bind(entryId).first();
-    if (!exists) return err("Entry not found", 404);
+    if (!owner) return err("Entry not found", 404);
+    if (!canManageOwned(userId, owner.from_user)) return err("Forbidden", 403);
     await env.DB.prepare("UPDATE entries SET is_deleted = 1, updated_at = datetime('now') WHERE id = ?1").bind(entryId).run();
     await env.DB.prepare(
       "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'entry',?3)"

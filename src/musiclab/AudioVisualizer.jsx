@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
+import { Icon } from "../core/ui";
 
 function withAlpha(color, alpha) {
   const hex = Math.round(alpha * 255).toString(16).padStart(2, "0");
@@ -529,7 +530,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
               className="fixed top-6 right-6 z-[60] w-11 h-11 flex items-center justify-center rounded-sm text-sm"
               style={{ color: ac, border: `1px solid ${ac}44`, background: `${ac}0d` }}
             >
-              ✕
+              <Icon name="close" size={14} decorative />
             </motion.button>
 
             <motion.div

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { workerClient } from "../core/WorkerClient";
 import { useToast } from "../core/ToastContext";
+import { Icon } from "../core/ui";
 
 // S74: Opening animation component for unlocked capsules
 const CapsuleReveal = ({ capsule, onClose }) => (
@@ -33,7 +34,7 @@ const CapsuleReveal = ({ capsule, onClose }) => (
         transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
         className="text-5xl mb-4"
       >
-        🔮
+        <Icon name="sparkles" size={42} label="Cápsula abierta" />
       </motion.div>
       <p className="text-lg font-bold mb-2" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
         {capsule.title}
@@ -144,7 +145,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
           className="text-xs p-3 min-h-[44px] text-left"
           style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO, background: showContentPicker ? `${ACID}08` : "transparent" }}
         >
-          📦 {selectedEntryIds.length + selectedPlaylistIds.length > 0
+          <Icon name="archive" size={14} label="Contenido" /> {selectedEntryIds.length + selectedPlaylistIds.length > 0
             ? `${selectedEntryIds.length} entradas + ${selectedPlaylistIds.length} playlists`
             : "Seleccionar contenido (opcional)"}
         </motion.button>
@@ -169,7 +170,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
                           <button key={e.id} onClick={() => setSelectedEntryIds(prev => sel ? prev.filter(id => id !== e.id) : [...prev, e.id])}
                             className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm"
                             style={{ color: sel ? ACID : `${ACID}44`, border: `1px solid ${sel ? ACID : `${ACID}18`}`, background: sel ? `${ACID}0d` : "transparent" }}>
-                            {sel ? "✓ " : ""}{e.title?.slice(0, 18) || e.id?.slice(0, 8)}
+                            {sel && <Icon name="check" size={13} decorative />}{e.title?.slice(0, 18) || e.id?.slice(0, 8)}
                           </button>
                         );
                       })}
@@ -186,7 +187,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
                           <button key={p.id} onClick={() => setSelectedPlaylistIds(prev => sel ? prev.filter(id => id !== p.id) : [...prev, p.id])}
                             className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm"
                             style={{ color: sel ? PURPLE : `${PURPLE}44`, border: `1px solid ${sel ? PURPLE : `${PURPLE}18`}`, background: sel ? `${PURPLE}0d` : "transparent" }}>
-                            {sel ? "✓ " : ""}{p.name?.slice(0, 18) || p.id?.slice(0, 8)}
+                            {sel && <Icon name="check" size={13} decorative />}{p.name?.slice(0, 18) || p.id?.slice(0, 8)}
                           </button>
                         );
                       })}
@@ -200,7 +201,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreate} disabled={isCreating || !title || !unlockAt}
           className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px]" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO, opacity: isCreating ? 0.5 : 1 }}>
-          {isCreating ? "SELLANDO..." : "SELLAR CÁPSULA 🔮"}
+          {isCreating ? "SELLANDO..." : "SELLAR CÁPSULA"}
         </motion.button>
         {error && (
           <p className="text-xs opacity-60" style={{ color: "#ff3b3b" }}>{error}</p>
@@ -210,7 +211,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       {/* Capsulas bloqueadas */}
       {locked.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs tracking-[0.3em] uppercase" style={{ color: PURPLE }}>🔒 BLOQUEADAS</h3>
+          <h3 className="text-xs tracking-[0.3em] uppercase flex items-center gap-2" style={{ color: PURPLE }}><Icon name="lock" size={14} label="Bloqueadas" /> BLOQUEADAS</h3>
           {locked.map(c => (
             <div key={c.id} className="p-3 text-xs" style={{ background: GLASS_BG, border: `1px solid ${PURPLE}33` }}>
               <span style={{ color: PURPLE }}>{c.title}</span>
@@ -228,7 +229,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       {/* Capsulas desbloqueadas */}
       {unlocked.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs tracking-[0.3em] uppercase" style={{ color: ACID }}>🔓 DESBLOQUEADAS</h3>
+          <h3 className="text-xs tracking-[0.3em] uppercase flex items-center gap-2" style={{ color: ACID }}><Icon name="unlock" size={14} label="Desbloqueadas" /> DESBLOQUEADAS</h3>
           {unlocked.map(c => (
             <motion.div key={c.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               className="p-3 text-xs cursor-pointer hover:scale-[1.01] transition-transform"

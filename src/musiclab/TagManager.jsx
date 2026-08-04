@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 import { ColorPicker } from "../core/ColorPicker";
 import { useToast } from "../core/ToastContext";
+import { Icon } from "../core/ui";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 const GLASS_BG     = "rgba(191,255,0,0.03)";
@@ -79,14 +80,14 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
       {/* Cabecera */}
       <div className="flex items-center justify-between">
         <span className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: ACID }}>
-          ◈ TAGS [{String(tags.length).padStart(2, "0")}]
+          <Icon name="tag" size={14} decorative /> TAGS [{String(tags.length).padStart(2, "0")}]
         </span>
         <motion.button whileTap={{ scale: 0.9 }}
           onClick={() => { if (showForm && !editingId) { handleCancel(); } else { openForm(); } }}
           className="w-11 h-11 flex items-center justify-center rounded-sm text-sm"
           style={{ color: ACID, border: `1px solid ${showForm && !editingId ? ACID + "66" : ACID + "33"}`,
             background: showForm && !editingId ? `${ACID}15` : `${ACID}06` }}>
-          {showForm && !editingId ? "✕" : "+"}
+          {showForm && !editingId ? <Icon name="close" size={14} decorative /> : <Icon name="plus" size={14} decorative />}
         </motion.button>
       </div>
 
@@ -97,7 +98,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
             className="flex flex-col gap-3 p-3 rounded-sm"
             style={{ background: `${ACID}04`, border: `1px solid ${ACID}22` }}>
             <p className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: ACID }}>
-              {editingId ? "✎ EDITAR TAG" : "+ NUEVO TAG"}
+              <Icon name={editingId ? "edit" : "plus"} size={14} decorative /> {editingId ? "EDITAR TAG" : "NUEVO TAG"}
             </p>
 
             {/* Nombre */}
@@ -115,7 +116,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
               <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Icono (emoji)</span>
               <div className="flex items-center gap-2">
                 <span style={{ fontSize: 20, color: form.color, lineHeight: 1, minWidth: 28, textAlign: "center" }}>
-                  {form.icon || "◈"}
+                  <Icon name={form.icon || "archive"} size={20} decorative />
                 </span>
                 <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))}
                   placeholder="◈"
@@ -134,14 +135,13 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
 
             {/* Preview */}
             <div className="flex items-center gap-2 p-2 rounded-sm"
-              style={{ background: `${form.color}08`, border: `1px solid ${form.color}33` }}>
-              <span style={{ color: form.color, fontSize: 16 }}>{form.icon || "◈"}</span>
+              style={{ background: `${form.color}08`, border: `1px solid ${form.color}33` }}>                <Icon name={form.icon || "archive"} size={16} decorative />
               <span className="text-xs font-bold tracking-widest" style={{ color: form.color }}>
                 {form.label || "PREVIEW"}
               </span>
               <span className="text-xs px-1.5 py-0.5 rounded-sm ml-auto"
                 style={{ color: form.color, background: `${form.color}15`, border: `1px solid ${form.color}33` }}>
-                {form.icon || "◈"}
+                <Icon name={form.icon || "archive"} size={14} decorative />
               </span>
             </div>
 
@@ -183,8 +183,8 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                 className="flex items-center gap-3 p-3 rounded-sm"
                 style={{ background: GLASS_BG, border: `1px solid ${tag.color}22`,
                   fontFamily: FONT_MONO, cursor: "grab" }}>
-                <span style={{ color: `${ACID}25`, fontSize: 11, flexShrink: 0 }}>⠿</span>
-                <span style={{ color: tag.color, fontSize: 18, flexShrink: 0 }}>{tag.icon}</span>
+                <Icon name="more" size={13} decorative className="flex-shrink-0" />
+                <Icon name={tag.icon} size={18} decorative />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold tracking-widest" style={{ color: tag.color }}>{tag.label}</p>
                   <motion.button whileTap={{ scale: 0.95 }}
@@ -200,14 +200,14 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                   <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleEdit(tag)}
                     style={{ color: ACID, background: `${ACID}0a`, border: `1px solid ${ACID}22`,
                       borderRadius: 2, fontSize: 12, padding: "12px 14px", fontFamily: FONT_MONO, flexShrink: 0 }}>
-                    ✎
+                    <Icon name="edit" size={14} decorative />
                   </motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleDelete(tag)}
                     style={{ color: inUse > 0 ? "#ff444466" : "#ff4444",
                       background: "#ff444408", border: "1px solid #ff444422",
                       borderRadius: 2, fontSize: 12, padding: "12px 14px", fontFamily: FONT_MONO, flexShrink: 0,
                       cursor: inUse > 0 ? "not-allowed" : "pointer" }}>
-                    ✕
+                    <Icon name="close" size={14} decorative />
                   </motion.button>
               </div>
             );

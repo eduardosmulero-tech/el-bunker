@@ -36,8 +36,15 @@ echo ""
 
 # Snapshot via Python (mas portable que parsear JSON de wrangler)
 python3 - "$DB_NAME" "$OUT" "${TABLES[@]}" <<'PYEOF'
-import subprocess, json, sys
+import subprocess, json, sys, shutil
 from datetime import datetime, timezone
+
+# Windows exposes npm executables as .cmd files. Resolve the executable
+# explicitly so this snapshot works from Git Bash as well as POSIX shells.
+WRANGLER = shutil.which("npx.cmd") or shutil.which("npx")
+if not WRANGLER:
+    print("FATAL: npx executable not found in PATH", file=sys.stderr)
+    sys.exit(1)
 
 db_name = sys.argv[1]
 out_path = sys.argv[2]
@@ -60,7 +67,7 @@ for t in tables:
     print(f"  Querying {t}...", flush=True)
     try:
         r = subprocess.run(
-            ["npx", "wrangler", "d1", "execute", db_name, "--remote", "--json",
+            [WRANGLER, "wrangler", "d1", "execute", db_name, "--remote", "--json",
              f"--command=SELECT * FROM {t}"],
             capture_output=True, text=True, check=True, timeout=60,
         )

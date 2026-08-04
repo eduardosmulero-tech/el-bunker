@@ -4,6 +4,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { canManageOwned } from "../utils/authorization.js";
 
 export default async function handlePlaylists(request, env, url, userId) {
   const method = request.method;
@@ -136,6 +137,9 @@ export default async function handlePlaylists(request, env, url, userId) {
   if (method === "PATCH" && path.startsWith("/api/playlists/") && !path.endsWith("/tracks")) {
     const PL_FIELDS = new Set(["name", "description"]);
     const plId = path.split("/")[3];
+    const owner = await env.DB.prepare("SELECT created_by FROM playlists WHERE id = ?1").bind(plId).first();
+    if (!owner) return err("Playlist not found", 404);
+    if (!canManageOwned(userId, owner.created_by)) return err("Forbidden", 403);
     const body = await request.json();
     const sets = []; const binds = [];
     for (const [k, v] of Object.entries(body)) {
@@ -150,10 +154,16 @@ export default async function handlePlaylists(request, env, url, userId) {
     return json({ id: plId, ...body });
   }
 
-  // DELETE /api/playlists/:id
+  // DELETE /api/playlists/:id — controlled hard-delete of the playlist only.
   if (method === "DELETE" && path.startsWith("/api/playlists/") && !path.endsWith("/tracks")) {
     const plId = path.split("/")[3];
+    const owner = await env.DB.prepare("SELECT created_by FROM playlists WHERE id = ?1").bind(plId).first();
+    if (!owner) return err("Playlist not found", 404);
+    if (!canManageOwned(userId, owner.created_by)) return err("Forbidden", 403);
     await env.DB.prepare("DELETE FROM playlists WHERE id = ?1").bind(plId).run();
+    await env.DB.prepare(
+      "INSERT INTO events (event_type, user_id, entity_type, entity_id) VALUES (?1,?2,'playlist',?3)"
+    ).bind("playlist_deleted", userId, plId).run();
     return json({ ok: true, id: plId });
   }
 

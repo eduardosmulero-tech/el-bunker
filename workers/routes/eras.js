@@ -4,6 +4,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { isAdmin } from "../utils/authorization.js";
 
 export default async function handleEras(request, env, url, userId) {
   const method = request.method;
@@ -96,6 +97,9 @@ export default async function handleEras(request, env, url, userId) {
     const eraId = path.split("/")[3];
     const exists = await env.DB.prepare("SELECT id FROM eras WHERE id = ?1").bind(eraId).first();
     if (!exists) return err("Era not found", 404);
+    if (!isAdmin(userId)) return err("Forbidden — only admin can delete eras", 403);
+    const { count } = await env.DB.prepare("SELECT COUNT(*) AS count FROM entries WHERE era_id = ?1 AND is_deleted = 0").bind(eraId).first();
+    if (Number(count) > 0) return err("Era has active entries; archive or move them first", 409);
     await env.DB.prepare("UPDATE entries SET era_id = NULL WHERE era_id = ?1").bind(eraId).run();
     await env.DB.prepare("DELETE FROM eras WHERE id = ?1").bind(eraId).run();
     await env.DB.prepare(

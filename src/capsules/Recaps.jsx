@@ -7,11 +7,12 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { workerClient } from "../core/WorkerClient";
+import { Icon } from "../core/ui";
 
 const PERIODS = [
-  { id: "weekly", label: "SEMANAL", icon: "📅" },
-  { id: "monthly", label: "MENSUAL", icon: "🌙" },
-  { id: "annual", label: "ANUAL", icon: "🌟" },
+  { id: "weekly", label: "SEMANAL", icon: "calendar" },
+  { id: "monthly", label: "MENSUAL", icon: "clock" },
+  { id: "annual", label: "ANUAL", icon: "star" },
 ];
 
 function getPeriodRange(period) {
@@ -85,24 +86,24 @@ export default function Recaps({ accentColor = ACID }) {
   };
 
   const sections = [
-    { icon: "📔", label: "PORTADA", content: `Tu ${PERIODS.find(p => p.id === period)?.label} en El Búnker`,
+    { icon: "book", label: "PORTADA", content: `Tu ${PERIODS.find(p => p.id === period)?.label} en El Búnker`,
       detail: `${stats.total} eventos · ${stats.uniqueDays} días activos`,
       color: ACID },
-    { icon: "🎵", label: "MÚSICA", content: `${stats.plays} reproducciones`,
+    { icon: "music", label: "MÚSICA", content: `${stats.plays} reproducciones`,
       detail: stats.topTrack
         ? `${stats.topTrack.title}${stats.topTrack.artist ? " — " + stats.topTrack.artist : ""} · ${stats.topTrack.plays}x`
         : "Sin datos",
       color: "#00ffcc" },
-    { icon: "📝", label: "MEMORIA", content: `${stats.created} entradas creadas`,
+    { icon: "edit", label: "MEMORIA", content: `${stats.created} entradas creadas`,
       detail: "Fotos, notas, cartas e hitos en el VAULT",
       color: PURPLE },
-    { icon: "♥", label: "CONEXIÓN", content: `${stats.drops} drops enviados`,
+    { icon: "heart", label: "CONEXIÓN", content: `${stats.drops} drops enviados`,
       detail: stats.topUser ? `${stats.topUser.name} lidera con ${stats.topUser.events} eventos` : "",
       color: "#ff6b35" },
-    { icon: "🏆", label: "HITOS", content: stats.topDay ? `Día más activo: ${stats.topDay.date}` : "Sin datos",
+    { icon: "star", label: "HITOS", content: stats.topDay ? `Día más activo: ${stats.topDay.date}` : "Sin datos",
       detail: `${stats.topDay?.count || 0} eventos en un solo día`,
       color: "#aaff44" },
-    { icon: "✨", label: "CIERRE", content: `${stats.completed} sesiones completadas`,
+    { icon: "sparkles", label: "CIERRE", content: `${stats.completed} sesiones completadas`,
       detail: "Lo vivido queda guardado. Hasta el próximo RECAP.",
       color: ACID },
   ];
@@ -112,13 +113,13 @@ export default function Recaps({ accentColor = ACID }) {
       {/* STAT-M9: indicador de carga + error de fetch server-side */}
       {loadingRecap && (
         <div className="flex items-center justify-center gap-2 py-3 text-xs opacity-50" style={{ color: accent, fontFamily: FONT_MONO }}>
-          <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.4, repeat: Infinity }}>◎</motion.span>
+          <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.4, repeat: Infinity }}><Icon name="circle" size={14} label="Generando recap" /></motion.span>
           <span className="tracking-[0.3em] uppercase">GENERANDO RECAP</span>
         </div>
       )}
       {recapFetchErr && !loadingRecap && (
         <div className="py-2 px-3 text-xs opacity-70 text-center" style={{ color: "#ff3b3b", fontFamily: FONT_MONO }}>
-          ⚠ {recapFetchErr}
+          <Icon name="alert" size={14} label="Error" /> {recapFetchErr}
         </div>
       )}
 
@@ -127,8 +128,7 @@ export default function Recaps({ accentColor = ACID }) {
         {PERIODS.map(p => (
           <motion.button key={p.id} onClick={() => { setPeriod(p.id); setSection(0); }} whileTap={{ scale: 0.95 }}
             className={`text-xs tracking-[0.2em] uppercase px-3 py-3 min-h-[44px] ${period === p.id ? "" : "opacity-30"}`}
-            style={{ color: period === p.id ? accent : `${accent}88`, borderBottom: period === p.id ? `1px solid ${accent}` : "1px solid transparent", fontFamily: FONT_MONO }}>
-            {p.icon} {p.label}
+            style={{ color: period === p.id ? accent : `${accent}88`, borderBottom: period === p.id ? `1px solid ${accent}` : "1px solid transparent", fontFamily: FONT_MONO }}>              <Icon name={p.icon} size={14} label={p.label} /> {p.label}
           </motion.button>
         ))}
       </div>
@@ -175,7 +175,7 @@ export default function Recaps({ accentColor = ACID }) {
               transition={{ type: "spring", stiffness: 400, delay: 0.1 }}
               className="text-3xl"
             >
-              {sections[section].icon}
+              <Icon name={sections[section].icon} size={32} label={sections[section].label} />
             </motion.span>
 
             {/* Section label */}
@@ -241,7 +241,7 @@ export default function Recaps({ accentColor = ACID }) {
                 opacity: recapSaved ? 0.5 : 1,
               }}
             >
-              {savingRecap ? 'GUARDANDO...' : recapSaved ? '✓ GUARDADO EN VAULT' : '🌟 GUARDAR COMO ENTRADA'}
+              {savingRecap ? 'GUARDANDO...' : recapSaved ? 'GUARDADO EN VAULT' : 'GUARDAR COMO ENTRADA'}
             </motion.button>
             {recapError && (
               <p className="text-xs opacity-60" style={{ color: '#ff3b3b', fontFamily: FONT_MONO }}>
@@ -259,7 +259,7 @@ export default function Recaps({ accentColor = ACID }) {
             style={{ color: accent, fontFamily: FONT_MONO }}
             disabled={section === 0}
           >
-            ◀ ANTERIOR
+            <Icon name="arrowLeft" size={14} label="Anterior" /> ANTERIOR
           </button>
           <button
             onClick={() => setSection(s => Math.min(sections.length - 1, s + 1))}
@@ -267,7 +267,7 @@ export default function Recaps({ accentColor = ACID }) {
             style={{ color: accent, fontFamily: FONT_MONO }}
             disabled={section === sections.length - 1}
           >
-            SIGUIENTE ▶
+            SIGUIENTE <Icon name="arrowRight" size={14} label="Siguiente" />
           </button>
         </div>
       </div>

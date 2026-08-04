@@ -98,9 +98,11 @@ export default async function handleCapsules(request, env, url, userId) {
     }, 201);
   }
 
-  // PATCH /api/time_capsules/:id
+  // PATCH /api/time_capsules/:id — unlock only; sealed capsules are not deletable.
   if (method === "PATCH" && path.startsWith("/api/time_capsules/")) {
     const capsuleId = path.split("/")[3];
+    const exists = await env.DB.prepare("SELECT id FROM time_capsules WHERE id = ?1").bind(capsuleId).first();
+    if (!exists) return err("Capsule not found", 404);
     const body = await request.json().catch(() => null);
     if (body?.is_unlocked) {
       await env.DB.prepare(

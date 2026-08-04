@@ -8,6 +8,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
+import { Icon } from "../core/ui";
 import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
@@ -221,7 +222,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
           className="min-w-[44px] min-h-[44px] flex items-center justify-center text-xl rounded-full pointer-events-auto"
           style={{ color: ac, background: "rgba(255,255,255,0.06)", border: `1px solid ${ac}22` }}
         >
-          ✕
+          <Icon name="close" size={18} label="Cerrar" />
         </motion.button>
       </div>
 
@@ -266,7 +267,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
                   />
                 ) : mediaType === "audio" ? (
                   <div className="flex flex-col items-center gap-4 p-8">
-                    <span className="text-6xl" style={{ color: eraColor }}>🎵</span>
+                    <Icon name="music" size={54} label="Audio" />
                     <p className="text-xs text-center opacity-50" style={{ color: eraColor, fontFamily: FONT_MONO }}>
                       AUDIO · Reproducir en Music Lab
                     </p>
@@ -287,7 +288,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
                 )
               ) : (
                 <div className="flex flex-col items-center gap-4">
-                  <span className="text-6xl opacity-20" style={{ color: ac }}>📷</span>
+                  <Icon name="camera" size={54} label="Sin imagen" />
                   {entry.content?.text && (
                     <p className="text-sm max-w-md text-center px-8 leading-relaxed" style={{ color: eraColor, opacity: 0.6 }}>
                       {entry.content.text.slice(0, 400)}
@@ -307,7 +308,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
                 onClick={(e) => { e.stopPropagation(); goPrev(); }}
                 className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center text-lg rounded-full"
                 style={{ color: ac, background: "rgba(0,0,0,0.4)", border: `1px solid ${ac}22` }}
-              >◀</motion.button>
+              ><Icon name="arrowLeft" size={18} label="Anterior" /></motion.button>
             )}
             {currentIndex < total - 1 && (
               <motion.button
@@ -315,7 +316,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
                 onClick={(e) => { e.stopPropagation(); goNext(); }}
                 className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 flex items-center justify-center text-lg rounded-full"
                 style={{ color: ac, background: "rgba(0,0,0,0.4)", border: `1px solid ${ac}22` }}
-              >▶</motion.button>
+              ><Icon name="arrowRight" size={18} label="Siguiente" /></motion.button>
             )}
           </>
         )}
@@ -346,7 +347,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
               <span className="text-xs px-2 py-0.5 rounded-sm" style={{ background: `${eraColor}22`, color: eraColor }}>{era.name}</span>
             )}
             <span className="text-[9px] px-1.5 py-0.5 rounded-sm opacity-60" style={{ background: `${ac}15`, color: ac }}>
-              {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+              <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative /> {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
             </span>
             {dateStr && <span className="text-[9px] opacity-35 ml-auto" style={{ color: ac }}>{dateStr}</span>}
           </div>
@@ -362,12 +363,12 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
             )}
             {entry.content?.event_date && (
               <span className="text-[9px] px-2 py-0.5 rounded-sm opacity-45" style={{ color: eraColor, background: `${eraColor}10`, border: `1px solid ${eraColor}18` }}>
-                📅 {new Date(entry.content.event_date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                <Icon name="calendar" size={12} decorative /> {new Date(entry.content.event_date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
               </span>
             )}
           </div>
           <p className="text-[9px] mt-3 opacity-15 text-center" style={{ color: ac }}>
-            tap para cerrar · desliza ◀ ▶ · doble tap zoom · pellizca
+            tap para cerrar · desliza para navegar · doble tap zoom · pellizca
           </p>
         </div>
       </motion.div>

@@ -7,6 +7,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, R2_PUBLIC_BASE } from "../tokens";
 import { usePlayer } from "../core/PlayerContext"; // VB9: vibe accent propagation
+import { Icon } from "../core/ui";
 import WallView from "./WallView"; // Fase 1: WALL virtualizado
 import EntryLightbox from "./EntryLightbox"; // FASE C.1: lightbox unificado
 
@@ -18,12 +19,12 @@ import { ENTRY_TYPES, CATEGORY_FILTERS } from "./AddEntryForm";
 
 // ─── MODES ──────────────────────────────────────────────────
 const MODES = [
-  { id: "wall",       icon: "⊞", label: "WALL" },
-  { id: "cinema",     icon: "▶", label: "CINEMA" },
-  { id: "map",        icon: "◉", label: "MAP" },
-  { id: "dialogue",   icon: "♥", label: "DIALOGUE" },
-  { id: "exhibition", icon: "◆", label: "EXHIBITION" },
-  { id: "reel",       icon: "◎", label: "REEL" },
+  { id: "wall",       icon: "grid",    label: "WALL" },
+  { id: "cinema",     icon: "play",    label: "CINEMA" },
+  { id: "map",        icon: "map",     label: "MAP" },
+  { id: "dialogue",   icon: "heart",   label: "DIALOGUE" },
+  { id: "exhibition", icon: "star",    label: "EXHIBITION" },
+  { id: "reel",       icon: "circle",  label: "REEL" },
 ];
 
 // S95 — CATEGORY_FILTERS importado de AddEntryForm (single source of truth)
@@ -152,7 +153,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
                 <video src={imgUrl} controls className="w-full h-full object-contain" />
               ) : getMediaType(entry) === "audio" ? (
                 <div className="flex flex-col items-center gap-4 p-8">
-                  <span className="text-6xl" style={{ color: eraColor }}>🎵</span>
+                  <Icon name="music" size={54} label="Audio" />
                   <p className="text-xs text-center opacity-50" style={{ color: eraColor, fontFamily: FONT_MONO }}>
                     AUDIO · Reproducir en Music Lab
                   </p>
@@ -167,7 +168,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
               )
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <span className="text-6xl opacity-30" style={{ color: eraColor }}>📷</span>
+                <Icon name="camera" size={54} label="Sin imagen" />
                 {entry.content?.text && (
                   <p className="text-sm max-w-md text-center px-8 leading-relaxed"
                     style={{ color: eraColor, fontFamily: FONT_MONO, opacity: 0.7 }}>
@@ -182,7 +183,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="absolute top-3 left-3 text-[9px] px-2 py-0.5 rounded-sm"
             style={{ background: "rgba(0,0,0,0.5)", color: eraColor, fontFamily: FONT_MONO }}>
-            ◉ CONTEMPLAR
+            <Icon name="circle" size={12} decorative /> CONTEMPLAR
           </motion.div>
         )}
         {currentIdx === 0 && entries.length > 1 && (
@@ -215,7 +216,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
         )}
         <div className="flex items-center gap-1 mt-2">
           <span className="text-[9px] opacity-40" style={{ color: eraColor, fontFamily: FONT_MONO }}>
-            {CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+            <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative /> {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
           </span>
         </div>
       </motion.div>
@@ -224,8 +225,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
       <div className="flex items-center gap-4">
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i - 1 + entries.length) % entries.length)}
           className="text-xl w-11 h-11 flex items-center justify-center rounded-full"
-          style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>
-          ◀
+          style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>            <Icon name="arrowLeft" size={18} label="Anterior" />
         </motion.button>
         <span className="text-xs tabular-nums opacity-50" style={{ color: eraColor, fontFamily: FONT_MONO }}>
           {safeIdx + 1} / {entries.length}
@@ -233,24 +233,24 @@ const CinemaView = ({ entries, eras, onZoom }) => {
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setCurrentIdx(i => (i + 1) % entries.length)}
           className="text-xl w-11 h-11 flex items-center justify-center rounded-full"
           style={{ color: eraColor, border: `1px solid ${eraColor}33`, background: `${eraColor}08` }}>
-          ▶
+          <Icon name="arrowRight" size={18} label="Siguiente" />
         </motion.button>
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => onZoom?.(entry)}
           className="text-sm w-11 h-11 flex items-center justify-center rounded-full"
           style={{ color: eraColor, border: `1px solid ${eraColor}22`, background: `${eraColor}05` }} title="Ampliar">
-          ⊞
+          <Icon name="plus" size={18} label="Ampliar" />
         </motion.button>
         {/* Fase 2: Ambient music toggle */}
         <motion.button whileTap={{ scale: 0.9 }} onClick={() => setAmbientOn(!ambientOn)}
           className="text-sm min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full"
           style={{ color: ambientOn ? eraColor : `${eraColor}44`, border: `1px solid ${ambientOn ? eraColor : `${eraColor}22`}`, background: ambientOn ? `${eraColor}12` : "transparent" }} title={ambientOn ? "Ambient ON" : "Ambient OFF"}>
-          {ambientOn ? "♫" : "♪"}
+          <Icon name="music" size={16} label={ambientOn ? "Ambiente activado" : "Ambiente desactivado"} />
         </motion.button>
       </div>
 
       {ambientOn && era && (
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] opacity-30 italic" style={{ color: eraColor, fontFamily: FONT_MONO }}>
-          ♫ Volumen reducido para contemplar — {eraName}
+          <Icon name="music" size={12} decorative /> Volumen reducido para contemplar — {eraName}
         </motion.p>
       )}
 
@@ -317,11 +317,11 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
   const onlyDavid = pairs.davidCount > 0 && pairs.eduCount === 0;
 
   return (
-    <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="w-full flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span style={{ color: PURPLE }}>♥</span>
+          <Icon name="heart" size={16} decorative />
           <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>DIALOGUE</span>
         </div>
         <div className="flex gap-1">
@@ -429,7 +429,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                         {eduImg ? (
                           <img src={eduImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.edu)} />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}>📷</div>
+                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}><Icon name="camera" size={22} label="Sin imagen" /></div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -486,7 +486,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                         {davidImg ? (
                           <img src={davidImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.david)} />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}>📷</div>
+                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}><Icon name="camera" size={22} label="Sin imagen" /></div>
                         )}
                       </div>
                     </div>
@@ -542,7 +542,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
   return (
     <div className="flex flex-col gap-6" style={{ fontFamily: FONT_MONO }}>
       <div className="flex items-center gap-2">
-        <span style={{ color: PURPLE }}>◆</span>
+        <Icon name="star" size={16} decorative />
         <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>EXHIBITION</span>
         <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>{eraGroups.length} salas</span>
       </div>
@@ -563,7 +563,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
                   {firstImg ? (
                     <img src={firstImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xl opacity-30" style={{ background: `${eraColor}15`, color: eraColor }}>◈</div>
+                    <div className="w-full h-full flex items-center justify-center text-xl opacity-30" style={{ background: `${eraColor}15`, color: eraColor }}><Icon name="archive" size={22} label="Sin imagen" /></div>
                   )}
                 </div>
                 <div>
@@ -596,7 +596,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
                           <img src={url} alt={e.title || ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-1" style={{ background: `${eraColor}08` }}>
-                            <span className="text-xs opacity-30" style={{ color: eraColor }}>{CAT_ICON[ENTRY_CATEGORY[e.type]] || "◈"}</span>
+                            <span className="text-xs opacity-30" style={{ color: eraColor }}><Icon name={CAT_ICON[ENTRY_CATEGORY[e.type]] || "archive"} size={12} decorative /></span>
                             <span className="text-[7px] text-center leading-tight opacity-40 truncate" style={{ color: eraColor, fontFamily: FONT_MONO }}>{e.title || ""}</span>
                           </div>
                         )}
@@ -653,9 +653,9 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
   if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   return (
-    <div className="flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="w-full flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       <div className="flex items-center gap-2">
-        <span style={{ color: PURPLE }}>◎</span>
+        <Icon name="circle" size={16} decorative />
         <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>REEL</span>
         <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>{reels.length} secuencias</span>
       </div>
@@ -680,8 +680,7 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
                       <div key={entry.id} className="flex gap-3 p-2 rounded-sm items-center cursor-pointer" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}22` }}
                         onClick={() => { const idx = entries.findIndex(e => e.id === entry.id); if (idx >= 0) onOpenLightbox?.(entries, idx); }}>
                         <span className="text-[10px] font-bold opacity-40 w-5" style={{ color: eraColor }}>{i + 1}</span>
-                        <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}33` }}>
-                          {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: eraColor }}>📷</div>}
+                        <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}33` }}>                           {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: eraColor }}><Icon name="camera" size={22} label="Sin imagen" /></div>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: eraColor }}>{entry.title || "Sin título"}</p>
@@ -705,8 +704,7 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
             return (
               <motion.button key={day} whileTap={{ scale: 0.96 }} onClick={() => setActiveReel(i)}
                 className="p-3 rounded-sm text-left" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}33` }}>
-                <div className="w-full aspect-video rounded-sm overflow-hidden mb-2" style={{ background: `${eraColor}15`, border: `1px solid ${eraColor}22` }}>
-                  {firstImg ? <img src={firstImg} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-20" style={{ color: eraColor }}>◎</div>}
+                <div className="w-full aspect-video rounded-sm overflow-hidden mb-2" style={{ background: `${eraColor}15`, border: `1px solid ${eraColor}22` }}>                   {firstImg ? <img src={firstImg} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-20" style={{ color: eraColor }}><Icon name="circle" size={26} label="Sin imagen" /></div>}
                 </div>
                 <p className="text-[10px] font-bold truncate" style={{ color: eraColor }}>{dayStr}</p>
                 <p className="text-[8px] opacity-40" style={{ color: eraColor }}>{items.length} momentos</p>
@@ -857,8 +855,8 @@ const MapView = ({ entries = [], eras = [] }) => {
       if (!isNaN(y)) yearSet.add(y.toString());
     });
     return {
-      eras: Array.from(eraSet.entries()).map(([id, name]) => ({ id, label: name, icon: "🏛️" })),
-      years: Array.from(yearSet).sort().reverse().map((y) => ({ id: y, label: y, icon: "📅" })),
+      eras: Array.from(eraSet.entries()).map(([id, name]) => ({ id, label: name, icon: "archive" })),
+      years: Array.from(yearSet).sort().reverse().map((y) => ({ id: y, label: y, icon: "calendar" })),
     };
   }, [geocoded]);
 
@@ -913,7 +911,7 @@ const MapView = ({ entries = [], eras = [] }) => {
   return (
     <div className="flex flex-col gap-2" style={{ fontFamily: FONT_MONO }}>
       <div className="flex items-center gap-2 flex-wrap">
-        <span style={{ color: PURPLE }}>◉</span>
+        <Icon name="target" size={16} decorative />
         <span className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: PURPLE }}>MAP</span>
         <span className="text-[9px] opacity-30" style={{ color: PURPLE }}>
           {filteredByDate.length}/{geocoded.length} pines · {eraBreakdown.length} eras
@@ -998,14 +996,14 @@ const MapView = ({ entries = [], eras = [] }) => {
           <div className="flex gap-3 mt-2">
             <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Geocoder</span>
             <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Polylines</span>
-            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>⧖ Slider temp.</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}><Icon name="timer" size={11} decorative /> Slider temp.</span>
           </div>
         </motion.div>
       ) : filteredByDate.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center gap-3 py-10 px-6 rounded-sm"
           style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
-          <span className="text-3xl" style={{ color: PURPLE, opacity: 0.4 }}>⧖</span>
+          <Icon name="timer" size={30} label="Slider temporal" />
           <p className="text-xs tracking-[0.2em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>Sin pines en este rango</p>
           <p className="text-[9px] text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
             Ajusta el slider temporal para ver más entradas en el mapa.
@@ -1044,7 +1042,7 @@ const MapView = ({ entries = [], eras = [] }) => {
                         </div>
                       )}
                       <div style={{ fontSize: 8, opacity: 0.4, marginTop: 4, color: "#000" }}>
-                        {CAT_ICON[ENTRY_CATEGORY[e.type]] ?? "◈"} {CAT_LABEL[ENTRY_CATEGORY[e.type]] ?? e.type}
+                        <Icon name={CAT_ICON[ENTRY_CATEGORY[e.type]] ?? "archive"} size={10} decorative /> {CAT_LABEL[ENTRY_CATEGORY[e.type]] ?? e.type}
                       </div>
                       {/* Fase 7: carrusel horizontal de fotos de esta ubicación */}
                       {(() => {
@@ -1195,7 +1193,7 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
           <button key={m.id} onClick={() => setMode(m.id)}
             className={`text-xs px-3 py-2.5 uppercase whitespace-nowrap ${mode === m.id ? "" : "opacity-30"}`}
             style={{ color: vibeAccent, borderBottom: mode === m.id ? `1px solid ${vibeAccent}` : "1px solid transparent", fontFamily: FONT_MONO }}>
-            {m.icon} {m.label}
+            <Icon name={m.icon} size={14} decorative /> {m.label}
           </button>
         ))}
       </nav>

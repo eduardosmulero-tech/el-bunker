@@ -26,6 +26,7 @@ import handleUpload from "./routes/upload.js";
 import handleR2 from "./routes/r2.js";
 import handleSync from "./routes/sync.js";
 import handleConfig from "./routes/config.js";
+import handleAdminG2 from "./routes/admin-g2.js";
 
 // Mapa de rutas: [prefix, handler, requiresAuth]
 const ROUTES = [
@@ -45,6 +46,7 @@ const ROUTES = [
   ["/api/upload",          handleUpload,     true],
   ["/api/sync",            handleSync,       true],
   ["/api/config",          handleConfig,     false],
+  ["/api/admin/g2",        handleAdminG2,     true],
 ];
 
 export default {

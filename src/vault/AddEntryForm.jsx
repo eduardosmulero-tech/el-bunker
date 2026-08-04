@@ -9,7 +9,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
-import { Input } from "../core/ui";
+import { Icon, Input } from "../core/ui";
 import LocationSearch from "./LocationSearch";
 
 // Fase 8.3 — Taxonomía completa 14 categorías (docs/spec/taxonomia_vault.md)
@@ -230,7 +230,7 @@ function TypeGroup({ category, currentType, onSelect }) {
               fontFamily: FONT_MONO,
             }}
           >
-            {t.icon} {t.label}
+            <Icon name={t.icon} size={14} decorative /> {t.label}
           </button>
         ))}
       </div>
@@ -366,7 +366,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {isEditing && (
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: ACID, fontFamily: FONT_MONO }}>
-            ✎ EDITANDO ENTRADA
+            <Icon name="edit" size={14} decorative /> EDITANDO ENTRADA
           </span>
           <span className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>
             {entry.id?.slice(0, 8)}…
@@ -443,7 +443,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
             ) : (
               <>
                 <span className="text-3xl mb-2 opacity-40" style={{ color: ACID }}>
-                  {currentMeta?.icon ?? "📷"}
+                  <Icon name={currentMeta?.icon ?? "camera"} size={30} decorative />
                 </span>
                 <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
                   TAP PARA SELECCIONAR {currentMeta?.label ?? "ARCHIVO"}

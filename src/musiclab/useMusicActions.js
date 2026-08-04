@@ -5,6 +5,7 @@ import { useVault } from "../core/VaultContext";
 import { dropSent } from "../core/StatsEngine";
 import { workerClient } from "../core/WorkerClient";
 import { removeUploadedFile, uploadFile } from "../core/FileUploadService";
+import { buildEditPayload, normalizeNewTrack } from "./MusicPayloadBuilder";
 
 export function useMusicActions() {
   // S115-D3: jwtToken ya no se necesita — WorkerClient maneja auth
@@ -40,13 +41,7 @@ export function useMusicActions() {
         created = { ...created, r2_key: uploaded.r2_key };
       }
       // CRÍTICO: D1 devuelve tag_id, frontend lee t.tag. Merge para que `tag` siempre exista.
-      const normalized = {
-        ...trackData,
-        ...created,
-        file: undefined,
-        r2_key: created.r2_key ?? uploaded?.r2_key ?? null,
-        tag: created.tag_id ?? trackData.tag ?? trackData.vibe,
-      };
+      const normalized = normalizeNewTrack(trackData, created, uploaded);
       await patchDb((prev) => ({ ...prev, music_lab: { ...prev.music_lab, tracks: [...(prev.music_lab?.tracks ?? []), normalized] } }));
       return normalized;
     } catch (err) {
@@ -117,19 +112,7 @@ export function useMusicActions() {
       return updatedTrack;
     }
     try {
-      const body = { ...updatedTrack };
-      if (body.tag !== undefined || body.vibe !== undefined) {
-        body.tag_id = body.tag || body.vibe || null;
-        delete body.tag;
-        delete body.vibe;
-      }
-      const ALLOWED = new Set([
-        "era_id", "title", "artist", "tag_id", "r2_key", "format", "note",
-        "duration", "thumbnail", "drive_file_id", "color", "play_count", "last_played",
-      ]);
-      for (const k of Object.keys(body)) {
-        if (!ALLOWED.has(k)) delete body[k];
-      }
+      const body = buildEditPayload(updatedTrack);
       await workerClient.patch(`/api/tracks/${updatedTrack.id}`, body);
       await patchDb((prev) => ({
         ...prev,

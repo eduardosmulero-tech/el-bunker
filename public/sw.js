@@ -129,7 +129,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   // ── 5. External resources (fonts, CDNs) → Stale-While-Revalidate
-  event.respondWith(staleWhileRevalidate(request));
+  event.respondWith(staleWhileRevalidate(request, event));
 });
 
 // ─── STRATEGIES ──────────────────────────────────────────────
@@ -181,18 +181,22 @@ async function networkFirstWithFallback(request, fallbackUrl) {
  * Return cache immediately; fetch update in background.
  * Best for fonts, external CDN assets.
  */
-async function staleWhileRevalidate(request) {
+async function staleWhileRevalidate(request, event) {
   const cache  = await caches.open(RUNTIME_CACHE);
   const cached = await cache.match(request);
 
   const fetchPromise = fetch(request)
     .then((response) => {
-      if (response.ok) cache.put(request, response.clone());
+      if (!response.ok) return response;
+      const cacheWrite = cache.put(request, response.clone());
+      event?.waitUntil(cacheWrite);
       return response;
     })
     .catch(() => null);
 
-  return cached || fetchPromise || offlineFallback(request);
+  // Serve cached content immediately while the refresh continues in the background.
+  // When there is no cache, await the network so offline still gets the explicit fallback.
+  return cached || (await fetchPromise) || offlineFallback(request);
 }
 
 /**
@@ -256,62 +260,9 @@ function offlineFallback(request) {
   );
 }
 
-// ─── BACKGROUND SYNC (future-proofing) ───────────────────────
-// If the browser supports Background Sync, queue failed DB writes
-// and replay them when connectivity is restored.
-self.addEventListener("sync", (event) => {
-  if (event.tag === "bunker-db-sync") {
-    console.log("[Búnker SW] Background sync triggered: bunker-db-sync");
-    // Drive API calls happen in the main thread via gapi;
-    // this tag signals the app to retry pending writes.
-    event.waitUntil(
-      self.clients
-        .matchAll({ includeUncontrolled: true, type: "window" })
-        .then((clients) =>
-          clients.forEach((client) =>
-            client.postMessage({ type: "BUNKER_SYNC_READY" })
-          )
-        )
-    );
-  }
-});
+// Push and Background Sync are intentionally not registered here.
+// No durable outbox, push subscription, or product permission flow exists.
+// `/api/sync` is a Worker endpoint for shared listening and remains separate.
 
-// ─── PUSH NOTIFICATIONS (stub) ───────────────────────────────
-self.addEventListener("push", (event) => {
-  const data = event.data?.json() ?? {};
-  event.waitUntil(
-    self.registration.showNotification(data.title ?? "El Búnker", {
-      body: data.body ?? "",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/badge-72.png",
-      tag: "bunker-push",
-      data: { url: data.url ?? "/" },
-    })
-  );
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const data = event.notification.data ?? {};
-  // Fase 2.4 M8: Abrir en Music Lab si la notificación es de música
-  let targetUrl = data.url ?? "/";
-  if (data.tab === "music") {
-    targetUrl = `/?tab=music`;
-  } else if (data.url && !data.url.includes("?tab=") && data.tab) {
-    targetUrl = `${data.url}?tab=${data.tab}`;
-  }
-  event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) => {
-        const existing = clients.find((c) => c.url.includes(targetUrl) || c.url === targetUrl);
-        if (existing) {
-          existing.postMessage({ type: "BUNKER_NAVIGATE", tab: data.tab ?? "vault" });
-          return existing.focus();
-        }
-        return self.clients.openWindow(targetUrl);
-      })
-  );
-});
 
 console.log("[Búnker SW] Script loaded ✓");

@@ -14,7 +14,7 @@
 //   shuffle). Son patrones establecidos y funcionales del motor
 //   de reproducción. No refactorizar sin tests.
 
-/* global cast, chrome */
+/* global chrome */
 /* eslint-disable react-hooks/immutability, react-hooks/set-state-in-effect */
 // Las 3 reglas arriba son del react-hooks plugin v6+. En PlayerContext tenemos
 // patrones intencionales y bien documentados que las disparan:
@@ -30,20 +30,15 @@
 // Fase 9+, fuera del scope del fix TDZ.
 
 import { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getStreamUrl } from "./GoogleDriveService";
+import { getStreamUrl as getR2StreamUrl } from "./FileUploadService";
+
+// D1/R2 is the only playback source. Legacy drive_file_id is metadata only.
+const getStreamUrl = (track) => getR2StreamUrl(track?.r2_key);
 import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TAGS } from "../tokens";
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 import { workerClient } from "./WorkerClient";
-
-// S142: Fisher-Yates shuffle — Q8/Q9 compliant (Spotify-style).
-// Baraja el array in-place. No-op si length < 2. Pure idempotente (mismo input → mismo output si no random).
-function fisherYatesInPlace(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
+import { enforceQueueLimit, fisherYatesInPlace } from "./QueueTransforms";
+import { loadCastSdk } from "./CastSdkService";
 
 const PlayerContext = createContext(null);
 
@@ -791,15 +786,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   });
 
   // S77 Q6: enforce MAX_QUEUE_SIZE in queue operations
-  const enforceQueueLimit = useCallback((q) => {
-    if (q.length <= MAX_QUEUE_SIZE) return q;
-    // Keep manual tracks, trim oldest non-active context tracks
-    const manual = q.filter(t => t._manual);
-    const context = q.filter(t => !t._manual);
-    if (manual.length > MAX_QUEUE_SIZE) return manual.slice(-MAX_QUEUE_SIZE);
-    const contextBudget = MAX_QUEUE_SIZE - manual.length;
-    return [...context.slice(0, contextBudget), ...manual];
-  }, []);
+  const limitQueue = useCallback((queue) => enforceQueueLimit(queue, MAX_QUEUE_SIZE), []);
 
   // addToQueue — C4-B: añade al final, _manual:true
   // Returns: "added" | "duplicate" | "limit_reached" (S85c Q6: para toast con sugerencia)
@@ -813,7 +800,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (localQueue.length >= MAX_QUEUE_SIZE && !force) return "limit_reached";
     setLocalQueue((q) => {
       const base = force ? q.filter((t) => t.id !== track.id) : q;
-      const next = enforceQueueLimit([...base, { ...track, _manual: true }]);
+      const next = limitQueue([...base, { ...track, _manual: true }]);
       if (next.length >= MAX_QUEUE_SIZE && q.length < MAX_QUEUE_SIZE) {
         console.warn("[Búnker] ⚠ Cola llena (75 tracks). Considera guardar como playlist.");
       }
@@ -830,7 +817,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       });
     }
     return "added";
-  }, [localQueue, enforceQueueLimit, sessionId, syncAction]);
+  }, [localQueue, limitQueue, sessionId, syncAction]);
 
   // S77 Q12: add entire playlist to queue
   // S142: shuffle=ON → baraja el subset _manual:false al añadir (contexto playlist).
@@ -843,7 +830,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (clearFirst) {
         const ctxItems = playlistTracks.map((t) => ({ ...t, _manual: false }));
         if (shuffle && ctxItems.length > 1) fisherYatesInPlace(ctxItems);
-        return enforceQueueLimit([...ctxItems, ...manual]);
+        return limitQueue([...ctxItems, ...manual]);
       }
       // clearFirst=false: añade al final del contexto, mergea con el existente.
       const ctx = q.filter((t) => !t._manual);
@@ -851,10 +838,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       const merged = shuffle && (ctx.length + newCtx.length > 1)
         ? fisherYatesInPlace([...ctx, ...newCtx])
         : [...ctx, ...newCtx];
-      return enforceQueueLimit([...merged, ...manual]);
+      return limitQueue([...merged, ...manual]);
     });
     return "added";
-  }, [enforceQueueLimit, shuffle]);
+  }, [limitQueue, shuffle]);
 
   // addNext — C4-A: inserta tras el track activo, _manual:true
   const addNext = useCallback((track, force = false) => {
@@ -865,10 +852,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       const base = force ? q.filter((t) => t.id !== track.id) : q;
       const idx = base.findIndex((t) => t.id === activeTrack?.id);
       const insertAt = idx >= 0 ? idx + 1 : 0;
-      return enforceQueueLimit([...base.slice(0, insertAt), { ...track, _manual: true }, ...base.slice(insertAt)]);
+      return limitQueue([...base.slice(0, insertAt), { ...track, _manual: true }, ...base.slice(insertAt)]);
     });
     return "added";
-  }, [localQueue, activeTrack?.id, enforceQueueLimit]);
+  }, [localQueue, activeTrack?.id, limitQueue]);
 
   // setPlaybackContext — C2/C4: carga playlist como contexto, _manual:false
   // Q10: preserva tracks manuales (_manual:true) al cambiar de playlist.
@@ -1039,49 +1026,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const [castDeviceName, setCastDeviceName] = useState(null);
   const castSessionRef = useRef(null);
 
-  // S109 — Init Chromecast SDK (se dispara cuando el SDK llama a __onGCastApiAvailable)
-  useEffect(() => {
-    window.__onGCastApiAvailable = (isAvailable) => {
-      if (!isAvailable) return;
-      try {
-        const ctx = cast.framework.CastContext.getInstance();
-        ctx.setOptions({
-          receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
-          autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
-        });
-        setCastState("available");
-        console.info("[Búnker] ▶ Chromecast disponible");
-
-        // Listener de cambios de sesión
-        ctx.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (e) => {
-          switch (e.sessionState) {
-            case cast.framework.SessionState.SESSION_STARTED:
-            case cast.framework.SessionState.SESSION_RESUMED:
-              castSessionRef.current = ctx.getCurrentSession();
-              setCastState("connected");
-              setCastDeviceName(castSessionRef.current?.getCastDevice()?.friendlyName ?? null);
-              // Pausar audio local al conectar
-              audioRef.current?.pause();
-              setIsPlaying(false);
-              // Castear el track activo si hay
-              if (activeTrackRef?.current) castTrackToDevice(activeTrackRef.current);
-              console.info("[Búnker] ▶ Cast conectado:", castSessionRef.current?.getCastDevice()?.friendlyName);
-              break;
-            case cast.framework.SessionState.SESSION_ENDED:
-              castSessionRef.current = null;
-              setCastState("available");
-              setCastDeviceName(null);
-              console.info("[Búnker] ◼ Cast desconectado");
-              break;
-          }
-        });
-      } catch (e) {
-        console.warn("[Búnker] Chromecast init error:", e);
-      }
-    };
-    return () => { delete window.__onGCastApiAvailable; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const castInitializedRef = useRef(false);
 
   // S109 — Castear un track al dispositivo conectado
   const castTrackToDevice = useCallback((track) => {
@@ -1101,16 +1046,58 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     );
   }, []);
 
-  // S109 — Iniciar sesión Cast (abre el picker de dispositivos)
-  const startCasting = useCallback(() => {
-    if (castState !== "available") return;
-    setCastState("connecting");
-    cast.framework.CastContext.getInstance()
-      .requestSession()
-      .catch(() => {
-        setCastState("available"); // usuario canceló o error
+  const initializeCast = useCallback(() => {
+    if (castInitializedRef.current || !window.cast?.framework || !window.chrome?.cast) return false;
+    try {
+      const ctx = window.cast.framework.CastContext.getInstance();
+      ctx.setOptions({
+        receiverApplicationId: window.chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: window.chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
       });
-  }, [castState]);
+      castInitializedRef.current = true;
+      setCastState("available");
+      console.info("[Búnker] ▶ Chromecast disponible");
+      ctx.addEventListener(window.cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
+        switch (event.sessionState) {
+          case window.cast.framework.SessionState.SESSION_STARTED:
+          case window.cast.framework.SessionState.SESSION_RESUMED:
+            castSessionRef.current = ctx.getCurrentSession();
+            setCastState("connected");
+            setCastDeviceName(castSessionRef.current?.getCastDevice()?.friendlyName ?? null);
+            audioRef.current?.pause();
+            setIsPlaying(false);
+            if (activeTrackRef.current) castTrackToDevice(activeTrackRef.current);
+            console.info("[Búnker] ▶ Cast conectado:", castSessionRef.current?.getCastDevice()?.friendlyName);
+            break;
+          case window.cast.framework.SessionState.SESSION_ENDED:
+            castSessionRef.current = null;
+            setCastState("available");
+            setCastDeviceName(null);
+            console.info("[Búnker] ◼ Cast desconectado");
+            break;
+        }
+      });
+      return true;
+    } catch (error) {
+      console.warn("[Búnker] Chromecast init error:", error);
+      setCastState("unavailable");
+      return false;
+    }
+  }, [castTrackToDevice]);
+
+  // S109/G7 — Cargar Cast solo tras intención explícita del usuario.
+  const startCasting = useCallback(async () => {
+    if (castState === "connected" || castState === "connecting") return;
+    setCastState("connecting");
+    const available = await loadCastSdk();
+    if (!available || !initializeCast()) {
+      setCastState("unavailable");
+      return;
+    }
+    window.cast.framework.CastContext.getInstance()
+      .requestSession()
+      .catch(() => setCastState("available"));
+  }, [castState, initializeCast]);
 
   // S109 — Finalizar sesión Cast
   const stopCasting = useCallback(() => {
@@ -1434,8 +1421,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     }
 
     // Fase 1.7 — EC-P5: Si es el mismo archivo que el track anterior, hacer seek a 0
-    // en lugar de recargar. Compara r2_key o drive_file_id.
-    const fileKey = activeTrack.r2_key || activeTrack.drive_file_id || null;
+    // en lugar de recargar. Compara únicamente la clave R2 canónica.
+    const fileKey = activeTrack.r2_key || null;
     if (fileKey && fileKey === _prevFileKeyRef.current && audioRef.current) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});

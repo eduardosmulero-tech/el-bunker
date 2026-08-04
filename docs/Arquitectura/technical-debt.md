@@ -1,6 +1,6 @@
 ---
 describe: cualquier refactor estructural
-sincronizado_con: S148 — FASE C.2+D cierre v1.0 (DEMO purge, R2 gate, track_updated silenciado, TD-6 actualizado)
+sincronizado_con: G3-1 — D1/R2 source of truth, Google OAuth only, TD-1/TD-2 actualizados
 stale_si_pliego_toca: cualquier refactor estructural
 ---
 
@@ -28,16 +28,16 @@ stale_si_pliego_toca: cualquier refactor estructural
 
 ## Deuda activa
 
-### TD-1: Migración completa Drive JSON → D1 (ADR-024) — 🅿️ PARKING post-v1.0
-**Progreso:** 60%. Entries/eras/tracks ya cargan de Worker API. Libraries/playlists/drops/tags siguen en Drive JSON.
-**Impacto:** MEDIO (rebajado tras cierre v1.0). Coexisten dos fuentes de verdad, pero el caso real (2 usuarios) funciona.
-**Riesgo:** Divergencia de datos si se escribe en Drive pero se lee de D1.
-**Plan:** **PARKING** — el cierre v1.0 (decisión Edu 08-jul, ADDENDUM) deja la migración completa y la soberanía profunda (cifrado cliente / quitar Google) fuera del alcance de v1.0. Reabrir es decisión futura de Edu, no bloquea el cierre. Con el R2 HMAC gate (S148 FASE D), la caja fuerte ya está cerrada para el caso real.
+### TD-1: Frontera Drive → D1/R2 — ✅ cerrado en código; documentación histórica en actualización
+**Resultado:** Entries, eras, tracks, playlists, drops, tags, queue, cápsulas, eventos y archivos usan Worker/D1/R2. `VaultContext` carga desde Worker y `patchDb` es local-only; no existe escritura de datos en Drive.
+**Evidencia:** `GoogleAuthService` solo solicita `userinfo.email` y `userinfo.profile`; no contiene scopes ni APIs Drive. La única referencia conservada es un facade legacy que lanza errores explícitos para las antiguas operaciones de biblioteca.
+**Riesgo residual:** El fallback `drive_file_id` se conserva como metadata histórica, pero la reproducción actual usa exclusivamente `r2_key`. Se mantiene el facade hasta retirar consumidores externos y cerrar la compatibilidad.
+**Plan:** No añadir imports nuevos de `GoogleDriveService`; mantener la prueba de frontera y retirar el facade en un contenedor posterior solo cuando exista evidencia de cero consumidores fuera del repositorio.
 
-### TD-2: GoogleDriveService.js como monolito
-**Impacto:** MEDIO. Mezcla auth OAuth2, operaciones Drive, migraciones.
-**Riesgo:** Acoplamiento. Difícil testear. Se deprecará al completar TD-1.
-**Plan:** Eliminar progresivamente. Auth quedará en Google OAuth2 (ADR-025).
+### TD-2: GoogleDriveService.js como facade legacy — 🟡 transición controlada
+**Impacto:** Bajo. Ya no mezcla auth ni realiza operaciones Drive; reexporta auth y expone errores explícitos para APIs retiradas.
+**Riesgo:** Un consumidor futuro podría interpretar los exports históricos como capacidad activa.
+**Plan:** Mantener el facade sin nuevos consumidores, documentar la retirada y eliminarlo únicamente tras una búsqueda de referencias externa/monorepo y aceptación de compatibilidad.
 
 ### TD-3: App.jsx como God Component
 **Impacto:** BAJO. Lógica de mutaciones y routing mezclada.
@@ -45,14 +45,16 @@ stale_si_pliego_toca: cualquier refactor estructural
 **Plan:** Extraer mutaciones a custom hooks cuando se complete migración a Worker API.
 
 ### TD-4: VaultContext monolítico
-**Impacto:** MEDIO. Asume auth + DB híbrida + UI state + polling.
-**Riesgo:** Re-renders en cascada (polling de drops cada 30s → toda la app).
-**Plan:** Separar en capas: AuthLayer, DBLayer, UILayer (post-migración D1).
+**Impacto:** MEDIO. Asume sesión/auth, carga D1, estado UI y polling local.
+**Estado G3:** ya no usa una DB híbrida ni carga Drive; `GoogleAuthService` está separado y `_buildDbFromWorker` carga D1/R2.
+**Riesgo:** Re-renders en cascada y responsabilidades todavía agrupadas.
+**Plan:** Separar progresivamente en capas AuthLayer, DBLayer y UILayer, manteniendo `useVault()` durante la transición.
 
-### TD-5: Sin tests
-**Impacto:** ALTO a largo plazo. Solo testing manual en dispositivo Android.
-**Riesgo:** Regresiones silenciosas en flujos complejos (boot híbrido, Worker fallback).
-**Plan:** Tests de integración para PlayerContext + VaultContext boot. Tests E2E con Cypress/Playwright.
+### TD-5: Cobertura de integración/E2E incompleta
+**Impacto:** MEDIO. Existe una suite automatizada de contrato y unidades, pero faltan recorridos E2E y pruebas runtime PWA/dispositivo.
+**Estado 3-ago-2026:** **114/114 tests** verdes en 18 archivos; lint/build/sintaxis/diff-check verdes.
+**Riesgo residual:** Regresiones de flujo completo (boot, UI autenticada, PWA instalada, offline/update) pueden escapar a la suite jsdom/node.
+**Plan:** Añadir pruebas E2E y una matriz runtime Android/PWA cuando exista un artefacto de navegador reproducible; no confundir tests verdes con aceptación visual.
 
 ### TD-6: Virtualización de galería
 **Impacto:** MEDIO (rebajado S148).
@@ -76,4 +78,12 @@ stale_si_pliego_toca: cualquier refactor estructural
 - Soporte HEIC/RAW en galería.
 - FLAC + OPUS en reproductor.
 - Escucha compartida (sharedListening stub exists).
-- Modo offline con Service Worker caching.
+- Modo offline ampliado con Service Worker caching: actualmente existe shell/cache de assets y fallback; `/api/` no se cachea y no hay sincronización automática de cambios.
+
+## Estado de higiene G0–G8 — 3 ago 2026
+
+- G4 seguro: fronteras puras extraídas sin duplicar estado ni audio.
+- G5: iconografía funcional canónica; aliases legacy preservan contenido persistido.
+- G6: responsive/overflow comprobados en navegador, pero aceptación visual final y PWA instalada requieren artefacto reproducible.
+- G7: SW contractualmente protegido; falta prueba runtime offline/update en dispositivo real.
+- TD-1/TD-2: Drive queda como facade/fallback de transición; no retirarlo sin evidencia externa y decisión de compatibilidad.

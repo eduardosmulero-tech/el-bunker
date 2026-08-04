@@ -10,6 +10,7 @@ import { useToast } from "../core/ToastContext";
 import { usePlayer } from "../core/PlayerContext";
 import { useVault } from "../core/VaultContext";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
+import { Icon } from "../core/ui";
 
 // ─── SCANLINE OVERLAY ────────────────────────────────────────
 // CRT scanline effect via repeating linear gradient
@@ -131,7 +132,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
                   transition={{ duration: 1.2, repeat: Infinity }}
                   className="flex-none"
                 >
-                  {sessionId ? "♥" : "◉"}
+                  <Icon name={sessionId ? "heart" : "music"} size={12} label={sessionId ? "Sesión compartida" : "Reproduciendo"} />
                 </motion.span>
                 <span className="truncate">
                   {partnerName}{partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}
@@ -152,7 +153,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
           >
             <span className="text-[10px] tracking-widest uppercase px-2 py-1.5 rounded-sm transition-all"
               style={{ border: `1px solid ${accentColor}22`, opacity: 0.45, color: accentColor }}>
-              ↺
+              <Icon name="refresh" size={14} label="Recargar" />
             </span>
           </button>
           {onSignOut && (
@@ -162,7 +163,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
             >
               <span className="text-[10px] tracking-widest uppercase px-2 py-1.5 rounded-sm transition-all"
                 style={{ border: "1px solid #ff3b3b22", color: "#ff3b3b", opacity: 0.45 }}>
-                ⎋
+                <Icon name="unlock" size={14} label="Cerrar sesión" />
               </span>
             </button>
           )}
@@ -175,9 +176,9 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
 // ─── BOTTOM NAV ──────────────────────────────────────────────
 const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
   const tabs = [
-    { id: "vault",     label: "VAULT",    icon: "◈" },
-    { id: "music",     label: "MUSIC LAB",icon: "◉" },
-    { id: "capsules",  label: "CAPSULES", icon: "⧖" },
+    { id: "vault",     label: "VAULT",    icon: "archive" },
+    { id: "music",     label: "MUSIC LAB",icon: "music" },
+    { id: "capsules",  label: "CAPSULES", icon: "lock" },
   ];
 
   return (
@@ -206,7 +207,7 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
               textShadow: isActive ? `0 0 12px ${accentColor}` : "none",
             }}
           >
-            <span className="text-base" style={{ fontSize: 16, lineHeight: 1.2 }}>{tab.icon}</span>
+            <Icon name={tab.icon} size={16} label={tab.label} />
             <span style={{ fontSize: 11, lineHeight: 1.2 }} className="truncate max-w-full">{tab.label}</span>
             {isActive && (
               <motion.div
@@ -341,7 +342,7 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
             className="text-base"
             style={{ color: accentColor, textShadow: `0 0 8px ${accentColor}88` }}
           >
-            {isPlaying ? "⏸" : "▶"}
+            <Icon name={isPlaying ? "pause" : "play"} size={16} label={isPlaying ? "Pausar" : "Reproducir"} />
           </motion.span>
         </motion.div>
 
@@ -372,7 +373,7 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
             style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
             title="Anterior"
           >
-            <span className="text-xs opacity-60" style={{ color: accentColor }}>◀◀</span>
+            <Icon name="arrowLeft" size={14} label="Anterior" />
           </motion.div>
 
           {/* Skip */}
@@ -383,7 +384,7 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
             style={{ background: `${accentColor}0e`, border: `1px solid ${accentColor}33` }}
             title="Siguiente"
           >
-            <span className="text-xs opacity-60" style={{ color: accentColor }}>▶▶</span>
+            <Icon name="arrowRight" size={14} label="Siguiente" />
           </motion.div>
         </div>
       </div>
@@ -397,42 +398,6 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
           style={{ background: `linear-gradient(90deg, ${accentColor}cc 0%, ${accentColor} 100%)`, boxShadow: `0 0 6px ${accentColor}88` }}
         />
       </div>
-    </motion.div>
-  );
-};
-
-// ─── PORTRAIT LOCK OVERLAY (UX3.7) ────────────────────────
-const PortraitLockOverlay = ({ accentColor = ACID }) => {
-  // Hooks SIEMPRE al inicio (rules-of-hooks)
-  const [isLandscape, setIsLandscape] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(orientation: landscape) and (max-height: 500px)");
-    const handler = (e) => setIsLandscape(e.matches);
-    handler(mq);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  if (!isLandscape) return null;
-  return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-3 px-6"
-      style={{
-        background: "rgba(0,0,0,0.92)", backdropFilter: "blur(8px)",
-      }}
-    >
-      <motion.div
-        animate={{ rotate: [0, 90, 90, 0] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        className="text-5xl"
-        style={{ color: accentColor, textShadow: `0 0 24px ${accentColor}66` }}
-      >◢◣</motion.div>
-      <p className="text-sm tracking-[0.3em] uppercase font-bold text-center" style={{ color: accentColor }}>
-        GIRA EL DISPOSITIVO
-      </p>
-      <p className="text-xs opacity-50 tracking-widest uppercase text-center" style={{ color: accentColor }}>
-        El Búnker solo funciona en vertical
-      </p>
     </motion.div>
   );
 };
@@ -506,7 +471,7 @@ export default function Layout({
               textShadow: "0 0 8px rgba(255,59,59,0.4)",
             }}
           >
-            ◉ Sin conexión
+            <Icon name="offline" size={14} label="Sin conexión" /> Sin conexión
           </motion.div>
         )}
       </AnimatePresence>
@@ -529,7 +494,7 @@ export default function Layout({
               textShadow: "0 0 8px rgba(255,45,85,0.3)",
             }}
           >
-            <span>♥</span>
+            <Icon name="heart" size={14} label="Sesión compartida" />
             <span>{typeof sessionToast === "string" ? sessionToast : sessionToast.msg}</span>
             {typeof sessionToast === "object" && (
               <div className="flex items-center gap-1 ml-1">
@@ -617,10 +582,7 @@ export default function Layout({
       {/* ── Layer 4: Bottom Nav ── */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
 
-      {/* ── Layer 5: Portrait Lock (UX3.7) ── */}
-      <AnimatePresence>
-        <PortraitLockOverlay accentColor={accentColor} />
-      </AnimatePresence>
+      {/* Landscape is supported; no global orientation lock. */}
     </div>
   );
 }

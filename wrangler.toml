@@ -14,6 +14,7 @@ compatibility_date = "2025-06-09"
 binding = "DB"
 database_name = "el-bunker-db"
 database_id = "795e5e88-6fab-4aa2-a294-d24640a0de05"   # ← remplazar tras `wrangler d1 create el-bunker-db`
+migrations_dir = "migrations"
 
 # ═══ R2 Bucket ═══════════════════════════════════════════════
 # Crea el bucket con: wrangler r2 bucket create el-bunker
