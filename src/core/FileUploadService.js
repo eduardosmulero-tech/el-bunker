@@ -43,6 +43,7 @@ export async function uploadFile(file, prefix, metadata = {}) {
   try {
     const uploadRes = await workerClient.fetch(`/api/upload/${encodeURIComponent(r2_key)}`, {
       method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
       body: file,
     });
     if (!uploadRes.ok) {

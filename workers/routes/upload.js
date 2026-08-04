@@ -5,6 +5,7 @@
 
 import { VALID_UPLOAD_PREFIXES } from "../config.js";
 import { json, err } from "../utils/response.js";
+import { canManageOwned } from "../utils/authorization.js";
 
 export default async function handleUpload(request, env, url, userId) {
   const method = request.method;
@@ -18,6 +19,14 @@ export default async function handleUpload(request, env, url, userId) {
     if (!body?.prefix || !body?.filename) return err("prefix and filename required", 400);
     if (!VALID_UPLOAD_PREFIXES.includes(body.prefix)) {
       return err(`Invalid prefix. Valid: ${VALID_UPLOAD_PREFIXES.join(", ")}`, 400);
+    }
+    if (body.track_id) {
+      const track = await env.DB.prepare(
+        "SELECT id, added_by FROM tracks WHERE id = ?1 AND is_deleted = 0"
+      ).bind(body.track_id).first();
+      if (!track || !canManageOwned(userId, track.added_by)) {
+        return err("Track not found or forbidden", 403);
+      }
     }
     const safeFilename = body.filename
       .replace(/[^a-zA-Z0-9._-]/g, "_")
@@ -59,6 +68,10 @@ export default async function handleUpload(request, env, url, userId) {
     if (!VALID_UPLOAD_PREFIXES.some(p => r2_key.startsWith(p + "/"))) {
       return err("Forbidden — invalid r2_key prefix", 403);
     }
+    const reservation = await env.DB.prepare(
+      "SELECT id FROM files WHERE r2_key = ?1 AND uploaded_by = ?2"
+    ).bind(r2_key, userId).first();
+    if (!reservation) return err("Upload reservation not found", 404);
     const data = await request.arrayBuffer();
     await env.BUNKER.put(r2_key, data, {
       httpMetadata: { contentType: request.headers.get("Content-Type") || "application/octet-stream" },

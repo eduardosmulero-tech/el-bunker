@@ -265,6 +265,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
     return null;
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   // S130-D: coordenadas de ubicación (geocoder + manual)
   const [locationLat, setLocationLat] = useState(entry?.content?.lat ?? null);
   const [locationLng, setLocationLng] = useState(entry?.content?.lng ?? null);
@@ -312,6 +313,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
 
   const handleSubmit = async () => {
     if (!text.trim() && !title.trim() && !photoFile && !isEditing) return;
+    setSubmitError("");
     setIsSubmitting(true);
     try {
       // Fase 8.4 — Merge campos extra en content JSON
@@ -354,6 +356,10 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       }
       setTitle(""); setText(""); setPhotoFile(null); setPhotoPreview(null);
       setTags([]); setExtraValues({});
+    } catch (error) {
+      // Preserve the draft and make a transient network/API failure visible in the form.
+      console.warn("[AddEntryForm] No se pudo guardar la entrada:", error);
+      setSubmitError(error?.message ?? "No se pudo guardar la entrada. Inténtalo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -511,6 +517,12 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           </button>
         ))}
       </div>
+
+      {submitError && (
+        <p role="alert" className="text-xs leading-relaxed" style={{ color: "#ff6b6b", fontFamily: FONT_MONO }}>
+          {submitError}
+        </p>
+      )}
 
       {/* Botones */}
       <div className="flex gap-2">

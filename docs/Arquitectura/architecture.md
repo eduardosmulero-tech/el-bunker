@@ -135,7 +135,7 @@ Archivos: `src/core/FileUploadService.js`
 - `src/vault/EntryLightbox.jsx` — lightbox unificado (S146/S148: portal+swipe+pinch, adoptado por los 6 modos vía `onOpenLightbox`)
 - `public/sw-assets.json` — generado por swAssetManifest plugin
 - `workers/routes/config.js` — GET /api/config (app_config table)
-- `workers/utils/r2-sign.js` — helper HMAC-SHA256 para firmar lecturas R2 sensibles (S148 FASE D)
+- `workers/utils/r2-sign.js` — helper HMAC-SHA256 para firmar lecturas R2 sensibles (S148 FASE D). Fuera de `local/development`, la ausencia de `R2_SIGN_SECRET` bloquea la lectura y sanea las referencias sensibles en entries.
 
 > S148: `DEMO_TRACKS`/`DEMO_ERAS`/`DEMO_ENTRIES_GEO` eliminados — ya no hay fallbacks hardcoded. Estado vacío honesto cuando no hay datos reales.
 

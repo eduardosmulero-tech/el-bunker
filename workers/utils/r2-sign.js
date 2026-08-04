@@ -3,9 +3,9 @@
 //  FASE D.1 (veredicto V4 Fable S147): firma HMAC de URLs de
 //  lectura R2 para los prefijos sensibles vault/docs/ y vault/audio/.
 //  TTL reutiliza JWT_EXPIRY (config.js). Secret: R2_SIGN_SECRET en env.
-//  Sin secret configurado → el helper devuelve null y el gate deja
-//  pasar como antes (no bloquea el arranque si falta el secret; Edu
-//  lo setea con `wrangler secret put R2_SIGN_SECRET` al levantar la pausa).
+//  Sin secret configurado → la firma devuelve null. El gate R2 solo
+//  omite la exigencia en entornos explícitos local/development; cualquier
+//  otro entorno falla cerrado para no exponer contenido sensible.
 // ============================================================
 
 import { JWT_EXPIRY } from "../config.js";
@@ -53,7 +53,7 @@ async function getHmacKey(secret) {
  * Token = base64url(expiresAt) + "." + base64url(hmac).
  *
  * @returns {{ token: string, expiresAt: number } | null}
- *   null si no hay R2_SIGN_SECRET configurado (gate se omite).
+ *   null si no hay R2_SIGN_SECRET configurado.
  */
 export async function signR2Read(r2_key, env) {
   const secret = env?.R2_SIGN_SECRET;
@@ -88,7 +88,7 @@ export async function verifyR2Read(r2_key, token, env) {
   } catch {
     return false;
   }
-  if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
+  if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) return false;
   const enc = new TextEncoder();
   const payload = `${r2_key}|${expiresAt}`;
   const key = await getHmacKey(secret);

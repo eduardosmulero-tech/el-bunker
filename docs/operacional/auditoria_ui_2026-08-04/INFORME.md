@@ -11,14 +11,15 @@
 
 | Métrica | Valor |
 |---|---|
-| Items del checklist | 62 |
+| Items del checklist | 66 |
 | OK | 49 |
-| Observaciones | 9 |
-| Fallos | 1 (H-01, reproducción sistemática) |
+| Observaciones | 10 |
+| Fallos | 4 (H-01 rate limit; H-11/H-12/H-13 truncamientos, reproducidos 2/2) |
 | No verificables en headless | 3 (play de audio, descarga backup, Google OAuth) |
 | Bugs P1 del 2-ago (P1-01, P1-02) | **RESUELTOS** (verificado por artefacto hoy) |
 | Datos de prueba creados y limpiados | entrada (soft-deleted), era (física), track+MP3 (soft+R2), cápsula (física) |
 | Baseline tras la auditoría | 527 entries activas · 2 eras · 529 tracks activos (intacto) |
+| Método visual | **Canon DOM-first**: toda anomalía visual medida por DOM (overflow/posición) antes de mirar la imagen; la imagen solo confirma o aporta lo no medible (estética) |
 
 ---
 
@@ -72,6 +73,27 @@
 ### H-10 — [INFO] Iconografía emoji del vault (deuda conocida)
 - Confirmado en vivo: ~75 tipos de entrada emoji en el modal + 15 filtros emoji (📷✎📄…). Deuda conocida de Edu (no defender como diseño; si se queja, es pliego).
 
+### H-11 — [MEDIO / P2] Títulos de entradas truncados en la galería WALL (23 items, ~37% del texto perdido)
+- **Qué pasa:** en el masonry de WALL, los nombres de archivo bajo cada foto se truncan con ellipsis: el texto necesita **194px** y el contenedor solo da **122px** (clase `text-xs truncate leading-tight`, contenedor `absolute inset-x-0 bottom-0 p-2`). Se pierde ~37% del título (ej. `takeout_IMG-20211101-WA0012` → `takeout_IMG-20211101-WA…`).
+- **Evidencia:** barrido por scroll completo del DOM — **23 cortes medidos** (scrollWidth > clientWidth + 3) en la era 2021; reproducido 2/2 en cargas independientes (turno original y re-auditoría de esta noche).
+- **Impacto:** el nombre del archivo es la única etiqueta del recuerdo en ese modo; truncado pierde información. Con ellipsis (no corte en seco) — es un defecto de diseño del contenedor, no un fallo de render.
+- Capturas: 05_vault_wall_cortes.png (evidencia cruda).
+
+### H-12 — [MEDIO / P2] Títulos de tracks truncados en MUSIC LAB (14 items, algunos a 1/3)
+- **Qué pasa:** en la lista de tracks, títulos largos (remixes/slowed) se truncan con ellipsis agresiva: `Ain´t No Love In The Heart Of The City vs Fuzz And…` necesita **662px** y tiene **247px** (pierde ~60% y el dato del remix, que es la información clave del track); clase `text-xs font-bold truncate` en contenedor `flex-1 min-w-0`.
+- **Evidencia:** barrido completo del DOM — **14 cortes medidos**; reproducido 2/2 en cargas independientes. El caso peor: 662 vs 247px.
+- **Impacto:** títulos de remixes (slowed/nightcore/speed up) quedan irreconocibles; el usuario no puede distinguir versiones sin abrir el track.
+- Captura: 04_musiclab_cortes.png.
+
+### H-13 — [BAJO / P3] Títulos de eventos truncados en CAPSULES · TIMELINE (2 items)
+- **Qué pasa:** el texto `admin Ｌａｄｙ，Ｈｅａｒ Ｍｅ Ｔｏｎｉｇｈｔ (slowed down)` necesita **401px** y el contenedor da **302px**; mismo patrón en `admin lady gaga ft beyonce - telephone (slow…` (403 vs 302). El prefijo "admin " consume ancho sin aportar (el autor ya se muestra aparte).
+- **Evidencia:** barrido DOM — 2 cortes medidos; reproducido 2/2.
+
+### H-14 — [REQUISITO DE EDU, 3 peticiones] Adaptación a escritorio (navegador real) NO está tratada como deuda en ningún doc vivo
+- **Contexto:** Edu ha pedido 3 veces adaptar la app a pantalla de escritorio cuando se usa en navegador real (no instalada en Android). La auditoría del 2-ago lo documentó (DEUDA-UI-03, P3 "HUD desktop", ALTA por queja explícita) y PROYECTO.md:54 dice textualmente: *"la app no está optimizada para desktop"*.
+- **Contradicción:** `docs/Arquitectura/architecture.md:110` (S152/S153) y el ACTA G0-G1 declaran "responsive desktop implementado" y G6 "aceptación verificada" — pero la aceptación real quedó pendiente (ESTADO.md:29: "Pendiente: viewport móvil real"), y esta re-auditoría **mide** en viewport 1264x625 (escritorio real) los H-11/H-12/H-13: la galería de 3 columnas estrechas (122px) y la lista de tracks de columna única comprimida no están optimizadas para escritorio.
+- **Veredicto:** el requisito existe (3 peticiones), los docs se contradicen (unos dicen hecho, otros pendiente, PROYECTO.md dice no optimizada) y **no aparece en el checklist de cierre como tarea propia**. Es deuda real de producto pendiente de pliego: decidir qué significa "versión escritorio" (layout multi-columna, atajos de teclado, filas de tracks más anchas, HUD) y ejecutarla.
+
 ---
 
 ## VERIFICACIONES POR ARTEFACTO (logs/d1_verificaciones.md)
@@ -98,6 +120,7 @@
 - Nota: `QA_ERA_20260804` y `QA_CAPSULE_20260804` fueron eliminadas físicamente (0 filas restantes).
 
 ## MÉTODO Y LIMITACIONES
+- **Canon DOM-first (verificación visual):** (1) toda anomalía visual se detecta y mide primero por DOM — texto que desborda su contenedor (`scrollWidth > clientWidth`), elementos fuera del viewport, solapamientos entre hermanos, contenedores con overflow — porque es reproducible y verificable por cualquiera; (2) el análisis de imagen se usa SOLO como soporte grueso o confirmación, con pregunta dirigida y, cuando existe, con las medidas DOM previas como anclaje en el prompt; (3) ninguna afirmación del modelo de visión entra al informe sin respaldo DOM o marcada explícitamente como "apreciación no verificable". Las capturas quedan siempre como evidencia cruda que el revisor puede contrastar.
+- La visión auxiliar (modelo externo) alucinó en 4 de 4 análisis libres (web de apuestas con "BALANCE 88852" y "REDEEM" inexistentes, tabs inventados, fechas falsas, nombres de archivo repetidos en filas donde no están): sus descripciones finas se descartaron sistemáticamente. Con anclaje de medidas DOM, su confirmación es utilizable (H-12 confirmado en imagen tras medir los cortes).
 - Clicks disparados por eventos JS (pointerdown/up) — el click sintético del driver no activa los handlers de pointer de WallView.
-- La visión auxiliar (modelo externo) alucinó detalles en 2 análisis (botones inexistentes, fechas falsas): se descartaron sus descripciones finas; solo se usó como soporte grueso y las capturas quedan como evidencia cruda verificable.
 - Verificación siempre por artefacto (D1/API/R2/DOM), nunca por afirmación del ejecutor.

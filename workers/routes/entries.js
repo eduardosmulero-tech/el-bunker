@@ -6,15 +6,19 @@
 import { json, err } from "../utils/response.js";
 import { isSensitiveR2Key, signR2Read } from "../utils/r2-sign.js";
 import { canManageOwned } from "../utils/authorization.js";
+import { cleanString } from "../utils/validation.js";
 
 // FASE D.1 (V4): para entries con imágenes en prefijos sensibles
 // (vault/docs/, vault/audio/), inyecta `url` firmada HMAC en cada imagen.
 // El frontend prefiere `img.url` sobre `${R2_PUBLIC_BASE}/${img.r2_key}`.
-// Si no hay R2_SIGN_SECRET configurado, no inyecta nada (compat hacia atrás).
+// Sin secret, solo local/development conserva compatibilidad pública; cualquier
+// otro entorno elimina la referencia sensible para no filtrar una key inútil.
 // MUTA el entry in-place (no devuelve nuevo objeto) — así los callers no
 // necesitan reasignar (entry es const en el handler de detalle).
 async function signEntryImages(entry, env, url) {
-  if (!env?.R2_SIGN_SECRET) return;
+  const isLocalEnvironment = env?.ENVIRONMENT === "local" || env?.ENVIRONMENT === "development";
+  const hasSigningSecret = Boolean(env?.R2_SIGN_SECRET);
+  if (!hasSigningSecret && isLocalEnvironment) return;
   const content = typeof entry.content === "string" ? safeParseContent(entry.content) : entry.content;
   const images = content?.images;
   if (!Array.isArray(images) || !images.length) return;
@@ -24,7 +28,14 @@ async function signEntryImages(entry, env, url) {
     images.map(async (img) => {
       if (!img?.r2_key || !isSensitiveR2Key(img.r2_key)) return img;
       const signed = await signR2Read(img.r2_key, env);
-      if (!signed) return img;
+      if (!signed) {
+        // Fail closed fuera de local/development: no enviar la key sensible.
+        mutated = true;
+        const safeImage = { ...img };
+        delete safeImage.r2_key;
+        delete safeImage.url;
+        return { ...safeImage, protected: true };
+      }
       mutated = true;
       return { ...img, url: `${origin}/${img.r2_key}?t=${signed.token}` };
     })
@@ -32,6 +43,22 @@ async function signEntryImages(entry, env, url) {
   if (!mutated) return;
   const newContent = { ...content, images: signedImages };
   entry.content = typeof entry.content === "string" ? JSON.stringify(newContent) : newContent;
+}
+
+async function protectEntryFiles(files, env, url) {
+  const isLocalEnvironment = env?.ENVIRONMENT === "local" || env?.ENVIRONMENT === "development";
+  if (!Array.isArray(files) || (!env?.R2_SIGN_SECRET && isLocalEnvironment)) return files;
+  return Promise.all(files.map(async (file) => {
+    if (!file?.r2_key || !isSensitiveR2Key(file.r2_key)) return file;
+    const signed = await signR2Read(file.r2_key, env);
+    if (!signed) {
+      const safeFile = { ...file };
+      delete safeFile.r2_key;
+      delete safeFile.url;
+      return { ...safeFile, protected: true };
+    }
+    return { ...file, url: `${url.origin}/${file.r2_key}?t=${signed.token}` };
+  }));
 }
 
 const safeParseContent = (c) => {
@@ -97,10 +124,11 @@ export default async function handleEntries(request, env, url, userId) {
         entry.tags = tagsByEntry[entry.id] || [];
         entry.files = filesByEntry[entry.id] || [];
       }
-      // FASE D.1: firmar imágenes en prefijos sensibles (paralelo, best-effort, muta in-place).
-      if (env?.R2_SIGN_SECRET) {
-        await Promise.all(results.map((e) => signEntryImages(e, env, url)));
-      }
+      // FASE D.1: firmar o sanear referencias sensibles (paralelo, muta in-place).
+      await Promise.all(results.map(async (entry) => {
+        entry.files = await protectEntryFiles(entry.files, env, url);
+        await signEntryImages(entry, env, url);
+      }));
     }
     return json(results);
   }
@@ -123,7 +151,7 @@ export default async function handleEntries(request, env, url, userId) {
     const { results: files } = await env.DB.prepare(
       "SELECT id, r2_key, prefix, filename, mime_type, size_bytes FROM files WHERE entry_id = ?1"
     ).bind(entryId).all();
-    entry.files = files;
+    entry.files = await protectEntryFiles(files, env, url);
     // FASE D.1: firmar imágenes en prefijos sensibles (muta entry in-place, sin reasignar).
     await signEntryImages(entry, env, url);
     return json(entry);
@@ -131,7 +159,9 @@ export default async function handleEntries(request, env, url, userId) {
 
   // POST /api/entries
   if (method === "POST" && path === "/api/entries") {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return err("Invalid JSON body", 400);
+    const type = cleanString(body.type, 50) || "note";
     if (body.era_id) {
       const era = await env.DB.prepare("SELECT id FROM eras WHERE id = ?1").bind(body.era_id).first();
       if (!era) return err(`Era ${body.era_id} not found`, 400);
@@ -139,23 +169,37 @@ export default async function handleEntries(request, env, url, userId) {
     const id = body.id || crypto.randomUUID();
     const now = body.created_at || new Date().toISOString();
     const fromUser = userId;
-    await env.DB.prepare(
-      `INSERT INTO entries (id, era_id, type, title, content, from_user, to_user, created_at, updated_at)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?8)`
-    ).bind(id, body.era_id || null, body.type || "note", body.title || "",
-           JSON.stringify(body.content || {}), fromUser, body.to_user || "both", now).run();
+    const batch = [
+      env.DB.prepare(
+        `INSERT INTO entries (id, era_id, type, title, content, from_user, to_user, created_at, updated_at)
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?8)`
+      ).bind(id, body.era_id || null, type, body.title || "",
+             JSON.stringify(body.content || {}), fromUser, body.to_user || "both", now),
+    ];
     if (Array.isArray(body.tags) && body.tags.length) {
       const stmt = env.DB.prepare("INSERT OR IGNORE INTO entry_tags (entry_id, tag_id) VALUES (?1,?2)");
-      await env.DB.batch(body.tags.map(tid => stmt.bind(id, tid)));
+      batch.push(...body.tags.map(tid => stmt.bind(id, tid)));
     }
     if (Array.isArray(body.file_ids) && body.file_ids.length) {
       const stmt = env.DB.prepare("UPDATE files SET entry_id = ?1 WHERE id = ?2 AND entry_id IS NULL");
-      await env.DB.batch(body.file_ids.map(fid => stmt.bind(id, fid)));
+      batch.push(...body.file_ids.map(fid => stmt.bind(id, fid)));
     }
-    await env.DB.prepare(
-      "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'entry',?3,?4)"
-    ).bind("entry_created", userId, id, JSON.stringify({ type: body.type, title: body.title })).run();
-    return json({ id, ...body, from_user: userId }, 201);
+    batch.push(
+      env.DB.prepare(
+        "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'entry',?3,?4)"
+      ).bind("entry_created", userId, id, JSON.stringify({ type, title: body.title }))
+    );
+    // Entry, tags, file links and audit event must commit or roll back together.
+    await env.DB.batch(batch);
+    return json({
+      ...body,
+      id,
+      type,
+      from_user: fromUser,
+      to_user: body.to_user || "both",
+      created_at: now,
+      updated_at: now,
+    }, 201);
   }
 
   // PATCH /api/entries/:id

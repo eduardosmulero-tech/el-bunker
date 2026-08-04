@@ -5,6 +5,7 @@
 
 import { json, err } from "../utils/response.js";
 import { canManageOwned } from "../utils/authorization.js";
+import { cleanString } from "../utils/validation.js";
 
 // FASE D.2 (veredicto V5 Fable S147): helper local para emitir eventos de track.
 // Contrato explícito: POST emite track_created, DELETE emite track_deleted,
@@ -73,14 +74,28 @@ export default async function handleTracks(request, env, url, userId) {
 
   // POST /api/tracks
   if (method === "POST" && path === "/api/tracks") {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return err("Invalid JSON body", 400);
+    const title = cleanString(body.title, 200);
+    if (!title) return err("title is required (non-empty, max 200 chars)", 400);
+    if (body.r2_key && !body.r2_key.startsWith("music/")) {
+      return err("Invalid r2_key: tracks must use the music/ prefix", 400);
+    }
     const id = body.id || crypto.randomUUID();
+    if (body.r2_key) {
+      const reservation = await env.DB.prepare(
+        "SELECT id, track_id, uploaded_by FROM files WHERE r2_key = ?1 AND prefix = 'music'"
+      ).bind(body.r2_key).first();
+      if (!reservation || reservation.track_id !== id || !canManageOwned(userId, reservation.uploaded_by)) {
+        return err("r2_key reservation not found or forbidden", 403);
+      }
+    }
     const now = body.created_at || new Date().toISOString();
     const addedBy = userId;
     await env.DB.prepare(
       `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, drive_file_id, color, play_count, last_played, added_by, created_at, updated_at)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)`
-    ).bind(id, body.era_id || null, body.title, body.artist || "", body.tag_id || null,
+    ).bind(id, body.era_id || null, title, body.artist || "", body.tag_id || null,
            body.r2_key || null, body.format || "mp3", body.note || "", body.duration || null,
            body.thumbnail || null, null, body.color || null,
            body.play_count || 0, body.last_played || null, addedBy, now, now).run();
@@ -89,8 +104,22 @@ export default async function handleTracks(request, env, url, userId) {
       await env.DB.batch(body.tags.map(tid => stmt.bind(id, tid)));
     }
     // FASE D.2: POST emite track_created vía helper local.
-    await emitTrackEvent(env, "track_created", userId, id, { title: body.title });
-    return json({ id, ...body, added_by: addedBy }, 201);
+    await emitTrackEvent(env, "track_created", userId, id, { title });
+    return json({
+      id,
+      title,
+      artist: body.artist || "",
+      note: body.note || "",
+      tag_id: body.tag_id || null,
+      r2_key: body.r2_key || null,
+      format: body.format || "mp3",
+      duration: body.duration || null,
+      thumbnail: body.thumbnail || null,
+      color: body.color || null,
+      added_by: addedBy,
+      created_at: now,
+      updated_at: now,
+    }, 201);
   }
 
   // PATCH /api/tracks/:id

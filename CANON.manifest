@@ -1,0 +1,32 @@
+# CANON.manifest — el-bunker
+#
+# Lo consume el hook H7 (canon-read gate): C:\proyectos\scripts\hooks\canon_read_gate.py
+# Bloquea escribir en [protege] si la sesion no ha leido antes TODO lo de [requiere].
+# Se verifica contra el transcript real de la sesion, no contra la palabra del agente.
+#
+# Forma canonica global (28/29-jul-2026, decision de Edu en hermes-principal):
+# DOS GRUPOS. El estado vivo se toca cada sesion y no debe pagar el peaje de releer
+# el canon completo; editar diseno/plan/canon si lo paga.
+# REGLA DE TAMANO: en [requiere] solo entra lo VIVO. Un plan cerrado sale del
+# manifest el dia que deja de guiar decisiones.
+
+# Grupo 1 — el estado vivo: se toca cada sesion, exige solo leerse a si mismo.
+[protege]
+docs/Nucleo/ESTADO.md
+
+[requiere]
+docs/Nucleo/ESTADO.md
+
+# Grupo 2 — disenar, planificar o cambiar el rumbo: aqui SI exige el canon completo.
+# El refactor G0-G8 se ejecuto y cerro (4-ago-2026); PLAN_REFACTOR_HIGIENE y su acta
+# viven en docs/operacional/ como historico y NO son peaje de sesion.
+[protege]
+docs/*.md
+AGENTS.md
+CLAUDE.md
+CANON.manifest
+
+[requiere]
+docs/Nucleo/CONTRATO.md
+docs/Nucleo/REGLAS.md
+docs/Nucleo/ESTADO.md

@@ -4,6 +4,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { isValidEventType } from "../utils/validation.js";
 
 export default async function handleEvents(request, env, url, userId) {
   const method = request.method;
@@ -14,6 +15,7 @@ export default async function handleEvents(request, env, url, userId) {
   if (method === "POST" && url.pathname === "/api/events") {
     const body = await request.json().catch(() => null);
     if (!body) return err("Invalid JSON body", 400);
+    if (!isValidEventType(body.event_type)) return err("Invalid event_type: not a known app event", 400);
     const payload = JSON.stringify(body.payload || {});
     if (payload.length > 4096) return err("Payload too large (max 4KB)", 413);
     await env.DB.prepare(

@@ -107,11 +107,6 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
         unlock_at: new Date(unlockAt).toISOString(),
         entry_ids: selectedEntryIds,
         playlist_ids: selectedPlaylistIds,
-        content_snapshot: JSON.stringify({
-          entry_ids: selectedEntryIds,
-          playlist_ids: selectedPlaylistIds,
-          sealed_at: new Date().toISOString(),
-        }),
       };
       const created = await workerClient.post('/api/time_capsules', body);
       setCapsules(prev => [created, ...prev]);
@@ -216,9 +211,9 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
             <div key={c.id} className="p-3 text-xs" style={{ background: GLASS_BG, border: `1px solid ${PURPLE}33` }}>
               <span style={{ color: PURPLE }}>{c.title}</span>
               <span className="opacity-40 ml-2" style={{ color: ACID }}>— abre {new Date(c.unlock_at).toLocaleDateString()}</span>
-              {(c.entry_ids?.length || c.playlist_ids?.length) > 0 && (
+              {((c.content_counts?.entries || c.entry_ids?.length || 0) + (c.content_counts?.playlists || c.playlist_ids?.length || 0)) > 0 && (
                 <span className="opacity-20 ml-2" style={{ color: ACID }}>
-                  ({c.entry_ids?.length || 0}E + {c.playlist_ids?.length || 0}P)
+                  ({c.content_counts?.entries ?? c.entry_ids?.length ?? 0}E + {c.content_counts?.playlists ?? c.playlist_ids?.length ?? 0}P)
                 </span>
               )}
             </div>

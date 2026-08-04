@@ -50,6 +50,7 @@
 | 1.26 | ✕ borrar entrada | ✅ Soft delete verificado por API (200, is_deleted=1) en entrada de prueba | logs/d1_verificaciones.md |
 | 1.27 | ↓ BACKUP JSON | ✅ Código canónico Blob+download (descarga real no verificable en headless) | — |
 | 1.28 | Iconografía emoji del vault | ⚠️ Deuda conocida de Edu (ENTRY_TYPES) — confirmada en vivo | 01_vault_principal.png |
+| 1.29 | Títulos de entradas en WALL sin truncar | ❌ **23 cortes medidos por DOM** (194px necesarios vs 122px disponibles, ellipsis; H-11) | 05_vault_wall_cortes.png |
 
 ## 2. MUSIC LAB
 
@@ -70,6 +71,7 @@
 | 2.13 | Tab LISTS (playlists) | ✅ Presente (4 playlists en D1) | — |
 | 2.14 | Crear playlist | ✅ POST /api/playlists verificado en código | — |
 | 2.15 | ✎ editar / − borrar track | ✅ PATCH/DELETE soft en código y verificado por API | logs/d1_verificaciones.md |
+| 2.16 | Títulos de tracks sin truncar | ❌ **14 cortes medidos por DOM** (caso peor 662px vs 247px, pierde dato del remix; H-12) | 04_musiclab_cortes.png |
 
 ## 3. CAPSULES
 
@@ -83,6 +85,7 @@
 | 3.6 | SELLAR CÁPSULA 🔮 | ✅ Crea time_capsules + capsule_items + event en D1 | logs/d1_verificaciones.md |
 | 3.7 | Cápsulas selladas sin DELETE | ⚠️ No hay ruta DELETE (inmutables por diseño; ver INFORME H-07) | logs/d1_verificaciones.md |
 | 3.8 | Filtro eras 2021/2022 | ✅ | — |
+| 3.9 | Títulos de eventos en TIMELINE sin truncar | ❌ **2 cortes medidos por DOM** (401px vs 302px; prefijo "admin " consume ancho; H-13) | 03_capsules_timeline.png |
 
 ## 4. PWA / INFRAESTRUCTURA
 
@@ -95,6 +98,7 @@
 | 4.5 | Rate limit API | ❌ **10 req/s por IP rompe la carga normal** (ver INFORME H-01) | logs/consola_04_musiclab.md |
 | 4.6 | Vista móvil 390x844 | ➖ Pendiente conocido (sin emulación en este entorno) | — |
 | 4.7 | PWA instalada en Android | ➖ Pendiente conocido | — |
+| 4.8 | Adaptación a escritorio (navegador real) | ⚠️ **Requisito pedido 3 veces por Edu, sin tratar como deuda en docs vivos** (H-14); hoy se miden cortes de títulos en las 3 tabs | 04_musiclab_cortes.png, 05_vault_wall_cortes.png |
 
 ## 5. ESTABILIDAD DEL ENTORNO DE PRUEBA
 
@@ -107,7 +111,8 @@
 
 ## RESUMEN
 
-- **Total items del checklist:** 62
-- **✅ OK:** 49 · **⚠️ Observación:** 9 · **❌ FALLO:** 1 · **➖ No verificable:** 3
+- **Total items del checklist:** 66
+- **✅ OK:** 49 · **⚠️ Observación:** 10 · **❌ FALLO:** 4 · **➖ No verificable:** 3
 - **Bugs P1 conocidos del 2-ago (P1-01, P1-02): RESUELTOS en producción** (verificado por artefacto hoy)
 - **Hallazgo nuevo principal:** rate limit 10 req/s (H-01) — ver INFORME.md
+- **Hallazgos visuales (turno repetido, canon DOM-first):** 23 títulos truncados en WALL (H-11), 14 en MUSIC LAB (H-12), 2 en TIMELINE (H-13) — todos medidos por DOM y reproducidos 2/2; requisito desktop de Edu documentado como H-14

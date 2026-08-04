@@ -3,7 +3,22 @@
 > Pipeline canónica: AGENTS.md.
 
 **MODO: PIPELINE PROMETHE-OS. Kanban = estado vivo.**
-Board `el-bunker` activo. Este archivo es snapshot documental, no fuente de estado.
+⚠️ **El board `el-bunker` NO existe todavía** (verificado 4-ago: `hermes kanban boards list` solo
+lista `default` y `empleo`). Lo crea la fase E1 de
+`cerebro/normas/loop-agentico/ENCARGO_PILOTO_PARALELISMO_ELBUNKER_2026-08-04.md`. Hasta entonces,
+este archivo es la re-entrada.
+
+## ▶ SIGUIENTE (4-ago, decidido por Edu — arranca aquí)
+**el-bunker es la PRIORIDAD GLOBAL del workspace**, por encima de vinos y empleo.
+Dos frentes nuevos, ya diseñados y en BORRADOR pendientes de OK de Edu:
+- `docs/disenos/DISENO_MODO_VISITA_2026-08-04.md` — censura de contenido para poder enseñar la app.
+- `docs/disenos/DISENO_PANEL_ADMIN_2026-08-04.md` — panel `/admin` reutilizable en vinos.
+- `docs/planes/PLAN_CARRILES_ELBUNKER_2026-08-04.md` — las tarjetas, ya repartidas en carriles.
+
+**Dos bloqueos previos, ambos de Edu:** (1) los 16 ficheros modificados sin commitear son los
+mismos que tocan las tarjetas — commitear o descartar antes de abrir carriles; (2) faltan perfiles
+de Hermes y falta decidir proveedor gratuito de lo automático, así que hoy todos los carriles son
+de terminal (los abre Edu).
 
 ## ✅ Cerrado
 - v1.0 en código + prod (S148, 13-jul) · G0–G5 higiene/refactor local ✅ · tests 114/114 (3-ago)
@@ -31,10 +46,13 @@ Board `el-bunker` activo. Este archivo es snapshot documental, no fuente de esta
 - **G8:** ✅ documentación sincronizada en esta sesión; no se reescriben ADRs normativos sin enmienda.
 
 ## ▶ Pendientes reales
+- **HUD DESKTOP (requisito de Edu, 3 peticiones, tarjeta t_504a2707 en fase IDEA):** rediseñar la HUD para aprovechar el escritorio — móvil compacta y visible, desktop con capacidades que el móvil no tiene. Medido en auditoría UI 4-ago: 23 títulos truncados en WALL, 14 en MUSIC LAB, 2 en TIMELINE a 1264px (H-11/H-12/H-13, canon DOM-first). Docs contradictorios (S152/S153 y ACTA G0-G1 dicen "responsive desktop hecho"; PROYECTO.md:54 dice "no optimizada para desktop") — alinear en CONTRATO/SPEC.
 - Aceptación móvil real (390x844) y PWA instalada/offline/update en dispositivo físico; revisar modales y controles táctiles. Sin sustituto de navegador headless.
 - Confirmar EntryLightbox en móvil (t_9badd928).
 - **7403 RESUELTO (4-ago):** la query remota D1 funciona (files=527 verificado); el fallo de G2-1J fue transitorio. **Huérfano G2 RESUELTO (4-ago):** `prueba_dod.jpg` (c4c564a9, residuo de DoD 2-ago, sin objeto R2) borrado con OK de Edu; rollback en `C:\proyectos\.trabajo\orphan_rollback.sql`. El residuo R2 `c1f11fad…` pendiente de verificar por API (el CLI no lista objetos).
+- **Backfill G2 HECHO (4-ago, autorizado por Edu):** `file_references` poblada — 1.054 referencias (527 files × 2: files_fk + entry_content_json), 0 colgantes, 0 duplicados, baseline intacto (files 527 / entries 527 / tracks 1.117). Snapshot `tools/snapshots/d1_pre_g2_backfill_20260804.sql`; rollback fuera del repo. Detalle en acta G2-1M.
 - Código Drive facade/fallback: retirada solo tras evidencia externa y decisión de compatibilidad. Verificado 4-ago: 0 tracks con drive_file_id, 0 consumidores del facade en src.
+- **R11 HECHO (4-ago):** validaciones POST (BUG-5) en tracks (title requerido), drops (to_user whitelist admin/edu/david), events (event_type en whitelist de 28 tipos emitidos) y entries (type saneado). Helper `workers/utils/validation.js` + tests. Suite 141/141.
 - Revisión humana del plan completo y gate final antes de deploy.
 
 ## Infra

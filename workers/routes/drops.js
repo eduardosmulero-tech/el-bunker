@@ -5,6 +5,7 @@
 
 import { json, err } from "../utils/response.js";
 import { canManageParticipant } from "../utils/authorization.js";
+import { isValidUserId } from "../utils/validation.js";
 
 export default async function handleDrops(request, env, url, userId) {
   const method = request.method;
@@ -23,19 +24,22 @@ export default async function handleDrops(request, env, url, userId) {
 
   // POST /api/drops
   if (method === "POST" && path === "/api/drops") {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body) return err("Invalid JSON body", 400);
+    const toUser = body.to_user || userId;
+    if (!isValidUserId(toUser)) return err("Invalid to_user: must be admin, edu or david", 400);
     const id = body.id || crypto.randomUUID();
     const now = body.created_at || new Date().toISOString();
     const fromUser = userId;
     await env.DB.prepare(
       `INSERT INTO drops (id, era_id, track_id, from_user, to_user, drop_date, memory, mood, favorited, favorited_by, created_at)
        VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)`
-    ).bind(id, body.era_id || null, body.track_id || null, fromUser, body.to_user || userId,
+    ).bind(id, body.era_id || null, body.track_id || null, fromUser, toUser,
            body.drop_date || null, body.memory || "", body.mood || "",
            body.favorited ? 1 : 0, body.favorited ? userId : null, now).run();
     await env.DB.prepare(
       "INSERT INTO events (event_type, user_id, entity_type, entity_id, payload) VALUES (?1,?2,'drop',?3,?4)"
-    ).bind("drop_sent", userId, id, JSON.stringify({ to_user: body.to_user || userId, track_id: body.track_id })).run();
+    ).bind("drop_sent", userId, id, JSON.stringify({ to_user: toUser, track_id: body.track_id })).run();
     return json({ id, ...body, from_user: userId }, 201);
   }
 

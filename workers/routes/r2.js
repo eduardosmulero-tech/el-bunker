@@ -47,8 +47,10 @@ export default async function handleR2(request, env, path) {
   const r2_key = path.slice(1); // quitar / inicial
   if (!r2_key) return err("Not found", 404);
 
-  // FASE D.1: gate HMAC para prefijos sensibles.
-  if (env?.R2_SIGN_SECRET && isSensitiveR2Key(r2_key)) {
+  // FASE D.1: gate HMAC para prefijos sensibles. En producción falta de
+  // secret = fail closed; solo el entorno local conserva compatibilidad.
+  const isLocalEnvironment = env?.ENVIRONMENT === "local" || env?.ENVIRONMENT === "development";
+  if (isSensitiveR2Key(r2_key) && (!isLocalEnvironment || env?.R2_SIGN_SECRET)) {
     const url = new URL(request.url);
     const token = url.searchParams.get("t");
     const ok = await verifyR2Read(r2_key, token, env);
