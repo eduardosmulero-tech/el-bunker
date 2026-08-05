@@ -36,6 +36,15 @@ Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integra
 
 B1 sigue `running`. Opus avanzó hasta `apiClient` (`2ab6951`) y un contrato ejecutable de tests (`4bc8ec7`), pero no hay entrega final de `admin-core`; no se integra ni se presenta como terminado.
 
+## Ronda posterior — tarjetas P0/V-A1 bloqueadas por infraestructura del carril
+
+Se continuó con la misma mecánica de Luna después de A1/B2:
+
+- `t_9800bed2` — P0 excluir `.worktrees/` de Vitest: `ready` y prioridad máxima. Se reclamó, pero Hermes entregó un workspace `scratch` vacío, sin `.git`, `vite.config.js` ni checkout. Se añadió comentario al board y quedó `blocked`. No se modificó el checkout principal ni se pudo afirmar el DoD de 29 ficheros.
+- `t_09474b0d` — verificación read-only de migraciones 0002/0003 en D1 remota: se reclamó después, pero volvió a entregar un `scratch` vacío sin `.git` ni checkout. Se añadió comentario al board y quedó `blocked`. No se ejecutó ninguna consulta D1 remota ni se aplicó ninguna migración.
+
+**Diagnóstico y justificación:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. El bloqueo es del dispatcher/provisionamiento de worktrees, no un fallo de código de P0 ni evidencia de que falten las migraciones remotas. Para reanudar: recrear/reasignar ambas tarjetas con worktree Git real. La tarjeta D1, si después detecta ausencia, requiere una tarjeta separada con snapshot, rollback y autorización explícita de Edu.
+
 ## Validación y límites
 
 - Suite principal: **202/202** tests.
@@ -43,6 +52,6 @@ B1 sigue `running`. Opus avanzó hasta `apiClient` (`2ab6951`) y un contrato eje
 - Migración local fresca: `schema_version=1.1.0`, `classified_items` y `files.blurhash` presentes.
 - Contrato de wiring estático: handlers concretos y precedencia `/api/admin/g2` antes de `/api/admin/` verificadas.
 - Diff staged: PASS con `core.whitespace=cr-at-eol` (el archivo histórico `worker.js` usa CRLF).
-- No hubo deploy, push ni mutación remota D1/R2.
+- No hubo deploy, push ni mutación remota D1/R2; en particular, la verificación V-A1 no llegó a ejecutar una consulta remota por el workspace inválido.
 
 El test de wiring es deliberadamente estático: verifica la matriz de rutas y sus handlers, no una ejecución del dispatcher real ni una ejecución remota. El riesgo residual está documentado arriba; el coordinador debe revisar el commit `3ee54dc` y la justificación completa como integración fuera de contrato solicitada por Edu.
