@@ -1,6 +1,6 @@
 -- ============================================================
 --  EL BÚNKER — schema.sql
---  D1 Schema v1.0.0 · Migración Drive JSON → SQL (ADR-024)
+--  D1 Schema v1.1.0 · Migración Drive JSON → SQL (ADR-024)
 --  S54 · Fase 1 — Infraestructura Cloudflare
 -- ============================================================
 
@@ -250,5 +250,5 @@ INSERT INTO tags (id, namespace, label, icon, color, created_by, sort_order) VAL
 
 -- ═══ SEED DATA: app_config ══════════════════════════════════
 INSERT INTO app_config (key, value) VALUES
-  ('schema_version',       '1.0.0'),
+  ('schema_version',       '1.1.0'),
   ('adventures_start_date', datetime('now'));

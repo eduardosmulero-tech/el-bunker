@@ -8,6 +8,8 @@
 // src/smoke/SmokeSession.jsx y el mapa de iconos de Timeline.jsx.
 export const EVENT_TYPES = new Set([
   "auth_login",
+  "item_classified",
+  "item_unclassified",
   "capsule_created",
   "capsule_opened",
   "capsule_sealed",

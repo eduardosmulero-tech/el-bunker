@@ -27,9 +27,11 @@ import handleR2 from "./routes/r2.js";
 import handleSync from "./routes/sync.js";
 import handleConfig from "./routes/config.js";
 import handleAdminG2 from "./routes/admin-g2.js";
+import handleAdmin from "./routes/admin.js";
+import handleClassify from "./routes/classify.js";
 
 // Mapa de rutas: [prefix, handler, requiresAuth]
-const ROUTES = [
+export const ROUTES = [
   ["/api/health",          handleHealth,     false],
   ["/api/auth",            handleAuth,       false],
   ["/api/tracks",          handleTracks,     true],
@@ -46,7 +48,10 @@ const ROUTES = [
   ["/api/upload",          handleUpload,     true],
   ["/api/sync",            handleSync,       true],
   ["/api/config",          handleConfig,     false],
+  // Keep the specific G2 route before the generic admin skeleton.
   ["/api/admin/g2",        handleAdminG2,     true],
+  ["/api/admin/",          handleAdmin,       true],
+  ["/api/classify",        handleClassify,    true],
 ];
 
 export default {

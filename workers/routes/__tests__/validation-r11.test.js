@@ -143,6 +143,20 @@ describe("R11 — validaciones POST (BUG-5)", () => {
       expect(response.status).toBe(201);
     });
 
+    it("rejects internal classification events from non-admin callers", async () => {
+      const db = makeDb();
+      const response = await handleEvents(req("POST", "/api/events", { event_type: "item_classified" }), { DB: db }, new URL("https://bunker.test/api/events"), "edu");
+      expect(response.status).toBe(403);
+      expect(db.calls).toHaveLength(0);
+    });
+
+    it("rejects internal classification events even from direct admin event callers", async () => {
+      const db = makeDb();
+      const response = await handleEvents(req("POST", "/api/events", { event_type: "item_unclassified" }), { DB: db }, new URL("https://bunker.test/api/events"), "admin");
+      expect(response.status).toBe(403);
+      expect(db.calls).toHaveLength(0);
+    });
+
     it("rejects invalid JSON body", async () => {
       const db = makeDb();
       const response = await handleEvents(new Request("https://bunker.test/api/events", { method: "POST", body: "not-json" }), { DB: db }, new URL("https://bunker.test/api/events"), "edu");
