@@ -118,6 +118,17 @@ Validar `entry_ids`; ocultar referencias y snapshots locked; reducir `capsule_cr
 
 Siguiente: confirmar `R2_SIGN_SECRET` en el Worker sin mostrar su valor y ejecutar un GET autorizado/no autorizado sobre una clave sensible sin guardar token; después cerrar F2 con la aceptación visual/móvil pendiente. **Gate:** capturar, subir, reproducir y buscar sin pérdida.
 
+## Ola 1 Luna — A1 + B2 (5-ago-2026)
+
+La reconciliación con Sonnet/Opus confirmó que el plan paralelo se está respetando: A1 y B2 fueron reclamadas en worktrees independientes del carril `luna`, sin tocar el checkout principal ni `workers/worker.js`, y ambas tarjetas quedaron `done` con commit propio.
+
+- **A1 — `classified_items` + `files.blurhash`: HECHO en su rama Luna.** Commit `e74e122`. Incluye `migrations/0002_classified_items.sql`, rollback explícito `migrations/0002_classified_items.rollback.sql.txt`, `workers/routes/classify.js` y 13 tests focales. La migración se aplicó sobre schema base en D1 local, se verificó la tabla/columna y se ejecutó rollback con ambas ausentes después. Worktree limpia; suite de la rama: **191/191**, lint/build/sintaxis/diff-check verdes.
+- **B2 — `requireAdmin` + esqueleto `/api/admin/*`: HECHO en su rama Luna.** Commit `8387460`. Incluye `workers/utils/require-admin.js`, `workers/routes/admin.js` y 6 tests focales. `admin` atraviesa la guardia al placeholder 404; identidad ausente y `edu` reciben 403 antes de `DB.prepare()`. Worktree limpia; suite de la rama: **182/182**, lint/build/sintaxis/diff-check verdes.
+- **Integración fuera de contrato — hecha por petición expresa de Edu:** en un commit separado del trabajo Luna se registraron `classify.js` y `admin.js` en `workers/worker.js`, se preservó `/api/admin/g2` antes de `/api/admin/`, se añadieron `item_classified`/`item_unclassified` a `EVENT_TYPES`, se protegieron esos eventos frente a POST no-admin y se actualizó schema a `1.1.0` mediante `migrations/0003_schema_version_1_1_0.sql`. Evidencia de integración en `workers/__tests__/router-contract.test.js`, entregable para coordinador en `docs/planes/ENTREGABLE_COORDINADOR_LUNA_2026-08-05.md` y commit `3ee54dc`. El coordinador debe revisar explícitamente este bloque porque no pertenecía al ámbito A1/B2.
+- **B1 Opus:** la tarjeta sigue `running`; el worktree contiene `apiClient` (`2ab6951`) y un contrato de tests posterior (`4bc8ec7`), pero no la entrega final de `admin-core`. No se presentó como terminado ni se mezcló aquí.
+
+El checkout principal conserva el contenedor R2 anterior y la integración local sin mutaciones remotas. La validación final de este bloque se registra en el entregable y en el commit de integración; no hubo deploy, push ni mutación D1/R2 remota en esta continuación.
+
 ### F3 — aceptación visual
 Hermes debe entregar checklist de tres tabs, logs de consola/red, viewport y capturas por modo. Repetir en Android físico; revisar Lightbox, WALL, safe-area, modales y overflow. **Gate:** capturar y revivir sin sensación de app rota.
 
