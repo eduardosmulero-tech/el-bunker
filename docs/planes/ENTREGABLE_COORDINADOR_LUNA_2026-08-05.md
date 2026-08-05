@@ -30,7 +30,7 @@ Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integra
 
 - **Hecho y validado localmente:** código, tests, lint, build, sintaxis y cadena de migraciones.
 - **Pendiente de revisión:** coordinador debe aceptar el bloque como excepción al contrato A1/B2.
-- **Pendiente de autorización:** Edu debe autorizar cualquier merge final si procede, deploy o migración D1/R2 remota.
+- **Pendiente de autorización:** cualquier merge final si procede, deploy o release del Worker requiere revisión de Edu/coordinador. La migración D1 remota V-A1-APPLY ya fue autorizada y ejecutada con snapshot/rollback; no se hizo deploy.
 
 ## B1 / admin-core — completado por Luna
 
@@ -43,20 +43,30 @@ Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integra
 - **Validación:** `npx vitest run src/admin` — **8 archivos, 64/64 tests**; `npm test` — **34 archivos, 242/242 tests**; `npm run build` PASS; `npm run lint` PASS.
 - **Límites:** el documento de diseño heredado quedó fuera del commit; no hubo merge, push, deploy ni mutación remota. El merge lo debe revisar y ejecutar Edu/coordinador según el protocolo.
 
-## Ronda posterior — P0 completada; FIX-SB bloqueada; V-A1 verificada en remoto
+## Ronda posterior — P0 completada; FIX-SB bloqueada; V-A1 verificada y aplicada
 
 Se continuó con la misma mecánica de Luna después de A1/B2:
 
 - `t_9800bed2` — P0 original: quedó `blocked` porque Hermes entregó un workspace `scratch` vacío, sin `.git` ni checkout. No se modificó el checkout principal.
 - `t_09474b0d` — V-A1 original: quedó `blocked` por el mismo workspace inválido. Fue sustituida por `t_e8175ccc`.
-- `t_e8175ccc` — V-A1 se ejecutó en un worktree válido con consulta remota estrictamente read-only: `classified_items_table=0`, `files_blurhash_column=0`, `schema_version=1.0.0`, `changes=0`, `changed_db=false`, `rows_written=0`, `rows_read=92`. Quedó `blocked` porque el remoto carece de 0002/0003 y esta tarjeta no autoriza mutaciones.
-- `t_6e54a79d` — V-A1-APPLY fue creada a petición de Edu como tarjeta separada para la aplicación remota. No es un bloqueo técnico: por indicación de Edu quedó en **`review`**, pendiente de revisión/OK explícito antes de cualquier mutación. El evento auditado registra la transición `blocked → review`; no se ejecutó SQL de escritura.
+- `t_e8175ccc` — V-A1 se ejecutó en un worktree válido con consulta remota estrictamente read-only: `classified_items_table=0`, `files_blurhash_column=0`, `schema_version=1.0.0`, `changes=0`, `changed_db=false`, `rows_written=0`, `rows_read=92`. Su DoD quedó cumplido y el board está `done`; el hallazgo se derivó a la tarjeta de aplicación separada.
+- `t_6e54a79d` — V-A1-APPLY fue creada a petición de Edu como tarjeta separada. La aprobación explícita quedó registrada con firma operativa y SHA-256 `60fd58e63ae3988a22bdabd9dd0b580fb983f932b65faea752b2a377613eaeff`. Se ejecutó con snapshot y rollback conservados; board `done`.
 - `t_eb4788e7` — FIX-SB quedó `blocked` por workspace scratch inválido, sin `.git`, `package.json` ni archivo objetivo; no se tocó el checkout principal.
 - `t_e19b5128` — P0 recreada con workspace Git válido: quedó `done` con commit `6f3d55c` (`fix: exclude worktrees from vitest`). En `vite.config.js` se importó `configDefaults` desde `vitest/config` y se añadió `exclude: [...configDefaults.exclude, '**/.worktrees/**']`. El cambio fue exclusivamente de configuración, dentro del ámbito contratado.
 
 **Evidencia P0 (`t_e19b5128`):** `npx vitest run` recogió **29 archivos** y pasó **202/202 tests** con los worktrees abiertos; `npm run lint`, `npm run build`, `node --check vite.config.js` y `git -c core.whitespace=cr-at-eol diff --check` también pasaron. La revisión independiente no encontró blockers. No hubo merge, push, deploy ni mutación remota.
 
-**Diagnóstico y justificación:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. FIX-SB sí está bloqueada por infraestructura. La aplicación remota no está bloqueada por fallo técnico: está en `review` por decisión de Edu y sigue prohibida hasta su OK explícito.
+**Diagnóstico y justificación:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. FIX-SB sí está bloqueada por infraestructura. La aplicación remota se ejecutó únicamente después del OK explícito de Edu, sin deploy ni release del Worker.
+
+## V-A1-APPLY — evidencia de aplicación remota autorizada
+
+- **Aprobación:** texto literal de Edu registrado en `t_6e54a79d`; SHA-256 UTF-8 `60fd58e63ae3988a22bdabd9dd0b580fb983f932b65faea752b2a377613eaeff`.
+- **Snapshot previo:** `tools/snapshots/d1_pre_v_a1_apply_20260805.sql`, 2.723.904 bytes, SHA-256 `a7d5ee4831f909de0d3c0f356576b83648b3271c6b4cb4c0d5298fcc12a9aab6`.
+- **0002:** `migrations/0002_classified_items.sql`, SHA-256 `134e301bec032517837e20ec7ec066f807892451edff7dc8d932551ba11e1f4b`; 3 queries, `changes=1`, `rows_written=5`, `rows_read=88`, bookmark `00000171-00000006-000050be-052f3445947fb125d09857d8d72ca91f`.
+- **0003:** `migrations/0003_schema_version_1_1_0.sql`, SHA-256 `8cc77c99d7c62afd25e83339761811324e77c9e68020a923d663f061bd595cab`; 1 query, `changes=2`, `rows_written=1`, `rows_read=1`, bookmark `00000171-0000000e-000050be-25c0028c6d871e21c72ce576be4830a5`.
+- **Rollback conservado:** `migrations/0002_classified_items.rollback.sql.txt`, SHA-256 `97284073aada23d55fa572609f68850eadd007f19c575d2ac16a5f9ef228c2bb`; no ejecutado.
+- **Verificación posterior read-only:** `schema_version=1.1.0`, `classified_items_table=1`, `files_blurhash_column=1`, `classified_items_rows=0`; baseline intacto: `files=527`, `entries=528`, `tracks=1118`, `users=3`. Las consultas finales tuvieron `changes=0`, `rows_written=0`, `changed_db=false`.
+- **Límites:** no hubo deploy, push ni release del Worker. La mutación quedó limitada a D1 y fue autorizada por Edu.
 
 ## Validación y límites
 
@@ -67,6 +77,6 @@ Se continuó con la misma mecánica de Luna después de A1/B2:
 - Migración local fresca: `schema_version=1.1.0`, `classified_items` y `files.blurhash` presentes.
 - Contrato de wiring estático: handlers concretos y precedencia `/api/admin/g2` antes de `/api/admin/` verificadas.
 - Diff staged: PASS con `core.whitespace=cr-at-eol` (el archivo histórico `worker.js` usa CRLF).
-- No hubo deploy, push ni mutación remota D1/R2. V-A1 sí ejecutó una consulta remota estrictamente read-only (`changes=0`, `rows_written=0`, `changed_db=false`); no se aplicaron migraciones.
+- No hubo deploy, push ni mutación remota adicional D1/R2 fuera de la aplicación autorizada V-A1-APPLY. La aplicación remota quedó documentada arriba; las verificaciones posteriores fueron read-only (`changes=0`, `rows_written=0`, `changed_db=false`).
 
 El test de wiring es deliberadamente estático: verifica la matriz de rutas y sus handlers, no una ejecución del dispatcher real ni una ejecución remota. El riesgo residual está documentado arriba; el coordinador debe revisar el commit `3ee54dc` y la justificación completa como integración fuera de contrato solicitada por Edu.
