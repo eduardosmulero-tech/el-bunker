@@ -1,6 +1,7 @@
 # PLAN — carriles de trabajo paralelo para el-bunker (4-ago-2026)
 
-> **Estado: 🔴 BORRADOR** (n3/Opus). Canónico solo con OK de Edu.
+> **Estado: 🟢 CANÓNICO** (n3/Opus; OK de Edu 4-ago). Ejecución: board `el-bunker` ya existía:
+> se usa tal cual, sin crear un `ENCARGO_PILOTO` redundante con este plan.
 > **Qué es:** las tarjetas a crear en el board `el-bunker`, ya repartidas en carriles y con ámbito
 > de ficheros declarado, para que dos o tres frentes trabajen a la vez sin pisarse.
 > **Depende de:** `cerebro/normas/loop-agentico/CANON_PARALELISMO_2026-08-04.md` y su encargo de

@@ -1,6 +1,7 @@
 # DISEÑO — MODO VISITA: clasificación de contenido y censura a la vista
 
-> **Estado: 🔴 BORRADOR** (n3/Opus, 4-ago-2026). Canónico solo con OK de Edu.
+> **Estado: 🟢 CANÓNICO** (n3/Opus, 4-ago-2026; OK de Edu 4-ago). DEMO_ACCESS_KEY: Edu pide usuario
+> demo separado → exige enmienda de ADR-006 antes de implementarse (ver §11).
 > **Origen:** decisión de Edu del 4-ago — el-bunker pasa a prioridad global del workspace y hay
 > que poder enseñarlo siendo una app personal.
 > **Decisiones de Edu ya tomadas (entrevista 4-ago):** marcado por contenido **+** interruptor

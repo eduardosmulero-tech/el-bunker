@@ -11,8 +11,13 @@
 # manifest el dia que deja de guiar decisiones.
 
 # Grupo 1 — el estado vivo: se toca cada sesion, exige solo leerse a si mismo.
+# PLAN_CARRILES_ELBUNKER entra aqui el 4-ago (piloto CANON_PARALELISMO): mientras corra,
+# recibe marcado de tarjetas/olas hecho-pendiente cada sesion, igual que
+# PLAN_E2_CHECKLIST.md en hermes-principal (mismo motivo, mismo patron). Si se cierra el
+# piloto y el plan pasa a historico, sale de aqui.
 [protege]
 docs/Nucleo/ESTADO.md
+docs/planes/PLAN_CARRILES_ELBUNKER_2026-08-04.md
 
 [requiere]
 docs/Nucleo/ESTADO.md

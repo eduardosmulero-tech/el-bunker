@@ -50,8 +50,9 @@ Roles locales:
 
 ## ▶ KANBAN = ESTADO VIVO
 
-Para estado detallado: `hermes kanban list`.
+Para estado detallado: `hermes kanban --board el-bunker list`.
 Este archivo NO almacena estado de tareas.
 ESTADO.md/BACKLOG.md están en transición a kanban.
+Paralelismo (varios agentes a la vez): `cerebro/normas/loop-agentico/CANON_PARALELISMO_2026-08-04.md`.
 
-Para re-entrar: (1) leer AGENTS.md, (2) `hermes kanban list`, (3) primera tarjeta ready.
+Para re-entrar: (1) leer AGENTS.md, (2) `hermes kanban --board el-bunker list`, (3) primera tarjeta ready.

@@ -1,6 +1,6 @@
 # DISEÑO — PANEL ADMIN (TERMINAL DE MANDO)
 
-> **Estado: 🔴 BORRADOR** (n3/Opus, 4-ago-2026). Canónico solo con OK de Edu.
+> **Estado: 🟢 CANÓNICO** (n3/Opus, 4-ago-2026; OK de Edu 4-ago).
 > **Origen:** decisión de Edu del 4-ago. Cita literal: *"Quiero un panel admin como el que tendrá
 > la app de vinos así practicamos. Se podrá controlar todo lo que un admin debería, siguiendo la
 > temática y estilo."*
