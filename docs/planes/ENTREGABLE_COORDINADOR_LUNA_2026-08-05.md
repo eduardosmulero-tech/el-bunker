@@ -32,25 +32,34 @@ Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integra
 - **Pendiente de revisión:** coordinador debe aceptar el bloque como excepción al contrato A1/B2.
 - **Pendiente de autorización:** Edu debe autorizar cualquier merge final si procede, deploy o migración D1/R2 remota.
 
-## B1 / Opus
+## B1 / admin-core — completado por Luna
 
-B1 sigue `running`. Opus avanzó hasta `apiClient` (`2ab6951`) y un contrato ejecutable de tests (`4bc8ec7`), pero no hay entrega final de `admin-core`; no se integra ni se presenta como terminado.
+- **Tarjeta:** `t_0a8cf470`, board `done`.
+- **Commit:** `ab5d813` (`feat(admin-core): complete reusable admin panel core`).
+- **Ámbito:** `src/admin/core/**` y cinco tests contractuales nuevos en `src/admin/__tests__/**`; no se modificaron las specs existentes.
+- **Implementado:** `useAdminResource`, `ConfirmDialog`, `ResourceTable`, `ResourceForm`, `ResourceConsole`, `AdminShell`, `AdminGuard` y barril `index.js`.
+- **Contrato cubierto:** carga/debounce/paginación/orden/filtros/carreras de requests/mutaciones/auditoría; formulario descriptor-driven con validación y coerción; confirmación destructiva con escritura exacta y aviso de snapshot; tabla controlada con selección; shell responsive y guardia de experiencia.
+- **Portabilidad:** cero imports o referencias a `vault`, `musiclab`, `capsules`, `smoke`, contextos del Búnker, servicios de persistencia o `lucide-react` directo. Revisión de fronteras PASS.
+- **Validación:** `npx vitest run src/admin` — **8 archivos, 64/64 tests**; `npm test` — **34 archivos, 242/242 tests**; `npm run build` PASS; `npm run lint` PASS.
+- **Límites:** el documento de diseño heredado quedó fuera del commit; no hubo merge, push, deploy ni mutación remota. El merge lo debe revisar y ejecutar Edu/coordinador según el protocolo.
 
 ## Ronda posterior — P0 recreada y ejecutada; V-A1 antigua aún bloqueada
 
 Se continuó con la misma mecánica de Luna después de A1/B2:
 
 - `t_9800bed2` — P0 original: quedó `blocked` porque Hermes entregó un workspace `scratch` vacío, sin `.git` ni checkout. No se modificó el checkout principal.
-- `t_09474b0d` — V-A1 original: quedó `blocked` por el mismo workspace inválido. No se ejecutó ninguna consulta D1 remota ni se aplicó ninguna migración.
+- `t_09474b0d` — V-A1 original: quedó `blocked` por el mismo workspace inválido. Fue sustituida por `t_e8175ccc`, que el board muestra actualmente como `ready`; no se ejecutó ninguna consulta D1 remota ni se aplicó ninguna migración.
 - `t_e19b5128` — P0 recreada con workspace Git válido: quedó `done` con commit `6f3d55c` (`fix: exclude worktrees from vitest`). En `vite.config.js` se importó `configDefaults` desde `vitest/config` y se añadió `exclude: [...configDefaults.exclude, '**/.worktrees/**']`. El cambio fue exclusivamente de configuración, dentro del ámbito contratado.
 
 **Evidencia P0 (`t_e19b5128`):** `npx vitest run` recogió **29 archivos** y pasó **202/202 tests** con los worktrees abiertos; `npm run lint`, `npm run build`, `node --check vite.config.js` y `git -c core.whitespace=cr-at-eol diff --check` también pasaron. La revisión independiente no encontró blockers. No hubo merge, push, deploy ni mutación remota.
 
-**Diagnóstico y justificación de los bloqueos antiguos:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. La P0 se pudo reanudar al recrearse con un worktree Git real. V-A1 sigue pendiente de recreación/reasignación con worktree válido; si detecta ausencia de migraciones, requiere una tarjeta separada con snapshot, rollback y autorización explícita de Edu.
+**Diagnóstico y justificación de los bloqueos antiguos:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. La P0 se pudo reanudar al recrearse con un worktree Git real. V-A1 queda representada por `t_e8175ccc` en estado `ready`; cuando se reclame con workspace válido, la verificación seguirá siendo read-only. Si detecta ausencia de migraciones, requiere una tarjeta separada con snapshot, rollback y autorización explícita de Edu.
 
 ## Validación y límites
 
-- Suite principal tras la corrección P0: **29 archivos, 202/202 tests**.
+- Validación del worktree B1 en commit `ab5d813`: **34 archivos, 242/242 tests** en la suite principal.
+- Validación específica del mismo worktree: **8 archivos, 64/64 tests** de B1.
+- El checkout principal no incorpora aún `ab5d813`; los resultados anteriores no deben confundirse con una validación post-merge.
 - Lint, build y sintaxis de Worker: PASS.
 - Migración local fresca: `schema_version=1.1.0`, `classified_items` y `files.blurhash` presentes.
 - Contrato de wiring estático: handlers concretos y precedencia `/api/admin/g2` antes de `/api/admin/` verificadas.
