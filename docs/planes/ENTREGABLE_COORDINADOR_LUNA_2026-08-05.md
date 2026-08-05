@@ -24,7 +24,7 @@ Las tarjetas A1/B2 prohibían tocar `workers/worker.js`, la whitelist global y l
 
 **Nota de rollback de A1:** `migrations/0002_classified_items.rollback.sql.txt` usa `.txt` deliberadamente para que Wrangler no lo trate como migración hacia delante. Se ejecuta manualmente y solo en local/revisión; no es una migración remota automática y requiere aprobación antes de cualquier uso destructivo.
 
-Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integrate Luna admin and classification routes`), distinto de los commits Luna, y no incluye la lógica de B1. La primera versión de la documentación quedó en `3996625`; esta ampliación de justificación se entrega en un commit documental posterior, cuyo hash se registra al cerrar esta actualización.
+Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integrate Luna admin and classification routes`), distinto de los commits Luna, y no incluye la lógica de B1. La primera versión de la documentación quedó en `3996625`; esta ampliación de justificación quedó en el commit documental `68462a8` (`docs: justify out-of-contract Luna integration`).
 
 ### Estado de aprobación
 
