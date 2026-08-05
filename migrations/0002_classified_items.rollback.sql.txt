@@ -1,0 +1,3 @@
+-- Rollback for 0002_classified_items.sql — local/reviewed execution only.
+DROP TABLE IF EXISTS classified_items;
+ALTER TABLE files DROP COLUMN blurhash;
