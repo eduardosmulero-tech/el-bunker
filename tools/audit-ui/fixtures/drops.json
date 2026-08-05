@@ -1,0 +1,30 @@
+[
+  {
+    "id": "drp-001",
+    "era_id": "era-2021",
+    "track_id": "trk-003",
+    "from_user": "edu",
+    "to_user": "david",
+    "drop_date": "2021-08-14T21:30:00.000Z",
+    "memory": "Cuando sonó esto en la playa.",
+    "mood": "nostalgia",
+    "seen": 1,
+    "favorited": 1,
+    "favorited_by": "david",
+    "created_at": "2021-08-14T21:30:00.000Z"
+  },
+  {
+    "id": "drp-002",
+    "era_id": "era-2022",
+    "track_id": "trk-006",
+    "from_user": "david",
+    "to_user": "edu",
+    "drop_date": "2022-05-01T11:00:00.000Z",
+    "memory": "La boda de los primos.",
+    "mood": "feliz",
+    "seen": 1,
+    "favorited": 0,
+    "favorited_by": null,
+    "created_at": "2022-05-01T11:00:00.000Z"
+  }
+]

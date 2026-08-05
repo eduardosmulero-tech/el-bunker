@@ -1,0 +1,32 @@
+[
+  {
+    "id": "cap-001",
+    "title": "Cápsula para abrir el día que cumplamos un año en el piso de la calle Luna",
+    "description": "Fotos del día de la mudanza y la lista de cosas que prometimos arreglar.",
+    "unlock_at": "2027-01-15T00:00:00.000Z",
+    "created_by": "edu",
+    "is_unlocked": 0,
+    "unlocked_at": null,
+    "created_at": "2022-01-15T00:00:00.000Z"
+  },
+  {
+    "id": "cap-002",
+    "title": "Para David, cuando vuelva de su viaje",
+    "description": "",
+    "unlock_at": "2026-12-24T00:00:00.000Z",
+    "created_by": "edu",
+    "is_unlocked": 1,
+    "unlocked_at": "2026-12-24T00:05:00.000Z",
+    "created_at": "2026-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "cap-003",
+    "title": "Cápsula sorpresa de cumpleaños con la canción que sonaba en el primer beso y una carta escrita a mano",
+    "description": "Incluye la entrada del concierto escaneada.",
+    "unlock_at": "2028-02-02T00:00:00.000Z",
+    "created_by": "david",
+    "is_unlocked": 0,
+    "unlocked_at": null,
+    "created_at": "2026-02-02T00:00:00.000Z"
+  }
+]
