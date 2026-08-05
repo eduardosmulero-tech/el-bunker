@@ -43,17 +43,20 @@ Este bloque quedó materializado en el commit separado `3ee54dc` (`feat: integra
 - **Validación:** `npx vitest run src/admin` — **8 archivos, 64/64 tests**; `npm test` — **34 archivos, 242/242 tests**; `npm run build` PASS; `npm run lint` PASS.
 - **Límites:** el documento de diseño heredado quedó fuera del commit; no hubo merge, push, deploy ni mutación remota. El merge lo debe revisar y ejecutar Edu/coordinador según el protocolo.
 
-## Ronda posterior — P0 recreada y ejecutada; V-A1 antigua aún bloqueada
+## Ronda posterior — P0 completada; FIX-SB bloqueada; V-A1 verificada en remoto
 
 Se continuó con la misma mecánica de Luna después de A1/B2:
 
 - `t_9800bed2` — P0 original: quedó `blocked` porque Hermes entregó un workspace `scratch` vacío, sin `.git` ni checkout. No se modificó el checkout principal.
-- `t_09474b0d` — V-A1 original: quedó `blocked` por el mismo workspace inválido. Fue sustituida por `t_e8175ccc`, que el board muestra actualmente como `ready`; no se ejecutó ninguna consulta D1 remota ni se aplicó ninguna migración.
+- `t_09474b0d` — V-A1 original: quedó `blocked` por el mismo workspace inválido. Fue sustituida por `t_e8175ccc`.
+- `t_e8175ccc` — V-A1 se ejecutó en un worktree válido con consulta remota estrictamente read-only: `classified_items_table=0`, `files_blurhash_column=0`, `schema_version=1.0.0`, `changes=0`, `changed_db=false`, `rows_written=0`, `rows_read=92`. Quedó `blocked` porque el remoto carece de 0002/0003 y esta tarjeta no autoriza mutaciones.
+- `t_6e54a79d` — V-A1-APPLY fue creada a petición de Edu como tarjeta separada para la aplicación remota. No es un bloqueo técnico: por indicación de Edu quedó en **`review`**, pendiente de revisión/OK explícito antes de cualquier mutación. El evento auditado registra la transición `blocked → review`; no se ejecutó SQL de escritura.
+- `t_eb4788e7` — FIX-SB quedó `blocked` por workspace scratch inválido, sin `.git`, `package.json` ni archivo objetivo; no se tocó el checkout principal.
 - `t_e19b5128` — P0 recreada con workspace Git válido: quedó `done` con commit `6f3d55c` (`fix: exclude worktrees from vitest`). En `vite.config.js` se importó `configDefaults` desde `vitest/config` y se añadió `exclude: [...configDefaults.exclude, '**/.worktrees/**']`. El cambio fue exclusivamente de configuración, dentro del ámbito contratado.
 
 **Evidencia P0 (`t_e19b5128`):** `npx vitest run` recogió **29 archivos** y pasó **202/202 tests** con los worktrees abiertos; `npm run lint`, `npm run build`, `node --check vite.config.js` y `git -c core.whitespace=cr-at-eol diff --check` también pasaron. La revisión independiente no encontró blockers. No hubo merge, push, deploy ni mutación remota.
 
-**Diagnóstico y justificación de los bloqueos antiguos:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. La P0 se pudo reanudar al recrearse con un worktree Git real. V-A1 queda representada por `t_e8175ccc` en estado `ready`; cuando se reclame con workspace válido, la verificación seguirá siendo read-only. Si detecta ausencia de migraciones, requiere una tarjeta separada con snapshot, rollback y autorización explícita de Edu.
+**Diagnóstico y justificación:** no se ejecutó desde el checkout principal porque el arranque de Luna exige que todo trabajo ocurra en el workspace devuelto por `claim`; saltarse esa regla habría mezclado cambios entre carriles y habría invalidado la trazabilidad. FIX-SB sí está bloqueada por infraestructura. La aplicación remota no está bloqueada por fallo técnico: está en `review` por decisión de Edu y sigue prohibida hasta su OK explícito.
 
 ## Validación y límites
 
@@ -64,6 +67,6 @@ Se continuó con la misma mecánica de Luna después de A1/B2:
 - Migración local fresca: `schema_version=1.1.0`, `classified_items` y `files.blurhash` presentes.
 - Contrato de wiring estático: handlers concretos y precedencia `/api/admin/g2` antes de `/api/admin/` verificadas.
 - Diff staged: PASS con `core.whitespace=cr-at-eol` (el archivo histórico `worker.js` usa CRLF).
-- No hubo deploy, push ni mutación remota D1/R2; en particular, la verificación V-A1 no llegó a ejecutar una consulta remota porque su tarjeta original sigue bloqueada por workspace inválido.
+- No hubo deploy, push ni mutación remota D1/R2. V-A1 sí ejecutó una consulta remota estrictamente read-only (`changes=0`, `rows_written=0`, `changed_db=false`); no se aplicaron migraciones.
 
 El test de wiring es deliberadamente estático: verifica la matriz de rutas y sus handlers, no una ejecución del dispatcher real ni una ejecución remota. El riesgo residual está documentado arriba; el coordinador debe revisar el commit `3ee54dc` y la justificación completa como integración fuera de contrato solicitada por Edu.
