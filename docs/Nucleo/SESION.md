@@ -2,6 +2,30 @@
 > Dispatcher. Leer primero. Max 40 líneas.
 > Historial completo → `git log --oneline docs/Nucleo/SESION.md`
 
+## S154 — B1 admin-core: diseño + DoD ejecutable (5 Ago 2026 · Opus, carril `claude`)
+Turno de diseño de la tarjeta `t_0a8cf470`. **Handoff completo:
+`docs/planes/HANDOFF_OPUS_B1_2026-08-05.md`** — leer ese, no este resumen.
+
+**Entregado:** `docs/disenos/DISENO_B1_ADMIN_CORE_2026-08-05.md` (7 piezas, props exactas, 2 anexos)
++ el DoD escrito como suite ejecutable en `.worktrees/t_0a8cf470/src/admin/__tests__/` (commit
+`4bc8ec7`): fronteras 7/7 en verde, `useAdminResource` (14 casos) y `toy-mount` (9 casos) en **rojo
+a propósito** — son la especificación. Ejecutar B1 = ponerlos en verde sin tocarlos.
+
+**Hallazgos verificados:** (1) `vite.config.js` no excluye `.worktrees/` → `npx vitest run` recorre
+los 4 árboles (29 ficheros reales, 112 recogidos), tarjeta `t_9800bed2`; (2) la regex de
+`service-boundaries.test.js:11` no casa con ningún fichero, ese test pasa en vacío (`t_eb4788e7`);
+(3) `core/ui/Button.jsx` no hace spread de `...rest` — `aria-label` se pierde, los botones
+solo-icono usan `title`.
+
+**Piloto de paralelismo:** tres carriles sin un solo conflicto de merge — la apuesta salió. Reserva:
+`workers/worker.js` no estaba en el ámbito de ninguna tarjeta, así que A1 y B2 llegaron a `done`
+con endpoints que ningún HTTP alcanzaba; lo cerró Luna a petición directa de Edu, fuera de contrato
+(`3ee54dc`, justificado en `68462a8`). Corrección propuesta: tarjeta de integración por ola con
+dueño único (`t_565f2055`).
+
+**A1 y B2 las coordina y cierra Sonnet, no Opus.** Pendiente de verificar antes de cerrarlas:
+migraciones `0002`/`0003` aplicadas en la D1 **remota** (`t_09474b0d`).
+
 ## S149 — ADAPTACIÓN A PIPELINE PROMETHE-OS + CANON v1.0 (22 Jul 2026 · Hermes Principal)
 Primera sesión con Hermes en el-bunker. Adaptación completa al pipeline Promethe-os.
 

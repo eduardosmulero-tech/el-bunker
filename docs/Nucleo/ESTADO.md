@@ -3,22 +3,41 @@
 > Pipeline canónica: AGENTS.md.
 
 **MODO: PIPELINE PROMETHE-OS. Kanban = estado vivo.**
-⚠️ **El board `el-bunker` NO existe todavía** (verificado 4-ago: `hermes kanban boards list` solo
-lista `default` y `empleo`). Lo crea la fase E1 de
-`cerebro/normas/loop-agentico/ENCARGO_PILOTO_PARALELISMO_ELBUNKER_2026-08-04.md`. Hasta entonces,
-este archivo es la re-entrada.
+✅ **El board `el-bunker` EXISTE y está en uso desde el 4-ago** (corregido 5-ago: la nota anterior
+decía que no existía, y llevaba un día desfasada). **La re-entrada es
+`hermes kanban --board el-bunker list`, no este archivo.**
 
-## ▶ SIGUIENTE (4-ago, decidido por Edu — arranca aquí)
+## ▶ SIGUIENTE (5-ago — se lee del board, no de aquí)
 **el-bunker es la PRIORIDAD GLOBAL del workspace**, por encima de vinos y empleo.
-Dos frentes nuevos, ya diseñados y en BORRADOR pendientes de OK de Edu:
-- `docs/disenos/DISENO_MODO_VISITA_2026-08-04.md` — censura de contenido para poder enseñar la app.
-- `docs/disenos/DISENO_PANEL_ADMIN_2026-08-04.md` — panel `/admin` reutilizable en vinos.
-- `docs/planes/PLAN_CARRILES_ELBUNKER_2026-08-04.md` — las tarjetas, ya repartidas en carriles.
+Ola 1 del piloto de paralelismo ejecutada: A1 y B2 en `done` (Luna, pendientes de que Sonnet las
+coordine y cierre), B1 con diseño entregado y ejecución pendiente.
 
-**Dos bloqueos previos, ambos de Edu:** (1) los 16 ficheros modificados sin commitear son los
-mismos que tocan las tarjetas — commitear o descartar antes de abrir carriles; (2) faltan perfiles
-de Hermes y falta decidir proveedor gratuito de lo automático, así que hoy todos los carriles son
-de terminal (los abre Edu).
+- Handoff del turno de Opus, con el veredicto sobre el piloto y las tarjetas nuevas:
+  `docs/planes/HANDOFF_OPUS_B1_2026-08-05.md`.
+- **Turno de Opus del 5-ago (2 tarjetas cerradas, docs sin commitear):**
+  `docs/operacional/VEREDICTO_OPUS_AUDITORIA_3_CAPAS_2026-08-05.md` (`t_cf71309f`) y
+  `docs/planes/OLA2_ELBUNKER_2026-08-05.md` + P12 del canon de paralelismo (`t_565f2055`).
+  Tarjeta de integración de la Ola 2 creada: `t_74282e2b` (en `todo`, sin dueño — lo asigna Edu).
+- Diseño ejecutable de admin-core: `docs/disenos/DISENO_B1_ADMIN_CORE_2026-08-05.md`.
+- Los dos frentes de diseño siguen vigentes: `docs/disenos/DISENO_MODO_VISITA_2026-08-04.md` y
+  `docs/disenos/DISENO_PANEL_ADMIN_2026-08-04.md` (🟢 canónico).
+- **Aviso operativo de `.worktrees/` RESUELTO (6-ago, merge `t_8b21aec7`):** `vite.config.js` ya
+  excluye `.worktrees/` en el árbol principal. `npx vitest run` desde el repo principal vuelve a
+  medir solo este árbol.
+
+## ▶ Madrugada del 5-ago (06:00-06:30, carril `opus` tras reinicio accidental)
+- **`done` = INTEGRADO EN MAIN** (regla de Edu). Dos tarjetas incumplían: B1 (`t_0a8cf470`, 19
+  ficheros de `src/admin/`) y P0 (`t_e19b5128`). A1, B2 y FIX-SB **sí** están integradas.
+  Tarjeta de merge: `t_8b21aec7` (carril `edu`).
+- **Gateway de Hermes instalado y arrancado** (fallback carpeta Inicio, no Tarea Programada: pide
+  UAC). Sin él no hay dispatcher: un worker muerto dejaba la tarjeta clavada en `running`.
+- **AUD-1 (`t_420b2f04`) reasignada `obrero1` → `flash1`**: `obrero1/2/3` comparten una sola cuota
+  de OpenRouter y se agotó. Despachada sola por el gateway a las 06:09.
+- **Clave de zen rotada por Edu** antes del reinicio; verificado que los 3 `.env` llevan la nueva.
+  Queda confirmar que la vieja está *revocada* y revisar `config.yaml:240` (`t_3564265b`).
+- **Canon de paralelismo:** P13 (cuota por proveedor, no por perfil), P14 (lo del chat va a la
+  tarjeta), P15 (`done` = integrado) y §12 — el board ya implementaba media docena de reglas que
+  el canon escribía a mano (`swarm`, columna `review`, `triage/specify/decompose`, `diagnostics`).
 
 ## ✅ Cerrado
 - v1.0 en código + prod (S148, 13-jul) · G0–G5 higiene/refactor local ✅ · tests 114/114 (3-ago)

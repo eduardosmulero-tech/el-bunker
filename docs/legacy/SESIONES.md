@@ -4,6 +4,34 @@
 
 ---
 
+## S154 — 2026-08-05 (Opus, carril `claude` del piloto de paralelismo)
+- **Tipo:** diseño de B1 `admin-core` (tarjeta `t_0a8cf470`) + revisión del piloto de paralelismo
+- **Archivos nuevos:** `docs/disenos/DISENO_B1_ADMIN_CORE_2026-08-05.md`,
+  `docs/planes/HANDOFF_OPUS_B1_2026-08-05.md`; en el worktree `t_0a8cf470`:
+  `src/admin/__tests__/{admin-core-boundaries.test.js, useAdminResource.test.jsx, toy-mount.test.jsx,
+  fixtures/toyDescriptor.js, fixtures/fakeClient.js}`
+- **Archivos tocados:** `docs/Nucleo/ESTADO.md` (corregido el desfase que decía que el board no
+  existía), `docs/Nucleo/SESION.md`
+- **Commits:** `4bc8ec7` (solo en el worktree `t_0a8cf470`). Los docs del repo principal quedan
+  **sin commitear**, a la espera de OK de Edu.
+- **Hitos:**
+  - El entregable se partió en dos: el diseño paso a paso **y el DoD escrito como suite ejecutable**,
+    entregada en rojo. Ejecutar la tarjeta pasa a ser "iterar hasta verde" y verificarla, un comando.
+  - `admin-core-boundaries.test.js` convierte el DoD de portabilidad (grep manual) en test
+    permanente: lista blanca de imports, cero módulos del Búnker, cero `lucide-react` directo, cero
+    emoji y solo 4 tokens (`ACID`, `RED`, `BG`, `FONT_MONO`). 7/7 en verde ya.
+  - Correcciones al brief tras leer el código real: `core/ui/Dialog.jsx` ya existe (no se escribe un
+    modal nuevo) y **ya exporta un `ConfirmDialog` distinto** — colisión de nombre; los iconos van
+    por `core/ui/Icon`, no por `lucide-react`; añadida una 7ª pieza (`ResourceConsole.jsx`).
+  - Tarjetas abiertas: `t_9800bed2` (vitest recorre `.worktrees/`), `t_09474b0d` (migraciones en D1
+    remota), `t_565f2055` (integración por ola con dueño único), `t_eb4788e7` (regex vacua).
+- **Error propio, anotado:** revisé A1/B2 leyendo los worktrees de Luna y casi reporto como vivo un
+  hallazgo que ella ya había cerrado en `3ee54dc`. Un worktree es un corte en el tiempo, no un
+  estado. Memoria: `feedback-leer-arbol-principal-no-worktree`.
+- **Estado al cierre:** A1 y B2 en `done`, **pendientes de que las coordine y cierre Sonnet**. B1 con
+  diseño listo y ejecución pendiente de asignar a un worker. Siguiente trabajo de Opus ya asignado
+  en el board: `t_cf71309f` (review de la propuesta de auditoría UI en 3 capas).
+
 ## S86 — React Key Audit (browser-use hallazgo) (14 Junio 2026)
 
 **Tipo:** Audit + bugfixes (no manual steps, no infra)
