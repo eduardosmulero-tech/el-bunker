@@ -1,0 +1,23 @@
+{
+  "theme": "base",
+  "themeVariables": {
+    "darkMode": true,
+    "background": "#020617",
+    "primaryColor": "#0f172a",
+    "primaryTextColor": "#e2e8f0",
+    "primaryBorderColor": "#334155",
+    "lineColor": "#64748b",
+    "secondaryColor": "#0f172a",
+    "tertiaryColor": "#0f172a",
+    "fontFamily": "JetBrains Mono, monospace",
+    "fontSize": "13px"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "padding": 14,
+    "nodeSpacing": 45,
+    "rankSpacing": 55,
+    "useMaxWidth": true,
+    "htmlLabels": true
+  }
+}

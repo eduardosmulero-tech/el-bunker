@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>el-bunker — Flujo de la app</title>
+  
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -11,36 +11,69 @@
       font-family: 'JetBrains Mono', monospace;
       background: #020617;
       min-height: 100vh;
-      padding: 2rem;
-      color: white;
+      padding: 2.5rem 2rem;
+      color: #e2e8f0;
     }
-    .container { max-width: 1200px; margin: 0 auto; }
+    .container { max-width: 1120px; margin: 0 auto; }
+
     .header { margin-bottom: 2rem; }
-    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
-    .pulse-dot { width: 12px; height: 12px; background: #22d3ee; border-radius: 50%; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
-    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
-    .diagram-container {
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+    .pulse-dot { width: 10px; height: 10px; background: #22d3ee; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+    h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    .subtitle { color: #94a3b8; font-size: 0.85rem; margin-left: 1.7rem; }
+    .badge {
+      display: inline-block; background: rgba(34, 211, 238, 0.08); color: #22d3ee;
+      border: 1px solid rgba(34, 211, 238, 0.35); border-radius: 999px; padding: 0.2rem 0.8rem;
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; margin-left: 0.75rem; vertical-align: middle;
+      text-transform: uppercase;
+    }
+
+    .diagram-card {
       background: rgba(15, 23, 42, 0.5);
-      border-radius: 1rem;
       border: 1px solid #1e293b;
-      padding: 1.5rem;
+      border-radius: 1rem;
+      padding: 1.75rem 1.75rem 1.25rem;
       overflow-x: auto;
     }
-    svg { width: 100%; min-width: 900px; display: block; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 2rem; }
-    .card { background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid #1e293b; padding: 1.25rem; }
+    .diagram-card .mermaid-svg { display: flex; justify-content: center; min-width: 720px; }
+    .diagram-card .mermaid-svg svg { max-width: 100%; height: auto; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #1e293b; }
+    .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.72rem; color: #94a3b8; }
+    .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid; flex-shrink: 0; }
+    .swatch.frontend { background: rgba(8, 51, 68, 0.6); border-color: #22d3ee; }
+    .swatch.backend { background: rgba(6, 78, 59, 0.6); border-color: #34d399; }
+    .swatch.data { background: rgba(76, 29, 149, 0.6); border-color: #a78bfa; }
+    .swatch.security { background: rgba(136, 19, 55, 0.6); border-color: #fb7185; }
+    .swatch.future { background: #1e293b; border-color: #64748b; border-style: dashed; }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .kpi {
+      background: rgba(15, 23, 42, 0.5); border: 1px solid #1e293b; border-radius: 0.85rem;
+      padding: 1.1rem 1.25rem;
+    }
+    .kpi-value { font-size: 1.5rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.35rem; }
+    .kpi-value small { font-size: 0.85rem; color: #64748b; font-weight: 400; }
+    .kpi-label { font-size: 0.72rem; color: #94a3b8; line-height: 1.5; }
+    .kpi.cyan .kpi-value { color: #22d3ee; }
+    .kpi.violet .kpi-value { color: #a78bfa; }
+    .kpi.emerald .kpi-value { color: #34d399; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .card { background: rgba(15, 23, 42, 0.5); border-radius: 0.85rem; border: 1px solid #1e293b; padding: 1.25rem; }
     .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; }
     .card-dot { width: 8px; height: 8px; border-radius: 50%; }
     .card-dot.cyan { background: #22d3ee; }
     .card-dot.violet { background: #a78bfa; }
-    .card-dot.rose { background: #fb7185; }
     .card-dot.slate { background: #94a3b8; }
-    .card h3 { font-size: 0.875rem; font-weight: 600; }
+    .card h3 { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: #e2e8f0; }
     .card ul { list-style: none; color: #94a3b8; font-size: 0.75rem; }
-    .card li { margin-bottom: 0.375rem; }
-    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.75rem; }
+    .card li { margin-bottom: 0.45rem; line-height: 1.55; padding-left: 1rem; position: relative; }
+    .card li::before { content: '—'; position: absolute; left: 0; color: #475569; }
+
+    .footer { text-align: center; margin-top: 2rem; color: #475569; font-size: 0.7rem; line-height: 1.7; }
+    .footer a { color: #22d3ee; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -49,174 +82,75 @@
       <div class="header-row">
         <div class="pulse-dot"></div>
         <h1>el-bunker — Flujo de la app</h1>
+        <span class="badge">documento vivo</span>
       </div>
-      <p class="subtitle">Cómo funciona la app de principio a fin. Grafo vivo: se actualiza con cada parche.</p>
+      <p class="subtitle">Cómo funciona la app de principio a fin. Se actualiza con cada parche.</p>
     </div>
 
-    <div class="diagram-container">
-      <svg viewBox="0 0 1000 700">
-        <defs>
-          <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-            <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
-          </marker>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
-          </pattern>
-        </defs>
+    <div class="diagram-card">
+      <div class="mermaid-svg">
+        <svg id="my-svg" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 1044.53px; background-color: transparent;" viewBox="0 0 1044.53125 1182.5" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#my-svg{font-family:JetBrains Mono,monospace;font-size:13px;fill:#e2e8f0;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#my-svg .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#my-svg .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#my-svg .error-icon{fill:#0f172a;}#my-svg .error-text{fill:#f0e8d5;stroke:#f0e8d5;}#my-svg .edge-thickness-normal{stroke-width:1px;}#my-svg .edge-thickness-thick{stroke-width:3.5px;}#my-svg .edge-pattern-solid{stroke-dasharray:0;}#my-svg .edge-thickness-invisible{stroke-width:0;fill:none;}#my-svg .edge-pattern-dashed{stroke-dasharray:3;}#my-svg .edge-pattern-dotted{stroke-dasharray:2;}#my-svg .marker{fill:#64748b;stroke:#64748b;}#my-svg .marker.cross{stroke:#64748b;}#my-svg svg{font-family:JetBrains Mono,monospace;font-size:13px;}#my-svg p{margin:0;}#my-svg .label{font-family:JetBrains Mono,monospace;color:#e2e8f0;}#my-svg .cluster-label text{fill:#f0e8d5;}#my-svg .cluster-label span{color:#f0e8d5;}#my-svg .cluster-label span p{background-color:transparent;}#my-svg .label text,#my-svg span{fill:#e2e8f0;color:#e2e8f0;}#my-svg .node rect,#my-svg .node circle,#my-svg .node ellipse,#my-svg .node polygon,#my-svg .node path{fill:#0f172a;stroke:#334155;stroke-width:1px;}#my-svg .rough-node .label text,#my-svg .node .label text,#my-svg .image-shape .label,#my-svg .icon-shape .label{text-anchor:middle;}#my-svg .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#my-svg .rough-node .label,#my-svg .node .label,#my-svg .image-shape .label,#my-svg .icon-shape .label{text-align:center;}#my-svg .node.clickable{cursor:pointer;}#my-svg .root .anchor path{fill:#64748b!important;stroke-width:0;stroke:#64748b;}#my-svg .arrowheadPath{fill:#fdf9e8;}#my-svg .edgePath .path{stroke:#64748b;stroke-width:1px;}#my-svg .flowchart-link{stroke:#64748b;fill:none;}#my-svg .edgeLabel{background-color:hsl(222.2222222222, 47.3684210526%, 0%);text-align:center;}#my-svg .edgeLabel p{background-color:hsl(222.2222222222, 47.3684210526%, 0%);}#my-svg .edgeLabel rect{opacity:0.5;background-color:hsl(222.2222222222, 47.3684210526%, 0%);fill:hsl(222.2222222222, 47.3684210526%, 0%);}#my-svg .labelBkg{background-color:rgba(0, 0, 0, 0.5);}#my-svg .cluster rect{fill:#0f172a;stroke:hsl(222.2222222222, 7.3684210526%, 21.1764705882%);stroke-width:1px;}#my-svg .cluster text{fill:#f0e8d5;}#my-svg .cluster span{color:#f0e8d5;}#my-svg div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:JetBrains Mono,monospace;font-size:12px;background:#0f172a;border:1px solid hsl(222.2222222222, 7.3684210526%, 21.1764705882%);border-radius:2px;pointer-events:none;z-index:100;}#my-svg .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#e2e8f0;}#my-svg rect.text{fill:none;stroke-width:0;}#my-svg .icon-shape,#my-svg .image-shape{background-color:hsl(222.2222222222, 47.3684210526%, 0%);text-align:center;}#my-svg .icon-shape p,#my-svg .image-shape p{background-color:hsl(222.2222222222, 47.3684210526%, 0%);padding:2px;}#my-svg .icon-shape .label rect,#my-svg .image-shape .label rect{opacity:0.5;background-color:hsl(222.2222222222, 47.3684210526%, 0%);fill:hsl(222.2222222222, 47.3684210526%, 0%);}#my-svg .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#my-svg .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#my-svg .node .neo-node{stroke:#334155;}#my-svg [data-look="neo"].node rect,#my-svg [data-look="neo"].cluster rect,#my-svg [data-look="neo"].node polygon{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].swimlane.cluster rect{filter:none;}#my-svg [data-look="neo"].node path{stroke:url(#my-svg-gradient);stroke-width:1px;}#my-svg [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node .neo-line path{stroke:#334155;filter:none;}#my-svg [data-look="neo"].node circle{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].node circle .state-start{fill:#000000;}#my-svg [data-look="neo"].icon-shape .icon{fill:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg [data-look="neo"].icon-shape .icon-neo path{stroke:url(#my-svg-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#my-svg :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}#my-svg .external&gt;*{fill:rgb(30, 41, 59)!important;stroke:rgb(148, 163, 184)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .external span{fill:rgb(30, 41, 59)!important;stroke:rgb(148, 163, 184)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .external tspan{fill:rgb(226, 232, 240)!important;}#my-svg .security&gt;*{fill:rgb(61, 16, 32)!important;stroke:rgb(251, 113, 133)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .security span{fill:rgb(61, 16, 32)!important;stroke:rgb(251, 113, 133)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .security tspan{fill:rgb(226, 232, 240)!important;}#my-svg .frontend&gt;*{fill:rgb(14, 58, 77)!important;stroke:rgb(34, 211, 238)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .frontend span{fill:rgb(14, 58, 77)!important;stroke:rgb(34, 211, 238)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .frontend tspan{fill:rgb(226, 232, 240)!important;}#my-svg .backend&gt;*{fill:rgb(12, 61, 46)!important;stroke:rgb(52, 211, 153)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .backend span{fill:rgb(12, 61, 46)!important;stroke:rgb(52, 211, 153)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .backend tspan{fill:rgb(226, 232, 240)!important;}#my-svg .data&gt;*{fill:rgb(42, 27, 77)!important;stroke:rgb(167, 139, 250)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .data span{fill:rgb(42, 27, 77)!important;stroke:rgb(167, 139, 250)!important;color:rgb(226, 232, 240)!important;stroke-width:2px!important;}#my-svg .data tspan{fill:rgb(226, 232, 240)!important;}#my-svg .future&gt;*{fill:rgb(22, 32, 46)!important;stroke:rgb(100, 116, 139)!important;color:rgb(148, 163, 184)!important;stroke-width:1.5px!important;stroke-dasharray:5,5!important;}#my-svg .future span{fill:rgb(22, 32, 46)!important;stroke:rgb(100, 116, 139)!important;color:rgb(148, 163, 184)!important;stroke-width:1.5px!important;stroke-dasharray:5,5!important;}#my-svg .future tspan{fill:rgb(148, 163, 184)!important;}</style><g><marker id="my-svg_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="my-svg_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="my-svg_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"><g class="cluster" id="my-svg-S_DAT" data-look="classic"><rect style="" x="49.70703125" y="1013.5" width="622" height="161"/><g class="cluster-label" transform="translate(341.19921875, 1013.5)"><foreignObject width="39.015625" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>DATOS</p></span></div></foreignObject></g></g><g class="cluster" id="my-svg-S_API" data-look="classic"><rect style="" x="31.16015625" y="758.5" width="684.1484375" height="180.5"/><g class="cluster-label" transform="translate(283.515625, 758.5)"><foreignObject width="179.4375" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>API — Cloudflare Worker</p></span></div></foreignObject></g></g><g class="cluster" id="my-svg-S_FE" data-look="classic"><rect style="" x="8" y="420.5" width="851.92578125" height="263.5"/><g class="cluster-label" transform="translate(344.244140625, 420.5)"><foreignObject width="179.4375" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>FRONTEND — PWA · Vercel</p></span></div></foreignObject></g></g><g class="cluster" id="my-svg-S_ACC" data-look="classic"><rect style="" x="419.94140625" y="204.5" width="321" height="141.5"/><g class="cluster-label" transform="translate(557.03515625, 204.5)"><foreignObject width="46.8125" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>ACCESO</p></span></div></foreignObject></g></g><g class="cluster" id="my-svg-S_USR" data-look="classic"><rect style="" x="419.94140625" y="8" width="321" height="141.5"/><g class="cluster-label" transform="translate(549.23046875, 8)"><foreignObject width="62.421875" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5;"><span class="nodeLabel"><p>USUARIOS</p></span></div></foreignObject></g></g></g><g class="edgePaths"><path d="M580.441,122L580.441,126.583C580.441,131.167,580.441,140.333,580.441,149.5C580.441,158.667,580.441,167.833,580.441,177C580.441,186.167,580.441,195.333,580.441,203.833C580.441,212.333,580.441,220.167,580.441,224.083L580.441,228" id="my-svg-L_EDU_LOGIN_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_EDU_LOGIN_0" data-points="W3sieCI6NTgwLjQ0MTQwNjI1LCJ5IjoxMjJ9LHsieCI6NTgwLjQ0MTQwNjI1LCJ5IjoxNDkuNX0seyJ4Ijo1ODAuNDQxNDA2MjUsInkiOjE3N30seyJ4Ijo1ODAuNDQxNDA2MjUsInkiOjIwNC41fSx7IngiOjU4MC40NDE0MDYyNSwieSI6MjMyfV0=" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M580.441,318.5L580.441,323.083C580.441,327.667,580.441,336.833,580.441,347.625C580.441,358.417,580.441,370.833,580.441,383.25C580.441,395.667,580.441,408.083,580.441,418.208C580.441,428.333,580.441,436.167,580.441,440.083L580.441,444" id="my-svg-L_LOGIN_APP_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_LOGIN_APP_0" data-points="W3sieCI6NTgwLjQ0MTQwNjI1LCJ5IjozMTguNX0seyJ4Ijo1ODAuNDQxNDA2MjUsInkiOjM0Nn0seyJ4Ijo1ODAuNDQxNDA2MjUsInkiOjM4My4yNX0seyJ4Ijo1ODAuNDQxNDA2MjUsInkiOjQyMC41fSx7IngiOjU4MC40NDE0MDYyNSwieSI6NDQ4fV0=" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M490.027,494.888L436.439,502.824C382.852,510.759,275.676,526.629,222.088,538.481C168.5,550.333,168.5,558.167,168.5,562.083L168.5,566" id="my-svg-L_APP_VAULT_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_APP_VAULT_0" data-points="W3sieCI6NDkwLjAyNzM0Mzc1LCJ5Ijo0OTQuODg4NDUyMTY1MzM3NX0seyJ4IjoxNjguNSwieSI6NTQyLjV9LHsieCI6MTY4LjUsInkiOjU3MH1d" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M490.027,514.324L477.092,519.02C464.156,523.716,438.285,533.108,425.35,543.346C412.414,553.583,412.414,564.667,412.414,570.208L412.414,575.75" id="my-svg-L_APP_LAB_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_APP_LAB_0" data-points="W3sieCI6NDkwLjAyNzM0Mzc1LCJ5Ijo1MTQuMzIzNTczMTcyMTQ5M30seyJ4Ijo0MTIuNDE0MDYyNSwieSI6NTQyLjV9LHsieCI6NDEyLjQxNDA2MjUsInkiOjU3OS43NX1d" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M614.33,515L618.966,519.583C623.603,524.167,632.876,533.333,637.512,543.458C642.148,553.583,642.148,564.667,642.148,570.208L642.148,575.75" id="my-svg-L_APP_CAPS_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_APP_CAPS_0" data-points="W3sieCI6NjE0LjMyOTY5MzkwMzY4ODUsInkiOjUxNX0seyJ4Ijo2NDIuMTQ4NDM3NSwieSI6NTQyLjV9LHsieCI6NjQyLjE0ODQzNzUsInkiOjU3OS43NX1d" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M168.5,656.5L168.5,661.083C168.5,665.667,168.5,674.833,168.5,685.625C168.5,696.417,168.5,708.833,168.5,721.25C168.5,733.667,168.5,746.083,191.943,760.057C215.387,774.031,262.273,789.562,285.717,797.327L309.16,805.093" id="my-svg-L_VAULT_API_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_VAULT_API_0" data-points="W3sieCI6MTY4LjUsInkiOjY1Ni41fSx7IngiOjE2OC41LCJ5Ijo2ODR9LHsieCI6MTY4LjUsInkiOjcyMS4yNX0seyJ4IjoxNjguNSwieSI6NzU4LjV9LHsieCI6MzEyLjk1NzAzMTI1LCJ5Ijo4MDYuMzUwNjUzNzcyODE0fV0=" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M412.414,646.75L412.414,652.958C412.414,659.167,412.414,671.583,412.414,684C412.414,696.417,412.414,708.833,412.414,721.25C412.414,733.667,412.414,746.083,413.663,756.239C414.911,766.395,417.408,774.291,418.657,778.238L419.905,782.186" id="my-svg-L_LAB_API_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_LAB_API_0" data-points="W3sieCI6NDEyLjQxNDA2MjUsInkiOjY0Ni43NX0seyJ4Ijo0MTIuNDE0MDYyNSwieSI6Njg0fSx7IngiOjQxMi40MTQwNjI1LCJ5Ijo3MjEuMjV9LHsieCI6NDEyLjQxNDA2MjUsInkiOjc1OC41fSx7IngiOjQyMS4xMTEzNjU5OTcyMjk5NCwieSI6Nzg2fV0=" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M642.148,646.75L642.148,652.958C642.148,659.167,642.148,671.583,642.148,684C642.148,696.417,642.148,708.833,642.148,721.25C642.148,733.667,642.148,746.083,630.558,757.491C618.968,768.898,595.787,779.297,584.197,784.496L572.607,789.695" id="my-svg-L_CAPS_API_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_CAPS_API_0" data-points="W3sieCI6NjQyLjE0ODQzNzUsInkiOjY0Ni43NX0seyJ4Ijo2NDIuMTQ4NDM3NSwieSI6Njg0fSx7IngiOjY0Mi4xNDg0Mzc1LCJ5Ijo3MjEuMjV9LHsieCI6NjQyLjE0ODQzNzUsInkiOjc1OC41fSx7IngiOjU2OC45NTcwMzEyNSwieSI6NzkxLjMzMjA0MDU3ODU4NDZ9XQ==" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M312.957,898.813L295.832,905.511C278.707,912.209,244.457,925.604,227.332,938.51C210.207,951.417,210.207,963.833,210.207,976.25C210.207,988.667,210.207,1001.083,210.207,1012.833C210.207,1024.583,210.207,1035.667,210.207,1041.208L210.207,1046.75" id="my-svg-L_API_D1_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_API_D1_0" data-points="W3sieCI6MzEyLjk1NzAzMTI1LCJ5Ijo4OTguODEyODM4NTY5ODgwOH0seyJ4IjoyMTAuMjA3MDMxMjUsInkiOjkzOX0seyJ4IjoyMTAuMjA3MDMxMjUsInkiOjk3Ni4yNX0seyJ4IjoyMTAuMjA3MDMxMjUsInkiOjEwMTMuNX0seyJ4IjoyMTAuMjA3MDMxMjUsInkiOjEwNTAuNzV9XQ==" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M453.144,911.5L454.034,916.083C454.924,920.667,456.704,929.833,457.594,940.625C458.484,951.417,458.484,963.833,458.484,976.25C458.484,988.667,458.484,1001.083,462.185,1012.942C465.886,1024.801,473.288,1036.103,476.988,1041.753L480.689,1047.404" id="my-svg-L_API_R2_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_API_R2_0" data-points="W3sieCI6NDUzLjE0MzYzMzEzNzExOTE0LCJ5Ijo5MTEuNX0seyJ4Ijo0NTguNDg0Mzc1LCJ5Ijo5Mzl9LHsieCI6NDU4LjQ4NDM3NSwieSI6OTc2LjI1fSx7IngiOjQ1OC40ODQzNzUsInkiOjEwMTMuNX0seyJ4Ijo0ODIuODgwODgzNjM3NDIyMzYsInkiOjEwNTAuNzV9XQ==" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M569.112,1050.75L577.424,1044.542C585.736,1038.333,602.36,1025.917,610.672,1013.5C618.984,1001.083,618.984,988.667,647.232,976.25C675.479,963.833,731.974,951.417,760.221,930.167C788.469,908.917,788.469,878.833,788.469,848.75C788.469,818.667,788.469,788.583,788.469,767.333C788.469,746.083,788.469,733.667,788.469,721.25C788.469,708.833,788.469,696.417,788.469,678.417C788.469,660.417,788.469,636.833,788.469,613.25C788.469,589.667,788.469,566.083,769.506,548.731C750.544,531.379,712.619,520.258,693.656,514.698L674.694,509.138" id="my-svg-L_R2_APP_0" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_R2_APP_0" data-points="W3sieCI6NTY5LjExMjI1MDA5NzA0OTcsInkiOjEwNTAuNzV9LHsieCI6NjE4Ljk4NDM3NSwieSI6MTAxMy41fSx7IngiOjYxOC45ODQzNzUsInkiOjk3Ni4yNX0seyJ4Ijo3ODguNDY4NzUsInkiOjkzOX0seyJ4Ijo3ODguNDY4NzUsInkiOjg0OC43NX0seyJ4Ijo3ODguNDY4NzUsInkiOjc1OC41fSx7IngiOjc4OC40Njg3NSwieSI6NzIxLjI1fSx7IngiOjc4OC40Njg3NSwieSI6Njg0fSx7IngiOjc4OC40Njg3NSwieSI6NjEzLjI1fSx7IngiOjc4OC40Njg3NSwieSI6NTQyLjV9LHsieCI6NjcwLjg1NTQ2ODc1LCJ5Ijo1MDguMDEyMTc3MjYwMzUxMTd9XQ==" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/><path d="M551.845,911.5L559.944,916.083C568.044,920.667,584.243,929.833,643.69,940.625C703.138,951.417,805.835,963.833,857.183,976.25C908.531,988.667,908.531,1001.083,908.531,1011.208C908.531,1021.333,908.531,1029.167,908.531,1033.083L908.531,1037" id="my-svg-L_API_FUT_0" class="edge-thickness-normal edge-pattern-dotted edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_API_FUT_0" data-points="W3sieCI6NTUxLjg0NTA1OTI5NzA5MTQsInkiOjkxMS41fSx7IngiOjYwMC40NDE0MDYyNSwieSI6OTM5fSx7IngiOjkwOC41MzEyNSwieSI6OTc2LjI1fSx7IngiOjkwOC41MzEyNSwieSI6MTAxMy41fSx7IngiOjkwOC41MzEyNSwieSI6MTA0MX1d" data-look="classic" marker-end="url(#my-svg_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_EDU_LOGIN_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(580.44140625, 383.25)"><g class="label" data-id="L_LOGIN_APP_0" transform="translate(-31.2109375, -9.75)"><foreignObject width="62.421875" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"><p>JWT 24 h</p></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_APP_VAULT_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_APP_LAB_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_APP_CAPS_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_VAULT_API_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_LAB_API_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_CAPS_API_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_API_D1_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_API_R2_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(788.46875, 721.25)"><g class="label" data-id="L_R2_APP_0" transform="translate(-54.609375, -9.75)"><foreignObject width="109.21875" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"><p>fotos · música</p></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(908.53125, 976.25)"><g class="label" data-id="L_API_FUT_0" transform="translate(-50.7109375, -9.75)"><foreignObject width="101.421875" height="19.5"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"><p>siguiente ola</p></span></div></foreignObject></g></g></g><g class="nodes"><g class="node default external" id="my-svg-flowchart-EDU-0" data-look="classic" transform="translate(580.44140625, 78.75)"><rect class="basic label-container" style="fill:#1e293b !important;stroke:#94a3b8 !important;stroke-width:2px !important" x="-128" y="-43.25" width="256" height="86.5"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-100, -29.25)"><rect/><foreignObject width="200" height="58.5"><div style="color: rgb(226, 232, 240) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>Edu / David<br />navegador · móvil · PWA instalada</p></span></div></foreignObject></g></g><g class="node default security" id="my-svg-flowchart-LOGIN-1" data-look="classic" transform="translate(580.44140625, 275.25)"><rect class="basic label-container" style="fill:#3d1020 !important;stroke:#fb7185 !important;stroke-width:2px !important" x="-128" y="-43.25" width="256" height="86.5"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-100, -29.25)"><rect/><foreignObject width="200" height="58.5"><div style="color: rgb(226, 232, 240) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>Login<br />Google OAuth · o clave test/admin</p></span></div></foreignObject></g></g><g class="node default frontend" id="my-svg-flowchart-APP-2" data-look="classic" transform="translate(580.44140625, 481.5)"><rect class="basic label-container" style="fill:#0e3a4d !important;stroke:#22d3ee !important;stroke-width:2px !important" x="-90.4140625" y="-33.5" width="180.828125" height="67"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-62.4140625, -19.5)"><rect/><foreignObject width="124.828125" height="39"><div style="color: rgb(226, 232, 240) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>el-bunker<br />3 pestañas fijas</p></span></div></foreignObject></g></g><g class="node default frontend" id="my-svg-flowchart-VAULT-3" data-look="classic" transform="translate(168.5, 613.25)"><rect class="basic label-container" style="fill:#0e3a4d !important;stroke:#22d3ee !important;stroke-width:2px !important" x="-128" y="-43.25" width="256" height="86.5"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-100, -29.25)"><rect/><foreignObject width="200" height="58.5"><div style="color: rgb(226, 232, 240) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>VAULT<br />galería 6 modos · subir fotos</p></span></div></foreignObject></g></g><g class="node default frontend" id="my-svg-flowchart-LAB-4" data-look="classic" transform="translate(412.4140625, 613.25)"><rect class="basic label-container" style="fill:#0e3a4d !important;stroke:#22d3ee !important;stroke-width:2px !important" x="-70.9140625" y="-33.5" width="141.828125" height="67"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-42.9140625, -19.5)"><rect/><foreignObject width="85.828125" height="39"><div style="color: rgb(226, 232, 240) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>MUSIC LAB<br />reproductor</p></span></div></foreignObject></g></g><g class="node default frontend" id="my-svg-flowchart-CAPS-5" data-look="classic" transform="translate(642.1484375, 613.25)"><rect class="basic label-container" style="fill:#0e3a4d !important;stroke:#22d3ee !important;stroke-width:2px !important" x="-113.8203125" y="-33.5" width="227.640625" height="67"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-85.8203125, -19.5)"><rect/><foreignObject width="171.640625" height="39"><div style="color: rgb(226, 232, 240) !important; display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>CAPSULES<br />fotos + música + texto</p></span></div></foreignObject></g></g><g class="node default backend" id="my-svg-flowchart-API-6" data-look="classic" transform="translate(440.95703125, 848.75)"><rect class="basic label-container" style="fill:#0c3d2e !important;stroke:#34d399 !important;stroke-width:2px !important" x="-128" y="-62.75" width="256" height="125.5"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-100, -48.75)"><rect/><foreignObject width="200" height="97.5"><div style="color: rgb(226, 232, 240) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>/api/auth · /api/entries · /api/tracks<br />/api/music · /api/classify · /api/admin</p></span></div></foreignObject></g></g><g class="node default data" id="my-svg-flowchart-D1-7" data-look="classic" transform="translate(210.20703125, 1094)"><rect class="basic label-container" style="fill:#2a1b4d !important;stroke:#a78bfa !important;stroke-width:2px !important" x="-128" y="-43.25" width="256" height="86.5"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-100, -29.25)"><rect/><foreignObject width="200" height="58.5"><div style="color: rgb(226, 232, 240) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>D1 — catálogo<br />1.117 canciones · 527 fotos · eventos</p></span></div></foreignObject></g></g><g class="node default data" id="my-svg-flowchart-R2-8" data-look="classic" transform="translate(511.20703125, 1094)"><rect class="basic label-container" style="fill:#2a1b4d !important;stroke:#a78bfa !important;stroke-width:2px !important" x="-128" y="-43.25" width="256" height="86.5"/><g class="label" style="color:#e2e8f0 !important" transform="translate(-100, -29.25)"><rect/><foreignObject width="200" height="58.5"><div style="color: rgb(226, 232, 240) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#e2e8f0 !important" class="nodeLabel"><p>R2 — archivos<br />MP3 · fotos · vídeos · documentos</p></span></div></foreignObject></g></g><g class="node default future" id="my-svg-flowchart-FUT-9" data-look="classic" transform="translate(908.53125, 1094)"><rect class="basic label-container" style="fill:#16202e !important;stroke:#64748b !important;stroke-width:1.5px !important;stroke-dasharray:5 5 !important" x="-128" y="-53" width="256" height="106"/><g class="label" style="color:#94a3b8 !important" transform="translate(-100, -39)"><rect/><foreignObject width="200" height="78"><div style="color: rgb(148, 163, 184) !important; display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;" xmlns="http://www.w3.org/1999/xhtml"><span style="color:#94a3b8 !important" class="nodeLabel"><p>PRÓXIMOS PARCHES<br />panel admin visible · HUD desktop · móvil real + PWA</p></span></div></foreignObject></g></g></g></g></g><defs><filter id="my-svg-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="my-svg-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="my-svg-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#334155" stop-opacity="1"/><stop offset="100%" stop-color="hsl(222.2222222222, 7.3684210526%, 21.1764705882%)" stop-opacity="1"/></linearGradient></svg>
+      </div>
 
-        <rect width="100%" height="100%" fill="url(#grid)" />
+      <div class="legend">
+        <div class="legend-item"><span class="swatch" style="border-color:#94a3b8;background:#1e293b;"></span>Usuario</div>
+        <div class="legend-item"><span class="swatch frontend"></span>Frontend — lo que ves</div>
+        <div class="legend-item"><span class="swatch backend"></span>API — la puerta</div>
+        <div class="legend-item"><span class="swatch data"></span>Datos — catálogo y archivos</div>
+        <div class="legend-item"><span class="swatch security"></span>Login y permisos</div>
+        <div class="legend-item"><span class="swatch future"></span>Próximos parches</div>
+      </div>
+    </div>
 
-        <!-- ============ FLECHAS (detrás de las cajas) ============ -->
-        <!-- Usuario -> PWA -->
-        <line x1="150" y1="120" x2="248" y2="120" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <text x="199" y="112" fill="#94a3b8" font-size="9" text-anchor="middle">HTTPS</text>
-
-        <!-- Login -> PWA (flujo de auth, dashed rose) -->
-        <path d="M 95 250 L 95 190 Q 95 175 110 175 L 245 175 Q 260 175 260 190 L 260 240" fill="none" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="5,5" marker-end="url(#arrowhead)"/>
-        <text x="160" y="168" fill="#fb7185" font-size="8">JWT 24h</text>
-
-        <!-- PWA -> Tabs -->
-        <line x1="360" y1="190" x2="310" y2="248" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <line x1="360" y1="190" x2="450" y2="248" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <line x1="360" y1="190" x2="590" y2="248" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-
-        <!-- Tabs -> API -->
-        <line x1="310" y1="310" x2="310" y2="398" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <line x1="450" y1="310" x2="450" y2="398" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <line x1="590" y1="310" x2="590" y2="398" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-
-        <!-- API -> D1 y R2 -->
-        <line x1="510" y1="455" x2="558" y2="455" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <text x="534" y="447" fill="#94a3b8" font-size="8" text-anchor="middle">SQL</text>
-        <line x1="620" y1="455" x2="768" y2="455" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <text x="694" y="447" fill="#94a3b8" font-size="8" text-anchor="middle">objetos</text>
-
-        <!-- R2 -> PWA (streaming, por el borde derecho) -->
-        <path d="M 960 455 L 960 130 Q 960 120 950 120 L 475 120" fill="none" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <text x="935" y="300" fill="#94a3b8" font-size="8" transform="rotate(-90 935 300)">fotos · música</text>
-
-        <!-- ============ USUARIO ============ -->
-        <rect x="40" y="90" width="110" height="60" rx="6" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-        <text x="95" y="115" fill="white" font-size="11" font-weight="600" text-anchor="middle">Edu / David</text>
-        <text x="95" y="132" fill="#94a3b8" font-size="9" text-anchor="middle">Navegador o móvil</text>
-
-        <!-- ============ LOGIN ============ -->
-        <rect x="40" y="250" width="110" height="70" rx="6" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
-        <text x="95" y="272" fill="white" font-size="11" font-weight="600" text-anchor="middle">Login</text>
-        <text x="95" y="288" fill="#94a3b8" font-size="8" text-anchor="middle">Google OAuth</text>
-        <text x="95" y="302" fill="#94a3b8" font-size="8" text-anchor="middle">o clave test/admin</text>
-
-        <!-- ============ FRONTEND ============ -->
-        <rect x="250" y="60" width="220" height="130" rx="8" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-        <text x="360" y="85" fill="white" font-size="12" font-weight="600" text-anchor="middle">el-bunker (PWA)</text>
-        <text x="360" y="103" fill="#94a3b8" font-size="9" text-anchor="middle">React + Vite · Vercel</text>
-        <text x="360" y="120" fill="#22d3ee" font-size="8" text-anchor="middle">3 pestañas fijas</text>
-        <text x="360" y="136" fill="#94a3b8" font-size="9" text-anchor="middle">VAULT · MUSIC LAB · CAPSULES</text>
-        <text x="360" y="156" fill="#94a3b8" font-size="8" text-anchor="middle">instalable como app</text>
-        <text x="360" y="172" fill="#94a3b8" font-size="8" text-anchor="middle">funciona sin conexión (básico)</text>
-
-        <!-- ============ TABS (acciones del usuario) ============ -->
-        <rect x="250" y="250" width="120" height="60" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-        <text x="310" y="272" fill="white" font-size="10" font-weight="600" text-anchor="middle">VAULT</text>
-        <text x="310" y="288" fill="#94a3b8" font-size="8" text-anchor="middle">galería 6 modos</text>
-        <text x="310" y="300" fill="#94a3b8" font-size="8" text-anchor="middle">ver y subir fotos</text>
-
-        <rect x="390" y="250" width="120" height="60" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-        <text x="450" y="272" fill="white" font-size="10" font-weight="600" text-anchor="middle">MUSIC LAB</text>
-        <text x="450" y="288" fill="#94a3b8" font-size="8" text-anchor="middle">reproductor</text>
-        <text x="450" y="300" fill="#94a3b8" font-size="8" text-anchor="middle">tu música y la de David</text>
-
-        <rect x="530" y="250" width="120" height="60" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-        <text x="590" y="272" fill="white" font-size="10" font-weight="600" text-anchor="middle">CAPSULES</text>
-        <text x="590" y="288" fill="#94a3b8" font-size="8" text-anchor="middle">cápsulas de recuerdos</text>
-        <text x="590" y="300" fill="#94a3b8" font-size="8" text-anchor="middle">fotos + música + texto</text>
-
-        <!-- ============ API ============ -->
-        <rect x="250" y="400" width="260" height="110" rx="8" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
-        <text x="380" y="425" fill="white" font-size="12" font-weight="600" text-anchor="middle">API — Cloudflare Worker</text>
-        <text x="380" y="443" fill="#94a3b8" font-size="8" text-anchor="middle">/api/auth · /api/entries</text>
-        <text x="380" y="458" fill="#94a3b8" font-size="8" text-anchor="middle">/api/tracks · /api/music</text>
-        <text x="380" y="473" fill="#94a3b8" font-size="8" text-anchor="middle">/api/classify · /api/admin (esqueleto)</text>
-        <text x="380" y="493" fill="#34d399" font-size="8" text-anchor="middle">una sola puerta para todo</text>
-
-        <!-- ============ DATOS ============ -->
-        <rect x="560" y="400" width="180" height="110" rx="8" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-        <text x="650" y="425" fill="white" font-size="11" font-weight="600" text-anchor="middle">D1 — base de datos</text>
-        <text x="650" y="443" fill="#94a3b8" font-size="8" text-anchor="middle">• canciones: 1.117</text>
-        <text x="650" y="458" fill="#94a3b8" font-size="8" text-anchor="middle">• fotos: 527 (2 bloques)</text>
-        <text x="650" y="473" fill="#94a3b8" font-size="8" text-anchor="middle">• clasificadas · eventos</text>
-        <text x="650" y="493" fill="#a78bfa" font-size="8" text-anchor="middle">el catálogo, con índice</text>
-
-        <rect x="770" y="400" width="190" height="110" rx="8" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-        <text x="865" y="425" fill="white" font-size="11" font-weight="600" text-anchor="middle">R2 — almacén</text>
-        <text x="865" y="443" fill="#94a3b8" font-size="8" text-anchor="middle">• archivos MP3</text>
-        <text x="865" y="458" fill="#94a3b8" font-size="8" text-anchor="middle">• fotos del vault</text>
-        <text x="865" y="473" fill="#94a3b8" font-size="8" text-anchor="middle">• vídeos y documentos</text>
-        <text x="865" y="493" fill="#a78bfa" font-size="8" text-anchor="middle">los archivos de verdad</text>
-
-        <!-- ============ EN CAMINO (próximos parches) ============ -->
-        <rect x="250" y="580" width="520" height="64" rx="8" fill="transparent" stroke="#94a3b8" stroke-width="1" stroke-dasharray="6,4"/>
-        <text x="510" y="602" fill="#94a3b8" font-size="10" font-weight="600" text-anchor="middle">PRÓXIMOS PARCHES</text>
-        <text x="510" y="620" fill="#64748b" font-size="8" text-anchor="middle">panel de administración visible · HUD rediseñada para el escritorio · prueba en móvil real y PWA instalada</text>
-        <line x1="360" y1="510" x2="360" y2="578" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4,4" marker-end="url(#arrowhead)"/>
-
-        <!-- ============ LEYENDA ============ -->
-        <text x="720" y="70" fill="white" font-size="10" font-weight="600">Leyenda</text>
-        <rect x="720" y="82" width="16" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
-        <text x="742" y="90" fill="#94a3b8" font-size="8">Frontend (lo que ves)</text>
-        <rect x="720" y="98" width="16" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
-        <text x="742" y="106" fill="#94a3b8" font-size="8">API (la puerta)</text>
-        <rect x="720" y="114" width="16" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
-        <text x="742" y="122" fill="#94a3b8" font-size="8">Datos (D1 + R2)</text>
-        <rect x="720" y="130" width="16" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
-        <text x="742" y="138" fill="#94a3b8" font-size="8">Login y permisos</text>
-        <line x1="720" y1="150" x2="736" y2="150" stroke="#fb7185" stroke-width="1" stroke-dasharray="3,3"/>
-        <text x="742" y="153" fill="#94a3b8" font-size="8">Flujo de acceso</text>
-        <rect x="720" y="160" width="16" height="10" rx="2" fill="transparent" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3,3"/>
-        <text x="742" y="168" fill="#94a3b8" font-size="8">En camino (próximo parche)</text>
-      </svg>
+    <div class="kpis">
+      <div class="kpi cyan">
+        <div class="kpi-value">3 <small>pestañas</small></div>
+        <div class="kpi-label">VAULT · MUSIC LAB · CAPSULES — fijas, con un solo motor de audio</div>
+      </div>
+      <div class="kpi violet">
+        <div class="kpi-value">1.117 <small>canciones</small></div>
+        <div class="kpi-label">en D1, con archivos MP3 en R2</div>
+      </div>
+      <div class="kpi violet">
+        <div class="kpi-value">527 <small>fotos</small></div>
+        <div class="kpi-label">del vault, en 2 bloques: 2021 y 2022</div>
+      </div>
+      <div class="kpi emerald">
+        <div class="kpi-value">1 <small>puerta</small></div>
+        <div class="kpi-label">la API del worker — todo pasa por ahí, con permisos y validaciones</div>
+      </div>
     </div>
 
     <div class="cards">
       <div class="card">
-        <div class="card-header">
-          <div class="card-dot cyan"></div>
-          <h3>La app</h3>
-        </div>
+        <div class="card-header"><div class="card-dot cyan"></div><h3>La app</h3></div>
         <ul>
-          <li>• Entras con Google o con clave de prueba</li>
-          <li>• 3 pestañas fijas: VAULT, MUSIC LAB, CAPSULES</li>
-          <li>• Todo pasa por una sola puerta: la API</li>
-          <li>• Se instala como app y funciona sin conexión</li>
+          <li>Entras con Google o con clave de prueba (test/admin)</li>
+          <li>Se instala como PWA y funciona sin conexión (básico)</li>
+          <li>Vault en 6 modos de galería, cápsulas con filtro por persona</li>
         </ul>
       </div>
       <div class="card">
-        <div class="card-header">
-          <div class="card-dot violet"></div>
-          <h3>Los datos</h3>
-        </div>
+        <div class="card-header"><div class="card-dot violet"></div><h3>Los datos</h3></div>
         <ul>
-          <li>• 1.117 canciones y 527 fotos en 2 bloques (2021, 2022)</li>
-          <li>• Catálogo con índice (D1) y archivos de verdad (R2)</li>
-          <li>• Las fotos y la música viajan desde el almacén a tu pantalla</li>
+          <li>El catálogo con índice (D1) y los archivos de verdad (R2)</li>
+          <li>Fotos y música viajan del almacén a tu pantalla bajo demanda</li>
+          <li>Contenido clasificado y eventos de uso registrados</li>
         </ul>
       </div>
       <div class="card">
-        <div class="card-header">
-          <div class="card-dot slate"></div>
-          <h3>En camino</h3>
-        </div>
+        <div class="card-header"><div class="card-dot slate"></div><h3>En camino</h3></div>
         <ul>
-          <li>• Panel de administración visible</li>
-          <li>• HUD rediseñada para el escritorio</li>
-          <li>• Móvil real (390x844) y PWA instalada</li>
-          <li>• Este grafo se actualiza con cada parche</li>
+          <li>Panel de administración visible</li>
+          <li>HUD rediseñada para el escritorio</li>
+          <li>Móvil real (390x844) y PWA instalada</li>
         </ul>
       </div>
     </div>
 
     <p class="footer">
-      el-bunker • flujo de la app • v1 (6-ago-2026) — se actualiza con cada parche
+      el-bunker · flujo de la app · v2 (6-ago-2026) · documento vivo: se actualiza con cada parche<br>
+      <a href="parche-usuario.html">notas del parche actual</a>
     </p>
   </div>
 </body>

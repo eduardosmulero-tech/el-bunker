@@ -1,0 +1,49 @@
+flowchart TB
+    subgraph S_USR["USUARIOS"]
+        EDU["Edu / David<br/>navegador · móvil · PWA instalada"]
+    end
+
+    subgraph S_ACC["ACCESO"]
+        LOGIN["Login<br/>Google OAuth · o clave test/admin"]
+    end
+
+    subgraph S_FE["FRONTEND — PWA · Vercel"]
+        APP["el-bunker<br/>3 pestañas fijas"]
+        VAULT["VAULT<br/>galería 6 modos · subir fotos"]
+        LAB["MUSIC LAB<br/>reproductor"]
+        CAPS["CAPSULES<br/>fotos + música + texto"]
+    end
+
+    subgraph S_API["API — Cloudflare Worker"]
+        API["/api/auth · /api/entries · /api/tracks<br/>/api/music · /api/classify · /api/admin"]
+    end
+
+    subgraph S_DAT["DATOS"]
+        D1["D1 — catálogo<br/>1.117 canciones · 527 fotos · eventos"]
+        R2["R2 — archivos<br/>MP3 · fotos · vídeos · documentos"]
+    end
+
+    FUT["PRÓXIMOS PARCHES<br/>panel admin visible · HUD desktop · móvil real + PWA"]
+
+    EDU --> LOGIN
+    LOGIN -->|JWT 24 h| APP
+    APP --> VAULT & LAB & CAPS
+    VAULT & LAB & CAPS --> API
+    API --> D1
+    API --> R2
+    R2 -.->|fotos · música| APP
+    API -.->|siguiente ola| FUT
+
+    classDef external fill:#1e293b,stroke:#94a3b8,color:#e2e8f0,stroke-width:2px
+    classDef security fill:#3d1020,stroke:#fb7185,color:#e2e8f0,stroke-width:2px
+    classDef frontend fill:#0e3a4d,stroke:#22d3ee,color:#e2e8f0,stroke-width:2px
+    classDef backend fill:#0c3d2e,stroke:#34d399,color:#e2e8f0,stroke-width:2px
+    classDef data fill:#2a1b4d,stroke:#a78bfa,color:#e2e8f0,stroke-width:2px
+    classDef future fill:#16202e,stroke:#64748b,color:#94a3b8,stroke-width:1.5px,stroke-dasharray:5 5
+
+    class EDU external
+    class LOGIN security
+    class APP,VAULT,LAB,CAPS frontend
+    class API backend
+    class D1,R2 data
+    class FUT future
