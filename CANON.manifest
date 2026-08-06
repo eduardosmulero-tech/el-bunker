@@ -25,6 +25,20 @@ docs/Nucleo/ESTADO.md
 # Grupo 2 — disenar, planificar o cambiar el rumbo: aqui SI exige el canon completo.
 # El refactor G0-G8 se ejecuto y cerro (4-ago-2026); PLAN_REFACTOR_HIGIENE y su acta
 # viven en docs/operacional/ como historico y NO son peaje de sesion.
+#
+# docs/spec/INDEX.md entra el 7-ago-2026 (decision de Edu). Motivo: docs/spec/ contiene las
+# specs funcionales VIVAS (VB1-VB20 del vibe, cola, transiciones, galeria, capsulas,
+# taxonomia) y no estaba en ningun grupo del manifest, asi que H7 no podia bloquear a quien
+# diseñara sin leerlas. Paso: el diseño de la HUD desktop se escribio entero sin ellas y al
+# cruzarlo aparecieron 3 contradicciones, 10 correcciones y 11 huecos. Y la auditoria que se
+# declaro al 100% del canon clasifico docs/spec/ como "documentacion historica fuera del
+# alcance funcional" (auditoria_total_2026-08-02_REPETIDA_9_HERMES.md:185-192, regla
+# U3_PATH_DOCS) — esa regla sigue pendiente de corregir, tarjeta t_54f1d39e.
+#
+# Entra el INDICE, no las cuatro specs: son ~55 KB y obligarlas todas por cada sesion de
+# diseño seria un peaje absurdo. El indice es una pagina con tabla de enrutado (que area ->
+# que spec), precedencia frente al CONTRATO y placeholders abiertos. Desde el se abre SOLO
+# la spec relevante. La regla operativa esta escrita dentro del propio indice.
 [protege]
 docs/*.md
 AGENTS.md
@@ -35,3 +49,4 @@ CANON.manifest
 docs/Nucleo/CONTRATO.md
 docs/Nucleo/REGLAS.md
 docs/Nucleo/ESTADO.md
+docs/spec/INDEX.md

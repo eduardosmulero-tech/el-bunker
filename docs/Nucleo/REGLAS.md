@@ -1,6 +1,7 @@
 # REGLAS.md — el_bunker
 > Workflow y conducta de Claude. Normativo — prevalencia absoluta.
-> Última actualización: S49 — Refundación del producto.
+> Última actualización: S154 (7-ago-2026) — reglas de specs, iconografía y personalización.
+> Base: S49, refundación del producto.
 
 ## ROL
 Edu es desarrollador novato — Claude es el responsable técnico.
@@ -47,6 +48,23 @@ Loop es triestado.
 - **No duplicar uploaders:** Usar FileUploadService unificado a R2 (ADR-022).
 - **Namespaces de tags:** `music_lab.tags[]` y `vault.tags[]` separados (ADR-023).
 - **Galería 6 modos:** WALL, CINEMA, MAP, DIALOGUE, REEL, EXHIBITION (ADR-021).
+
+## REGLAS NUEVAS (7-ago-2026, decisión de Edu)
+- **Las specs de `docs/spec/` no son historia.** Antes de escribir un diseño, un plan o un ADR, se
+  lee `docs/spec/INDEX.md` (lo exige el `CANON.manifest`) y desde ahí **solo la spec del área que
+  se toca**. No hace falta leerlas las cuatro; sí hace falta abrir la que corresponde.
+- **Iconografía:** todo icono sale de `src/core/ui/Icon.jsx`. Cero emoji y cero caracteres unicode
+  como icono en `src/`, incluidos los objetos de configuración de `tokens.js`. El mapa
+  `LEGACY_ICON_NAMES` es un puente cerrado para datos antiguos: ningún componente nuevo se apoya en
+  él. Esta regla prevalece sobre la iconografía de caracteres dibujada en las specs (ADR-029).
+- **Dato del usuario intocable:** la app nunca reescribe títulos, nombres ni etiquetas escritos por
+  el usuario para que parezcan más limpios, por raros que sean sus adornos.
+- **Nada inventado en pantalla:** si el dato no está, se muestra estado vacío. Prohibidos los
+  valores por defecto fabricados para que un widget tenga algo que enseñar.
+- **Ninguna animación nueva en bucle infinito** que no comunique un estado.
+- **Personalización:** lo que el usuario puede personalizar se lee del dato (D1), nunca se escribe
+  en el código. La ley del vibe es el mecanismo (la interfaz sigue a lo que suena), no el catálogo:
+  qué vibes existen, su nombre, color e icono son del usuario.
 
 ## MAPA DE ARCHIVOS JSX (actual)
 

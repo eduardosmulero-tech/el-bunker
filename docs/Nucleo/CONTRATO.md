@@ -2,7 +2,9 @@
 > ADRs vigentes. Normativo — prevalencia absoluta.
 > Contradicción con este doc → Claude detiene y reporta antes de generar pliego.
 > Solo crece con nuevas decisiones. Los ADRs revertidos nunca desaparecen: se marcan ⛔.
-> Última actualización: S150 — ADR-028 acceso test/admin (2-ago-2026). Base: S49, refundación del producto.
+> Última actualización: S154 — ADR-029 HUD de escritorio (7-ago-2026). Base: S49, refundación del producto.
+> Las specs funcionales viven en `docs/spec/`; su índice de enrutado es `docs/spec/INDEX.md`,
+> exigido por el `CANON.manifest`. Este CONTRATO manda sobre ellas (ver ADR-029).
 
 ---
 
@@ -150,6 +152,50 @@ Además del login de Google, el worker acepta canjear una **clave de acceso** de
 
 Toda emisión escribe `auth_login` en la tabla `events` (ADR-019); los intentos fallidos van a los logs del worker (`events.user_id` tiene FK a `users`). Revocación = borrar o rotar el secret. Manual de uso, rotación y auditoría: `docs/operacional/ACCESO_TEST_ADMIN.md`.
 
+### ✅ ADR-029 — La HUD tiene dos arquitecturas, no una escala (NUEVO S154)
+> Decisión aprobada por Edu el 7-ago-2026. Diseño completo:
+> `docs/disenos/DISENO_HUD_DESKTOP_2026-08-07.md`. Tarjeta `t_504a2707`.
+
+Por debajo de 1280px de ancho, el cromo flota sobre el contenido: cabecera fija, navegación
+inferior fija y mini-reproductor flotante, con el contenido pasando por debajo. Es lo correcto
+cuando no hay sitio para dos cosas a la vez, y **no se toca**.
+
+A partir de 1280px, el cromo deja de flotar y se convierte en marco: barra superior de 44px, raíl
+de navegación de 208px a la izquierda, dock de reproductor de 336px a la derecha, línea de estado
+de 28px abajo, y un lienzo central que es el único elemento con scroll de la aplicación. Nada tapa
+nada.
+
+En escritorio el reproductor pertenece al marco y está visible en las tres pestañas. Esto **no
+altera ADR-018 ni la regla inamovible 3**: los elementos `<audio>` siguen encapsulados en
+`PlayerProvider`, que está por encima del marco en el árbol. Lo que se mueve es dónde se pinta el
+mando, no quién posee el audio.
+
+"Responsive" y "diseñado para escritorio" no son lo mismo. La app tiene adaptación responsive desde
+S152; el diseño de escritorio es esto. Las afirmaciones de S152/S153 y del ACTA G0-G1 se leen como
+"la app no se rompe en escritorio", que es cierto, y no como "la app está diseñada para escritorio",
+que no lo era. Con esto queda cerrada la contradicción con `PROYECTO.md:54`.
+
+**Enmiendas a las specs de `docs/spec/` que este ADR hace explícitas.** Sin ellas, el diseño de
+escritorio contradice la spec en vez de ampliarla:
+
+1. `el_bunker_reproductor_spec_v2.md` define el producto como "PWA privada **Android-only**". Pasa
+   a ser **Android primero, escritorio como segundo cliente de primera clase**.
+2. `UX8` ("orientación landscape → forzar portrait siempre") **queda limitada al móvil**. En
+   escritorio no hay bloqueo de orientación, que es lo que el código ya hacía de facto
+   (`Layout.jsx:585`) sin que ningún documento lo recogiera.
+3. `galeria_vault_spec.md`, selector de 6 modos: "barra horizontal en cabecera" **sigue vigente en
+   móvil**; en escritorio el selector vive en el raíl, en vertical, conservando `layoutId` y el
+   glow del modo activo.
+4. La regla de Edu del 6-ago (cero emoji, cero caracteres como iconografía) **prevalece sobre la
+   iconografía dibujada en las specs** (el selector de galería, los badges de contexto y las
+   sub-tabs de cápsulas se dibujan ahí con caracteres). Ninguna spec asigna significado al glifo
+   concreto, solo al concepto: no se pierde nada.
+
+**Lo que este ADR NO enmienda**, y por tanto sigue mandando entero: `VB1`-`VB20` (incluidos `VB8`
+color base fijo en reposo, `VB9` exclusiones del vibe, `VB10` contraste algorítmico, `VB11`/`VB17`
+formulario de tags con paleta completa), `T1`-`T11`, `Q15`, `UX9` y `UX10`. Enrutado a las specs:
+`docs/spec/INDEX.md`.
+
 ---
 
 ## RESUMEN DE ADRs
@@ -184,5 +230,6 @@ Toda emisión escribe `auth_login` en la tabla `events` (ADR-019); los intentos 
 | ADR-026 | RECAP 4ª cápsula | ✅ NUEVO S49 |
 | ADR-027 | DIALOGUE perspectiva dual | ✅ NUEVO S49 |
 | ADR-028 | Acceso por clave test/admin | ✅ NUEVO S150 |
+| ADR-029 | HUD: dos arquitecturas (corte 1280px) | ✅ NUEVO S154 |
 
-**Total: 28 ADRs · 7 🔒 inamovibles · 3 ⛔ revertidos**
+**Total: 29 ADRs · 7 🔒 inamovibles · 3 ⛔ revertidos**

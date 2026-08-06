@@ -65,7 +65,22 @@ coordine y cierre), B1 con diseño entregado y ejecución pendiente.
 - **G8:** ✅ documentación sincronizada en esta sesión; no se reescriben ADRs normativos sin enmienda.
 
 ## ▶ Pendientes reales
-- **HUD DESKTOP (requisito de Edu, 3 peticiones, tarjeta t_504a2707 en fase IDEA):** rediseñar la HUD para aprovechar el escritorio — móvil compacta y visible, desktop con capacidades que el móvil no tiene. Medido en auditoría UI 4-ago: 23 títulos truncados en WALL, 14 en MUSIC LAB, 2 en TIMELINE a 1264px (H-11/H-12/H-13, canon DOM-first). Docs contradictorios (S152/S153 y ACTA G0-G1 dicen "responsive desktop hecho"; PROYECTO.md:54 dice "no optimizada para desktop") — alinear en CONTRATO/SPEC.
+- **HUD DESKTOP (`t_504a2707`) — DISEÑO ENTREGADO Y FIRMADO (7-ago), ejecución pendiente.**
+  Diseño: `docs/disenos/DISENO_HUD_DESKTOP_2026-08-07.md` (marco de escritorio a partir de 1280px;
+  por debajo no cambia un pixel). Canonizado en **ADR-029**, que además cierra la contradicción
+  S152/S153 vs `PROYECTO.md:54` y firma 4 enmiendas a las specs. La propuesta conceptual del 5-ago
+  quedó rechazada por Edu y no se mergea. Plan de 6 fases en el §11 del diseño; F5 y F6
+  (iconografía y microcopy) no dependen de nada y pueden ir en carril paralelo. Sigue pendiente la
+  medición de truncados como línea base: 23 en WALL, 14 en MUSIC LAB, 2 en TIMELINE a 1264px
+  (H-11/H-12/H-13).
+- **Specs funcionales incorporadas al canon (7-ago):** `docs/spec/INDEX.md` entra en el
+  `[requiere]` del grupo 2 del `CANON.manifest`. Motivo: `docs/spec/` no estaba en ningún grupo y
+  el diseño de la HUD se escribió sin leerlo (3 contradicciones, 10 correcciones y 11 huecos al
+  cruzarlo). Queda abierto corregir la regla `U3_PATH_DOCS` de la plantilla de auditoría, que
+  clasifica `spec/` como histórico (`t_54f1d39e`).
+- **Tarjetas nuevas sin dueño (7-ago):** `t_69b7d224` visualizador a pantalla completa roto
+  (reporte de Edu; hipótesis: `AudioContext` sin limpieza en `AudioVisualizer.jsx`),
+  `t_717572c4` el contador `TRACKS [529]` no cuadra con el canon, `t_54f1d39e` canon/auditoría.
 - Aceptación móvil real (390x844) y PWA instalada/offline/update en dispositivo físico; revisar modales y controles táctiles. Sin sustituto de navegador headless.
 - Confirmar EntryLightbox en móvil (t_9badd928).
 - **7403 RESUELTO (4-ago):** la query remota D1 funciona (files=527 verificado); el fallo de G2-1J fue transitorio. **Huérfano G2 RESUELTO (4-ago):** `prueba_dod.jpg` (c4c564a9, residuo de DoD 2-ago, sin objeto R2) borrado con OK de Edu; rollback en `C:\proyectos\.trabajo\orphan_rollback.sql`. El residuo R2 `c1f11fad…` pendiente de verificar por API (el CLI no lista objetos).
