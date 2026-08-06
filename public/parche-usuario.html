@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>el-bunker — Parche 2026-08-06 (notas para el usuario)</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    .container { max-width: 860px; margin: 0 auto; }
+    .header { margin-bottom: 2rem; }
+    .header-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+    .pulse-dot { width: 12px; height: 12px; background: #34d399; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.025em; }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-left: 1.75rem; }
+    .badge {
+      display: inline-block; background: rgba(52, 211, 153, 0.15); color: #34d399;
+      border: 1px solid #34d399; border-radius: 999px; padding: 0.15rem 0.75rem;
+      font-size: 0.7rem; font-weight: 600; margin-left: 0.75rem; vertical-align: middle;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.5); border-radius: 0.75rem; border: 1px solid #1e293b;
+      padding: 1.5rem; margin-bottom: 1.25rem;
+    }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+    .card-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    .card-dot.slate { background: #94a3b8; }
+    .card h3 { font-size: 0.9rem; font-weight: 600; }
+    .card p { color: #cbd5e1; font-size: 0.8rem; line-height: 1.6; margin-bottom: 0.75rem; }
+    .card ul { list-style: none; color: #94a3b8; font-size: 0.78rem; }
+    .card li { margin-bottom: 0.6rem; line-height: 1.5; padding-left: 1rem; position: relative; }
+    .card li::before { content: '•'; position: absolute; left: 0; color: #475569; }
+    .card li strong { color: #e2e8f0; }
+    .card li span.nuevo { color: #34d399; font-weight: 600; }
+    .footer { text-align: center; margin-top: 1.5rem; color: #475569; font-size: 0.7rem; line-height: 1.6; }
+    code { background: rgba(30, 41, 59, 0.6); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.75em; color: #a5f3fc; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-row">
+        <div class="pulse-dot"></div>
+        <h1>el-bunker — Parche del 6 de agosto de 2026</h1>
+        <span class="badge">notas para el usuario</span>
+      </div>
+      <p class="subtitle">Qué cambia con este parche, en lenguaje normal. Para Edu y David.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot cyan"></div>
+        <h3>Lo que ya notabais antes de este parche (recordatorio)</h3>
+      </div>
+      <ul>
+        <li><strong>El vault ya muestra el contenido real:</strong> 527 fotos en 2 bloques (2021 y 2022). Antes la app solo enseñaba las 200 primeras; desde el 2 de agosto se ven todas.</li>
+        <li><strong>Las canciones repetidas desaparecieron</strong> (1 de agosto): se limpiaron 30 duplicados exactos.</li>
+        <li><strong>El login con Google ya no pide acceso a Drive</strong>: entrar es más rápido y con menos permisos.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot emerald"></div>
+        <h3>Qué cambia con este parche <span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;">por dentro</span></h3>
+      </div>
+      <p>Este parche es de cimientos: no cambia ninguna pantalla todavía, pero deja preparado el terreno para lo que viene.</p>
+      <ul>
+        <li><span class="nuevo">NUEVO</span> — <strong>Primera piedra del panel de administración:</strong> la base de las pantallas de gestión (tablas de recursos, formularios, diálogos de confirmación, permisos de administrador) queda integrada y probada. Aún no se ve en la app: es el esqueleto.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Clasificación automática lista en el servidor:</strong> la app ya puede marcar entradas como clasificadas y las imágenes quedan preparadas para mostrarse con un placeholder difuminado mientras cargan.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Protección de datos al subir:</strong> el servidor ahora valida que los títulos sean obligatorios y que los tipos de contenido sean los permitidos.</li>
+        <li><strong>Arreglos internos:</strong> las pruebas del sistema volvieron a medir solo el código real (antes contaban cada prueba varias veces), y se corrigió una comprobación que no comprobaba nada.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot amber"></div>
+        <h3>Qué viene en los próximos parches</h3>
+      </div>
+      <ul>
+        <li><strong>El panel de administración visible</strong> (conexión del esqueleto con las rutas reales).</li>
+        <li><strong>La pantalla de inicio rediseñada para el escritorio</strong>: títulos sin recortar y mejor aprovechamiento del espacio.</li>
+        <li><strong>Móvil y PWA</strong>: prueba real en pantalla pequeña y la app instalable con funcionamiento sin conexión.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot slate"></div>
+        <h3>Nota de despliegue</h3>
+      </div>
+      <p>Este parche llega a la web con la actualización de hoy (6 de agosto). La parte del servidor (API) se actualiza en un paso aparte, cuando se cierre la integración de la siguiente ola de trabajo.</p>
+    </div>
+
+    <p class="footer">
+      el-bunker • bóveda de memoria + reproductor • parche 2026-08-06<br>
+      Versión del grafo del flujo: <a href="grafo-app.html" style="color:#22d3ee;">grafo-app.html</a>
+    </p>
+  </div>
+</body>
+</html>
