@@ -45,3 +45,6 @@ docs.zip
 __pycache__/
 tools/__pycache__/
 .worktrees/
+
+# Carpeta externa de trabajo del agente (nunca al repo)
+.trabajo/
