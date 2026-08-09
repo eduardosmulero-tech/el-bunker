@@ -1,0 +1,72 @@
+[
+  {
+    "id": "gaming",
+    "namespace": "music",
+    "label": "GAMING",
+    "icon": "◉",
+    "color": "#00ffcc",
+    "created_by": "system",
+    "sort_order": 0,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  },
+  {
+    "id": "420_chill",
+    "namespace": "music",
+    "label": "420",
+    "icon": "◎",
+    "color": "#aaff44",
+    "created_by": "system",
+    "sort_order": 1,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  },
+  {
+    "id": "dnb",
+    "namespace": "music",
+    "label": "DnB",
+    "icon": "⚡",
+    "color": "#ff6b35",
+    "created_by": "system",
+    "sort_order": 2,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  },
+  {
+    "id": "romantiqueo",
+    "namespace": "music",
+    "label": "♥",
+    "icon": "♥",
+    "color": "#d966ff",
+    "created_by": "system",
+    "sort_order": 3,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  },
+  {
+    "id": "viajes",
+    "namespace": "vault",
+    "label": "VIAJES",
+    "icon": "✈",
+    "color": "#00ccff",
+    "created_by": "system",
+    "sort_order": 4,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  },
+  {
+    "id": "familia",
+    "namespace": "vault",
+    "label": "FAMILIA",
+    "icon": "◈",
+    "color": "#ffcc00",
+    "created_by": "system",
+    "sort_order": 5,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  },
+  {
+    "id": "cocina",
+    "namespace": "vault",
+    "label": "COCINA",
+    "icon": "◉",
+    "color": "#ff8844",
+    "created_by": "system",
+    "sort_order": 6,
+    "created_at": "2021-03-22T00:00:00.000Z"
+  }
+]

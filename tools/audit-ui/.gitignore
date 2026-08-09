@@ -1,0 +1,3 @@
+# Evidencia regenerable del pase de auditoría (AUD-1): audit.json + capturas.
+# Cada ejecución de `npm run audit:ui` regenera tools/audit-ui/report/ entero.
+report/

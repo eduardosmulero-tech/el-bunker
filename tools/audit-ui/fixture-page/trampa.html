@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Página trampa</title>
+<style>
+body { min-width: 600px; }
+h1 { width: 100px; overflow: hidden; white-space: nowrap; }
+button { width: 20px; height: 20px; }
+</style>
+</head>
+<body>
+<h1>Este título se corta a cien píxeles para simular un texto truncado</h1>
+<button aria-label="Botón trampa 20x20"></button>
+<script>console.error("error de consola intencional para la auditoría");</script>
+</body>
+</html>

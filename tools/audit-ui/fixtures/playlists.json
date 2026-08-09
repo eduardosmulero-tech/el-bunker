@@ -1,0 +1,29 @@
+[
+  {
+    "id": "pl-001",
+    "name": "LA BANDA SONORA DEL PRIMER AÑO — LA QUE SONABA EN EL COCHE Y EN LA COCINA",
+    "description": "Lo que sonaba cuando todo era nuevo.",
+    "created_by": "edu",
+    "sort_order": 0,
+    "created_at": "2021-06-01T00:00:00.000Z",
+    "updated_at": "2021-06-01T00:00:00.000Z"
+  },
+  {
+    "id": "pl-002",
+    "name": "Para llorar en la ducha (y luego reírnos)",
+    "description": "",
+    "created_by": "edu",
+    "sort_order": 1,
+    "created_at": "2022-02-14T00:00:00.000Z",
+    "updated_at": "2022-02-14T00:00:00.000Z"
+  },
+  {
+    "id": "pl-003",
+    "name": "DnB hasta que el vecino llame a la puerta",
+    "description": "Volumen de riesgo.",
+    "created_by": "edu",
+    "sort_order": 2,
+    "created_at": "2022-09-01T00:00:00.000Z",
+    "updated_at": "2022-09-01T00:00:00.000Z"
+  }
+]

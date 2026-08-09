@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "event_type": "track_play",
+    "user_id": "edu",
+    "entity_type": "track",
+    "entity_id": "trk-003",
+    "payload": "{\"track_id\": \"trk-003\", \"title\": \"Midnight City\"}",
+    "created_at": "2026-07-01T20:00:00.000Z"
+  },
+  {
+    "id": 2,
+    "event_type": "track_play",
+    "user_id": "david",
+    "entity_type": "track",
+    "entity_id": "trk-001",
+    "payload": "{\"track_id\": \"trk-001\", \"title\": \"\\uff2c\\uff41\\uff44\\uff59\\uff0c\\uff28\\uff45\\uff41\\uff52 \\uff2d\\uff45 \\uff34\\uff4f\\uff4e\\uff49\\uff47\\uff48\\uff54\"}",
+    "created_at": "2026-07-01T21:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "event_type": "entry_created",
+    "user_id": "edu",
+    "entity_type": "entry",
+    "entity_id": "ent-011",
+    "payload": "{\"entry_id\": \"ent-011\", \"title\": \"A\"}",
+    "created_at": "2026-07-02T10:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "event_type": "track_play",
+    "user_id": "edu",
+    "entity_type": "track",
+    "entity_id": "trk-006",
+    "payload": "{\"track_id\": \"trk-006\", \"title\": \"\\ud83d\\udc68\\u200d\\ud83d\\udc69\\u200d\\ud83d\\udc67\\u200d\\ud83d\\udc66 La canci\\u00f3n de la boda de los primos\"}",
+    "created_at": "2026-07-02T12:30:00.000Z"
+  },
+  {
+    "id": 5,
+    "event_type": "drop_sent",
+    "user_id": "david",
+    "entity_type": "drop",
+    "entity_id": "drp-002",
+    "payload": "{\"drop_id\": \"drp-002\", \"memory\": \"La boda de los primos.\"}",
+    "created_at": "2026-07-03T09:00:00.000Z"
+  },
+  {
+    "id": 6,
+    "event_type": "track_play",
+    "user_id": "edu",
+    "entity_type": "track",
+    "entity_id": "trk-008",
+    "payload": "{\"track_id\": \"trk-008\", \"title\": \"The Longest Wave\"}",
+    "created_at": "2026-07-03T22:15:00.000Z"
+  },
+  {
+    "id": 7,
+    "event_type": "track_skip",
+    "user_id": "edu",
+    "entity_type": "track",
+    "entity_id": "trk-002",
+    "payload": "{\"track_id\": \"trk-002\"}",
+    "created_at": "2026-07-04T08:00:00.000Z"
+  },
+  {
+    "id": 8,
+    "event_type": "entry_created",
+    "user_id": "edu",
+    "entity_type": "entry",
+    "entity_id": "ent-010",
+    "payload": "{\"entry_id\": \"ent-010\", \"title\": \"Primer concierto juntos\"}",
+    "created_at": "2026-07-05T19:45:00.000Z"
+  }
+]
