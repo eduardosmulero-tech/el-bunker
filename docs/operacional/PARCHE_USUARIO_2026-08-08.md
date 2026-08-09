@@ -39,5 +39,5 @@
 
 ## Nota de despliegue
 - Frontend (Vercel): este parche llega por push a `master` el 8-ago.
-- API (Cloudflare Worker): el código del worker va integrado en el mismo push; el
-  despliegue a Cloudflare se hace en un paso aparte.
+- API (Cloudflare Worker): desplegada el 8-ago (version `8a8c839a`) — `/api/session` y el
+  prefijo `/api/admin` verificados vivos en produccion, canje de clave ADR-028 operativo.
