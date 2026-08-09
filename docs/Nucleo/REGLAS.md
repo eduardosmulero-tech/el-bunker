@@ -53,6 +53,13 @@ Loop es triestado.
 - **Las specs de `docs/spec/` no son historia.** Antes de escribir un diseño, un plan o un ADR, se
   lee `docs/spec/INDEX.md` (lo exige el `CANON.manifest`) y desde ahí **solo la spec del área que
   se toca**. No hace falta leerlas las cuatro; sí hace falta abrir la que corresponde.
+- **Clasificación de auditoría:** `docs/spec/` es `U3_PATH_DOCS + LIVE_SPEC` y nunca puede recibir
+  automáticamente el motivo "documentación histórica fuera del alcance funcional". `docs/legacy/`,
+  `docs/sesiones/`, `docs/historico/`, `docs/planes/` y `docs/disenos/` son históricos o de trabajo
+  salvo declaración explícita de vigencia. `docs/Nucleo/`, `docs/Arquitectura/` y `docs/operacional/`
+  se clasifican por documento: contratos, reglas, estado, índices y políticas vigentes se leen;
+  actas e informes fechados se conservan como histórico. Esta política corrige el consumidor futuro;
+  no reescribe auditorías anteriores.
 - **Iconografía:** todo icono sale de `src/core/ui/Icon.jsx`. Cero emoji y cero caracteres unicode
   como icono en `src/`, incluidos los objetos de configuración de `tokens.js`. El mapa
   `LEGACY_ICON_NAMES` es un puente cerrado para datos antiguos: ningún componente nuevo se apoya en

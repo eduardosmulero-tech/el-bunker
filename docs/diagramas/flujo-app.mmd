@@ -12,23 +12,25 @@ flowchart TB
         VAULT["VAULT<br/>galería 6 modos · subir fotos"]
         LAB["MUSIC LAB<br/>reproductor"]
         CAPS["CAPSULES<br/>fotos + música + texto"]
+        PANEL["PANEL ADMIN<br/>/admin · terminal de mando"]
     end
 
     subgraph S_API["API — Cloudflare Worker"]
-        API["/api/auth · /api/entries · /api/tracks<br/>/api/music · /api/classify · /api/admin"]
+        API["/api/auth · /api/session · /api/entries · /api/tracks<br/>/api/music · /api/classify · /api/admin"]
     end
 
     subgraph S_DAT["DATOS"]
-        D1["D1 — catálogo<br/>1.117 canciones · 527 fotos · eventos"]
+        D1["D1 — catálogo<br/>529 canciones activas · 527 fotos · eventos"]
         R2["R2 — archivos<br/>MP3 · fotos · vídeos · documentos"]
     end
 
-    FUT["PRÓXIMOS PARCHES<br/>panel admin visible · HUD desktop · móvil real + PWA"]
+    FUT["PRÓXIMOS PARCHES<br/>HUD desktop · móvil real + PWA · F5 /admin con SW"]
 
     EDU --> LOGIN
     LOGIN -->|JWT 24 h| APP
     APP --> VAULT & LAB & CAPS
-    VAULT & LAB & CAPS --> API
+    APP -->|ruta /admin| PANEL
+    VAULT & LAB & CAPS & PANEL --> API
     API --> D1
     API --> R2
     R2 -.->|fotos · música| APP
@@ -43,7 +45,7 @@ flowchart TB
 
     class EDU external
     class LOGIN security
-    class APP,VAULT,LAB,CAPS frontend
+    class APP,VAULT,LAB,CAPS,PANEL frontend
     class API backend
     class D1,R2 data
     class FUT future

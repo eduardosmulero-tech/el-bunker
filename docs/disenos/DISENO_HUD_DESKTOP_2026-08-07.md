@@ -516,11 +516,13 @@ sistema, y esta franja lo es entera. Es la única zona del marco que no cambia d
 cambia la música, y esa quietud es justo lo que la hace legible como instrumento.
 
 **Cifras: se leen del store, nunca se escriben en el código.** Aviso de dato, sin resolverlo aquí:
-el canon (`ESTADO.md:43`, `ESTADO.md:72`) dice 1.117 tracks y 527 entradas, mientras que la app
-viva del 6-ago muestra `TRACKS [529]` (`dump-desktop-musiclab.json`, captura desktop-3). No sé cuál
-es correcta y **no la invento**. Quien ejecute debe comprobar de dónde sale ese 529 antes de
-cablear ningún contador; si resulta que el contador de la pestaña cuenta otra cosa, es un bug
-aparte y merece su propia tarjeta.
+el canon actual (`ESTADO.md`) dice **529 tracks activos** y 527 entradas. El baseline histórico
+pre-purga era 1.117 filas totales, de las que 588 estaban soft-deleted; la purga del 7-ago dejó
+529 activos, 0 soft-deleted y 0 huérfanos. La app viva del 6-ago muestra `TRACKS [529]`
+(`dump-desktop-musiclab.json`, captura desktop-3), por lo que el contador es correcto. El
+snapshot previo es `tools/snapshots/d1_pre_purga_softdeleted_tracks_20260807.sql`, SHA-256
+`aded972277e786495141c5c55fb6c37c005ba380156c9f052979556cfc3e961a`. El dock debe mostrar el
+recuento actual leído del store; 1.117 solo puede aparecer al describir el baseline histórico.
 
 ---
 
@@ -1129,8 +1131,10 @@ identificador.
 - No toca el móvil. Por debajo de 1280 no se mueve nada, y hay una verificación dedicada a probarlo.
 - No añade un icono nuevo al registro: los 20 que hacen falta ya están.
 - No propone modo claro, ni densidad configurable global, ni raíl plegable, ni multi-selección.
-- No resuelve la discrepancia de 529 contra 1.117 tracks: la señala para que la resuelva quien
-  tenga el dato. Lectura de Edu el 7-ago: 529 son las canciones y esa lista quizá esté contando
+- Resuelve la discrepancia de 529 contra 1.117 tracks: 529 son los activos actuales y 1.117 era
+  el total histórico pre-purga (588 soft-deleted). La purga del 7-ago y su snapshot están
+  documentados en `docs/Nucleo/ESTADO.md`; no se debe presentar el baseline histórico como
+  biblioteca reproducible actual.
   las fotos (527). Sigue siendo diagnóstico pendiente, no dato cerrado.
 - **No enmienda ninguna spec por su cuenta.** Las cuatro enmiendas que necesita (§2.3 y ADR-029)
   están escritas para que las firme Edu. Si no las firma, este diseño no se ejecuta: contradice la

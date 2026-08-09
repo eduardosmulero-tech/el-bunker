@@ -43,6 +43,8 @@ La clasificación será determinista y prioritaria:
 3. `U1_CODE_EXT`: `.js`, `.jsx` o `.css` bajo `src/`, `workers/` o `public/`;
 4. `U2_REST`: todo archivo incluido restante.
 
+La clasificación de lectura de `docs/spec/` es `U3_PATH_DOCS + LIVE_SPEC` (docs/Nucleo/REGLAS.md:53-56 y CANON.manifest:29-41): las especificaciones de `docs/spec/` son canon vivo y se clasifican `LECTURA COMPLETA` (se leen: el `INDEX.md` y la spec del área que se toca); nunca pueden recibir `MUESTREO` con el motivo «documentación histórica fuera del alcance funcional». La enumeración de carpetas históricas (`legacy/`, `sesiones/`, `historico/`, `planes/`, `disenos/`) NO incluye `spec/`. Esta cláusula corrige el consumidor futuro; no reescribe auditorías anteriores.
+
 El total, los subtotales y las reglas se calcularán desde T0. No se fija aquí una cifra esperada: el informe deberá imprimir una única ecuación `TOTAL_T0 = U1 + U2 + U3`, repetir exactamente la misma ecuación en inventario, tabla, checklist, validador y manifiesto, y demostrar que todas las referencias a conteos coinciden. Si aparecen cifras históricas como 215, 216 o 217, solo podrán aparecer dentro de una sección de antecedentes claramente etiquetada; nunca como total vigente.
 
 El validador comprobará:

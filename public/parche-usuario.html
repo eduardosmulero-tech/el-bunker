@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>el-bunker — Parche 2026-08-06 (notas para el usuario)</title>
+  <title>el-bunker — Parche 2026-08-08 (notas para el usuario)</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +54,7 @@
     <div class="header">
       <div class="header-row">
         <div class="pulse-dot"></div>
-        <h1>el-bunker — Parche del 6 de agosto de 2026</h1>
+        <h1>el-bunker — Parche del 8 de agosto de 2026</h1>
         <span class="badge">notas para el usuario</span>
       </div>
       <p class="subtitle">Qué cambia con este parche, en lenguaje normal. Para Edu y David.</p>
@@ -63,26 +63,38 @@
     <div class="card">
       <div class="card-header">
         <div class="card-dot cyan"></div>
-        <h3>Lo que ya notabais antes de este parche (recordatorio)</h3>
+        <h3>Lo que ya notabais antes (recordatorio)</h3>
       </div>
       <ul>
-        <li><strong>El vault ya muestra el contenido real:</strong> 527 fotos en 2 bloques (2021 y 2022). Antes la app solo enseñaba las 200 primeras; desde el 2 de agosto se ven todas.</li>
+        <li><strong>El vault muestra el contenido real:</strong> 527 fotos en 2 bloques (2021 y 2022).</li>
         <li><strong>Las canciones repetidas desaparecieron</strong> (1 de agosto): se limpiaron 30 duplicados exactos.</li>
-        <li><strong>El login con Google ya no pide acceso a Drive</strong>: entrar es más rápido y con menos permisos.</li>
+        <li><strong>El login con Google ya no pide acceso a Drive</strong> (1 de agosto).</li>
       </ul>
     </div>
 
     <div class="card">
       <div class="card-header">
         <div class="card-dot emerald"></div>
-        <h3>Qué cambia con este parche <span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;">por dentro</span></h3>
+        <h3>Qué cambia con este parche <span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;">se ve en la app</span></h3>
       </div>
-      <p>Este parche es de cimientos: no cambia ninguna pantalla todavía, pero deja preparado el terreno para lo que viene.</p>
       <ul>
-        <li><span class="nuevo">NUEVO</span> — <strong>Primera piedra del panel de administración:</strong> la base de las pantallas de gestión (tablas de recursos, formularios, diálogos de confirmación, permisos de administrador) queda integrada y probada. Aún no se ve en la app: es el esqueleto.</li>
-        <li><span class="nuevo">NUEVO</span> — <strong>Clasificación automática lista en el servidor:</strong> la app ya puede marcar entradas como clasificadas y las imágenes quedan preparadas para mostrarse con un placeholder difuminado mientras cargan.</li>
-        <li><span class="nuevo">NUEVO</span> — <strong>Protección de datos al subir:</strong> el servidor ahora valida que los títulos sean obligatorios y que los tipos de contenido sean los permitidos.</li>
-        <li><strong>Arreglos internos:</strong> las pruebas del sistema volvieron a medir solo el código real (antes contaban cada prueba varias veces), y se corrigió una comprobación que no comprobaba nada.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>El panel de administración ya se ve:</strong> en <code>/admin</code> se abre la Terminal de Mando para gestionar el contenido (canciones, fotos, listas, cápsulas) con permisos de administrador. Es la integración completa de la Ola 2: el esqueleto del parche anterior, conectado con las rutas reales del servidor.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Las fotos se editan y eliminan desde el visor:</strong> al abrir una foto hay botón de editar (título, texto, etiquetas, era...) y botón de eliminar con confirmación. Antes solo se podía desde la lista.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Modo Visita:</strong> se puede entrar con una clave (sin cuenta de Google) para visitar.</li>
+        <li><strong>El login se ve más limpio:</strong> el botón de acceder perdió los cuadrados decorativos de las esquinas y los avisos de error se ven centrados.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-dot violet"></div>
+        <h3>Por dentro <span class="badge" style="background:rgba(167,139,250,0.15);color:#a78bfa;">no cambia ninguna pantalla</span></h3>
+      </div>
+      <ul>
+        <li><strong>Retirada completa del código de Drive</strong>: ya no queda rastro de la época en que la app usaba Drive como almacén.</li>
+        <li><strong>Clasificación y marcado en lote</strong> en el servidor, con el endpoint de sesión de visita incluido.</li>
+        <li><strong>Herramienta de auditoría de la interfaz:</strong> un pase automático que mide textos truncados, desbordamientos, errores de consola y fallos de red en cada pantalla (24 hallazgos reproducibles en su primer pase).</li>
+        <li><strong>Pruebas de regresión nuevas</strong> (el cliente de datos ya no puede volver a emitir cabeceras malformadas) y la auditoría del canon del proyecto ahora lee las especificaciones vivas, que antes se saltaba.</li>
       </ul>
     </div>
 
@@ -92,9 +104,9 @@
         <h3>Qué viene en los próximos parches</h3>
       </div>
       <ul>
-        <li><strong>El panel de administración visible</strong> (conexión del esqueleto con las rutas reales).</li>
-        <li><strong>La pantalla de inicio rediseñada para el escritorio</strong>: títulos sin recortar y mejor aprovechamiento del espacio.</li>
-        <li><strong>Móvil y PWA</strong>: prueba real en pantalla pequeña y la app instalable con funcionamiento sin conexión.</li>
+        <li><strong>La pantalla de inicio rediseñada para el escritorio</strong>: títulos sin recortar y mejor aprovechamiento del espacio (diseño firmado, ejecución pendiente).</li>
+        <li><strong>Móvil y PWA</strong>: prueba real en pantalla pequeña (390x844) y la app instalable con funcionamiento sin conexión.</li>
+        <li><strong>Recarga de /admin con la app instalada</strong>: comprobación de que la Terminal de Mando sobrevive a un F5 con el servicio en segundo plano.</li>
       </ul>
     </div>
 
@@ -103,11 +115,11 @@
         <div class="card-dot slate"></div>
         <h3>Nota de despliegue</h3>
       </div>
-      <p>Este parche llega a la web con la actualización de hoy (6 de agosto). La parte del servidor (API) se actualiza en un paso aparte, cuando se cierre la integración de la siguiente ola de trabajo.</p>
+      <p>Este parche llega a la web con la actualización de hoy (8 de agosto). El código del servidor (API) va integrado en la misma actualización; el despliegue del servidor en Cloudflare se hace en un paso aparte.</p>
     </div>
 
     <p class="footer">
-      el-bunker • bóveda de memoria + reproductor • parche 2026-08-06<br>
+      el-bunker • bóveda de memoria + reproductor • parche 2026-08-08<br>
       Versión del grafo del flujo: <a href="grafo-app.html" style="color:#22d3ee;">grafo-app.html</a>
     </p>
   </div>

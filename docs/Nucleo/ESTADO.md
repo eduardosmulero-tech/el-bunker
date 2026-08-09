@@ -76,15 +76,18 @@ coordine y cierre), B1 con diseño entregado y ejecución pendiente.
 - **Specs funcionales incorporadas al canon (7-ago):** `docs/spec/INDEX.md` entra en el
   `[requiere]` del grupo 2 del `CANON.manifest`. Motivo: `docs/spec/` no estaba en ningún grupo y
   el diseño de la HUD se escribió sin leerlo (3 contradicciones, 10 correcciones y 11 huecos al
-  cruzarlo). Queda abierto corregir la regla `U3_PATH_DOCS` de la plantilla de auditoría, que
-  clasifica `spec/` como histórico (`t_54f1d39e`).
+  cruzarlo). **CANON-1 resuelto (8-ago):** `docs/spec/` queda declarado como especificación viva
+  (`U3_PATH_DOCS + LIVE_SPEC`) en `REGLAS.md`; legacy/sesiones/historico/planes/disenos quedan
+  históricos o de trabajo. Los informes fechados no se reescriben; el hook externo debe sincronizar
+  esta regla.
 - **Tarjetas nuevas sin dueño (7-ago):** `t_69b7d224` visualizador a pantalla completa roto
   (reporte de Edu; hipótesis: `AudioContext` sin limpieza en `AudioVisualizer.jsx`),
-  `t_717572c4` el contador `TRACKS [529]` no cuadra con el canon, `t_54f1d39e` canon/auditoría.
+  `t_54f1d39e` canon/auditoría. `t_717572c4` queda resuelta: `TRACKS [529]` cuenta activos.
 - Aceptación móvil real (390x844) y PWA instalada/offline/update en dispositivo físico; revisar modales y controles táctiles. Sin sustituto de navegador headless.
 - Confirmar EntryLightbox en móvil (t_9badd928).
 - **7403 RESUELTO (4-ago):** la query remota D1 funciona (files=527 verificado); el fallo de G2-1J fue transitorio. **Huérfano G2 RESUELTO (4-ago):** `prueba_dod.jpg` (c4c564a9, residuo de DoD 2-ago, sin objeto R2) borrado con OK de Edu; rollback en `C:\proyectos\.trabajo\orphan_rollback.sql`. El residuo R2 `c1f11fad…` pendiente de verificar por API (el CLI no lista objetos).
-- **Backfill G2 HECHO (4-ago, autorizado por Edu):** `file_references` poblada — 1.054 referencias (527 files × 2: files_fk + entry_content_json), 0 colgantes, 0 duplicados, baseline intacto (files 527 / entries 527 / tracks 1.117). Snapshot `tools/snapshots/d1_pre_g2_backfill_20260804.sql`; rollback fuera del repo. Detalle en acta G2-1M.
+- **Backfill G2 HECHO (4-ago, autorizado por Edu):** `file_references` poblada — 1.054 referencias (527 files × 2: files_fk + entry_content_json), 0 colgantes, 0 duplicados. Baseline histórico pre-purga: files 527 / entries 527 / tracks 1.117. Snapshot `tools/snapshots/d1_pre_g2_backfill_20260804.sql`; rollback fuera del repo. Detalle en acta G2-1M.
+- **Purga de tracks (7-ago):** 589 soft-deleted eliminados y 30 `track_tags` en cascada; quedan 529 tracks activos, 0 soft-deleted y 0 huérfanos. Snapshot previo `tools/snapshots/d1_pre_purga_softdeleted_tracks_20260807.sql`; SHA-256 `aded972277e786495141c5c55fb6c37c005ba380156c9f052979556cfc3e961a`.
 - Código Drive facade/fallback: retirada solo tras evidencia externa y decisión de compatibilidad. Verificado 4-ago: 0 tracks con drive_file_id, 0 consumidores del facade en src.
 - **R11 HECHO (4-ago):** validaciones POST (BUG-5) en tracks (title requerido), drops (to_user whitelist admin/edu/david), events (event_type en whitelist de 28 tipos emitidos) y entries (type saneado). Helper `workers/utils/validation.js` + tests. Suite 141/141.
 - Revisión humana del plan completo y gate final antes de deploy.

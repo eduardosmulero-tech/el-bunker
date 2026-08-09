@@ -144,4 +144,6 @@ Esta sección prevalece sobre cualquier uso subjetivo de “documental” en el 
 
 El manifiesto de inventario debe incluir para cada ruta la regla objetiva que la asignó (`U3_PATH_DOCS`, `U3_EXT_MD_TXT`, `U1_CODE_EXT` o `U2_REST`). El validador debe comprobar que no existen rutas sin regla, con más de una regla o con una clasificación distinta de esta prioridad. Cualquier discrepancia produce `FAIL / INVALIDADA`.
 
+La clasificación de lectura de `docs/spec/` es `U3_PATH_DOCS + LIVE_SPEC` (docs/Nucleo/REGLAS.md:53-56 y CANON.manifest:29-41): las especificaciones de `docs/spec/` son canon vivo y se clasifican `LECTURA COMPLETA` (se leen: el `INDEX.md` y la spec del área que se toca); nunca pueden recibir `MUESTREO` con el motivo «documentación histórica fuera del alcance funcional». La enumeración de carpetas históricas (`legacy/`, `sesiones/`, `historico/`, `planes/`, `disenos/`) NO incluye `spec/`. Esta cláusula corrige el consumidor futuro; no reescribe auditorías anteriores.
+
 *Fin del contrato.*

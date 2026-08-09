@@ -33,7 +33,10 @@ docs/Nucleo/ESTADO.md
 # cruzarlo aparecieron 3 contradicciones, 10 correcciones y 11 huecos. Y la auditoria que se
 # declaro al 100% del canon clasifico docs/spec/ como "documentacion historica fuera del
 # alcance funcional" (auditoria_total_2026-08-02_REPETIDA_9_HERMES.md:185-192, regla
-# U3_PATH_DOCS) — esa regla sigue pendiente de corregir, tarjeta t_54f1d39e.
+# U3_PATH_DOCS) — la clasificación vigente está corregida en docs/Nucleo/REGLAS.md:
+# docs/spec/ es especificación funcional viva; legacy/sesiones/historico/planes/disenos son
+# históricos o de trabajo y no sustituyen a la fuente normativa. Los informes antiguos que
+# aplicaron la regla anterior se conservan intactos.
 #
 # Entra el INDICE, no las cuatro specs: son ~55 KB y obligarlas todas por cada sesion de
 # diseño seria un peaje absurdo. El indice es una pagina con tabla de enrutado (que area ->
