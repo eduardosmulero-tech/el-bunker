@@ -461,7 +461,7 @@ const ErrorBanner = ({ message }) => (
       textShadow: `0 0 8px ${RED}66`,
     }}
   >
-    <div className="flex items-center justify-center gap-2">
+    <div className="inline-flex items-center justify-center gap-2">
       <Icon name="alert" size={14} decorative />
       <span>{message}</span>
     </div>
