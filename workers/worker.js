@@ -11,6 +11,7 @@ import { checkRateLimit } from "./utils/rate-limit.js";
 
 import handleHealth from "./routes/health.js";
 import handleAuth from "./routes/auth.js";
+import handleSession from "./routes/session.js";
 import handleTracks from "./routes/tracks.js";
 import handleDrops from "./routes/drops.js";
 import handlePlaylists from "./routes/playlists.js";
@@ -34,6 +35,7 @@ import handleClassify from "./routes/classify.js";
 export const ROUTES = [
   ["/api/health",          handleHealth,     false],
   ["/api/auth",            handleAuth,       false],
+  ["/api/session",         handleSession,    true],
   ["/api/tracks",          handleTracks,     true],
   ["/api/drops",           handleDrops,      true],
   ["/api/playlists",       handlePlaylists,  true],

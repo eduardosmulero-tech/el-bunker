@@ -16,21 +16,24 @@ import {
   MIN_KEY_LENGTH,
 } from "../utils/access-keys.js";
 
-/** Usuario completo desde D1 — fuente única de identidad (schema.sql: tabla users). */
-async function loadUser(env, userId) {
+/** Usuario completo desde D1 — fuente única de identidad (schema.sql: tabla users).
+ *  Exportado para session.js (A2): el Modo Visita reutiliza el emisor de ADR-028. */
+export async function loadUser(env, userId) {
   return env.DB.prepare(
     "SELECT id, email, name, role FROM users WHERE id = ?1"
   ).bind(userId).first();
 }
 
-/** Firma el JWT y registra la emisión en events (ADR-019). Único punto de firma. */
-async function issueToken(env, request, user, method) {
+/** Firma el JWT y registra la emisión en events (ADR-019). Único punto de firma.
+ *  Exportado para session.js (A2): extraClaims permite añadir el claim `visit`
+ *  (diseño Modo Visita §5). Los emisores de login/token no cambian ({} por defecto). */
+export async function issueToken(env, request, user, method, extraClaims = {}) {
   const secret = env.JWT_SECRET;
   if (!secret && env.ENVIRONMENT === "production") {
     return err("JWT_SECRET not configured", 500);
   }
   const token = await signJWT(
-    { sub: user.id, email: user.email, method },
+    { sub: user.id, email: user.email, method, ...extraClaims },
     secret || "dev-secret-change-me"
   );
   await emitEvent(env, "auth_login", user.id, "session", null, {
@@ -38,7 +41,7 @@ async function issueToken(env, request, user, method) {
     ip: request.headers.get("CF-Connecting-IP") || "unknown",
     ua: (request.headers.get("User-Agent") || "").slice(0, 200),
   });
-  return json({ token, user });
+  return json({ token, user, ...extraClaims });
 }
 
 /** POST /api/auth/login — OAuth2 de Google. Flujo de David: sin cambios. */

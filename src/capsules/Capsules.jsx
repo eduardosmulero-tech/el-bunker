@@ -123,7 +123,10 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       {/* Error feedback — G4: vibe-aware */}
       {fetchError && !loadingEvents && (
         <div className="py-2 px-3 text-xs opacity-40 text-center" style={{ color: accent, fontFamily: FONT_MONO }}>
-          <Icon name="alert" size={14} label="Error" /> {fetchError}
+          <span className="inline-flex items-center justify-center gap-2">
+            <Icon name="alert" size={14} label="Error" />
+            <span>{fetchError}</span>
+          </span>
         </div>
       )}
 

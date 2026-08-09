@@ -27,6 +27,11 @@ describe("MusicPayloadBuilder", () => {
     expect(buildEditPayload({ tag: null })).toEqual({ tag_id: null });
   });
 
+  it("rejects the retired Drive metadata field", () => {
+    expect(buildEditPayload({ title: "Track", drive_file_id: "legacy-drive-id" }))
+      .toEqual({ title: "Track" });
+  });
+
   it("normalizes a created track without retaining the File object", () => {
     const trackData = { title: "Nuevo", file: { name: "x.mp3" }, tag: "rock" };
     const created = { id: "track-1", tag_id: "rock" };

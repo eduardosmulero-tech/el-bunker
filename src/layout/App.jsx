@@ -13,6 +13,8 @@ import { ACID, BG, FONT_MONO as FONT } from "../tokens";
 import { Icon } from "../core/ui";
 import { GlobalLoadingScreen, ErrorScreen } from "./BootScreen";
 import { AuthenticatedApp, UnauthorizedScreen } from "./TabShell";
+import Contenido from "../admin/screens/Contenido";
+import { createApiClient } from "../admin/core";
 
 // ─── S117: GLOBAL ERROR BOUNDARY ────────────────────────────
 class GlobalErrorBoundary extends Component {
@@ -65,6 +67,17 @@ class GlobalErrorBoundary extends Component {
   }
 }
 
+// ─── ADMIN PANEL (INT-Ola2, P12) ─────────────────────────────
+// Ruta aparte /admin, fuera de los 3 tabs (ADR-017 🔒-4). El panel se monta
+// ANTES del shell de tabs, por location.pathname, no dentro de él. La
+// autorización la decide el Worker (B2, requireAdmin): el frontend esconde,
+// no protege (plan OLA2 §1).
+const AdminPanel = () => {
+  const { user, jwtToken } = useVault();
+  const client = createApiClient({ getToken: () => jwtToken });
+  return <Contenido client={client} user={user} />;
+};
+
 // ─── APP CORE (consumes VaultContext) ────────────────────────
 const AppCore = () => {
   const { authStatus, bootPhase, bootError, isLoading, login, loginWithAccessKey, user, db, jwtToken } = useVault();
@@ -92,6 +105,17 @@ const AppCore = () => {
 
   const tracks = db?.music_lab?.tracks ?? [];
   const tags   = db?.music_lab?.tags   ?? [];
+
+  // INT-Ola2 (P12): ruta aparte /admin, fuera de los 3 tabs (ADR-017 🔒-4).
+  // El panel se monta ANTES del shell de tabs, por location.pathname.
+  if (window.location.pathname.startsWith("/admin")) {
+    return (
+      <ToastProvider>
+        <AdminPanel />
+      </ToastProvider>
+    );
+  }
+
   return (
     <PlayerProvider userId={user?.id ?? null} tracks={tracks} tags={tags} jwtToken={jwtToken}>
       <ToastProvider>

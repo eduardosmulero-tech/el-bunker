@@ -11,6 +11,14 @@ import { emitEvent } from "../utils/events.js";
 const POLL_TIMEOUT = 20000;  // 20s max
 const POLL_INTERVAL = 1000;  // Check every 1s
 
+function ownsSession(session, userId) {
+  return session?.host_user_id === userId || session?.guest_user_id === userId;
+}
+
+function canJoinSharedSession(userId) {
+  return userId === "edu" || userId === "david";
+}
+
 export default async function handleSync(request, env, url, userId) {
   if (!userId) return err("Unauthorized", 401);
 
@@ -57,6 +65,11 @@ export default async function handleSync(request, env, url, userId) {
     if (!sessionId) return json({ active: false });
 
     const deadline = Date.now() + POLL_TIMEOUT;
+    const initialSession = await env.DB.prepare(
+      "SELECT host_user_id, guest_user_id FROM shared_sessions WHERE id = ?"
+    ).bind(sessionId).first();
+    if (!initialSession) return json({ active: false, ended: true });
+    if (!ownsSession(initialSession, userId)) return err("Forbidden", 403);
 
     while (Date.now() < deadline) {
       const session = await env.DB.prepare(
@@ -64,6 +77,7 @@ export default async function handleSync(request, env, url, userId) {
       ).bind(sessionId).first();
 
       if (!session) return json({ active: false, ended: true });
+      if (!ownsSession(session, userId)) return err("Forbidden", 403);
 
       const sessionUpdated = new Date(session.updated_at).getTime();
       if (sessionUpdated > since) {
@@ -133,6 +147,9 @@ export default async function handleSync(request, env, url, userId) {
         "SELECT * FROM shared_sessions WHERE id = ?"
       ).bind(session_id).first();
       if (!session) return err("Session not found", 404);
+      if (!canJoinSharedSession(userId)) return err("Forbidden", 403);
+      if (session.host_user_id === userId) return err("Host cannot join own session", 409);
+      if (session.guest_user_id && session.guest_user_id !== userId) return err("Session already has a guest", 409);
 
       await env.DB.prepare(
         `UPDATE shared_sessions SET guest_user_id = ?, last_action = 'joined',
@@ -147,6 +164,8 @@ export default async function handleSync(request, env, url, userId) {
       return json({
         active: true,
         session_id,
+        host_id: session.host_user_id,
+        guest_id: userId,
         active_track_id: session.active_track_id,
         position: session.position,
         is_playing: session.is_playing === 1,
@@ -160,9 +179,10 @@ export default async function handleSync(request, env, url, userId) {
         "SELECT * FROM shared_sessions WHERE id = ?"
       ).bind(session_id).first();
       if (!session) return err("Session not found", 404);
+      if (!ownsSession(session, userId)) return err("Forbidden", 403);
 
       if (session.guest_user_id === userId) {
-        // Guest leaves — clear guest
+        // Guest leaves — clear guest without ending the host session.
         // TD-8/SC6: emitir shared_session_left (guest salió) ANTES del UPDATE
         await emitEvent(env, "shared_session_left", userId, "session", session_id, {
           role: "guest",
@@ -172,6 +192,7 @@ export default async function handleSync(request, env, url, userId) {
           `UPDATE shared_sessions SET guest_user_id = NULL, last_action = 'left',
            last_action_by = ?, updated_at = datetime('now') WHERE id = ?`
         ).bind(userId, session_id).run();
+        return json({ active: false, ended: false });
       } else if (session.host_user_id === userId) {
         // Host leaves — end session
         // TD-8/SC6: emitir shared_session_left (host terminó sesión) ANTES del DELETE
@@ -194,6 +215,7 @@ export default async function handleSync(request, env, url, userId) {
         "SELECT * FROM shared_sessions WHERE id = ?"
       ).bind(session_id).first();
       if (!session) return err("Session not found", 404);
+      if (!ownsSession(session, userId)) return err("Forbidden", 403);
 
       let q;
       try { q = session.queue_json ? JSON.parse(session.queue_json) : []; } catch { q = []; }
@@ -213,6 +235,7 @@ export default async function handleSync(request, env, url, userId) {
         "SELECT * FROM shared_sessions WHERE id = ?"
       ).bind(session_id).first();
       if (!session) return err("Session not found", 404);
+      if (!ownsSession(session, userId)) return err("Forbidden", 403);
 
       let q;
       try { q = session.queue_json ? JSON.parse(session.queue_json) : []; } catch { q = []; }
@@ -237,6 +260,11 @@ export default async function handleSync(request, env, url, userId) {
 
     // SYNC: play/pause/skip/seek events
     if (session_id) {
+      const session = await env.DB.prepare(
+        "SELECT host_user_id, guest_user_id FROM shared_sessions WHERE id = ?"
+      ).bind(session_id).first();
+      if (!session) return err("Session not found", 404);
+      if (!ownsSession(session, userId)) return err("Forbidden", 403);
       if (action === "sync") {
         // Position heartbeat — NO tocar last_action ni updated_at para no solapar acciones reales
         await env.DB.prepare(
@@ -281,6 +309,8 @@ export default async function handleSync(request, env, url, userId) {
     const sessionId = url.searchParams.get("session_id");
     if (!sessionId) return err("session_id required", 400);
     const session = await env.DB.prepare("SELECT queue_json, host_user_id, guest_user_id FROM shared_sessions WHERE id = ?").bind(sessionId).first();
+    if (!session) return err("Session not found", 404);
+    if (!ownsSession(session, userId)) return err("Forbidden", 403);
     let finalQueue = [];
     if (session) { try { finalQueue = JSON.parse(session.queue_json || '[]'); } catch (e) { console.warn('[sync] finalQueue parse:', e.message); } }
     // TD-8/SC6: emitir ANTES del DELETE (consistencia con PATCH leave-host).
@@ -288,6 +318,8 @@ export default async function handleSync(request, env, url, userId) {
     // un row que sigue vivo en shared_sessions \u2014 aceptado por ADR-019
     // (append-only lossy). Pr\u00f3ximo DELETE exitoso emite otro forced: true.
     if (session) {
+      if (!ownsSession(session, userId)) return err("Forbidden", 403);
+      if (session.guest_user_id === userId) return err("Guest must use leave action", 403);
       const isHost = session.host_user_id === userId;
       await emitEvent(env, "shared_session_left", userId, "session", sessionId, {
         role: isHost ? "host" : "guest",

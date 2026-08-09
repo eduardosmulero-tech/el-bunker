@@ -3,7 +3,7 @@
 
 const ALLOWED_TRACK_KEYS = new Set([
   "era_id", "title", "artist", "tag_id", "r2_key", "format", "note",
-  "duration", "thumbnail", "drive_file_id", "color", "play_count", "last_played",
+  "duration", "thumbnail", "color", "play_count", "last_played",
 ]);
 
 export function buildEditPayload(updatedTrack = {}) {

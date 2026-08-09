@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 import { Icon } from "../core/ui";
+import { getAudioGraph } from "./AudioGraph";
 
 function withAlpha(color, alpha) {
   const hex = Math.round(alpha * 255).toString(16).padStart(2, "0");
@@ -135,20 +136,18 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
   const setupAudio = useCallback(() => {
     if (!audioRef?.current || audioCtxRef.current) return;
     try {
-      const AudioContext = window.AudioContext || window.webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx      = new AudioContext();
-      const analyser = ctx.createAnalyser();
+      const graph = getAudioGraph(audioRef.current);
+      if (!graph) return;
       // S108 — preset-aware fftSize y smoothing
-      analyser.fftSize = preset.fftSize;
-      analyser.smoothingTimeConstant = preset.smoothing;
-      const source = ctx.createMediaElementSource(audioRef.current);
-      source.connect(analyser);
-      analyser.connect(ctx.destination);
-      audioCtxRef.current  = ctx;
-      analyserRef.current  = analyser;
-      sourceRef.current    = source;
-    } catch { /* noop */ }
+      graph.analyser.fftSize = preset.fftSize;
+      graph.analyser.smoothingTimeConstant = preset.smoothing;
+      audioCtxRef.current = graph.context;
+      analyserRef.current = graph.analyser;
+      sourceRef.current = graph.source;
+    } catch (error) {
+      // La creación única por elemento se cachea; los fallos restantes deben ser observables.
+      console.warn("[AudioVisualizer] unable to setup audio graph", error);
+    }
   }, [audioRef, preset.fftSize, preset.smoothing]);
 
   useEffect(() => {

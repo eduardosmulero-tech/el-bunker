@@ -963,6 +963,8 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
                     entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
                     eras={displayEras}
                     filterCategory={filterCategory}
+                    onEditEntry={setEditingEntry}
+                    onDeleteEntry={(entryId) => setPendingDeleteEntryId(entryId)}
                   />
                 </Suspense>
               </ChunkErrorBoundary>

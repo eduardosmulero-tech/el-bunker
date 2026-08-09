@@ -1094,7 +1094,7 @@ const MapView = ({ entries = [], eras = [] }) => {
 };
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────
-export default function VaultGallery({ entries = [], eras = [], filterCategory = "all", onOpenEntry: _onOpenEntry }) {
+export default function VaultGallery({ entries = [], eras = [], filterCategory = "all", onOpenEntry: _onOpenEntry, onEditEntry, onDeleteEntry }) {
   const [mode, setMode] = useState("wall");
   const [density, setDensity] = useState("normal");
 
@@ -1204,6 +1204,8 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
           entries={lightboxState.entries}
           startIndex={lightboxState.startIndex}
           onClose={closeLightbox}
+          onEditEntry={onEditEntry}
+          onDeleteEntry={onDeleteEntry}
           eras={eras}
           accentColor={vibeAccent}
         />

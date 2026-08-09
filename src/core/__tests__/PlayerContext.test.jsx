@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, act } from "@testing-library/react";
 import { PlayerProvider, usePlayer } from "../PlayerContext";
+import { workerClient } from "../WorkerClient";
 
 // ─── Helpers ──────────────────────────────────────────
 
@@ -37,6 +38,12 @@ const tick = () => act(() => new Promise((r) => setTimeout(r, 0)));
 describe("PlayerContext — Core", () => {
   beforeEach(() => {
     localStorage.clear();
+    workerClient.clearToken();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    workerClient.clearToken();
   });
 
   it("1. inicializa con el primer track como activeTrack", () => {
@@ -97,6 +104,60 @@ describe("PlayerContext — Core", () => {
     expect(ctx().shuffle).toBe(true);
     expect(localStorage.getItem("el_bunker_shuffle")).toBe("1");
   });
+
+  it("8. hidratar la cola persistida no arranca el audio sin intención del usuario", async () => {
+    const tracks = MOCK_TRACKS.map((track) => ({ ...track, r2_key: `music/${track.id}.mp3` }));
+    const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play");
+    const pauseSpy = vi.spyOn(window.HTMLMediaElement.prototype, "pause");
+    workerClient.setToken("test-token");
+    vi.spyOn(workerClient, "get").mockResolvedValue([{ track_id: "t1", _manual: true }]);
+    const { ctx } = renderPlayer({ tracks });
+    await tick();
+    await tick();
+    expect(ctx().activeTrack?.id).toBe("t1");
+    expect(ctx().isPlaying).toBe(false);
+    expect(playSpy).not.toHaveBeenCalled();
+    expect(pauseSpy).toHaveBeenCalled();
+  });
+
+  it("9. una hidratación tardía no pisa una reproducción manual", async () => {
+    const tracks = MOCK_TRACKS.map((track) => ({ ...track, r2_key: `music/${track.id}.mp3` }));
+    const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play");
+    const pauseSpy = vi.spyOn(window.HTMLMediaElement.prototype, "pause");
+    workerClient.setToken("test-token");
+    let resolveQueue;
+    vi.spyOn(workerClient, "get").mockReturnValue(new Promise((resolve) => { resolveQueue = resolve; }));
+    const { ctx } = renderPlayer({ tracks });
+    act(() => ctx().playTrack(tracks[0]));
+    await tick();
+    const playCallsBeforeHydration = playSpy.mock.calls.length;
+    expect(playCallsBeforeHydration).toBeGreaterThan(0);
+    await act(async () => { resolveQueue([{ track_id: "t1", _manual: true }]); await Promise.resolve(); });
+    await tick();
+    expect(ctx().activeTrack?.id).toBe("t1");
+    expect(playSpy.mock.calls.length).toBeGreaterThanOrEqual(playCallsBeforeHydration);
+    expect(pauseSpy).not.toHaveBeenCalled();
+  });
+
+  it("10. createSession conserva el id y activa al usuario como host", async () => {
+    const originalHasToken = workerClient.hasToken;
+    const originalPost = workerClient.post;
+    workerClient.hasToken = () => true;
+    workerClient.post = vi.fn(async () => ({ session_id: "session-1", active: true, host_id: "edu" }));
+
+    try {
+      const { ctx } = renderPlayer({ userId: "edu" });
+      let created;
+      await act(async () => { created = await ctx().createSession(); });
+      expect(created).toBe("session-1");
+      expect(ctx().sessionId).toBe("session-1");
+      expect(ctx().isHost).toBe(true);
+      expect(ctx().sharedListening).toBe(true);
+    } finally {
+      workerClient.hasToken = originalHasToken;
+      workerClient.post = originalPost;
+    }
+  });
 });
 
 describe("PlayerContext — Queue", () => {
@@ -104,7 +165,7 @@ describe("PlayerContext — Queue", () => {
     localStorage.clear();
   });
 
-  it("8. addToQueue añade track al final y devuelve 'added'", async () => {
+  it("11. addToQueue añade track al final y devuelve 'added'", async () => {
     const { ctx } = renderPlayer();
     let result;
     act(() => { result = ctx().addToQueue(MOCK_TRACKS[3]); });
@@ -113,7 +174,7 @@ describe("PlayerContext — Queue", () => {
     expect(ctx().localQueue.some((t) => t.id === "t4")).toBe(true);
   });
 
-  it("9. addToQueue con duplicado devuelve 'duplicate'", async () => {
+  it("12. addToQueue con duplicado devuelve 'duplicate'", async () => {
     const { ctx } = renderPlayer();
     act(() => { ctx().addToQueue(MOCK_TRACKS[1]); });
     await tick();
@@ -123,7 +184,7 @@ describe("PlayerContext — Queue", () => {
     expect(result).toBe("duplicate");
   });
 
-  it("10. addToQueue(force=true) elimina duplicado y re-añade", async () => {
+  it("13. addToQueue(force=true) elimina duplicado y re-añade", async () => {
     const { ctx } = renderPlayer();
     act(() => { ctx().addToQueue(MOCK_TRACKS[1]); });
     await tick();
@@ -140,13 +201,13 @@ describe("PlayerContext — Gapless + Restore", () => {
     localStorage.clear();
   });
 
-  it("11. restorePosition aplica posición guardada", () => {
+  it("14. restorePosition aplica posición guardada", () => {
     // Verificar que la función no crashea con audioRef no inicializado
     const { ctx } = renderPlayer();
     expect(() => ctx().restorePosition(MOCK_TRACKS[0])).not.toThrow();
   });
 
-  it("12. MAX_QUEUE_SIZE está definido y es 75", () => {
+  it("15. MAX_QUEUE_SIZE está definido y es 75", () => {
     const { ctx } = renderPlayer();
     expect(ctx().MAX_QUEUE_SIZE).toBe(75);
   });

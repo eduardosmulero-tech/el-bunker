@@ -13,7 +13,10 @@ import { FONT_MONO as FONT } from "../tokens";
 import { VaultPage, MusicPage, CapsulesPage } from "./PageWrappers";
 
 // ─── TAB ROUTER ──────────────────────────────────────────────
-const TAB_MAP = { vault: VaultPage, music: MusicPage, capsules: CapsulesPage };
+// ADR-017 🔒-4: exactamente 3 tabs (vault, music, capsules). Protegido por
+// test (src/layout/__tests__/TabShell.test.jsx) — un cuarto tab rompe la suite.
+// eslint-disable-next-line react-refresh/only-export-components
+export const TAB_MAP = { vault: VaultPage, music: MusicPage, capsules: CapsulesPage };
 
 // S101 — Orden de tabs para slide direccional: vault(0) → music(1) → capsules(2)
 const TAB_ORDER = { vault: 0, music: 1, capsules: 2 };

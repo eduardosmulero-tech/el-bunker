@@ -26,7 +26,8 @@ export default async function handleDrops(request, env, url, userId) {
   if (method === "POST" && path === "/api/drops") {
     const body = await request.json().catch(() => null);
     if (!body) return err("Invalid JSON body", 400);
-    const toUser = body.to_user || userId;
+    const toUser = body.to_user;
+    if (!toUser || toUser === userId) return err("to_user must differ from from_user", 400);
     if (!isValidUserId(toUser)) return err("Invalid to_user: must be admin, edu or david", 400);
     const id = body.id || crypto.randomUUID();
     const now = body.created_at || new Date().toISOString();

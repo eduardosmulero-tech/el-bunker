@@ -8,7 +8,7 @@
 //       _manual:false → cargado desde contexto de playlist
 // ============================================================
 
- 
+
 // ^ Los refs se acceden/modifican intencionalmente para evitar
 //   stale closures en callbacks de audio nativo (skip, loopMode,
 //   shuffle). Son patrones establecidos y funcionales del motor
@@ -39,6 +39,7 @@ import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 import { workerClient } from "./WorkerClient";
 import { enforceQueueLimit, fisherYatesInPlace } from "./QueueTransforms";
 import { loadCastSdk } from "./CastSdkService";
+import { advanceSyncCursor } from "./SyncTransforms";
 
 const PlayerContext = createContext(null);
 
@@ -249,10 +250,18 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const createSession = useCallback(async () => {
     if (!workerClient.hasToken()) return;
     try {
-      await workerClient.post("/api/sync", { action: "create" });
-      console.info("[Búnker] 🔗 Sesión personal creada (server)");
-    } catch (e) { console.warn("[Búnker] createSession error:", e); }
-    finally { setHasPersonalSession(true); }
+      const data = await workerClient.post("/api/sync", { action: "create" });
+      if (!data?.session_id) throw new Error("create session response missing session_id");
+      setSessionId(data.session_id);
+      setIsHost(true);
+      setHasPersonalSession(true);
+      console.info("[Búnker] 🔗 Sesión personal creada (server)", data.session_id);
+      return data.session_id;
+    } catch (e) {
+      console.warn("[Búnker] createSession error:", e);
+      setHasPersonalSession(false);
+      return null;
+    }
   }, []);
 
   // Unirse a sesión (guest) — solo desde joinPendingSession (1 click)
@@ -263,7 +272,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       if (!data.active) return;
       setSessionId(sid);
       setIsHost(false);
-      setPartnerId(data.host_id);
+      setPartnerId(data.host_id || data.host_user_id);
       // SC7: sincronizar al estado actual (track + posición)
       if (data.active_track_id) {
         const track = tracks.find(t => t.id === data.active_track_id);
@@ -300,7 +309,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     if (!sessionId) return;
     setSessionToast("Has abandonado la sesión compartida");
     try {
-      await workerClient.del(`/api/sync?session_id=${sessionId}`);
+      await workerClient.post("/api/sync", { action: "leave", session_id: sessionId });
     } catch { /* noop */ }
     setSessionId(null);
     setIsHost(false);
@@ -375,6 +384,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   useEffect(() => {
     if (!sessionId) return;
     let active = true;
+    const controller = new AbortController();
+    _sessionPollRef.current = controller;
 
     const poll = async () => {
       let data;
@@ -382,9 +393,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         try {
           const since = _lastSyncTsRef.current;
           const url = `/api/sync?session_id=${sessionId}&since=${since}`;
-          const res = await workerClient.fetch(url);
+          const res = await workerClient.fetch(url, { signal: controller.signal });
           if (!active) break;
           data = await res.json();
+          _lastSyncTsRef.current = advanceSyncCursor(_lastSyncTsRef.current, data);
 
           // SC8: reset disconnect flag on any successful response
           if (_wasDisconnectedRef.current) {
@@ -425,7 +437,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           }
 
           if (!data.unchanged && data.session_id && data.action && data.action !== "created" && data.action !== "joined") {
-            _lastSyncTsRef.current = new Date(data.updated_at).getTime();
             _isRemoteActionRef.current = true;
 
             // SC4: aplicar acción remota
@@ -483,18 +494,24 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
             setTimeout(() => { _isRemoteActionRef.current = false; }, 150);
           }
-        } catch {
+        } catch (error) {
+          if (!active || controller.signal.aborted || error?.name === "AbortError") break;
           // SC8: mark disconnected, retry in 3s
           _wasDisconnectedRef.current = true;
           await new Promise(r => setTimeout(r, 3000));
         }
 
+        if (!active || controller.signal.aborted) break;
         if (!data?.unchanged) await new Promise(r => setTimeout(r, 1000));
       }
     };
 
     poll();
-    return () => { active = false; };
+    return () => {
+      active = false;
+      controller.abort();
+      if (_sessionPollRef.current === controller) _sessionPollRef.current = null;
+    };
   }, [sessionId, tracks, isHost, userId]);
 
   // SC4: Sincronizar play/pause locales al partner
@@ -558,6 +575,12 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const _wasPlayingBeforeOffline = useRef(false);
   // Fase 1.7 — EC-P5: clave de archivo del track anterior para detectar duplicados
   const _prevFileKeyRef = useRef(null);
+  // BUG autoplay al entrar: la restauración de cola/recovery puede producir un
+  // nuevo objeto para el mismo archivo. Esa hidratación nunca es intención de play.
+  const _suppressRestoreAutoplayRef = useRef(null);
+  // Si el usuario interactúa mientras llega la cola persistida, esa respuesta no
+  // puede sobrescribir su selección manual.
+  const _playIntentVersionRef = useRef(0);
   // S106 — Gapless: trackea la URL del siguiente track ya precargado para evitar refetch
   const _nextTrackUrlRef = useRef(null);
 
@@ -565,6 +588,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // S115-D3: migrado a WorkerClient
   useEffect(() => {
     if (!userId || !workerClient.hasToken()) return;
+    const requestedAtIntentVersion = _playIntentVersionRef.current;
     workerClient.get(`/api/queue/${userId}`)
       .then((items) => {
         if (!Array.isArray(items) || !items.length) return;
@@ -575,8 +599,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           })
           .filter(Boolean);
         if (!qt.length) return;
+        // La cola persistida hidrata estado; no equivale a pulsar PLAY.
+        // Si hubo una acción manual mientras esperaba la red, conserva también su cola.
+        if (_playIntentVersionRef.current !== requestedAtIntentVersion) return;
         setLocalQueue(qt);
-        setActiveTrack(qt[0]);
+        const restoredTrack = qt[0];
+        _suppressRestoreAutoplayRef.current = {
+          trackId: restoredTrack.id,
+          fileKey: restoredTrack.r2_key || null,
+        };
+        setActiveTrack(restoredTrack);
       })
       .catch((err) => console.warn("[Búnker] fetchQueue (Worker):", err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -592,7 +624,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       context_name: queueContextName || null,
     }));
     if (!items.length && !activeTrack) return;
-     
+
     setSyncStatus("syncing");
     const timer = setTimeout(() => {
       workerClient.fetch(`/api/queue/${userId}`, {
@@ -974,6 +1006,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
   const playTrack = useCallback((track) => {
     if (!track) return;
+    _playIntentVersionRef.current += 1;
+    _suppressRestoreAutoplayRef.current = null;
     if (activeTrack?.id === track.id) {
       // BUG-11: tap en track activo → toggle play/pause
       if (isPlaying) {
@@ -1395,6 +1429,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const _blobUrlRef = useRef(null);  // para cleanup de blob URLs
 
   useEffect(() => {
+    // Capturar y consumir siempre la hidratación pendiente antes de cualquier
+    // retorno temprano (track vacío o sin archivo).
+    const restoreMarker = _suppressRestoreAutoplayRef.current;
+    _suppressRestoreAutoplayRef.current = null;
     if (!activeTrack) {
       setResolvedAudioSrc(null);
       if (_blobUrlRef.current) {
@@ -1423,7 +1461,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     // Fase 1.7 — EC-P5: Si es el mismo archivo que el track anterior, hacer seek a 0
     // en lugar de recargar. Compara únicamente la clave R2 canónica.
     const fileKey = activeTrack.r2_key || null;
+    const suppressRestoreAutoplay = restoreMarker?.trackId === activeTrack.id
+      && restoreMarker.fileKey === fileKey;
     if (fileKey && fileKey === _prevFileKeyRef.current && audioRef.current) {
+      if (suppressRestoreAutoplay && !isPlayingRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsPlaying(false);
+        console.info("[Búnker] ⏸ Restauración silenciosa — mismo archivo:", activeTrack.title);
+        return;
+      }
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(() => {});
       setIsPlaying(true);

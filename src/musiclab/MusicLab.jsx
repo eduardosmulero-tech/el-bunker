@@ -18,7 +18,7 @@ import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
 import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
-import { Icon, TextPromptDialog } from "../core/ui";
+import { Icon, TextPromptDialog, UserGlyph } from "../core/ui";
 import { sortTracks, TRACK_SORT_OPTIONS } from "./TrackTransforms";
 import { reorderQueueByIds } from "../core/QueueTransforms";
 
@@ -904,7 +904,7 @@ export default function MusicLab({
                               style={{ background: `${hVibe?.color ?? accentColor}12`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
                               {track.thumbnail
                                 ? <img src={track.thumbnail} alt="" className="w-full h-full object-cover opacity-70" />
-                                : <Icon name={hVibe?.icon || "circle"} size={12} decorative />}
+                                : <UserGlyph glyph={hVibe?.icon} size={12} label={hVibe?.label} />}
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? accentColor }}>{track.title}</p>
@@ -912,7 +912,7 @@ export default function MusicLab({
                             </div>
                             <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                               style={{ color: hVibe?.color ?? accentColor, background: `${hVibe?.color ?? accentColor}15`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
-                              <Icon name={hVibe?.icon} size={12} decorative />
+                              <UserGlyph glyph={hVibe?.icon} size={12} label={hVibe?.label} />
                             </span>
                           </div>
                         );
@@ -998,7 +998,7 @@ export default function MusicLab({
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
-                            <Icon name={qVibe?.icon} size={12} decorative />
+                            <UserGlyph glyph={qVibe?.icon} size={12} label={qVibe?.label} />
                           </span>
                           {activePl && (
                             <motion.button whileTap={{ scale: 0.9 }}
@@ -1069,7 +1069,7 @@ export default function MusicLab({
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33` }}>
-                            <Icon name={qVibe?.icon} size={12} decorative />
+                            <UserGlyph glyph={qVibe?.icon} size={12} label={qVibe?.label} />
                           </span>
                           <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleRemoveFromQueue(track.id)}
                             className="ml-1 flex-shrink-0 text-xs px-3 py-3 rounded-sm min-h-[44px] min-w-[44px]"
@@ -1521,7 +1521,7 @@ export default function MusicLab({
                           {plVibe && !isRenaming && (
                             <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                               style={{ color: plVibe.color, background: `${plVibe.color}15`, border: `1px solid ${plVibe.color}33` }}>
-                              <Icon name={plVibe.icon} size={12} decorative />
+                              <UserGlyph glyph={plVibe.icon} size={12} label={plVibe.label} />
                             </span>
                           )}
                           {isRenaming ? (

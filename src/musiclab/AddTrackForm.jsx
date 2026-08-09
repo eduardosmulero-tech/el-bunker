@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID } from "../tokens";
-import { Icon, Input } from "../core/ui";
+import { Icon, Input, UserGlyph } from "../core/ui";
 // S90 EC-TR6: extraer metadatos ID3 al seleccionar MP3
 import jsmediatags from "jsmediatags";
 
@@ -121,7 +121,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
                   border: `1px solid ${form.tag === vibe.id ? vibe.color + "55" : vibe.color + "22"}`,
                 }}
               >
-                <Icon name={vibe.icon} size={14} decorative /> {vibe.label}
+                <UserGlyph glyph={vibe.icon} size={14} label={vibe.label} /> {vibe.label}
               </motion.button>
             ))}
           </div>

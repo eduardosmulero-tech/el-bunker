@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 import { ColorPicker } from "../core/ColorPicker";
 import { useToast } from "../core/ToastContext";
-import { Icon } from "../core/ui";
+import { Icon, UserGlyph } from "../core/ui";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 const GLASS_BG     = "rgba(191,255,0,0.03)";
@@ -116,7 +116,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
               <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Icono (emoji)</span>
               <div className="flex items-center gap-2">
                 <span style={{ fontSize: 20, color: form.color, lineHeight: 1, minWidth: 28, textAlign: "center" }}>
-                  <Icon name={form.icon || "archive"} size={20} decorative />
+                  <UserGlyph glyph={form.icon} size={20} decorative />
                 </span>
                 <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))}
                   placeholder="◈"
@@ -135,13 +135,13 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
 
             {/* Preview */}
             <div className="flex items-center gap-2 p-2 rounded-sm"
-              style={{ background: `${form.color}08`, border: `1px solid ${form.color}33` }}>                <Icon name={form.icon || "archive"} size={16} decorative />
+              style={{ background: `${form.color}08`, border: `1px solid ${form.color}33` }}>                <UserGlyph glyph={form.icon} size={16} decorative />
               <span className="text-xs font-bold tracking-widest" style={{ color: form.color }}>
                 {form.label || "PREVIEW"}
               </span>
               <span className="text-xs px-1.5 py-0.5 rounded-sm ml-auto"
                 style={{ color: form.color, background: `${form.color}15`, border: `1px solid ${form.color}33` }}>
-                <Icon name={form.icon || "archive"} size={14} decorative />
+                <UserGlyph glyph={form.icon} size={14} decorative />
               </span>
             </div>
 
@@ -184,7 +184,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                 style={{ background: GLASS_BG, border: `1px solid ${tag.color}22`,
                   fontFamily: FONT_MONO, cursor: "grab" }}>
                 <Icon name="more" size={13} decorative className="flex-shrink-0" />
-                <Icon name={tag.icon} size={18} decorative />
+                <UserGlyph glyph={tag.icon} size={18} label={tag.label} />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold tracking-widest" style={{ color: tag.color }}>{tag.label}</p>
                   <motion.button whileTap={{ scale: 0.95 }}

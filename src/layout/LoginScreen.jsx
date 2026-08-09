@@ -280,24 +280,6 @@ const AccessButton = ({ onClick, loading, disabled }) => {
         }}
       />
 
-      {/* Corner brackets */}
-      {[
-        { top: 0,    left: 0,   borderTop: "solid",    borderLeft: "solid"  },
-        { top: 0,    right: 0,  borderTop: "solid",    borderRight: "solid" },
-        { bottom: 0, left: 0,   borderBottom: "solid", borderLeft: "solid"  },
-        { bottom: 0, right: 0,  borderBottom: "solid", borderRight: "solid" },
-      ].map((style, i) => (
-        <span
-          key={i}
-          className="absolute w-4 h-4"
-          style={{
-            ...style,
-            borderColor: hovered ? ACID : ACID + "66",
-            borderWidth: 1.5,
-          }}
-        />
-      ))}
-
       {/* Button content */}
       <div className="relative flex items-center justify-center gap-3">
         {loading ? (
@@ -470,7 +452,7 @@ const ErrorBanner = ({ message }) => (
   <motion.div
     initial={{ opacity: 0, y: -8 }}
     animate={{ opacity: 1, y: 0 }}
-    className="w-full max-w-md mx-auto px-4 py-3 rounded-sm text-xs tracking-widest uppercase text-center"
+    className="w-full max-w-md mx-auto px-4 py-3 rounded-sm text-xs tracking-widest uppercase"
     style={{
       background: "rgba(255,59,59,0.08)",
       border: `1px solid rgba(255,59,59,0.3)`,
@@ -479,7 +461,10 @@ const ErrorBanner = ({ message }) => (
       textShadow: `0 0 8px ${RED}66`,
     }}
   >
-    <Icon name="alert" size={14} decorative /> {message}
+    <div className="flex items-center justify-center gap-2">
+      <Icon name="alert" size={14} decorative />
+      <span>{message}</span>
+    </div>
   </motion.div>
 );
 

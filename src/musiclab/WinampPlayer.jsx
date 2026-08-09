@@ -5,7 +5,7 @@ import { ACID, BG, PURPLE, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";
-import { Icon } from "../core/ui";
+import { Icon, UserGlyph } from "../core/ui";
 
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
@@ -592,7 +592,7 @@ return () => cancelAnimationFrame(raf);
           )}
           <span className="text-xs tracking-widest uppercase px-2 py-0.5 rounded-sm"
             style={{ color: accentColor, background: withAlpha(accentColor, 0.08), border: `1px solid ${withAlpha(accentColor, 0.2)}` }}>
-            <Icon name={vibeConf?.icon} size={13} decorative /> {vibeConf?.label}
+            <UserGlyph glyph={vibeConf?.icon} size={13} label={vibeConf?.label} /> {vibeConf?.label}
           </span>
         </div>
       </div>
@@ -630,7 +630,7 @@ return () => cancelAnimationFrame(raf);
               return (
                 <div className="absolute inset-0 flex items-center justify-center" style={{ background: `radial-gradient(ellipse at center, ${accentColor}10, transparent 70%)` }}>
                   <span style={{ color: accentColor, opacity: 0.08, fontSize: 72, textShadow: `0 0 60px ${accentColor}22` }}>
-                    <Icon name={vibeConf?.icon || "circle"} size={72} decorative />
+                    <UserGlyph glyph={vibeConf?.icon} size={72} label={vibeConf?.label} />
                   </span>
                 </div>
               );

@@ -6,7 +6,7 @@ import handleEvents from "../events.js";
 import handleEntries from "../entries.js";
 
 // Mock D1 mínimo: registra SQL, responde a SELECT de eras.
-function makeDb({ eraExists = true, batchError = null, fileReservation = null } = {}) {
+function makeDb({ eraExists = true, batchError = null, fileReservation = null, trackOwner = null } = {}) {
   const calls = [];
   const batches = [];
   let runCalls = 0;
@@ -16,6 +16,7 @@ function makeDb({ eraExists = true, batchError = null, fileReservation = null } 
       async first() {
         if (sql.includes("FROM eras")) return eraExists ? { id: "era-1" } : null;
         if (sql.includes("FROM files")) return fileReservation;
+        if (sql.includes("FROM tracks")) return trackOwner;
         return null;
       },
       async run() {
@@ -104,6 +105,14 @@ describe("R11 — validaciones POST (BUG-5)", () => {
       expect(response.status).toBe(403);
       expect(db.calls.some((call) => call.sql.includes("INSERT INTO tracks"))).toBe(false);
     });
+
+    it("does not persist retired Drive metadata", async () => {
+      const db = makeDb({ trackOwner: { id: "track-1", added_by: "edu" } });
+      const response = await handleTracks(req("PATCH", "/api/tracks/track-1", { drive_file_id: "legacy-drive-id" }), { DB: db }, new URL("https://bunker.test/api/tracks/track-1"), "edu");
+      expect(response.status).toBe(400);
+      expect((await json(response)).error).toContain("No fields to update");
+      expect(db.calls.some((call) => call.sql.includes("UPDATE tracks"))).toBe(false);
+    });
   });
 
   describe("POST /api/drops", () => {
@@ -114,12 +123,28 @@ describe("R11 — validaciones POST (BUG-5)", () => {
       expect((await json(response)).error).toContain("Invalid to_user");
     });
 
-    it("defaults to_user to self when omitted", async () => {
+    it("rejects a missing to_user before touching D1", async () => {
       const db = makeDb();
       const response = await handleDrops(req("POST", "/api/drops", {}), { DB: db }, new URL("https://bunker.test/api/drops"), "edu");
-      expect(response.status).toBe(201);
-      const insert = db.calls.find(c => c.sql.includes("INSERT INTO drops"));
-      expect(insert.bindings[4]).toBe("edu");
+      expect(response.status).toBe(400);
+      expect((await json(response)).error).toBe("to_user must differ from from_user");
+      expect(db.calls).toHaveLength(0);
+    });
+
+    it("rejects a self-drop before touching D1", async () => {
+      const db = makeDb();
+      const response = await handleDrops(req("POST", "/api/drops", { to_user: "edu" }), { DB: db }, new URL("https://bunker.test/api/drops"), "edu");
+      expect(response.status).toBe(400);
+      expect((await json(response)).error).toBe("to_user must differ from from_user");
+      expect(db.calls).toHaveLength(0);
+    });
+
+    it("rejects a self-directed drop", async () => {
+      const db = makeDb();
+      const response = await handleDrops(req("POST", "/api/drops", { to_user: "edu" }), { DB: db }, new URL("https://bunker.test/api/drops"), "edu");
+      expect(response.status).toBe(400);
+      expect((await json(response)).error).toContain("to_user must differ from from_user");
+      expect(db.calls.some((call) => call.sql.includes("INSERT INTO drops"))).toBe(false);
     });
 
     it("accepts a known to_user", async () => {

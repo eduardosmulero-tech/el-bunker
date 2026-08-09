@@ -93,11 +93,11 @@ export default async function handleTracks(request, env, url, userId) {
     const now = body.created_at || new Date().toISOString();
     const addedBy = userId;
     await env.DB.prepare(
-      `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, drive_file_id, color, play_count, last_played, added_by, created_at, updated_at)
-       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17)`
+      `INSERT INTO tracks (id, era_id, title, artist, tag_id, r2_key, format, note, duration, thumbnail, color, play_count, last_played, added_by, created_at, updated_at)
+       VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16)`
     ).bind(id, body.era_id || null, title, body.artist || "", body.tag_id || null,
            body.r2_key || null, body.format || "mp3", body.note || "", body.duration || null,
-           body.thumbnail || null, null, body.color || null,
+           body.thumbnail || null, body.color || null,
            body.play_count || 0, body.last_played || null, addedBy, now, now).run();
     if (Array.isArray(body.tags) && body.tags.length) {
       const stmt = env.DB.prepare("INSERT OR IGNORE INTO track_tags (track_id, tag_id) VALUES (?1,?2)");
@@ -124,7 +124,7 @@ export default async function handleTracks(request, env, url, userId) {
 
   // PATCH /api/tracks/:id
   if (method === "PATCH" && path.startsWith("/api/tracks/")) {
-    const TRACK_FIELDS = new Set(["era_id", "title", "artist", "tag_id", "r2_key", "format", "note", "duration", "thumbnail", "drive_file_id", "color", "play_count", "last_played"]);
+    const TRACK_FIELDS = new Set(["era_id", "title", "artist", "tag_id", "r2_key", "format", "note", "duration", "thumbnail", "color", "play_count", "last_played"]);
     const trackId = path.split("/")[3];
     const owner = await env.DB.prepare("SELECT id, added_by FROM tracks WHERE id = ?1 AND is_deleted = 0").bind(trackId).first();
     if (!owner) return err("Track not found", 404);

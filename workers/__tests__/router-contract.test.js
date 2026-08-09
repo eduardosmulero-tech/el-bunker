@@ -4,6 +4,7 @@ import { ROUTES } from "../worker.js";
 import handleAdmin from "../routes/admin.js";
 import handleAdminG2 from "../routes/admin-g2.js";
 import handleClassify from "../routes/classify.js";
+import handleSession from "../routes/session.js";
 import { EVENT_TYPES, isValidEventType } from "../utils/validation.js";
 
 function routeIndex(prefix) {
@@ -27,5 +28,27 @@ describe("coordinated A1/B2 integration", () => {
     expect(EVENT_TYPES.has("item_unclassified")).toBe(true);
     expect(isValidEventType("item_classified")).toBe(true);
     expect(isValidEventType("item_unclassified")).toBe(true);
+  });
+});
+
+// ─── INT-Ola2 (P12): la ruta de sesión de A2 entra en el router ───────
+describe("INT-Ola2 — /api/session (A2) registrada", () => {
+  it("registers the session handler as an authenticated endpoint", () => {
+    expect(ROUTES.find(([prefix]) => prefix === "/api/session")).toEqual(["/api/session", handleSession, true]);
+  });
+
+  it("the session route responds 401 without an authenticated user", async () => {
+    const request = new Request("https://el-bunker-api.test/api/session/visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+    const env = { JWT_SECRET: "test-secret" };
+    const response = await handleSession(request, env, new URL(request.url), null);
+    expect(response.status).toBe(401);
+  });
+
+  it("does not shadow the existing auth prefix", () => {
+    expect(routeIndex("/api/auth")).toBeLessThan(routeIndex("/api/session"));
   });
 });

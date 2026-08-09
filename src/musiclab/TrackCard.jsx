@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { ACID, stringToColor } from "../tokens";
-import { Icon } from "../core/ui";
+import { UserGlyph } from "../core/ui";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
@@ -36,7 +36,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
               animation: isActive ? "vibe-pulse 2s ease-in-out infinite" : "none",
             }}
           >
-            <Icon name={vibe.icon} size={14} decorative />
+            <UserGlyph glyph={vibe.icon} size={14} label={vibe.label} />
             <span>{vibe.label}</span>
           </button>
         );
@@ -84,7 +84,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
           >
             <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${vibeColor}15`,
               display: "flex", alignItems: "center", gap: 10 }}>
-              <Icon name=<Icon name={vibe?.icon} size={14} decorative /> size={14} decorative />
+              <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
               <div style={{ minWidth: 0 }}>
                 <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
                   fontWeight: "bold", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -107,7 +107,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
                   letterSpacing: "0.2em", background: "transparent", border: "none",
                   cursor: "pointer", fontFamily: FONT_MONO_LOCAL, borderBottom: `1px solid ${vibeColor}10` }}
                 onClick={action}>
-                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><Icon name={icon} size={14} decorative /></span>
+                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><UserGlyph glyph={icon} size={14} decorative /></span>
                 {label}
               </button>
             ))}
@@ -140,7 +140,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
           <span style={{ position: "absolute", top: 6, left: 7,
             fontSize: 14, color: `${vibeColor}ee`,
             textShadow: `0 0 10px ${vibeColor}cc`, lineHeight: 1 }}>
-            <Icon name={vibe?.icon} size={14} decorative />
+            <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
           </span>
           {isActive && (
             <motion.div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
@@ -206,7 +206,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
           >
             <div style={{ padding: "14px 20px 10px", borderBottom: `1px solid ${vibeColor}15`,
               display: "flex", alignItems: "center", gap: 10 }}>
-              <Icon name=<Icon name={vibe?.icon} size={14} decorative /> size={14} decorative />
+              <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
               <div style={{ minWidth: 0 }}>
                 <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
                   fontWeight: "bold", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -229,7 +229,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
                   letterSpacing: "0.2em", background: "transparent", border: "none",
                   cursor: "pointer", fontFamily: FONT_MONO, borderBottom: `1px solid ${vibeColor}10` }}
                 onClick={action}>
-                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><Icon name={icon} size={14} decorative /></span>
+                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><UserGlyph glyph={icon} size={14} decorative /></span>
                 {label}
               </button>
             ))}
@@ -308,7 +308,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             justifyContent: "center", gap: 6, flexShrink: 0 }}>
             <span style={{ color: `${vibeColor}ee`, fontSize: 28,
               textShadow: `0 0 16px ${vibeColor}dd`, lineHeight: 1 }}>
-              <Icon name={vibe?.icon} size={14} decorative />
+              <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
             </span>
             <motion.button whileTap={{ scale: 0.85 }}
               onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}
@@ -385,7 +385,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             textShadow: `0 0 14px ${vibeColor}cc`,
             lineHeight: "normal",
           }}>
-            <Icon name={vibe?.icon} size={14} decorative />
+            <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
           </span>
           <motion.button whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); setShowCtx(true); }}

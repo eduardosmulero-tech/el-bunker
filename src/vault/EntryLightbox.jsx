@@ -32,7 +32,7 @@ const getDistance = (t1, t2) => {
 const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────
-export default function EntryLightbox({ entries = [], startIndex = 0, onClose, eras = [], accentColor = ACID }) {
+export default function EntryLightbox({ entries = [], startIndex = 0, onClose, onEditEntry, onDeleteEntry, eras = [], accentColor = ACID }) {
   const [currentIndex, setCurrentIndex] = useState(startIndex);
   const [direction, setDirection] = useState(0);
   const [scale, setScale] = useState(MIN_SCALE);
@@ -350,6 +350,34 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, e
               </span>
             )}
           </div>
+          {(onEditEntry || onDeleteEntry) && (
+            <div className="flex items-center justify-center gap-2 mt-4 pt-3" style={{ borderTop: `1px solid ${ac}18` }}>
+              {onEditEntry && (
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  type="button"
+                  onClick={() => { onEditEntry(entry); onClose?.(); }}
+                  className="min-h-[44px] px-3 rounded-sm text-[10px] uppercase tracking-widest flex items-center gap-2"
+                  style={{ color: ac, background: `${ac}10`, border: `1px solid ${ac}33` }}
+                  aria-label="Editar entrada"
+                >
+                  <Icon name="edit" size={14} decorative /> EDITAR
+                </motion.button>
+              )}
+              {onDeleteEntry && (
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  type="button"
+                  onClick={() => { onDeleteEntry(entry.id); onClose?.(); }}
+                  className="min-h-[44px] px-3 rounded-sm text-[10px] uppercase tracking-widest flex items-center gap-2"
+                  style={{ color: "#ff3b3b", background: "#ff3b3b10", border: "1px solid #ff3b3b33" }}
+                  aria-label="Eliminar entrada"
+                >
+                  <Icon name="close" size={14} decorative /> ELIMINAR
+                </motion.button>
+              )}
+            </div>
+          )}
           <p className="text-[9px] mt-3 opacity-15 text-center" style={{ color: ac }}>
             tap para cerrar · desliza para navegar · doble tap zoom · pellizca
           </p>

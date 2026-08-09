@@ -119,7 +119,10 @@ export default function Recaps({ accentColor = ACID }) {
       )}
       {recapFetchErr && !loadingRecap && (
         <div className="py-2 px-3 text-xs opacity-70 text-center" style={{ color: "#ff3b3b", fontFamily: FONT_MONO }}>
-          <Icon name="alert" size={14} label="Error" /> {recapFetchErr}
+          <span className="inline-flex items-center justify-center gap-2">
+            <Icon name="alert" size={14} label="Error" />
+            <span>{recapFetchErr}</span>
+          </span>
         </div>
       )}
 

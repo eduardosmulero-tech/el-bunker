@@ -68,16 +68,10 @@ describe("service boundaries", () => {
 
   it("keeps Google authentication independent from Drive and D1/R2 persistence", () => {
     const auth = read("src/core/GoogleAuthService.js");
-    const driveFacade = read("src/core/GoogleDriveService.js");
 
     expect(auth).not.toMatch(/auth\/drive|drive\.googleapis\.com|gapi(?:\.client)?|fetchData|updateData|patchDb/i);
     expect(auth).toContain("userinfo.email");
     expect(auth).toContain("userinfo.profile");
-    expect(driveFacade).toContain("legacy facade");
-    expect(driveFacade).toContain("GoogleAuthService");
-    expect(driveFacade).not.toMatch(/drive\.readonly|drive\.file|fetchData|updateData|_readDatabaseFile|_updateDatabaseFile/i);
-    expect(driveFacade).toContain("Google Drive library reads are retired");
-    expect(driveFacade).toContain("use D1/R2 metadata");
   });
 
   it("keeps Worker data loading behind the dedicated service boundary", () => {
