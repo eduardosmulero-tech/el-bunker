@@ -11,8 +11,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm, { CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, monthsSince, resolveEraId, resolveEntryDate, timeSince, timeUntil } from "./VaultHelpers";
-import VisitModeControl from "./VisitModeControl";
+import { ENTRY_CATEGORY, monthsSince, timeSince, timeUntil } from "./VaultHelpers";
 import { ColorPicker } from "../core/ColorPicker";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
@@ -24,6 +23,8 @@ const VaultGallery = lazy(() => import("./VaultGallery"));
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 // Sin fecha en la BD no hay contador: un contador inventado es un dato falso en pantalla.
+// (merge A5 + fix fecha iteracion 2, 12-ago: AdventureCounter recibe db?.adventures_start_date
+// y con null/undefined muestra ceros — nunca fabrica una fecha.)
 
 // FASE C.2.1 (veredicto V1 Fable S147): fallback demo de eras eliminado, estado vacío elegante.
 
@@ -34,7 +35,7 @@ const VaultGallery = lazy(() => import("./VaultGallery"));
  */
 const AdventureCounter = ({ startDate, accentColor = ACID }) => {
   const time   = timeSince(startDate);
-  const digits = String(time.totalDays).split("");
+  const digits = String(time.totalDays).padStart(4, "0").split("");
 
   return (
     <motion.div
@@ -380,9 +381,9 @@ const EXTRA_BADGE_FORMAT = {
     const d = new Date(val);
     return { icon: "calendar", label: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase() };
   },
-  location:  (val) => val ? { icon: "map", label: val } : null,
+  location:  (val) => val ? { icon: "📍", label: val } : null,
   rating:    (val) => val && val !== "—" ? { icon: "⭐", label: val } : null,
-  url:       (val) => val ? { icon: "send", label: val.length > 40 ? val.slice(0, 37) + "…" : val } : null,
+  url:       (val) => val ? { icon: "🔗", label: val.length > 40 ? val.slice(0, 37) + "…" : val } : null,
   mood:      (val) => val && val !== "—" ? { icon: null, label: val } : null,
   amount:    (val) => val ? { icon: "€", label: val } : null,
 };
@@ -401,7 +402,7 @@ const getExtraBadges = (entry) => {
 };
 
 const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
-  const eraEntries = entries.filter((e) => resolveEraId(e) === era.id && !e.is_deleted);
+  const eraEntries = entries.filter((e) => e.era_id === era.id && !e.is_deleted);
 
   return (
     <AnimatePresence mode="wait">
@@ -487,9 +488,7 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                 })()}
               </div>
               <span className="text-xs opacity-40 flex-shrink-0" style={{ color: era.color ?? ACID }}>
-                {resolveEntryDate(entry)
-                  ? new Date(resolveEntryDate(entry)).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()
-                  : ""}
+                {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}
               </span>
               {/* S65/S126 — mobile siempre visibles (opacity-40 base, hover → 100); desktop solo en group-hover */}
               <span className="flex gap-1 opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-1">
@@ -746,9 +745,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         transition={{ duration: 0.5 }}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
       >
-        {db?.adventures_start_date && (
-          <AdventureCounter accentColor={accent} startDate={db.adventures_start_date} />
-        )}
+        <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date} />
         <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
       </motion.div>
 
@@ -965,7 +962,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
               <ChunkErrorBoundary>
                 <Suspense fallback={<Skeleton.VaultGallery />}>
                   <VaultGallery
-                    entries={filteredEntries.filter(e => resolveEraId(e) === activeDisplayEra.id)}
+                    entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
                     eras={displayEras}
                     filterCategory={filterCategory}
                     onEditEntry={setEditingEntry}
@@ -980,17 +977,16 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
 
       {/* ══ SECTION 5: System Status ═════════════════════════════ */}
        <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="flex flex-wrap items-center justify-between gap-3 pt-2 pb-4 px-1"
-       >
-        <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: accent }}>
-          THE_VAULT v1.0
-        </span>
-        <div className="flex flex-wrap items-center gap-3">
-          <VisitModeControl accentColor={accent} />
-          {user?.role === "admin" && (
+     initial={{ opacity: 0 }}
+     animate={{ opacity: 1 }}
+     transition={{ duration: 0.5, delay: 0.5 }}
+     className="flex items-center justify-between pt-2 pb-4 px-1"
+   >
+     <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: accent }}>
+       THE_VAULT v1.0
+     </span>
+     <div className="flex items-center gap-3">
+       {user?.role === "admin" && (
          <motion.button
            whileTap={{ scale: 0.95 }}
            onClick={handleExport}
@@ -1004,7 +1000,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
              opacity: (exporting || !db) ? 0.4 : 1,
            }}
          >
-           {exporting ? "EXPORTANDO..." : <><Icon name="arrowDown" size={12} decorative /> BACKUP JSON</>}
+           {exporting ? "EXPORTANDO..." : "↓ BACKUP JSON"}
          </motion.button>
        )}
        <motion.span
