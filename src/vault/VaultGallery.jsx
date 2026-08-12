@@ -16,7 +16,8 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import { CATEGORY_FILTERS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, getImageUrl, getMediaType } from "./VaultHelpers";
+import { ENTRY_CATEGORY, getImageUrl, getMediaType, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
+import ClassifiedTile from "./ClassifiedTile";
 
 // ─── MODES ──────────────────────────────────────────────────
 const MODES = [
@@ -87,12 +88,12 @@ const CinemaView = ({ entries, eras, onZoom }) => {
 
   const safeIdx = ((currentIdx % entries.length) + entries.length) % entries.length;
   const entry = entries[safeIdx];
-  const era = eras.find(e => e.id === entry.era_id);
+  const era = eras.find(e => e.id === resolveEraId(entry));
   const imgUrl = getImageUrl(entry);
   const eraColor = era?.color ?? ACID;
   const eraName = era?.name ?? "";
-  const dateStr = entry.created_at
-    ? new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
+  const dateStr = resolveEntryDate(entry)
+    ? new Date(resolveEntryDate(entry)).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
     : "";
 
   const onTouchStart = (e) => {
@@ -127,7 +128,9 @@ const CinemaView = ({ entries, eras, onZoom }) => {
             exit={{ opacity: 0 }}
             transition={{ opacity: { duration: 0.6, ease: "easeInOut" }, scale: { duration: isPaused ? 8 : 0.3, ease: "linear" } }}
             className="absolute inset-0 flex items-center justify-center">
-            {imgUrl ? (
+            {isClassified(entry) ? (
+              <ClassifiedTile entry={entry} era={era} size="cinema" accentColor={eraColor} />
+            ) : imgUrl ? (
               getMediaType(entry) === "video" ? (
                 <video
                   src={imgUrl}
@@ -372,8 +375,8 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
       {!onlyEdu && !onlyDavid && (
         <div className="flex flex-col gap-4">
           {displayPairs.map((pair, idx) => {
-            const eraEdu = pair.edu ? eras.find(e => e.id === pair.edu.era_id) : null;
-            const eraDavid = pair.david ? eras.find(e => e.id === pair.david.era_id) : null;
+            const eraEdu = pair.edu ? eras.find(e => e.id === resolveEraId(pair.edu)) : null;
+            const eraDavid = pair.david ? eras.find(e => e.id === resolveEraId(pair.david)) : null;
             const eduImg = pair.edu ? getImageUrl(pair.edu) : null;
             const davidImg = pair.david ? getImageUrl(pair.david) : null;
             const sameEra = eraEdu && eraDavid && eraEdu.id === eraDavid.id;
@@ -412,7 +415,9 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                     <div className="flex-1 flex gap-2 items-start">
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${ACID}33` }}>
-                        {eduImg ? (
+                        {isClassified(pair.edu) ? (
+                          <ClassifiedTile entry={pair.edu} era={eraEdu} size="mini" accentColor={ACID} />
+                        ) : eduImg ? (
                           <img src={eduImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.edu)} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}><Icon name="camera" size={22} label="Sin imagen" /></div>
@@ -469,7 +474,9 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                       </div>
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
                         style={{ border: `1px solid ${PURPLE}33` }}>
-                        {davidImg ? (
+                        {isClassified(pair.david) ? (
+                          <ClassifiedTile entry={pair.david} era={eraDavid} size="mini" accentColor={PURPLE} />
+                        ) : davidImg ? (
                           <img src={davidImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.david)} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${PURPLE}10`, color: PURPLE }}><Icon name="camera" size={22} label="Sin imagen" /></div>
@@ -546,7 +553,9 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
               onClick={() => setExpandedEra(expandedEra === eraId ? null : eraId)}>
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-14 h-14 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}44` }}>
-                  {firstImg ? (
+                  {isClassified(eraEntries[0]) ? (
+                    <ClassifiedTile entry={eraEntries[0]} era={era} size="mini" accentColor={eraColor} />
+                  ) : firstImg ? (
                     <img src={firstImg} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xl opacity-30" style={{ background: `${eraColor}15`, color: eraColor }}><Icon name="archive" size={22} label="Sin imagen" /></div>
@@ -559,6 +568,13 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
                 <div className="ml-auto flex -space-x-2">
                   {eraEntries.slice(0, 5).map((e, i) => {
                     const url = getImageUrl(e);
+                    if (isClassified(e)) {
+                      return (
+                        <div key={e.id} className="w-8 h-8 rounded-full overflow-hidden border-2" style={{ borderColor: eraColor, zIndex: 5 - i }}>
+                          <ClassifiedTile entry={e} era={era} size="mini" accentColor={eraColor} />
+                        </div>
+                      );
+                    }
                     return url ? <img key={e.id} src={url} alt="" className="w-8 h-8 rounded-full object-cover border-2" style={{ borderColor: eraColor, zIndex: 5 - i }} /> : null;
                   })}
                 </div>
@@ -578,7 +594,9 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
                     return (
                       <div key={e.id} className="aspect-square rounded-sm overflow-hidden cursor-pointer" style={{ border: `1px solid ${eraColor}22` }}
                         onClick={(ev) => { ev.stopPropagation(); const idx = entries.findIndex(en => en.id === e.id); if (idx >= 0) onOpenLightbox?.(entries, idx); }}>
-                        {url ? (
+                        {isClassified(e) ? (
+                          <ClassifiedTile entry={e} era={era} accentColor={eraColor} />
+                        ) : url ? (
                           <img src={url} alt={e.title || ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-1" style={{ background: `${eraColor}08` }}>
@@ -660,13 +678,16 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
                 <p className="text-sm font-bold" style={{ color: eraColor }}>{dayStr}</p>
                 <p className="text-[10px] opacity-40" style={{ color: eraColor }}>{items.length} momentos · {items.filter(e => e.from_user === "edu").length} Edu · {items.filter(e => e.from_user === "david").length} David</p>
                 <div className="flex flex-col gap-2">
-                  {[...items].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((entry, i) => {
+                  {[...items].sort((a, b) => new Date(resolveEntryDate(a)) - new Date(resolveEntryDate(b))).map((entry, i) => {
                     const img = getImageUrl(entry);
                     return (
                       <div key={entry.id} className="flex gap-3 p-2 rounded-sm items-center cursor-pointer" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}22` }}
                         onClick={() => { const idx = entries.findIndex(e => e.id === entry.id); if (idx >= 0) onOpenLightbox?.(entries, idx); }}>
                         <span className="text-[10px] font-bold opacity-40 w-5" style={{ color: eraColor }}>{i + 1}</span>
-                        <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}33` }}>                           {img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: eraColor }}><Icon name="camera" size={22} label="Sin imagen" /></div>}
+                        <div className="w-10 h-10 rounded-sm overflow-hidden flex-shrink-0" style={{ border: `1px solid ${eraColor}33` }}>
+                          {isClassified(entry) ? (
+                            <ClassifiedTile entry={entry} era={era} size="mini" accentColor={eraColor} />
+                          ) : img ? <img src={img} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center opacity-30" style={{ color: eraColor }}><Icon name="camera" size={22} label="Sin imagen" /></div>}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold truncate" style={{ color: eraColor }}>{entry.title || "Sin título"}</p>
@@ -684,13 +705,16 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
         <div className="grid grid-cols-2 gap-2">
           {reels.map(([day, items], i) => {
             const firstImg = getImageUrl(items[0]);
-            const era = eras.find(e => items.some(i => i.era_id === e.id));
+            const era = eras.find(e => items.some(it => resolveEraId(it) === e.id));
             const eraColor = era?.color ?? PURPLE;
             const dayStr = new Date(day).toLocaleDateString("es-ES", { day: "numeric", month: "short" });
             return (
               <motion.button key={day} whileTap={{ scale: 0.96 }} onClick={() => setActiveReel(i)}
                 className="p-3 rounded-sm text-left" style={{ background: `${eraColor}08`, border: `1px solid ${eraColor}33` }}>
-                <div className="w-full aspect-video rounded-sm overflow-hidden mb-2" style={{ background: `${eraColor}15`, border: `1px solid ${eraColor}22` }}>                   {firstImg ? <img src={firstImg} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-20" style={{ color: eraColor }}><Icon name="circle" size={26} label="Sin imagen" /></div>}
+                <div className="w-full aspect-video rounded-sm overflow-hidden mb-2" style={{ background: `${eraColor}15`, border: `1px solid ${eraColor}22` }}>
+                  {isClassified(items[0]) ? (
+                    <ClassifiedTile entry={items[0]} era={era} accentColor={eraColor} />
+                  ) : firstImg ? <img src={firstImg} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-2xl opacity-20" style={{ color: eraColor }}><Icon name="circle" size={26} label="Sin imagen" /></div>}
                 </div>
                 <p className="text-[10px] font-bold truncate" style={{ color: eraColor }}>{dayStr}</p>
                 <p className="text-[8px] opacity-40" style={{ color: eraColor }}>{items.length} momentos</p>
@@ -1111,8 +1135,11 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
 
   // S95: mostrar todas las entradas con imagen/media, no solo photo.
   // El filtro por categoría lo aplica el padre (Vault.jsx) — entries ya vienen filtradas.
+  // Modo Visita (A5): lo clasificado llega vaciado (sin imagen ni texto) pero la
+  // app debe verse llena (diseño §3) → se incluyen explícitamente para que la
+  // tesela esmerilada ocupe su sitio.
   const entriesWithMedia = useMemo(() =>
-    entries.filter(e => !e.is_deleted && (getImageUrl(e) || e.content?.text)),
+    entries.filter(e => !e.is_deleted && (getImageUrl(e) || e.content?.text || e.classified === true)),
     [entries]
   );
 

@@ -46,3 +46,16 @@ export const getMediaType = (entry) => {
   if (images?.length && images[0].media_type) return images[0].media_type;
   return entry?.type ?? "note";
 };
+
+// ─── MODO VISITA (A5) ─────────────────────────────────────────
+// En modo visita (claim `visit:true`) el Worker vacía lo clasificado y lo
+// devuelve en la forma canónica del diseño §3: { id, classified: true,
+// blurhash, fecha, era }. Estos helpers normalizan esa forma para que el
+// resto de la UI no tenga que saber si la entrada vino saneada o completa.
+export const isClassified = (entry) => Boolean(entry?.classified === true);
+
+/** id de era: forma completa (era_id) o saneada (era, A3). */
+export const resolveEraId = (entry) => entry?.era_id ?? entry?.era ?? null;
+
+/** fecha canónica: created_at normal, fecha en la forma saneada (A3). */
+export const resolveEntryDate = (entry) => entry?.created_at ?? entry?.fecha ?? null;

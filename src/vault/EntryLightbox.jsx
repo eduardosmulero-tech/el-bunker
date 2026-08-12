@@ -9,8 +9,10 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO } from "../tokens";
 import { Icon } from "../core/ui";
+import { useVault } from "../core/VaultContext";
 import { CATEGORY_FILTERS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, getImageUrl, getMediaType } from "./VaultHelpers";
+import { ENTRY_CATEGORY, getImageUrl, getMediaType, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
+import ClassifiedTile from "./ClassifiedTile";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const SWIPE_THRESHOLD = 60;
@@ -45,9 +47,30 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
   const panBase = useRef({ x: 0, y: 0 });
   const lastTap = useRef(0);
 
+  // Modo Visita (A5): marcado individual (solo admin) y tesela clasificada.
+  // liveEntry = versión viva de db para que el estado del botón se actualice
+  // tras la actualización optimista de classifyItem sin reabrir el lightbox.
+  const { user, visitMode, classifyItem, db } = useVault();
+  const [classifyBusy, setClassifyBusy] = useState(false);
+  const [classifyError, setClassifyError] = useState(null);
+
   const entry = entries[currentIndex];
+  const liveEntry = (db?.entries ?? []).find((e) => e.id === entry?.id) ?? entry;
   const total = entries.length;
   const ac = accentColor;
+
+  const toggleClassified = async (target) => {
+    if (classifyBusy) return;
+    setClassifyBusy(true);
+    setClassifyError(null);
+    try {
+      await classifyItem("entry", target.id, !target.classified);
+    } catch (e) {
+      setClassifyError(e?.message ?? "No se pudo actualizar la clasificación.");
+    } finally {
+      setClassifyBusy(false);
+    }
+  };
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -159,13 +182,14 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
 
   // REVIEW FIX: hoist para evitar llamar getMediaType dos veces en el ternario.
   const mediaType = getMediaType(entry);
-  const era = eras.find(e => e.id === entry.era_id);
+  // Modo Visita (A5): la forma saneada trae `era` y `fecha` en vez de era_id/created_at.
+  const era = eras.find(e => e.id === resolveEraId(entry));
   const eraColor = era?.color ?? ac;
   const imgUrl = getImageUrl(entry);
   const whoName = entry.from_user === "edu" ? "Edu" : entry.from_user === "david" ? "David" : "";
   const whoColor = entry.from_user === "edu" ? ac : entry.from_user === "david" ? PURPLE : `${ac}66`;
-  const dateStr = entry.created_at
-    ? new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+  const dateStr = resolveEntryDate(entry)
+    ? new Date(resolveEntryDate(entry)).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
     : "";
 
   return createPortal(
@@ -237,7 +261,9 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
               {/* BUG #4 FIX (auditoría S148): rama <video> para entries de vídeo.
                   Antes siempre renderizaba <img src="...mp4"> (roto). Espejo
                   de CinemaView: video → <video controls>, audio → placeholder. */}
-              {imgUrl ? (
+              {isClassified(entry) ? (
+                <ClassifiedTile entry={entry} era={era} size="large" accentColor={eraColor} />
+              ) : imgUrl ? (
                 mediaType === "video" ? (
                   <video
                     src={imgUrl}
@@ -350,8 +376,28 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
               </span>
             )}
           </div>
-          {(onEditEntry || onDeleteEntry) && (
-            <div className="flex items-center justify-center gap-2 mt-4 pt-3" style={{ borderTop: `1px solid ${ac}18` }}>
+          {/* Modo Visita (A5): en modo visita no se exponen acciones de gestión
+              (editar/eliminar/clasificar) a quien mira la pantalla. */}
+          {!visitMode && (onEditEntry || onDeleteEntry || user?.role === "admin") && (
+            <div className="flex items-center justify-center gap-2 mt-4 pt-3 flex-wrap" style={{ borderTop: `1px solid ${ac}18` }}>
+              {user?.role === "admin" && (
+                <motion.button
+                  whileTap={{ scale: 0.92 }}
+                  type="button"
+                  onClick={() => toggleClassified(liveEntry ?? entry)}
+                  disabled={classifyBusy}
+                  className="min-h-[44px] px-3 rounded-sm text-[10px] uppercase tracking-widest flex items-center gap-2"
+                  style={{
+                    color: (liveEntry ?? entry).classified ? PURPLE : ac,
+                    background: `${(liveEntry ?? entry).classified ? PURPLE : ac}10`,
+                    border: `1px solid ${(liveEntry ?? entry).classified ? PURPLE : ac}33`,
+                  }}
+                  aria-label={entry.classified ? "Desclasificar entrada" : "Clasificar entrada"}
+                >
+                  <Icon name={(liveEntry ?? entry).classified ? "unlock" : "lock"} size={14} decorative />
+                  {(liveEntry ?? entry).classified ? "DESCLASIFICAR" : "CLASIFICAR"}
+                </motion.button>
+              )}
               {onEditEntry && (
                 <motion.button
                   whileTap={{ scale: 0.92 }}
@@ -377,6 +423,11 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
                 </motion.button>
               )}
             </div>
+          )}
+          {classifyError && (
+            <p className="text-[9px] mt-2 text-center uppercase tracking-widest" style={{ color: "#ff3b3b" }}>
+              <Icon name="alert" size={12} decorative /> {classifyError}
+            </p>
           )}
           <p className="text-[9px] mt-3 opacity-15 text-center" style={{ color: ac }}>
             tap para cerrar · desliza para navegar · doble tap zoom · pellizca

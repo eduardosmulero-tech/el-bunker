@@ -11,7 +11,8 @@ import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { motion, AnimatePresence } from "framer-motion";
 import AddEntryForm, { CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, monthsSince, timeSince, timeUntil } from "./VaultHelpers";
+import { ENTRY_CATEGORY, monthsSince, resolveEraId, resolveEntryDate, timeSince, timeUntil } from "./VaultHelpers";
+import VisitModeControl from "./VisitModeControl";
 import { ColorPicker } from "../core/ColorPicker";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
@@ -400,7 +401,7 @@ const getExtraBadges = (entry) => {
 };
 
 const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
-  const eraEntries = entries.filter((e) => e.era_id === era.id && !e.is_deleted);
+  const eraEntries = entries.filter((e) => resolveEraId(e) === era.id && !e.is_deleted);
 
   return (
     <AnimatePresence mode="wait">
@@ -486,7 +487,9 @@ const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
                 })()}
               </div>
               <span className="text-xs opacity-40 flex-shrink-0" style={{ color: era.color ?? ACID }}>
-                {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}
+                {resolveEntryDate(entry)
+                  ? new Date(resolveEntryDate(entry)).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()
+                  : ""}
               </span>
               {/* S65/S126 — mobile siempre visibles (opacity-40 base, hover → 100); desktop solo en group-hover */}
               <span className="flex gap-1 opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-1">
@@ -960,7 +963,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
               <ChunkErrorBoundary>
                 <Suspense fallback={<Skeleton.VaultGallery />}>
                   <VaultGallery
-                    entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
+                    entries={filteredEntries.filter(e => resolveEraId(e) === activeDisplayEra.id)}
                     eras={displayEras}
                     filterCategory={filterCategory}
                     onEditEntry={setEditingEntry}
@@ -975,16 +978,17 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
 
       {/* ══ SECTION 5: System Status ═════════════════════════════ */}
        <motion.footer
-     initial={{ opacity: 0 }}
-     animate={{ opacity: 1 }}
-     transition={{ duration: 0.5, delay: 0.5 }}
-     className="flex items-center justify-between pt-2 pb-4 px-1"
-   >
-     <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: accent }}>
-       THE_VAULT v1.0
-     </span>
-     <div className="flex items-center gap-3">
-       {user?.role === "admin" && (
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="flex flex-wrap items-center justify-between gap-3 pt-2 pb-4 px-1"
+       >
+        <span className="text-xs opacity-20 tracking-widest uppercase" style={{ color: accent }}>
+          THE_VAULT v1.0
+        </span>
+        <div className="flex flex-wrap items-center gap-3">
+          <VisitModeControl accentColor={accent} />
+          {user?.role === "admin" && (
          <motion.button
            whileTap={{ scale: 0.95 }}
            onClick={handleExport}

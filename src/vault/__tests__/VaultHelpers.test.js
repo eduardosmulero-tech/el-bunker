@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENTRY_CATEGORY, getImageUrl, getMediaType, monthsSince, timeSince, timeUntil } from "../VaultHelpers";
+import { ENTRY_CATEGORY, getImageUrl, getMediaType, isClassified, monthsSince, resolveEraId, resolveEntryDate, timeSince, timeUntil } from "../VaultHelpers";
 
 const NOW = new Date("2026-08-04T12:00:00.000Z");
 
@@ -39,5 +39,32 @@ describe("VaultHelpers", () => {
     expect(ENTRY_CATEGORY.photo).toBeDefined();
     expect(ENTRY_CATEGORY.note).toBeDefined();
     expect(Object.keys(ENTRY_CATEGORY).length).toBeGreaterThan(10);
+  });
+
+  // ── Modo Visita (A5): forma saneada del diseño §3 ──────────
+  it("isClassified detecta la forma saneada (classified === true) y nada más", () => {
+    expect(isClassified({ classified: true })).toBe(true);
+    expect(isClassified({ id: "x", classified: true, blurhash: null, fecha: "2026-01-01", era: "e1" })).toBe(true);
+    expect(isClassified({ classified: false })).toBe(false);
+    expect(isClassified({ classified: 1 })).toBe(false);
+    expect(isClassified({})).toBe(false);
+    expect(isClassified(null)).toBe(false);
+    expect(isClassified(undefined)).toBe(false);
+  });
+
+  it("resolveEraId prefiere era_id (forma completa) y cae a era (forma saneada A3)", () => {
+    expect(resolveEraId({ era_id: "e1", era: "e2" })).toBe("e1");
+    expect(resolveEraId({ era: "e2" })).toBe("e2");
+    expect(resolveEraId({ era: null })).toBeNull();
+    expect(resolveEraId({})).toBeNull();
+    expect(resolveEraId(null)).toBeNull();
+  });
+
+  it("resolveEntryDate prefiere created_at y cae a fecha (forma saneada A3)", () => {
+    expect(resolveEntryDate({ created_at: "2026-01-01", fecha: "2025-01-01" })).toBe("2026-01-01");
+    expect(resolveEntryDate({ fecha: "2025-01-01" })).toBe("2025-01-01");
+    expect(resolveEntryDate({ fecha: null })).toBeNull();
+    expect(resolveEntryDate({})).toBeNull();
+    expect(resolveEntryDate(null)).toBeNull();
   });
 });

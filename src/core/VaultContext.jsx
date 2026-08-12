@@ -114,6 +114,28 @@ const BOOT = Object.freeze({
   ERROR:         "error",
 });
 
+// ─── MODO VISITA (A5) ────────────────────────────────────────
+// El claim `visit` vive en el JWT (diseño Modo Visita §5): sobrevive a la
+// recarga y no se desactiva desde devtools. Se lee decodificando el payload
+// (base64url) sin verificar firma: la firma ya la validó authenticate() al
+// emitir el token, y aquí solo se pinta el estado del interruptor.
+// eslint-disable-next-line react-refresh/only-export-components
+export function decodeJwtPayload(token) {
+  if (!token) return null;
+  try {
+    const b64 = (token.split(".")[1] || "")
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const text = new TextDecoder().decode(
+      Uint8Array.from(atob(padded), (c) => c.charCodeAt(0))
+    );
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
 // ─── PROVIDER ────────────────────────────────────────────────
 export function VaultProvider({ children }) {
 
@@ -129,6 +151,13 @@ export function VaultProvider({ children }) {
   const [pendingDrop,   setPendingDrop]   = useState(null);
   // JWT para Worker API (ADR-024) — persistido en sessionStorage
   const [jwtToken,      setJwtToken]      = useState(() => readStoredJwt());
+
+  // Modo Visita (A5): claim `visit` del JWT — el servidor decide, no localStorage.
+  // Con visit:true las rutas del ámbito vacían lo clasificado (A3, server-side).
+  const visitMode = useMemo(
+    () => decodeJwtPayload(jwtToken)?.visit === true,
+    [jwtToken]
+  );
 
   // ADR-028: cómo se entró — Google o clave de acceso.
   const [sessionKind, setSessionKind] = useState(null);
@@ -788,6 +817,60 @@ export function VaultProvider({ children }) {
     return { ok: true, id: entryId };
   }, []);
 
+  // ── Modo Visita (A5): interruptor ────────────────────────
+  // Encender: cualquier sesión autenticada, sin clave (diseño §5).
+  // Apagar: solo con clave de acceso (ADR-028) — sin clave el worker responde 401.
+  // El worker emite un JWT nuevo con/sin el claim; tras aplicarlo se re-fetcha
+  // la db para que el contenido cambie de forma (vaciado ⇄ completo).
+  const setVisitMode = useCallback(async (wantOn, accessKey) => {
+    const res = await fetch(`${API_BASE}/api/session/visit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${jwtToken ?? workerClient.token}`,
+      },
+      body: JSON.stringify(wantOn ? {} : { access_key: accessKey }),
+    });
+    if (!res.ok) {
+      let msg = `El modo visita no pudo ${wantOn ? "encenderse" : "apagarse"} (${res.status}).`;
+      try {
+        const j = await res.json();
+        if (j?.error) msg = j.error;
+      } catch { /* cuerpo no JSON */ }
+      throw new Error(msg);
+    }
+    const { token } = await res.json();
+    if (!token) throw new Error("El worker no devolvió un token nuevo.");
+    _applyJwt(token);
+    await refreshDb();
+    return { ok: true };
+  }, [_applyJwt, refreshDb, jwtToken]);
+
+  /**
+   * classifyItem(itemType, itemId, classified)
+   * A1 — marcado individual vía POST/DELETE /api/classify (solo admin,
+   * el worker responde 403 al resto). Actualiza el estado local de forma
+   * optimista para que la UI refleje el estado al instante.
+   */
+  const classifyItem = useCallback(async (itemType, itemId, classified) => {
+    if (user?.role !== "admin") {
+      throw new Error("Solo el administrador puede clasificar contenido.");
+    }
+    const path = `/api/classify/${encodeURIComponent(itemType)}/${encodeURIComponent(itemId)}`;
+    if (classified) {
+      await workerClient.post(path);
+    } else {
+      await workerClient.del(path);
+    }
+    setDb((prev) => ({
+      ...prev,
+      entries: (prev?.entries ?? []).map((e) =>
+        e.id === itemId && itemType === "entry" ? { ...e, classified } : e
+      ),
+    }));
+    return { ok: true };
+  }, [user?.role]);
+
   // ── Context Value ─────────────────────────────────────────
   const value = {
     // Auth
@@ -804,6 +887,11 @@ export function VaultProvider({ children }) {
 
     // Worker API JWT
     jwtToken,
+
+    // Modo Visita (A5): claim `visit` del JWT + interruptor + marcado individual
+    visitMode,
+    setVisitMode,
+    classifyItem,
 
     // ADR-028: cómo se entró (google | access_key | null)
     sessionKind,
