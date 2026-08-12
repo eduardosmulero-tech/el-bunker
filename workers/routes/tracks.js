@@ -6,6 +6,7 @@
 import { json, err } from "../utils/response.js";
 import { canManageOwned } from "../utils/authorization.js";
 import { cleanString } from "../utils/validation.js";
+import { isVisitMode, loadClassifiedIds, sanitizeTrack } from "../utils/visit-filter.js";
 
 // FASE D.2 (veredicto V5 Fable S147): helper local para emitir eventos de track.
 // Contrato explícito: POST emite track_created, DELETE emite track_deleted,
@@ -69,6 +70,14 @@ export default async function handleTracks(request, env, url, userId) {
       thumbnail: r.thumbnail ? (r.thumbnail.startsWith("http") ? r.thumbnail : `${url.origin}/${r.thumbnail}`) : null,
       tag_label: undefined, tag_icon: undefined, tag_color: undefined,
     }));
+    // A3: en modo visita, vaciar los tracks clasificados (sin r2_key,
+    // URL firmada, título ni nota). Los no clasificados se devuelven tal cual.
+    if (isVisitMode(request)) {
+      const classifiedIds = await loadClassifiedIds(env, "track", mapped.map((t) => t.id));
+      if (classifiedIds.size) {
+        return json(mapped.map((track) => classifiedIds.has(track.id) ? sanitizeTrack(track) : track));
+      }
+    }
     return json(mapped);
   }
 

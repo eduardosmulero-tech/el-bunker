@@ -7,6 +7,13 @@ import { json, err } from "../utils/response.js";
 import { isSensitiveR2Key, signR2Read } from "../utils/r2-sign.js";
 import { canManageOwned } from "../utils/authorization.js";
 import { cleanString } from "../utils/validation.js";
+import {
+  isVisitMode,
+  loadClassifiedIds,
+  loadEntryBlurhash,
+  sanitizeEntry,
+  sanitizeFile,
+} from "../utils/visit-filter.js";
 
 // FASE D.1 (V4): para entries con imágenes en prefijos sensibles
 // (vault/docs/, vault/audio/), inyecta `url` firmada HMAC en cada imagen.
@@ -130,6 +137,28 @@ export default async function handleEntries(request, env, url, userId) {
         await signEntryImages(entry, env, url);
       }));
     }
+    // A3: en modo visita, vaciar lo clasificado (sin r2_key, URL firmada,
+    // título ni nota). Las entries no clasificadas se devuelven tal cual.
+    if (isVisitMode(request)) {
+      const classifiedIds = await loadClassifiedIds(env, "entry", results.map((e) => e.id));
+      const classifiedFileIds = await loadClassifiedIds(
+        env, "file", results.flatMap((e) => (e.files || []).map((f) => f.id))
+      );
+      if (classifiedIds.size || classifiedFileIds.size) {
+        const blurhashByEntry = await loadEntryBlurhash(env, [...classifiedIds]);
+        return json(results.map((entry) => {
+          if (classifiedIds.has(entry.id)) {
+            return sanitizeEntry(entry, blurhashByEntry.get(entry.id) ?? null);
+          }
+          if (classifiedFileIds.size && Array.isArray(entry.files)) {
+            entry.files = entry.files.map((file) =>
+              classifiedFileIds.has(file.id) ? sanitizeFile(file) : file
+            );
+          }
+          return entry;
+        }));
+      }
+    }
     return json(results);
   }
 
@@ -154,6 +183,22 @@ export default async function handleEntries(request, env, url, userId) {
     entry.files = await protectEntryFiles(files, env, url);
     // FASE D.1: firmar imágenes en prefijos sensibles (muta entry in-place, sin reasignar).
     await signEntryImages(entry, env, url);
+    // A3: en modo visita, vaciar la entry clasificada (y sus files clasificados).
+    if (isVisitMode(request)) {
+      const classifiedIds = await loadClassifiedIds(env, "entry", [entry.id]);
+      if (classifiedIds.has(entry.id)) {
+        const blurhash = (await loadEntryBlurhash(env, [entry.id])).get(entry.id) ?? null;
+        return json(sanitizeEntry(entry, blurhash));
+      }
+      const classifiedFileIds = await loadClassifiedIds(
+        env, "file", (entry.files || []).map((f) => f.id)
+      );
+      if (classifiedFileIds.size) {
+        entry.files = entry.files.map((file) =>
+          classifiedFileIds.has(file.id) ? sanitizeFile(file) : file
+        );
+      }
+    }
     return json(entry);
   }
 
