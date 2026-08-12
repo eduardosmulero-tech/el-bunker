@@ -1,0 +1,303 @@
+{
+  "meta": {
+    "fecha": "2026-08-12T02:42:50.970Z",
+    "commit": "b84088c3faaeadfbe465db04aedaddafb4e90ec2",
+    "navegador": "msedge/151.0.4129.78",
+    "fixtures": "cd41d5b2704b"
+  },
+  "cobertura": {
+    "estatico": 0,
+    "ejercitado": 0,
+    "no_ejercitado": []
+  },
+  "hallazgos": [
+    {
+      "id": "380bd1608f60",
+      "vista": "vault@1440x900",
+      "elemento": "span «takeout_IMG-20211101-WA0012.jpg»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 233,
+        "disponible": 136,
+        "deficit": 97
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "0fdff5efd74c",
+      "vista": "vault@1440x900",
+      "elemento": "span «Ｌａｄｙ，Ｈｅａｒ Ｍｅ Ｔｏｎｉｇｈｔ»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 236,
+        "disponible": 136,
+        "deficit": 100
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "7f3ca055f701",
+      "vista": "vault@1440x900",
+      "elemento": "span «EsteEsUnTituloDeCientoVeinteCaracteresSinEspaciosParaEstresarElLayoutDeLaTarjetaEnElMuroDeLaBovedaDelBunker»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 803,
+        "disponible": 136,
+        "deficit": 667
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "dd95a7453330",
+      "vista": "vault@1440x900",
+      "elemento": "p «La primera foto que nos mandamos por WhatsApp, con la calida»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 432,
+        "disponible": 235,
+        "deficit": 197
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "f943aa7170d1",
+      "vista": "vault@1440x900",
+      "elemento": "p «👨‍👩‍👧‍👦 La familia entera en la playa de agosto — el día que David se perdió»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 520,
+        "disponible": 235,
+        "deficit": 285
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "ee6d0d348808",
+      "vista": "vault@1440x900",
+      "elemento": "p «Foto de familia con emoji ZWJ en el título.»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 310,
+        "disponible": 235,
+        "deficit": 75
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "35084c79d835",
+      "vista": "vault@1440x900",
+      "elemento": "p «El día que sonó esta canción en el coche y decidimos que era»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 432,
+        "disponible": 235,
+        "deficit": 197
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "abb9b798a926",
+      "vista": "vault@1440x900",
+      "elemento": "p «日本語のタイトルはとても長いですから、カードの幅を超えて折り返すことができません»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 480,
+        "disponible": 235,
+        "deficit": 245
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "b1d921d0e0de",
+      "vista": "vault@1440x900",
+      "elemento": "p «Título CJK sin espacios que no cabe en la tarjeta.»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 360,
+        "disponible": 235,
+        "deficit": 125
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "9f3f5dca70fc",
+      "vista": "vault@1440x900",
+      "elemento": "p «EsteEsUnTituloDeCientoVeinteCaracteresSinEspaciosParaEstresarElLayoutDeLaTarjetaEnElMuroDeLaBovedaDelBunker»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 771,
+        "disponible": 235,
+        "deficit": 536
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "282ddf2b5fdb",
+      "vista": "vault@1440x900",
+      "elemento": "p «Carta larga con un título kilométrico para estresar el muro.»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 432,
+        "disponible": 235,
+        "deficit": 197
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "8692f11a66cf",
+      "vista": "vault@1440x900",
+      "elemento": "p «שלום עולם — זיכרון מיום החתונה בירושלים בערב של קיץ חם»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 389,
+        "disponible": 235,
+        "deficit": 154
+      },
+      "captura": "screenshots/vault-1440x900.png"
+    },
+    {
+      "id": "fff718d3815d",
+      "vista": "vault@390x844",
+      "elemento": "div «EL BÚNKERAUG 12, 202604:42:43· offline · AVENTURA EN CURSO1969días5Y·4M·21D SEGURO ERAS[02]+ ERAERA_00 ACTIVA2021 — EL P»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 452,
+        "disponible": 390,
+        "deficit": 62
+      },
+      "captura": "screenshots/vault-390x844.png"
+    },
+    {
+      "id": "02c0aed21d17",
+      "vista": "vault@390x844",
+      "elemento": "span «takeout_IMG-20211101-WA0012.jpg»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 233,
+        "disponible": 174,
+        "deficit": 59
+      },
+      "captura": "screenshots/vault-390x844.png"
+    },
+    {
+      "id": "d01ba21612de",
+      "vista": "vault@390x844",
+      "elemento": "span «Ｌａｄｙ，Ｈｅａｒ Ｍｅ Ｔｏｎｉｇｈｔ»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 236,
+        "disponible": 174,
+        "deficit": 62
+      },
+      "captura": "screenshots/vault-390x844.png"
+    },
+    {
+      "id": "d8a33e2ef074",
+      "vista": "vault@390x844",
+      "elemento": "span «EsteEsUnTituloDeCientoVeinteCaracteresSinEspaciosParaEstresarElLayoutDeLaTarjetaEnElMuroDeLaBovedaDelBunker»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 803,
+        "disponible": 174,
+        "deficit": 629
+      },
+      "captura": "screenshots/vault-390x844.png"
+    },
+    {
+      "id": "97b37cd05874",
+      "vista": "music@1440x900",
+      "elemento": "p «SupercalifragilisticoespialidosoYUnPocoMasParaQueElTituloNoQuepaEnLaTarjetaDeMusicaDelLaboratorio»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 699,
+        "disponible": 608,
+        "deficit": 91
+      },
+      "captura": "screenshots/music-1440x900.png"
+    },
+    {
+      "id": "37784c382310",
+      "vista": "music@390x844",
+      "elemento": "p «👨‍👩‍👧‍👦 La canción de la boda de los primos»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 283,
+        "disponible": 222,
+        "deficit": 61
+      },
+      "captura": "screenshots/music-390x844.png"
+    },
+    {
+      "id": "9a42d99fc9b9",
+      "vista": "music@390x844",
+      "elemento": "p «La canción del coche. Nunca la saltamos.»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 288,
+        "disponible": 222,
+        "deficit": 66
+      },
+      "captura": "screenshots/music-390x844.png"
+    },
+    {
+      "id": "8b8806f045c8",
+      "vista": "music@390x844",
+      "elemento": "p «SupercalifragilisticoespialidosoYUnPocoMasParaQueElTituloNoQuepaEnLaTarjetaDeMusicaDelLaboratorio»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 699,
+        "disponible": 222,
+        "deficit": 477
+      },
+      "captura": "screenshots/music-390x844.png"
+    },
+    {
+      "id": "e93d4c4ea6e3",
+      "vista": "music@390x844",
+      "elemento": "p «שיר עברי ארוך מאוד שלא נכנס בכרטיסייה של המוזיקה»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 346,
+        "disponible": 222,
+        "deficit": 124
+      },
+      "captura": "screenshots/music-390x844.png"
+    },
+    {
+      "id": "f183eaf22b2f",
+      "vista": "music@390x844",
+      "elemento": "p «日本語の曲名がとても長いのでカードからはみ出してしまいます»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 348,
+        "disponible": 222,
+        "deficit": 126
+      },
+      "captura": "screenshots/music-390x844.png"
+    },
+    {
+      "id": "4bec0afa9ea7",
+      "vista": "capsules@390x844",
+      "elemento": "span «david Ｌａｄｙ，Ｈｅａｒ Ｍｅ Ｔｏｎｉｇｈｔ»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 274,
+        "disponible": 234,
+        "deficit": 40
+      },
+      "captura": "screenshots/capsules-390x844.png"
+    },
+    {
+      "id": "13a8c02c1b96",
+      "vista": "capsules@390x844",
+      "elemento": "span «edu 👨‍👩‍👧‍👦 La canción de la boda de los primos»",
+      "tipo": "truncamiento",
+      "medida": {
+        "necesita": 311,
+        "disponible": 241,
+        "deficit": 70
+      },
+      "captura": "screenshots/capsules-390x844.png"
+    }
+  ]
+}
