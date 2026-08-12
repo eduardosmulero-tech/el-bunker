@@ -178,12 +178,13 @@ export async function runAudit({
         await interceptarRutas(page, baseUrl, fixturesDir);
 
         await page.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        // La nav inferior (BottomNav, <nav>) solo existe autenticado: esperarla
-        // = boot completado. NOTA: el nombre accesible de estas pestañas es
-        // "VAULT VAULT" (el Icon aporta label + el span el texto) → se localiza
-        // por texto dentro de <nav>, nunca por getByRole con exact:true.
-        const pestaña = page.locator(`nav button:has-text("${pantalla.tab}")`).first();
-        await pestaña.waitFor({ timeout: 20000 });
+        // La navegación visible depende del breakpoint: BottomNav (<nav>) en
+        // móvil y DesktopRail (<aside>) desde 1280px. El nombre accesible puede
+        // repetirse (el Icon aporta label + el texto), por eso se localiza por
+        // texto dentro del contenedor visible y no por getByRole exacto.
+        const contenedorNav = viewport.width >= 1280 ? 'aside.desktop-rail' : 'nav';
+        const pestaña = page.locator(`${contenedorNav} button:has-text("${pantalla.tab}")`).first();
+        await pestaña.waitFor({ state: 'visible', timeout: 20000 });
         // Si no es la pantalla inicial, navegar a ella.
         if (pantalla.id !== 'vault') {
           await pestaña.click();

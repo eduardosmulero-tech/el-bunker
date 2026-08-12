@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../core/ToastContext";
 import { usePlayer } from "../core/PlayerContext";
 import { useVault } from "../core/VaultContext";
+import { useMusicActions } from "../musiclab/useMusicActions";
+import { WinampPlayer } from "../musiclab/WinampPlayer";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 import { Icon } from "../core/ui";
 
@@ -76,7 +78,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="fixed top-0 left-0 right-0 z-30 flex flex-col px-6"
+      className="mobile-status-bar fixed top-0 left-0 right-0 z-30 flex flex-col px-6"
       style={{
         paddingTop: "env(safe-area-inset-top, 12px)",
         paddingBottom: "12px",
@@ -186,7 +188,7 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.3 }}
-      className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-2"
+      className="mobile-bottom-nav fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around px-2"
       style={{
         paddingTop: "10px",
         paddingBottom: "calc(10px + env(safe-area-inset-bottom, 8px))",
@@ -313,7 +315,7 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed left-0 right-0 z-[25] mx-2"
+      className="mobile-mini-player fixed left-0 right-0 z-[25] mx-2"
       style={{ bottom: `calc(${bottomNavHeight}px + env(safe-area-inset-bottom, 4px))` }}
     >
       <div
@@ -414,6 +416,55 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
  *   activeTab         — string
  *   onTabChange       — (tabId: string) => void
  */
+const DesktopRail = ({ activeTab, onTabChange, accentColor }) => {
+  const destinations = [
+    { id: "vault", label: "VAULT", icon: "archive", children: ["WALL", "CINEMA", "MAP", "DIALOGUE", "EXHIBITION", "REEL"] },
+    { id: "music", label: "MUSIC LAB", icon: "music", children: ["COLA", "TRACKS", "LISTS", "DROPS"] },
+    { id: "capsules", label: "CAPSULES", icon: "lock", children: ["TIMELINE", "SMOKE", "TIME CAPSULES", "RECAP"] },
+  ];
+  return (
+    <aside className="desktop-only desktop-rail" aria-label="Navegación de escritorio">
+      <div className="desktop-rail__destinations">
+        {destinations.map((destination) => {
+          const active = activeTab === destination.id;
+          return (
+            <div key={destination.id}>
+              <button type="button" onClick={() => onTabChange(destination.id)}
+                className="desktop-rail__destination" aria-current={active ? "page" : undefined}
+                style={{ color: active ? accentColor : `${accentColor}66`, borderLeftColor: active ? accentColor : "transparent", background: active ? `${accentColor}0d` : "transparent" }}>
+                <Icon name={destination.icon} size={16} decorative />
+                <span>{destination.label}</span>
+              </button>
+              {active && <div className="desktop-rail__children">
+                {destination.children.map((child, index) => (
+                  <span key={child} className={index === 0 ? "desktop-rail__child desktop-rail__child--active" : "desktop-rail__child"}
+                    style={{ color: index === 0 ? accentColor : `${accentColor}66` }}>{child}</span>
+                ))}
+              </div>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="desktop-rail__hint" style={{ color: `${accentColor}88` }}>1 / 2 / 3 · CAMBIAR ZONA</div>
+    </aside>
+  );
+};
+
+const DesktopTopbar = ({ isAuthenticated, onSignOut, activeTab, accentColor, partnerListening, partnerName, partnerTrack, tick }) => (
+  <header className="desktop-only desktop-topbar" style={{ color: accentColor }}>
+    <div className="desktop-topbar__brand"><span className="desktop-topbar__pulse" style={{ background: isAuthenticated ? accentColor : "#ff3b3b" }} /> EL BÚNKER <span className="desktop-topbar__separator">/</span> {activeTab.toUpperCase()}</div>
+    <div className="desktop-topbar__presence" style={{ color: partnerListening ? accentColor : `${accentColor}66` }}>
+      <Icon name={partnerListening ? "music" : "offline"} size={14} decorative />
+      {partnerListening ? `${partnerName || "PARTNER"}${partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}` : "OFFLINE"}
+    </div>
+    <div className="desktop-topbar__actions">
+      <span>{tick.toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} · {tick.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" })}</span>
+      <button type="button" onClick={() => window.location.reload()} aria-label="Recargar"><Icon name="refresh" size={14} decorative /></button>
+      {onSignOut && <button type="button" onClick={onSignOut} aria-label="Cerrar sesión"><Icon name="unlock" size={14} decorative /></button>}
+    </div>
+  </header>
+);
+
 export default function Layout({
   children,
   isAuthenticated = false,
@@ -424,8 +475,43 @@ export default function Layout({
   onSignOut,
 }) {
   const { toasts, muteToast } = useToast();
-  const { trackVibe, resolveVibeAccent, networkStatus, sessionToast, setSessionToast } = usePlayer();
+  const { db, user } = useVault();
+  const { onAddDrop } = useMusicActions();
+  const { trackVibe, resolveVibeAccent, networkStatus, sessionToast, setSessionToast, partnerListening, partnerName, partnerTrack, localQueue, playHistory } = usePlayer();
+  const [desktopViewport, setDesktopViewport] = useState(false);
+  const [tick, setTick] = useState(new Date());
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
+  const desktopTracks = useMemo(() => (db?.music_lab?.tracks ?? []).filter((track) => !track.is_deleted), [db?.music_lab?.tracks]);
+  const desktopVibeConf = trackVibe ? { palette: { accent: resolveVibeAccent(trackVibe) ?? ACID } } : undefined;
+  const handleDesktopDrop = (dropData) => {
+    const to = user?.id === "edu" ? "david" : "edu";
+    return onAddDrop?.({ ...dropData, id: crypto.randomUUID(), from: user?.id, to, created_at: new Date().toISOString() });
+  };
+
+  useEffect(() => {
+    const media = window.matchMedia?.("(min-width: 1280px)");
+    const update = () => setDesktopViewport(Boolean(media?.matches));
+    update();
+    media?.addEventListener?.("change", update);
+    return () => media?.removeEventListener?.("change", update);
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      const tag = event.target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || event.target?.isContentEditable) return;
+      if (event.key === "1") onTabChange("vault");
+      if (event.key === "2") onTabChange("music");
+      if (event.key === "3") onTabChange("capsules");
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onTabChange]);
 
   // VB9: propagate vibe accent as CSS variable on :root so all components can react
   useEffect(() => {
@@ -452,6 +538,37 @@ export default function Layout({
         onSignOut={onSignOut}
         accentColor={accentColor}
       />
+      <DesktopTopbar
+        isAuthenticated={isAuthenticated}
+        onSignOut={onSignOut}
+        activeTab={activeTab}
+        accentColor={accentColor}
+        partnerListening={partnerListening}
+        partnerName={partnerName}
+        partnerTrack={partnerTrack}
+        tick={tick}
+      />
+      <DesktopRail activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
+      <aside className="desktop-only desktop-dock" aria-label="Reproductor permanente">
+        {desktopViewport && <>
+          <WinampPlayer tracks={desktopTracks} vibeConf={desktopVibeConf} onDropSend={handleDesktopDrop} />
+          <section className="desktop-dock__queue" aria-label="Cola e historial">
+            <div className="desktop-dock__section-title" style={{ color: accentColor }}>COLA [{localQueue?.length ?? 0}]</div>
+            {(localQueue ?? []).slice(0, 5).map((track, index) => (
+              <div key={`${track.id}-${index}`} className="desktop-dock__queue-row" style={{ color: track.color || `${accentColor}aa` }}>
+                <span>{String(index + 1).padStart(2, "0")}</span><span className="truncate">{track.title || "SIN TÍTULO"}</span>
+              </div>
+            ))}
+            {(localQueue ?? []).length === 0 && <div className="desktop-dock__empty" style={{ color: `${accentColor}55` }}>COLA VACÍA</div>}
+            <div className="desktop-dock__section-title desktop-dock__section-title--history" style={{ color: `${accentColor}88` }}>HISTORIAL [5]</div>
+            {(playHistory ?? []).slice(-5).reverse().map((track, index) => (
+              <div key={`${track.id || track.title}-${index}`} className="desktop-dock__queue-row desktop-dock__queue-row--history" style={{ color: `${accentColor}55` }}>
+                <span>−</span><span className="truncate">{track.title || "SIN TÍTULO"}</span>
+              </div>
+            ))}
+          </section>
+        </>}
+      </aside>
 
       {/* ── Fase 1.5 — EC-P2: Toast de desconexión de red ── */}
       <AnimatePresence>
@@ -566,7 +683,7 @@ export default function Layout({
       {/* NOTA: Las transiciones de página las maneja App.jsx (AuthenticatedApp).
            No duplicar AnimatePresence aquí — causa doble animación y flicker. */}
       <main
-        className="relative z-20 min-h-screen"
+        className="relative z-20 min-h-screen desktop-canvas"
         /* 80px contenido (20+4+44+12) + safe-area (misma formula que StatusBar) */
         style={{
           paddingTop: "calc(80px + env(safe-area-inset-top, 12px))",
@@ -577,10 +694,13 @@ export default function Layout({
       </main>
 
       {/* ── Layer 3.5: Mini Player (G7) ── */}
-      {activeTab !== "music" && <MiniPlayer accentColor={accentColor} bottomNavHeight={80} />}
+      {!desktopViewport && activeTab !== "music" && <MiniPlayer accentColor={accentColor} bottomNavHeight={80} />}
 
       {/* ── Layer 4: Bottom Nav ── */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
+      <footer className="desktop-only desktop-footer" style={{ color: `${accentColor}88` }}>
+        <span>STATUS · {_dbStatus}</span><span>{db?.music_lab?.tracks?.filter((track) => !track.is_deleted).length ?? 0} TRACKS · {db?.entries?.length ?? 0} ENTRIES</span><span>SPACE PLAY/PAUSE · ? ATAJOS</span>
+      </footer>
 
       {/* Landscape is supported; no global orientation lock. */}
     </div>

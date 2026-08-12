@@ -97,6 +97,14 @@ export default function MusicLab({
     try { return localStorage.getItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`) ?? "list"; }
     catch { return "list"; }
   });
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia?.("(min-width: 1280px)");
+    const update = () => setIsDesktopViewport(Boolean(media?.matches));
+    update();
+    media?.addEventListener?.("change", update);
+    return () => media?.removeEventListener?.("change", update);
+  }, []);
   const cycleViewMode = () => {
     const next = viewMode === "list" ? "grid" : viewMode === "grid" ? "card" : "list";
     setViewMode(next);
@@ -617,10 +625,6 @@ export default function MusicLab({
   // confirmar eliminar playlist inline
   const [confirmDeletePlId, setConfirmDeletePlId] = useState(null);
 
-  const handleQueueAdvance = (track) => {
-    playTrack(track);
-  };
-
   // EC-C3: Mostrar bottom sheet si hay cola manual activa al pulsar play en playlist.
   // Si no hay tracks manuales, reemplaza el contexto directamente.
   const handlePlayPlaylistContext = (plTracks, plName) => {
@@ -769,22 +773,18 @@ export default function MusicLab({
 
       <div className="flex flex-col gap-5 px-4 py-6 w-full max-w-6xl mx-auto" style={{ fontFamily: FONT_MONO }}>
 
-        <div className="lg:grid lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
-        {/* ══ Player ══ */}
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="lg:sticky lg:top-6 lg:self-start">
+        <div className={`lg:grid ${isDesktopViewport ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"} lg:items-start lg:gap-6`}>
+        {/* ══ Player: mobile/tablet content; desktop lives in Layout's permanent dock ══ */}
+        {!isDesktopViewport && <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="lg:sticky lg:top-6 lg:self-start">
           <WinampPlayer
-            track={activeTrack}
             tracks={filteredTracks}
-            queue={localQueue.filter((t) => t.id !== activeTrack?.id)}
-            onTrackChange={(t) => { setActiveTrack(t); setAutoPlaySignal((n) => n + 1); }}
-            onQueueAdvance={handleQueueAdvance}
             onDropSend={handleDropSend}
             syncStatus={syncStatus}
             VIBE_TAGS={VIBE_TAGS}
             autoPlaySignal={autoPlaySignal}
             vibeConf={resolveVibeConf(activeTrack?.tag ?? activeTrack?.vibe)}
           />
-        </motion.section>
+        </motion.section>}
 
         <div className="min-w-0 flex flex-col gap-5">
         {/* ══ Tab Bar ══ */}

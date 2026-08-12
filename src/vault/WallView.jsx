@@ -99,11 +99,10 @@ const groupEntriesByEra = (entries, eras) => {
 const EraSectionHeader = ({ era, eraEntries, dateRange, vibeCount, accentColor = ACID }) => {
   const eraColor = era?.color ?? accentColor;
   const eraName = era?.name ?? "Sin Era";
-  const dateLabel = dateRange
-    ? dateRange.min === dateRange.max
-      ? fmtMonthYear(dateRange.min)
-      : `${fmtMonthYear(dateRange.min)} → ${fmtMonthYear(dateRange.max)}`
-    : "";
+  const dateLabel = dateRange      ? dateRange.min === dateRange.max
+        ? fmtMonthYear(dateRange.min)
+        : <>{fmtMonthYear(dateRange.min)} <Icon name="arrowRight" size={11} decorative /> {fmtMonthYear(dateRange.max)}</>
+      : "";
   return (
     <motion.div
       initial={{ opacity: 0, x: -8 }}
@@ -125,7 +124,7 @@ const EraSectionHeader = ({ era, eraEntries, dateRange, vibeCount, accentColor =
             title={eraName}
           />
           <span
-            className="text-sm font-bold tracking-wide truncate"
+            className="text-sm font-bold tracking-wide truncate xl:line-clamp-2 xl:whitespace-normal"
             style={{ color: eraColor, textShadow: `0 0 10px ${eraColor}44` }}
           >
             {eraName}
@@ -261,12 +260,12 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor 
             style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}
           >
             {entry.title && (
-              <p className="text-xs truncate leading-tight" style={{ color: ac, fontFamily: FONT_MONO }}>
+              <p className="text-xs truncate xl:line-clamp-2 xl:whitespace-normal leading-tight" style={{ color: ac, fontFamily: FONT_MONO }}>
                 {entry.title}
               </p>
             )}
             {entry.content?.text && (
-              <p className="text-xs opacity-50 truncate mt-0.5" style={{ color: ac, fontFamily: FONT_MONO }}>
+              <p className="text-xs opacity-50 truncate xl:line-clamp-2 xl:whitespace-normal mt-0.5" style={{ color: ac, fontFamily: FONT_MONO }}>
                 {entry.content.text.slice(0, 60)}
               </p>
             )}
@@ -381,9 +380,9 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
         <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ac }}><Icon name="camera" size={36} label="Sin imagen" /></div>
       )}
 
-      <p className="text-xs font-bold truncate" style={{ color: ac }}>{entry.title || "Sin título"}</p>
+      <p className="text-xs font-bold truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: ac }}>{entry.title || "Sin título"}</p>
       {entry.content?.text && (
-        <p className="text-xs opacity-50 mt-1 line-clamp-3" style={{ color: ac }}>{entry.content.text}</p>
+        <p className="text-xs opacity-50 mt-1 line-clamp-3 xl:line-clamp-2" style={{ color: ac }}>{entry.content.text}</p>
       )}
 
       <div className="flex flex-wrap gap-1 mt-2">

@@ -26,6 +26,16 @@ bucket_name = "el-bunker-music"
 [env.production]
 vars = { ENVIRONMENT = "production" }
 
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "el-bunker-db"
+database_id = "795e5e88-6fab-4aa2-a294-d24640a0de05"
+migrations_dir = "migrations"
+
+[[env.production.r2_buckets]]
+binding = "BUNKER"
+bucket_name = "el-bunker-music"
+
 # ═══ Observability ═══════════════════════════════════════════
 [observability]
 enabled = true

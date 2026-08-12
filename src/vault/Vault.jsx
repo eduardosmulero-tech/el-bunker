@@ -379,9 +379,9 @@ const EXTRA_BADGE_FORMAT = {
     const d = new Date(val);
     return { icon: "calendar", label: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase() };
   },
-  location:  (val) => val ? { icon: "📍", label: val } : null,
+  location:  (val) => val ? { icon: "map", label: val } : null,
   rating:    (val) => val && val !== "—" ? { icon: "⭐", label: val } : null,
-  url:       (val) => val ? { icon: "🔗", label: val.length > 40 ? val.slice(0, 37) + "…" : val } : null,
+  url:       (val) => val ? { icon: "send", label: val.length > 40 ? val.slice(0, 37) + "…" : val } : null,
   mood:      (val) => val && val !== "—" ? { icon: null, label: val } : null,
   amount:    (val) => val ? { icon: "€", label: val } : null,
 };

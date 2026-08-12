@@ -243,7 +243,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
                 <span className="opacity-30" style={{ color: accent, fontFamily: FONT_MONO }}>
                   {e.created_at?.slice(11, 16) ?? "--:--"}
                 </span>
-                <span className="opacity-50 truncate" style={{ color: accent, fontFamily: FONT_MONO }}>{label}</span>
+                <span className="xl:min-w-0 xl:flex-1 opacity-50 truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: accent, fontFamily: FONT_MONO }}>{label}</span>
                 <span className="opacity-20 ml-auto text-xs" style={{ color: accent }}>{e.user_id}</span>
               </motion.div>
             );
@@ -269,7 +269,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
                 style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
                 <Icon name={icon} size={14} label={label} />
                 <span className="opacity-50" style={{ color: accent }}>{label}</span>
-                <span className="opacity-30 ml-auto truncate" style={{ color: accent }}>
+                <span className="xl:min-w-0 ml-auto opacity-30 truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: accent }}>
                   {e.user_id} {detail.title || detail.track_id || detail.era_name || ""}
                 </span>
               </motion.div>

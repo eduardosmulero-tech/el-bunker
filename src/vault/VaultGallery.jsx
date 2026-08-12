@@ -177,7 +177,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
             transition={{ duration: 2.5, repeat: Infinity }}
             className="absolute bottom-3 right-3 text-[9px] px-2 py-0.5 rounded-sm"
             style={{ background: "rgba(0,0,0,0.5)", color: eraColor, fontFamily: FONT_MONO }}>
-            ← DESLIZA →
+            <Icon name="arrowLeft" size={11} decorative /> DESLIZA <Icon name="arrowRight" size={11} decorative />
           </motion.div>
         )}
       </div>
@@ -333,13 +333,13 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
       {/* Stats */}
       <div className="flex gap-2">
         <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${ACID}08`, border: `1px solid ${ACID}22` }}>
-          <span className="text-lg block" style={{ color: ACID }}>👤</span>
+          <span className="text-lg block" style={{ color: ACID }}><Icon name="user" size={20} decorative /></span>
           <p className="text-[10px] font-bold mt-1" style={{ color: ACID }}>EDU</p>
           <p className="text-[9px] opacity-40" style={{ color: ACID }}>{pairs.eduCount} momentos</p>
         </div>
-        <div className="flex items-center text-lg opacity-30" style={{ color: PURPLE }}>↔</div>
+        <div className="flex items-center text-lg opacity-30" style={{ color: PURPLE }}><Icon name="arrowRight" size={20} decorative /></div>
         <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${PURPLE}08`, border: `1px solid ${PURPLE}22` }}>
-          <span className="text-lg block" style={{ color: PURPLE }}>👤</span>
+          <span className="text-lg block" style={{ color: PURPLE }}><Icon name="user" size={20} decorative /></span>
           <p className="text-[10px] font-bold mt-1" style={{ color: PURPLE }}>DAVID</p>
           <p className="text-[9px] opacity-40" style={{ color: PURPLE }}>{pairs.davidCount} momentos</p>
         </div>
@@ -352,7 +352,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
       {onlyEdu && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="p-6 rounded-sm text-center" style={{ background: `${ACID}05`, border: `1px dashed ${ACID}22` }}>
-          <span className="text-3xl block mb-3 opacity-50" style={{ color: ACID }}>🎭</span>
+          <span className="text-3xl block mb-3 opacity-50" style={{ color: ACID }}><Icon name="sparkles" size={30} decorative /></span>
           <p className="text-xs leading-relaxed opacity-40" style={{ color: ACID }}>
             Solo un eco en la sala — David no capturó este momento.
           </p>
@@ -361,7 +361,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
       {onlyDavid && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="p-6 rounded-sm text-center" style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
-          <span className="text-3xl block mb-3 opacity-50" style={{ color: PURPLE }}>🎭</span>
+          <span className="text-3xl block mb-3 opacity-50" style={{ color: PURPLE }}><Icon name="sparkles" size={30} decorative /></span>
           <p className="text-xs leading-relaxed opacity-40" style={{ color: PURPLE }}>
             Solo un eco en la sala — Edu no capturó este momento.
           </p>
@@ -649,7 +649,7 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
         <p className="text-xs opacity-30 text-center py-8" style={{ color: PURPLE }}>Agrupa 2+ entradas el mismo día para generar REELS automáticos</p>
       ) : activeReel !== null ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
-          <button onClick={() => setActiveReel(null)} className="text-xs self-start px-3 py-2.5 rounded-sm" style={{ color: PURPLE, border: `1px solid ${PURPLE}33` }}>← VOLVER</button>
+          <button onClick={() => setActiveReel(null)} className="text-xs self-start px-3 py-2.5 rounded-sm" style={{ color: PURPLE, border: `1px solid ${PURPLE}33` }}><Icon name="arrowLeft" size={13} decorative /> VOLVER</button>
           {(() => {
             const [day, items] = reels[activeReel];
             const era = eras.find(e => items.some(i => i.era_id === e.id));
@@ -860,6 +860,7 @@ const MapView = ({ entries = [], eras = [] }) => {
   }, [layerFiltered]);
   const [dateMin, setDateMin] = useState(null);
   const [dateMax, setDateMax] = useState(null);
+  const dateRangeRef = useRef(null);
   useEffect(() => {
     if (dateRange) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -874,6 +875,7 @@ const MapView = ({ entries = [], eras = [] }) => {
       });
     }
   }, [dateRange]);
+  const dateSpan = dateRange ? Math.max(1, dateRange.max - dateRange.min) : 1;
   const filteredByDate = useMemo(() => {
     if (!dateRange || !dateMin || !dateMax) return layerFiltered;
     return layerFiltered.filter((e) => {
@@ -882,6 +884,35 @@ const MapView = ({ entries = [], eras = [] }) => {
     });
   }, [layerFiltered, dateMin, dateMax, dateRange]);
   const filteredPositions = useMemo(() => filteredByDate.map((e) => [e.lat, e.lng]), [filteredByDate]);
+
+  // The two native range inputs intentionally share one visual track. Handling
+  // the pointer on the wrapper avoids the later input swallowing every desktop
+  // click and chooses the closest thumb for both click and drag.
+  const updateDateThumb = useCallback((clientX, thumb) => {
+    if (!dateRange || !dateRangeRef.current) return;
+    const rect = dateRangeRef.current.getBoundingClientRect();
+    if (!rect.width) return;
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const value = dateRange.min + ratio * (dateRange.max - dateRange.min);
+    if (thumb === "min") setDateMin(Math.min(value, dateMax));
+    else setDateMax(Math.max(value, dateMin));
+  }, [dateRange, dateMax, dateMin]);
+
+  const handleDatePointerDown = useCallback((event) => {
+    if (!dateRange) return;
+    event.preventDefault();
+    const value = dateRange.min + ((event.clientX - event.currentTarget.getBoundingClientRect().left) /
+      event.currentTarget.getBoundingClientRect().width) * (dateRange.max - dateRange.min);
+    const thumb = Math.abs(value - dateMin) <= Math.abs(value - dateMax) ? "min" : "max";
+    updateDateThumb(event.clientX, thumb);
+    const onMove = (moveEvent) => updateDateThumb(moveEvent.clientX, thumb);
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp, { once: true });
+  }, [dateRange, dateMin, dateMax, updateDateThumb]);
 
   // Fase 7: agrupar entries por ubicación (~11m) para carrusel en popup
   const locationGroups = useMemo(() => {
@@ -918,20 +949,20 @@ const MapView = ({ entries = [], eras = [] }) => {
           <button onClick={() => setMapLayer("all")}
             className={`text-[9px] px-2 py-1.5 rounded-sm whitespace-nowrap ${mapLayer === "all" ? "" : "opacity-30"}`}
             style={{ color: PURPLE, borderBottom: mapLayer === "all" ? `1px solid ${PURPLE}` : "1px solid transparent" }}>
-            🌍 TODOS
+            <Icon name="map" size={12} decorative /> TODOS
           </button>
           {layerOptions.eras.map((era) => (
             <button key={era.id} onClick={() => setMapLayer(era.id)}
               className={`text-[9px] px-2 py-1.5 rounded-sm whitespace-nowrap ${mapLayer === era.id ? "" : "opacity-30"}`}
               style={{ color: PURPLE, borderBottom: mapLayer === era.id ? `1px solid ${PURPLE}` : "1px solid transparent" }}>
-              {era.icon} {era.label}
+              <Icon name={era.icon} size={12} decorative /> {era.label}
             </button>
           ))}
           {layerOptions.years.map((y) => (
             <button key={y.id} onClick={() => setMapLayer(y.id)}
               className={`text-[9px] px-2 py-1.5 rounded-sm whitespace-nowrap ${mapLayer === y.id ? "" : "opacity-30"}`}
               style={{ color: PURPLE, borderBottom: mapLayer === y.id ? `1px solid ${PURPLE}` : "1px solid transparent" }}>
-              {y.icon} {y.label}
+              <Icon name={y.icon} size={12} decorative /> {y.label}
             </button>
           ))}
         </div>
@@ -943,20 +974,38 @@ const MapView = ({ entries = [], eras = [] }) => {
           <span className="text-[7px] opacity-40 w-[52px] text-right shrink-0 leading-tight" style={{ color: PURPLE }}>
             {fmtSliderDate(dateMin)}
           </span>
-          <div className="relative flex-1 h-11 py-3">
+          <div ref={dateRangeRef} className="relative flex-1 h-11 py-3"
+            onPointerDownCapture={handleDatePointerDown}
+            role="group" aria-label="Rango temporal">
             <input type="range" min={dateRange.min} max={dateRange.max} value={dateMin}
               onChange={(e) => setDateMin(Math.min(Number(e.target.value), dateMax))}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-auto"
+              onKeyDown={(e) => {
+                const step = dateSpan / 100;
+                if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); setDateMin(Math.max(dateRange.min, dateMin - step)); }
+                if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); setDateMin(Math.min(dateMax, dateMin + step)); }
+                if (e.key === "Home") { e.preventDefault(); setDateMin(dateRange.min); }
+                if (e.key === "End") { e.preventDefault(); setDateMin(dateMax); }
+              }}
+              aria-label="Fecha inicial" tabIndex={0}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-none"
               style={{ accentColor: PURPLE, margin: 0 }} />
             <input type="range" min={dateRange.min} max={dateRange.max} value={dateMax}
               onChange={(e) => setDateMax(Math.max(Number(e.target.value), dateMin))}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-auto"
+              onKeyDown={(e) => {
+                const step = dateSpan / 100;
+                if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); setDateMax(Math.max(dateMin, dateMax - step)); }
+                if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); setDateMax(Math.min(dateRange.max, dateMax + step)); }
+                if (e.key === "Home") { e.preventDefault(); setDateMax(dateMin); }
+                if (e.key === "End") { e.preventDefault(); setDateMax(dateRange.max); }
+              }}
+              aria-label="Fecha final" tabIndex={0}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 pointer-events-none"
               style={{ accentColor: PURPLE, margin: 0 }} />
             {/* Track visual personalizado */}
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full" style={{ background: `${PURPLE}15` }}>
               <div className="absolute h-full rounded-full" style={{
-                left: `${((dateMin - dateRange.min) / (dateRange.max - dateRange.min)) * 100}%`,
-                right: `${100 - ((dateMax - dateRange.min) / (dateRange.max - dateRange.min)) * 100}%`,
+                left: `${((dateMin - dateRange.min) / dateSpan) * 100}%`,
+                right: `${100 - ((dateMax - dateRange.min) / dateSpan) * 100}%`,
                 background: PURPLE,
                 opacity: 0.5,
               }} />
@@ -974,13 +1023,13 @@ const MapView = ({ entries = [], eras = [] }) => {
           className="flex flex-col items-center justify-center gap-4 py-12 px-6 rounded-sm"
           style={{ background: `${PURPLE}05`, border: `1px dashed ${PURPLE}22` }}>
           <motion.span animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 3, repeat: Infinity }}
-            className="text-5xl" style={{ color: PURPLE }}>🌍</motion.span>
+            className="text-5xl" style={{ color: PURPLE }}><Icon name="map" size={48} decorative /></motion.span>
           <p className="text-xs tracking-[0.25em] uppercase text-center" style={{ color: PURPLE, opacity: 0.4 }}>MAPA · Geografía de la relación</p>
           <p className="text-[10px] leading-relaxed text-center max-w-xs" style={{ color: PURPLE, opacity: 0.2 }}>
             Las entradas necesitan coordenadas para aparecer aquí. Usa el buscador de ubicaciones al crear o editar una entrada, o introduce lat/lng manualmente.
           </p>
           <div className="flex gap-3 mt-2">
-            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>📍 Geocoder</span>
+            <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}><Icon name="map" size={10} decorative /> Geocoder</span>
             <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}>〰 Polylines</span>
             <span className="text-[8px] px-2 py-1 rounded-sm" style={{ background: `${PURPLE}10`, color: PURPLE }}><Icon name="timer" size={11} decorative /> Slider temp.</span>
           </div>
@@ -1064,7 +1113,7 @@ const MapView = ({ entries = [], eras = [] }) => {
                             </div>
                             {images.length > 1 && (
                               <div style={{ fontSize: 7, opacity: 0.3, marginTop: 2, textAlign: "center", color: "#000" }}>
-                                {images.length} fotos en esta ubicación · desliza →
+                                {images.length} fotos en esta ubicación · desliza <Icon name="arrowRight" size={10} decorative />
                               </div>
                             )}
                           </div>

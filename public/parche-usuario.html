@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>el-bunker — Parche 2026-08-08 (notas para el usuario)</title>
+  <title>el-bunker — Parche 2026-08-12 (notas para el usuario)</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -54,7 +54,7 @@
     <div class="header">
       <div class="header-row">
         <div class="pulse-dot"></div>
-        <h1>el-bunker — Parche del 8 de agosto de 2026</h1>
+        <h1>el-bunker — Parche del 12 de agosto de 2026</h1>
         <span class="badge">notas para el usuario</span>
       </div>
       <p class="subtitle">Qué cambia con este parche, en lenguaje normal. Para Edu y David.</p>
@@ -67,8 +67,8 @@
       </div>
       <ul>
         <li><strong>El vault muestra el contenido real:</strong> 527 fotos en 2 bloques (2021 y 2022).</li>
-        <li><strong>Las canciones repetidas desaparecieron</strong> (1 de agosto): se limpiaron 30 duplicados exactos.</li>
-        <li><strong>El login con Google ya no pide acceso a Drive</strong> (1 de agosto).</li>
+        <li><strong>El panel de administración funciona en <code>/admin</code></strong> (8 de agosto): Terminal de Mando para gestionar canciones, fotos, listas y cápsulas.</li>
+        <li><strong>Modo Visita:</strong> se puede entrar con una clave (sin cuenta de Google) para visitar.</li>
       </ul>
     </div>
 
@@ -78,10 +78,9 @@
         <h3>Qué cambia con este parche <span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;">se ve en la app</span></h3>
       </div>
       <ul>
-        <li><span class="nuevo">NUEVO</span> — <strong>El panel de administración ya se ve:</strong> en <code>/admin</code> se abre la Terminal de Mando para gestionar el contenido (canciones, fotos, listas, cápsulas) con permisos de administrador. Es la integración completa de la Ola 2: el esqueleto del parche anterior, conectado con las rutas reales del servidor.</li>
-        <li><span class="nuevo">NUEVO</span> — <strong>Las fotos se editan y eliminan desde el visor:</strong> al abrir una foto hay botón de editar (título, texto, etiquetas, era...) y botón de eliminar con confirmación. Antes solo se podía desde la lista.</li>
-        <li><span class="nuevo">NUEVO</span> — <strong>Modo Visita:</strong> se puede entrar con una clave (sin cuenta de Google) para visitar.</li>
-        <li><strong>El login se ve más limpio:</strong> el botón de acceder perdió los cuadrados decorativos de las esquinas y los avisos de error se ven centrados.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Consola de SALUD en el panel:</strong> en <code>/admin</code> hay una vista nueva que muestra los recuentos reales de la bóveda (fotos, canciones activas y eliminadas, referencias rotas) leídos directamente de la base de datos. Sirve para detectar datos huérfanos de un vistazo.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Consola de AUDITORÍA en el panel:</strong> un lector del registro de actividad de la app (eventos), con filtros por tipo, usuario y fechas, y paginación — para ver qué ha pasado y cuándo.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Modo Visita reforzado por el servidor:</strong> la censura de lo clasificado (sin título, sin nota, sin archivo) ahora la aplica el servidor en los listados y en el feed cuando se entra en modo visita. Ya no se puede saltar el candado guardando una copia antigua de la sesión: manda el servidor, no el navegador.</li>
       </ul>
     </div>
 
@@ -91,10 +90,11 @@
         <h3>Por dentro <span class="badge" style="background:rgba(167,139,250,0.15);color:#a78bfa;">no cambia ninguna pantalla</span></h3>
       </div>
       <ul>
-        <li><strong>Retirada completa del código de Drive</strong>: ya no queda rastro de la época en que la app usaba Drive como almacén.</li>
-        <li><strong>Clasificación y marcado en lote</strong> en el servidor, con el endpoint de sesión de visita incluido.</li>
-        <li><strong>Herramienta de auditoría de la interfaz:</strong> un pase automático que mide textos truncados, desbordamientos, errores de consola y fallos de red en cada pantalla (24 hallazgos reproducibles en su primer pase).</li>
-        <li><strong>Pruebas de regresión nuevas</strong> (el cliente de datos ya no puede volver a emitir cabeceras malformadas) y la auditoría del canon del proyecto ahora lee las especificaciones vivas, que antes se saltaba.</li>
+        <li><strong>Saneamiento server-side del modo visita</strong> en las rutas de contenido y en el feed (fotos, canciones, cápsulas, gotas).</li>
+        <li><strong>Medición de textos truncados reproducida y comparada:</strong> primera línea base de auditoría (24 hallazgos documentados) y primer delta contra la versión anterior: <strong>10 truncados resueltos, 0 agravados</strong>, 6 mediciones nuevas en escritorio.</li>
+        <li><strong>El harness de auditoría ahora mide también el escritorio</strong> (antes solo móvil).</li>
+        <li><strong>Arreglada la fecha de la "aventura en curso":</strong> la app ya no inventa una fecha falsa cuando la real no está disponible — se queda sin fecha hasta que exista.</li>
+        <li><strong>Iconografía declarada:</strong> la tabla de iconos del diseño HUD ahora documenta las 20 líneas reales que usan iconos (fuente de verdad para futuros cambios visuales).</li>
       </ul>
     </div>
 
@@ -104,7 +104,8 @@
         <h3>Qué viene en los próximos parches</h3>
       </div>
       <ul>
-        <li><strong>La pantalla de inicio rediseñada para el escritorio</strong>: títulos sin recortar y mejor aprovechamiento del espacio (diseño firmado, ejecución pendiente).</li>
+        <li><strong>La pantalla de inicio rediseñada para el escritorio</strong>: títulos sin recortar y mejor aprovechamiento del espacio (trabajo en curso, pendiente de integrar).</li>
+        <li><strong>Interfaz del Modo Visita</strong> (desenfoque y control) y <strong>revocación de sesiones</strong> (diseñada, pendiente de implementar).</li>
         <li><strong>Móvil y PWA</strong>: prueba real en pantalla pequeña (390x844) y la app instalable con funcionamiento sin conexión.</li>
         <li><strong>Recarga de /admin con la app instalada</strong>: comprobación de que la Terminal de Mando sobrevive a un F5 con el servicio en segundo plano.</li>
       </ul>
@@ -115,11 +116,11 @@
         <div class="card-dot slate"></div>
         <h3>Nota de despliegue</h3>
       </div>
-      <p>Este parche llega a la web con la actualización de hoy (8 de agosto). El servidor (API) ya está desplegado: las rutas nuevas de sesión y del panel de administración están verificadas vivas en producción, y el acceso con clave sigue operativo.</p>
+      <p>Este parche llega a la web con la actualización de hoy (12 de agosto). El servidor (API) se despliega aparte: las rutas nuevas de salud y auditoría del panel se verifican vivas en producción tras el despliegue del worker.</p>
     </div>
 
     <p class="footer">
-      el-bunker • bóveda de memoria + reproductor • parche 2026-08-08<br>
+      el-bunker • bóveda de memoria + reproductor • parche 2026-08-12<br>
       Versión del grafo del flujo: <a href="grafo-app.html" style="color:#22d3ee;">grafo-app.html</a>
     </p>
   </div>

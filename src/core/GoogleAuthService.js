@@ -83,8 +83,58 @@ const loadGisScript = () => new Promise((resolve, reject) => {
   document.head.appendChild(script);
 });
 
+const isOperaGX = () => {
+  if (typeof navigator === "undefined") return false;
+  const userAgent = navigator.userAgent || "";
+  const brands = navigator.userAgentData?.brands?.map((brand) => brand.brand).join(" ") || "";
+  // Opera GX has shipped UAs that omit the `GX` edition marker; OPR is the
+  // stable signal, and the redirect flow is harmless for regular Opera too.
+  return /OPR\//i.test(`${userAgent} ${brands}`);
+};
+
+const consumeRedirectAccessToken = () => {
+  if (typeof window === "undefined" || !window.location.hash) return false;
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  const token = params.get("access_token");
+  if (!token) return false;
+  const expectedState = localStorage.getItem("bunker_oauth_state");
+  const returnedState = params.get("state");
+  localStorage.removeItem("bunker_oauth_state");
+  window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.search}`);
+  if (!expectedState || expectedState !== returnedState) {
+    console.warn("[Búnker] OAuth redirect rechazado: state inválido");
+    notifyAuthListeners("AUTH_ERROR", { error: { error: "invalid_state" }, translated: { msg: "La respuesta OAuth no es válida.", action: null } });
+    return false;
+  }
+  state.accessToken = token;
+  const expiresAt = Date.now() + Number(params.get("expires_in") || 3600) * 1000;
+  localStorage.setItem("bunker_token", token);
+  localStorage.setItem("bunker_token_exp", String(expiresAt));
+  return true;
+};
+
+const redirectForOperaGX = () => {
+  const stateToken = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  localStorage.setItem("bunker_oauth_state", stateToken);
+  const redirectUri = `${window.location.origin}${window.location.pathname}`;
+  const params = new URLSearchParams({
+    client_id: CONFIG.CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: "token",
+    scope: CONFIG.SCOPES,
+    prompt: "select_account",
+    include_granted_scopes: "true",
+    state: stateToken,
+  });
+  window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
+};
+
 export const initGoogleServices = async () => {
   try {
+    // Opera GX can silently reuse its default Google account when GIS opens a
+    // token popup. Consume the explicit redirect response before wiring GIS so
+    // the normal boot path can fetch the selected account profile.
+    consumeRedirectAccessToken();
     await loadGisScript();
     state.tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: CONFIG.CLIENT_ID,
@@ -104,6 +154,12 @@ export const initGoogleServices = async () => {
 };
 
 export const requestAccessToken = (forceConsent = false) => new Promise((resolve, reject) => {
+  if (isOperaGX()) {
+    // Full-page OAuth honours select_account in Opera GX where the GIS popup
+    // may bind to the browser's default Google profile.
+    redirectForOperaGX();
+    return;
+  }
   if (!state.tokenClient) return reject(vaultError("NOT_INIT", "Llama a initGoogleServices() primero"));
   state.tokenClient.callback = async (tokenResponse) => {
     if (tokenResponse.error) {

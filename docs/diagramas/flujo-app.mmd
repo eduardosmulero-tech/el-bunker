@@ -16,15 +16,17 @@ flowchart TB
     end
 
     subgraph S_API["API — Cloudflare Worker"]
-        API["/api/auth · /api/session · /api/entries · /api/tracks<br/>/api/music · /api/classify · /api/admin"]
+        API["/api/auth · /api/session · /api/entries · /api/tracks<br/>/api/classify · /api/admin (recursos · health · audit)"]
     end
 
     subgraph S_DAT["DATOS"]
-        D1["D1 — catálogo<br/>529 canciones activas · 527 fotos · eventos"]
+        D1["D1 — catálogo<br/>529 canciones activas · 527 fotos · eventos · users.token_epoch"]
         R2["R2 — archivos<br/>MP3 · fotos · vídeos · documentos"]
     end
 
-    FUT["PRÓXIMOS PARCHES<br/>HUD desktop · móvil real + PWA · F5 /admin con SW"]
+    MV["MODO VISITA<br/>claim visit en JWT · saneamiento server-side<br/>feed filtrado (en master 12-ago)"]
+
+    FUT["PRÓXIMOS PARCHES<br/>HUD desktop (ronda Luna) · móvil real + PWA · F5 /admin con SW<br/>UI modo visita (A5) · revocación JWT (B6)"]
 
     EDU --> LOGIN
     LOGIN -->|JWT 24 h| APP
@@ -34,6 +36,8 @@ flowchart TB
     API --> D1
     API --> R2
     R2 -.->|fotos · música| APP
+    APP -.->|modo visita| MV
+    MV --> API
     API -.->|siguiente ola| FUT
 
     classDef external fill:#1e293b,stroke:#94a3b8,color:#e2e8f0,stroke-width:2px
@@ -46,6 +50,7 @@ flowchart TB
     class EDU external
     class LOGIN security
     class APP,VAULT,LAB,CAPS,PANEL frontend
+    class MV frontend
     class API backend
     class D1,R2 data
     class FUT future

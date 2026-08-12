@@ -192,7 +192,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                     style={{ background: "none", border: "none", padding: "12px 8px", cursor: onFilterByTag ? "pointer" : "default",
                       color: `${ACID}40`, fontSize: 12, letterSpacing: "0.15em", fontFamily: FONT_MONO }}>
                     {inUse} track{inUse !== 1 ? "s" : ""}{isSystem ? " · sistema" : ""}
-                    {onFilterByTag && inUse > 0 ? " →" : ""}
+                    {onFilterByTag && inUse > 0 && <><span className="ml-1"><Icon name="arrowRight" size={11} decorative /></span></>}
                   </motion.button>
                 </div>
                 <div style={{ width: 20, height: 20, borderRadius: 2, background: tag.color, flexShrink: 0,
