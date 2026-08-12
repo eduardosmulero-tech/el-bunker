@@ -717,7 +717,38 @@ verificados con `rg` sobre `src/`, 7-ago:
 | `src/layout/App.jsx:58` | `REINICIAR APP →` |
 | `src/smoke/SmokeSession.jsx:648` | `↺ RESET` |
 
-**Caso aparte: `src/core/ui/Icon.jsx:119-139`, el mapa `LEGACY_ICON_NAMES`.** No es rastro de IA en
+**Ampliación 12-ago (hallazgo V-1 de F5F6, t_bf7a8882).** El grep V-1 del §14 da 24 coincidencias
+sobre el código con F5 aplicado (commit 633b7a1): las 4 permitidas del §14 y estas 20 líneas que el
+inventario del 7-ago no había declarado. Todas re-verificadas con `rg --pcre2` (mismo patrón del
+§14) el 12-ago sobre ese mismo código; ninguna cambió respecto al reporte. Clasificación:
+**por-migrar** = iconografía de caracteres visible que debe pasar al registro `Icon` (tarjeta
+t_V1-IMPL); **permitido** = comentarios y trazas de error que el criterio del §14 no considera
+iconografía y se dejan como están.
+
+| Fichero:línea (verificado 12-ago) | Qué hay | Clasificación |
+|---|---|---|
+| `src/vault/WallView.jsx:105` | `→` en el rango de fechas (`min → max`) | por-migrar |
+| `src/vault/VaultGallery.jsx:180` | `← DESLIZA →` | por-migrar |
+| `src/vault/VaultGallery.jsx:336` | `👤` | por-migrar |
+| `src/vault/VaultGallery.jsx:340` | `↔` | por-migrar |
+| `src/vault/VaultGallery.jsx:342` | `👤` | por-migrar |
+| `src/vault/VaultGallery.jsx:355` | `🎭` | por-migrar |
+| `src/vault/VaultGallery.jsx:364` | `🎭` | por-migrar |
+| `src/vault/VaultGallery.jsx:652` | `← VOLVER` | por-migrar |
+| `src/vault/VaultGallery.jsx:921` | `🌍 TODOS` | por-migrar |
+| `src/vault/VaultGallery.jsx:977` | `🌍` | por-migrar |
+| `src/vault/VaultGallery.jsx:983` | `📍 Geocoder` | por-migrar |
+| `src/vault/VaultGallery.jsx:1067` | `desliza →` | por-migrar |
+| `src/vault/Vault.jsx:382` | `📍` en `EXTRA_BADGE_FORMAT` | por-migrar |
+| `src/vault/Vault.jsx:384` | `🔗` en `EXTRA_BADGE_FORMAT` | por-migrar |
+| `src/musiclab/TagManager.jsx:195` | `" →"` sufijo del tag en uso | por-migrar |
+| `src/vault/Vault.jsx:491` | comentario: `hover → 100` | permitido |
+| `src/vault/EntryLightbox.jsx:239` | comentario: `video → <video controls>, audio → placeholder` | permitido |
+| `src/musiclab/WinampPlayer.jsx:431` | comentario: `idle ♡ / partner ♥!bocadillo / sesión ♥ Edu+David` | permitido |
+| `src/musiclab/WinampPlayer.jsx:772` | comentario: `Toast efímero al tocar ♡/♥` | permitido |
+| `src/admin/core/apiClient.js:19` | mensaje de error: `throw new Error` con `→ ${res.status}` | permitido |
+
+**Caso aparte: `src/core/ui/Icon.jsx:119-139`, el mapa `LEGACY_ICON_NAMES`.**
 sí: es la prueba de que la migración a SVG se hizo a medias y se dejó un traductor de 120 entradas
 de emoji a icono en lugar de arreglar el origen. **Se conserva** —hace falta para datos viejos que
 ya están en D1—, pero se marca como puente cerrado: ningún componente nuevo puede apoyarse en él,
