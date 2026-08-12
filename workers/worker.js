@@ -28,6 +28,7 @@ import handleR2 from "./routes/r2.js";
 import handleSync from "./routes/sync.js";
 import handleConfig from "./routes/config.js";
 import handleAdminG2 from "./routes/admin-g2.js";
+import handleAdminHealth from "./routes/admin-health.js";
 import handleAdmin from "./routes/admin.js";
 import handleClassify from "./routes/classify.js";
 
@@ -52,6 +53,7 @@ export const ROUTES = [
   ["/api/config",          handleConfig,     false],
   // Keep the specific G2 route before the generic admin skeleton.
   ["/api/admin/g2",        handleAdminG2,     true],
+  ["/api/admin/health",    handleAdminHealth, true],
   ["/api/admin/",          handleAdmin,       true],
   ["/api/classify",        handleClassify,    true],
 ];
