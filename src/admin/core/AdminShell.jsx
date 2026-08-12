@@ -38,7 +38,7 @@ export default function AdminShell({
       <div className="flex">
         {resources.length > 0 && <aside className="hidden md:flex" style={{ width: 210, minHeight: "calc(100dvh - 64px)", flexDirection: "column", gap: 4, padding: "16px 0", borderRight: `1px solid ${accentColor}18` }}>{resources.map(resourceButton)}</aside>}
         <main style={{ flex: 1, minWidth: 0, padding: 16 }}>
-          {active ? <motion.div key={active.key} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><ResourceConsole descriptor={active} client={client} accentColor={accentColor} onAudit={onAudit} /></motion.div> : <div className="flex items-center gap-2" style={{ padding: 24, color: `${accentColor}88`, fontSize: 11 }}><Icon name="alert" size={15} decorative />SIN RECURSOS CONFIGURADOS</div>}
+          {active ? <motion.div key={active.key} initial={{ opacity: 0 }} animate={{ opacity: 1 }}><ResourceConsole descriptor={active} client={client} accentColor={accentColor} onAudit={onAudit} /></motion.div> : !footer && <div className="flex items-center gap-2" style={{ padding: 24, color: `${accentColor}88`, fontSize: 11 }}><Icon name="alert" size={15} decorative />SIN RECURSOS CONFIGURADOS</div>}
         </main>
       </div>
       {footer}

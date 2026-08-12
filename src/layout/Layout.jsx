@@ -11,6 +11,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { useVault } from "../core/VaultContext";
 import { useMusicActions } from "../musiclab/useMusicActions";
 import { WinampPlayer } from "../musiclab/WinampPlayer";
+import VisitModeControl from "../vault/VisitModeControl";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 import { Icon } from "../core/ui";
 
@@ -149,6 +150,7 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
         </div>
         {/* Action buttons */}
         <div className="flex items-center gap-2 flex-none ml-2">
+          <VisitModeControl accentColor={accentColor} />
           <button
             onClick={() => window.location.reload()}
             className="min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -451,6 +453,7 @@ const DesktopTopbar = ({ isAuthenticated, onSignOut, activeTab, accentColor, par
       {partnerListening ? `${partnerName || "PARTNER"}${partnerTrack?.title ? ` · ${partnerTrack.title}` : ""}` : "OFFLINE"}
     </div>
     <div className="desktop-topbar__actions">
+      <VisitModeControl accentColor={accentColor} />
       <span>{tick.toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} · {tick.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" })}</span>
       <button type="button" onClick={() => window.location.reload()} aria-label="Recargar"><Icon name="refresh" size={14} decorative /></button>
       {onSignOut && <button type="button" onClick={onSignOut} aria-label="Cerrar sesión"><Icon name="unlock" size={14} decorative /></button>}
