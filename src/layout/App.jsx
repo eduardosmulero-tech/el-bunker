@@ -3,7 +3,7 @@
 //  Orquestador Principal · Providers + Router (S116-L2 refactor)
 //  Stack: React 18 + Framer Motion
 // ============================================================
-import { useEffect, Component } from "react";
+import { useEffect, useState, Component } from "react";
 
 import { ToastProvider } from "../core/ToastContext";
 import { VaultProvider, useVault } from "../core/VaultContext";
@@ -14,7 +14,11 @@ import { Icon } from "../core/ui";
 import { GlobalLoadingScreen, ErrorScreen } from "./BootScreen";
 import { AuthenticatedApp, UnauthorizedScreen } from "./TabShell";
 import Contenido from "../admin/screens/Contenido";
+import Salud from "../admin/screens/Salud";
+import Auditoria from "../admin/screens/Auditoria";
+import Accesos from "../admin/screens/Accesos";
 import { createApiClient } from "../admin/core";
+import { API_BASE } from "../core/WorkerClient";
 
 // ─── S117: GLOBAL ERROR BOUNDARY ────────────────────────────
 class GlobalErrorBoundary extends Component {
@@ -72,10 +76,55 @@ class GlobalErrorBoundary extends Component {
 // ANTES del shell de tabs, por location.pathname, no dentro de él. La
 // autorización la decide el Worker (B2, requireAdmin): el frontend esconde,
 // no protege (plan OLA2 §1).
+// Secciones: Contenido (B3) + consolas SALUD (B4), AUDITORÍA (B5) y ACCESOS (B6).
+// El client del panel apunta al Worker API (API_BASE), igual que WorkerClient;
+// sin baseUrl los fetch irían contra el origen de Vercel y darían 404
+// (hallazgo de la auditoría visual 12-ago).
+const ADMIN_SECTIONS = [
+  { key: "contenido", label: "CONTENIDO", Screen: Contenido },
+  { key: "salud", label: "SALUD", Screen: Salud },
+  { key: "auditoria", label: "AUDITORÍA", Screen: Auditoria },
+  { key: "accesos", label: "ACCESOS", Screen: Accesos },
+];
+
 const AdminPanel = () => {
   const { user, jwtToken } = useVault();
-  const client = createApiClient({ getToken: () => jwtToken });
-  return <Contenido client={client} user={user} />;
+  const [section, setSection] = useState("contenido");
+  const client = createApiClient({ baseUrl: API_BASE, getToken: () => jwtToken });
+  const active = ADMIN_SECTIONS.find((s) => s.key === section) ?? ADMIN_SECTIONS[0];
+  const Screen = active.Screen;
+  return (
+    <div style={{ background: BG, minHeight: "100dvh" }}>
+      <nav
+        aria-label="SECCIONES DEL PANEL"
+        className="flex md:hidden"
+        style={{ overflowX: "auto", borderBottom: `1px solid ${ACID}22`, gap: 4, padding: "8px 12px" }}
+      >
+        {ADMIN_SECTIONS.map((s) => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => setSection(s.key)}
+            style={{
+              minHeight: 40,
+              padding: "0 12px",
+              color: s.key === active.key ? ACID : `${ACID}88`,
+              background: "transparent",
+              border: `1px solid ${s.key === active.key ? ACID : `${ACID}33`}`,
+              fontFamily: FONT,
+              letterSpacing: "0.16em",
+              fontSize: 10,
+              whiteSpace: "nowrap",
+              cursor: "pointer",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </nav>
+      <Screen key={active.key} client={client} user={user} />
+    </div>
+  );
 };
 
 // ─── APP CORE (consumes VaultContext) ────────────────────────

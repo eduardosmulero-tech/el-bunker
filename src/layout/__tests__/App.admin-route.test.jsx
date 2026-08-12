@@ -59,6 +59,7 @@ vi.mock("../../core/PlayerContext", () => {
 });
 
 vi.mock("../../core/WorkerClient", () => ({
+  API_BASE: "https://el-bunker-api.thebunker-admin.workers.dev",
   workerClient: {
     get: () => Promise.resolve([]),
     fetch: () => Promise.resolve({ ok: true, status: 200, json: async () => ({}) }),

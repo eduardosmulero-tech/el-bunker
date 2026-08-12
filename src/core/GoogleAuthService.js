@@ -116,7 +116,11 @@ const consumeRedirectAccessToken = () => {
 const redirectForOperaGX = () => {
   const stateToken = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   localStorage.setItem("bunker_oauth_state", stateToken);
-  const redirectUri = `${window.location.origin}${window.location.pathname}`;
+  // Google exige match EXACTO del redirect_uri (sin slash final): el URI
+  // autorizado en la consola es `https://el-bunker-beige.vercel.app` (origin
+  // puro). `origin + pathname` con pathname "/" daba "...vercel.app/" y Google
+  // respondía redirect_uri_mismatch — el fix de Opera GX moría en el intento.
+  const redirectUri = `${window.location.origin}${window.location.pathname}`.replace(/\/$/, "");
   const params = new URLSearchParams({
     client_id: CONFIG.CLIENT_ID,
     redirect_uri: redirectUri,

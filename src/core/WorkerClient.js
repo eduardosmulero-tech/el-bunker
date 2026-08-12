@@ -5,7 +5,7 @@
 //  Elimina el prop-drilling de jwtToken por todos los componentes.
 // ============================================================
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
+export const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
 class WorkerClient {
   constructor() {
