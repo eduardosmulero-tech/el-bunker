@@ -47,11 +47,6 @@ import {
 // ─── WORKER API URL ─────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || "https://el-bunker-api.thebunker-admin.workers.dev";
 
-// ─── S130-B: Fallback solo cuando D1 no tiene adventures_start_date ───
-// La fuente primaria es GET /api/config → app_config.adventures_start_date.
-// Este default solo se usa si la tabla app_config está vacía o el worker no responde.
-const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
-
 // ─── CONTEXT SHAPE ───────────────────────────────────────────
 /**
  * VaultContextValue
@@ -319,8 +314,10 @@ export function VaultProvider({ children }) {
    * Retorna null si falla (el caller usa una DB vacía como fallback).
    */
   // S115-D3: usa workerClient singleton (token via setToken en _fetchJwt)
+  // V-6: adventures_start_date es dato de usuario (hallazgo V-6). Si D1 no lo trae,
+  // queda ausente/null en el estado — el cliente no fabrica fechas.
   const _buildDbFromWorker = useCallback(
-    (_token) => buildDbFromWorker(workerClient, DEFAULT_ADVENTURE_DATE),
+    (_token) => buildDbFromWorker(workerClient),
     [],
   );
 
@@ -335,7 +332,6 @@ export function VaultProvider({ children }) {
     if (data) {
       data.libraries = [];
       data.heartbeat = new Date().toISOString();
-      data.adventures_start_date = data.adventures_start_date ?? DEFAULT_ADVENTURE_DATE;
       console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
     } else {
       console.info("[Búnker] Worker no disponible, usando DB vacía como fallback...");
