@@ -119,7 +119,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                   <UserGlyph glyph={form.icon} size={20} decorative />
                 </span>
                 <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))}
-                  placeholder="◈"
+                  placeholder="archive"
                   maxLength={4}
                   style={{ flex: 1, background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
                     color: ACID, fontSize: 18, padding: "12px 12px", fontFamily: FONT_MONO,

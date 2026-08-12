@@ -311,12 +311,12 @@ const AccessButton = ({ onClick, loading, disabled }) => {
               {glitchText}
             </span>
             <motion.span
-              animate={{ x: hovered ? 4 : 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ color: ACID, opacity: disabled ? 0.3 : 0.7 }}
-            >
-              →
-            </motion.span>
+                          animate={{ x: hovered ? 4 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          style={{ color: ACID, opacity: disabled ? 0.3 : 0.7, display: "inline-flex" }}
+                        >
+                          <Icon name="arrowRight" size={16} decorative />
+                        </motion.span>
           </>
         )}
       </div>
@@ -431,7 +431,7 @@ const AccessPanel = ({ onSubmit }) => {
             cursor: busy || !accessKey.trim() ? "not-allowed" : "pointer",
           }}
         >
-          {busy ? "VERIFICANDO..." : "ENTRAR →"}
+          {busy ? "VERIFICANDO..." : <>ENTRAR <Icon name="arrowRight" size={14} decorative /></>}
         </button>
         <button
           type="button"

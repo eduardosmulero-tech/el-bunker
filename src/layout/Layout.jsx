@@ -63,11 +63,11 @@ const StatusBar = ({ isAuthenticated, onSignOut, accentColor = ACID }) => {
     return () => clearInterval(id);
   }, []);
 
-  const timeStr = tick.toLocaleTimeString("en-US", {
+  const timeStr = tick.toLocaleTimeString("es-ES", {
     hour12: false, hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 
-  const dateStr = tick.toLocaleDateString("en-US", {
+  const dateStr = tick.toLocaleDateString("es-ES", {
     year: "numeric", month: "short", day: "2-digit",
   }).toUpperCase();
 
@@ -253,13 +253,6 @@ const AmbientGlows = ({ accentColor = ACID }) => (
     <div
       className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full opacity-[0.08]"
       style={{ background: PURPLE, filter: "blur(48px)" }}
-    />
-    {/* Center pulse — más nítido */}
-    <motion.div
-      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full opacity-[0.03]"
-      style={{ background: accentColor, filter: "blur(40px)" }}
-      animate={{ scale: [1, 1.2, 1], opacity: [0.03, 0.06, 0.03] }}
-      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
     />
   </div>
 );

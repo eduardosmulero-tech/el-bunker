@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { ACID, stringToColor } from "../tokens";
-import { UserGlyph } from "../core/ui";
+import { Icon, UserGlyph } from "../core/ui";
 
 const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
@@ -54,7 +54,7 @@ export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManag
           border: `1px solid ${isTagManagerOpen ? accentColor + "66" : accentColor + "33"}`,
           boxShadow: isTagManagerOpen ? `0 0 10px ${accentColor}44` : `0 0 4px ${accentColor}22`,
         }}>
-        ⚙
+        <Icon name="settings" size={14} decorative />
       </motion.button>
     )}
   </div>
@@ -97,9 +97,9 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
               </div>
             </div>
             {[
-              { icon: "▷", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
-              { icon: "◈", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
-              { icon: "◎", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
+              { icon: "play", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
+              { icon: "archive", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
+              { icon: "circle", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
             ].map(({ icon, label, action }) => (
               <button key={label}
                 style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
@@ -107,7 +107,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
                   letterSpacing: "0.2em", background: "transparent", border: "none",
                   cursor: "pointer", fontFamily: FONT_MONO_LOCAL, borderBottom: `1px solid ${vibeColor}10` }}
                 onClick={action}>
-                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><UserGlyph glyph={icon} size={14} decorative /></span>
+                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><Icon name={icon} size={14} decorative /></span>
                 {label}
               </button>
             ))}
@@ -171,7 +171,7 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
             fontFamily: FONT_MONO_LOCAL, minWidth: 44, minHeight: 44,
             display: "flex", alignItems: "center", justifyContent: "center",
             zIndex: 2 }}>
-          ⋮
+          <Icon name="more" size={18} decorative />
         </motion.button>
       </div>
     </>
@@ -219,9 +219,9 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
               </div>
             </div>
             {[
-              { icon: "▷", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
-              { icon: "◈", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
-              { icon: "◎", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
+              { icon: "play", label: "REPRODUCIR A CONTINUACIÓN", action: () => { onAddNext?.(track); setShowCtx(false); } },
+              { icon: "archive", label: "AÑADIR A COLA",             action: () => { onAddToQueue?.(track); setShowCtx(false); } },
+              { icon: "circle", label: "AÑADIR A PLAYLIST",         action: () => { onAddToPlaylist?.(track); setShowCtx(false); } },
             ].map(({ icon, label, action }) => (
               <button key={label}
                 style={{ display: "flex", alignItems: "center", gap: 14, width: "100%",
@@ -229,7 +229,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
                   letterSpacing: "0.2em", background: "transparent", border: "none",
                   cursor: "pointer", fontFamily: FONT_MONO, borderBottom: `1px solid ${vibeColor}10` }}
                 onClick={action}>
-                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><UserGlyph glyph={icon} size={14} decorative /></span>
+                <span style={{ opacity: 0.6, fontSize: 14, width: 18, textAlign: "center" }}><Icon name={icon} size={14} decorative /></span>
                 {label}
               </button>
             ))}
@@ -318,8 +318,8 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             lineHeight: 1, padding: "12px 14px", borderRadius: 2,
             fontFamily: FONT_MONO, minWidth: 44, minHeight: 44,
             display: "flex", alignItems: "center", justifyContent: "center" }}
-              title="Más opciones">
-              ⋮
+            title="Más opciones">
+            <Icon name="more" size={20} decorative />
             </motion.button>
           </div>
         </motion.div>
@@ -396,7 +396,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
               fontFamily: FONT_MONO, minWidth: 32, minHeight: 32,
               display: "flex", alignItems: "center", justifyContent: "center" }}
             title="Más opciones">
-            ⋮
+            <Icon name="more" size={20} decorative />
           </motion.button>
         </div>
       </motion.div>

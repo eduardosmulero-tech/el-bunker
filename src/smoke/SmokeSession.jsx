@@ -645,7 +645,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             opacity: (!isRunning && remaining === totalSeconds && !isDone) ? 0.3 : 1,
           }}
         >
-          ↺ RESET
+          <Icon name="reset" size={14} decorative /> RESET
         </motion.button>
 
         {/* Play / Pause — S126: outlined cuando !running, primario cuando isRunning/isDone */}

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import Icon from "./Icon";
 import { FONT_MONO } from "../../tokens";
 
 const VARIANTS = {
@@ -69,16 +70,16 @@ export default function Button({
       }}
     >
       {loading ? (
-        <motion.span
-          animate={{ rotate: 360 }}
-          transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-          style={{ fontSize: s.iconSize, lineHeight: 1 }}
-        >
-          ◌
-        </motion.span>
-      ) : icon ? (
-        <span style={{ fontSize: s.iconSize, lineHeight: 1 }}>{icon}</span>
-      ) : null}
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                style={{ display: "inline-flex", lineHeight: 1 }}
+              >
+                <Icon name="circle" size={s.iconSize} decorative />
+              </motion.span>
+            ) : icon ? (
+              <span style={{ fontSize: s.iconSize, lineHeight: 1 }}>{icon}</span>
+            ) : null}
       {children}
     </motion.button>
   );

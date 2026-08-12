@@ -6,6 +6,7 @@
 // ============================================================
 import { Component, Fragment } from "react";
 import { motion } from "framer-motion";
+import { Icon } from "../core/ui";
 
 const BG   = "#050505";
 const ACID = "#bfff00";
@@ -67,7 +68,7 @@ export default class ChunkErrorBoundary extends Component {
             transition={{ duration: 1.5, repeat: Infinity }}
             className="text-3xl"
           >
-            ⚡
+            <Icon name="zap" size={28} decorative />
           </motion.p>
 
           <p
@@ -95,7 +96,7 @@ export default class ChunkErrorBoundary extends Component {
                 opacity: this.state.retrying ? 0.5 : 1,
               }}
             >
-              {this.state.retrying ? "REINTENTANDO..." : "↻ REINTENTAR"}
+              {this.state.retrying ? "REINTENTANDO..." : <><Icon name="refresh" size={14} decorative /> REINTENTAR</>}
             </motion.button>
 
             <motion.button

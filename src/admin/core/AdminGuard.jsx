@@ -6,7 +6,7 @@ import Icon from "../../core/ui/Icon";
 import Skeleton from "../../core/ui/Skeleton";
 import { ACID, RED } from "../../tokens";
 
-export default function AdminGuard({ auth, children, accentColor = ACID, deniedMessage = "Esta terminal requiere sesión de administrador. El servidor es quien autoriza cada operación; ocultar la interfaz no concede ni retira permisos.", onRetry = null }) {
+export default function AdminGuard({ auth, children, accentColor = ACID, deniedMessage = "Esta terminal requiere sesión de administrador.", onRetry = null }) {
   const current = auth ?? { isLoading: true, isAdmin: false, user: null };
   if (current.isLoading) return (
     <Card accentColor={accentColor} style={{ minHeight: 180, display: "flex", flexDirection: "column", gap: 16, justifyContent: "center" }}>

@@ -22,7 +22,7 @@ import { useToast } from "../core/ToastContext";
 const VaultGallery = lazy(() => import("./VaultGallery"));
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
+// Sin fecha en la BD no hay contador: un contador inventado es un dato falso en pantalla.
 
 // FASE C.2.1 (veredicto V1 Fable S147): fallback demo de eras eliminado, estado vacío elegante.
 
@@ -33,7 +33,7 @@ const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString
  */
 const AdventureCounter = ({ startDate, accentColor = ACID }) => {
   const time   = timeSince(startDate);
-  const digits = String(time.totalDays).padStart(4, "0").split("");
+  const digits = String(time.totalDays).split("");
 
   return (
     <motion.div
@@ -743,7 +743,9 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         transition={{ duration: 0.5 }}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
       >
-        <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date ?? DEFAULT_ADVENTURE_DATE} />
+        {db?.adventures_start_date && (
+          <AdventureCounter accentColor={accent} startDate={db.adventures_start_date} />
+        )}
         <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
       </motion.div>
 
@@ -998,7 +1000,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
              opacity: (exporting || !db) ? 0.4 : 1,
            }}
          >
-           {exporting ? "EXPORTANDO..." : "↓ BACKUP JSON"}
+           {exporting ? "EXPORTANDO..." : <><Icon name="arrowDown" size={12} decorative /> BACKUP JSON</>}
          </motion.button>
        )}
        <motion.span
