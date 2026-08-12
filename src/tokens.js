@@ -73,7 +73,7 @@ export const VIBE_TAGS = [
   {
     id:        "gaming",
     label:     "GAMING",
-    icon:      "◉",
+    icon:      "target",
     namespace: "music",
     seedColor: "#00ffcc",
     palette:   buildPalette("#00ffcc"),
@@ -81,7 +81,7 @@ export const VIBE_TAGS = [
   {
     id:        "420_chill",
     label:     "420",
-    icon:      "◎",
+    icon:      "circle",
     namespace: "music",
     seedColor: "#aaff44",
     palette:   buildPalette("#aaff44"),
@@ -89,15 +89,15 @@ export const VIBE_TAGS = [
   {
     id:        "dnb",
     label:     "DnB",
-    icon:      "⚡",
+    icon:      "zap",
     namespace: "music",
     seedColor: "#ff6b35",
     palette:   buildPalette("#ff6b35"),
   },
   {
     id:        "romantiqueo",
-    label:     "♥",
-    icon:      "♥",
+    label:     "ROMANTIQUEO",
+    icon:      "heart",
     namespace: "music",
     seedColor: "#d966ff",
     palette:   buildPalette("#d966ff"),
@@ -109,7 +109,7 @@ export const VIBE_TAGS = [
 // "all" tiene color base ACID — es UI, no vibe (VB2).
 // Componentes de filtro importan esto, no VIBE_TAGS.
 export const FILTER_TAGS = [
-  { id: "all", label: "ALL", icon: "◈", seedColor: "#bfff00", palette: buildPalette("#bfff00") },
+  { id: "all", label: "ALL", icon: "archive", seedColor: "#bfff00", palette: buildPalette("#bfff00") },
   ...VIBE_TAGS,
 ];
 

@@ -28,7 +28,7 @@ const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 // "all" es filtro de UI, nunca en DB (VB2)
 // Tags se cargan exclusivamente desde D1 (db.music_lab.tags).
 // Sin hardcodeos — el usuario los crea/modifica/elimina desde TagManager.
-const ALL_TAG = { id: "all", label: "ALL", icon: "◈", color: "#ffffff" };
+const ALL_TAG = { id: "all", label: "ALL", icon: "archive", color: "#ffffff" };
 
 // FASE C.2.1 (veredicto V1 Fable S147): fallback demo eliminado, estado vacío elegante.
 // Referencia estable a nivel módulo (no literal [] en render) para no romper exhaustive-deps
@@ -72,7 +72,7 @@ export default function MusicLab({
     // Tag huérfano (en tracks pero no en DB) → crear config sintético desde el ID
     // para que los tracks siempre tengan color, icono y label visibles
     const label = vibeId.replace(/_/g, " ").toUpperCase();
-    return { id: vibeId, label, icon: "◎", color: stringToColor(vibeId) };
+    return { id: vibeId, label, icon: "circle", color: stringToColor(vibeId) };
   };
   // resolveVibeConf — normaliza tag de DB al schema que WinampPlayer espera.
   // Tags de DB: {id, label, icon, color/seedColor} — sin palette.
@@ -792,8 +792,8 @@ export default function MusicLab({
           className="flex gap-0 rounded-sm overflow-hidden" style={{ border: `1px solid ${GLASS_BORDER}` }}>
           {[
             ...(localQueue.length > 0 ? [{ id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "play" }] : []),
-            { id: "tracks",    label: "TRACKS",                        icon: "◎" },
-            { id: "playlists", label: "LISTS",                         icon: "◈" },
+            { id: "tracks",    label: "TRACKS",                        icon: "circle" },
+            { id: "playlists", label: "LISTS",                         icon: "archive" },
             ...(userDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${userDrops.length}]`, icon: "zap" }] : []),
           ].map((tab) => {
             const isActive = activeTab === tab.id;
@@ -922,7 +922,7 @@ export default function MusicLab({
                       <button onClick={() => setShowFullHistory(p => !p)}
                         className="text-xs tracking-widest uppercase py-1 opacity-50 hover:opacity-100 transition-opacity text-center"
                         style={{ color: accentColor, fontFamily: FONT_MONO }}>
-                        {showFullHistory ? "▴ OCULTAR" : `▾ VER TODO (+${playHistory.length - 3})`}
+                        {showFullHistory ? <><Icon name="arrowUp" size={12} decorative /> OCULTAR</> : <><Icon name="chevronDown" size={12} decorative /> VER TODO (+{playHistory.length - 3})</>}
                       </button>
                     )}
                   </div>
@@ -1137,7 +1137,7 @@ export default function MusicLab({
                       }}
                     >
                       <Icon name={SORT_OPTIONS.find((o) => o.id === trackSort)?.icon ?? "arrowUp"} size={12} decorative />
-                      <span style={{ fontSize: 8, opacity: 0.6 }}>▾</span>
+                      <Icon name="chevronDown" size={12} decorative />
                     </span>
                   </motion.button>
                   {showSortMenu && sortDropdownPos && createPortal(

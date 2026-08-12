@@ -57,7 +57,7 @@ class GlobalErrorBoundary extends Component {
                 fontFamily: FONT,
               }}
             >
-              REINICIAR APP →
+              REINICIAR APP <Icon name="arrowRight" size={14} decorative />
             </button>
           </div>
         </div>

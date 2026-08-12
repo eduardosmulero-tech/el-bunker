@@ -129,7 +129,7 @@ export const ErrorScreen = ({ message, onRetry }) => (
           fontFamily: FONT,
         }}
       >
-        REINTENTAR →
+        REINTENTAR <Icon name="arrowRight" size={14} decorative />
       </motion.button>
     </motion.div>
   </div>

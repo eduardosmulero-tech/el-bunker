@@ -288,7 +288,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
           className="text-xs tracking-[0.2em] uppercase py-3 px-4 min-h-[44px] mx-auto opacity-50 hover:opacity-100 transition-opacity"
           style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }}
         >
-          ↓ CARGAR MÁS ({filteredEvents.length - visibleCount} restantes)
+          <Icon name="arrowDown" size={12} decorative /> CARGAR MÁS ({filteredEvents.length - visibleCount} restantes)
         </motion.button>
       )}
     </div>

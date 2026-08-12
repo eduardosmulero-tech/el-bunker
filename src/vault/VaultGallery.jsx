@@ -554,7 +554,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
                 </div>
                 <div>
                   <p className="text-sm font-bold" style={{ color: eraColor }}>{eraName}</p>
-                  <p className="text-[10px] opacity-50" style={{ color: eraColor }}>{eraEntries.length} piezas · {Object.keys(vibeCounts).length} vibes · {expandedEra === eraId ? '▴' : '▾'}</p>
+                  <p className="text-[10px] opacity-50" style={{ color: eraColor }}>{eraEntries.length} piezas · {Object.keys(vibeCounts).length} vibes · {expandedEra === eraId ? <Icon name="arrowUp" size={10} decorative /> : <Icon name="chevronDown" size={10} decorative />}</p>
                 </div>
                 <div className="ml-auto flex -space-x-2">
                   {eraEntries.slice(0, 5).map((e, i) => {

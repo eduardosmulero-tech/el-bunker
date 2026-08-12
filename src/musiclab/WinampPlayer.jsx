@@ -652,7 +652,7 @@ return () => cancelAnimationFrame(raf);
           </motion.p>
         </div>
         {track?.note && (
-          <p className="text-xs mt-0.5 opacity-40 truncate" style={{ color: accentColor }}>↳ {track.note}</p>
+          <p className="text-xs mt-0.5 opacity-40 truncate" style={{ color: accentColor }}><Icon name="arrowRight" size={12} decorative /> {track.note}</p>
         )}
       </div>
 

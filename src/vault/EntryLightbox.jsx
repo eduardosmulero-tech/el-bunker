@@ -341,7 +341,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
           <div className="flex flex-wrap gap-1.5 mt-2">
             {entry.content?.location_name && (
               <span className="text-[9px] px-2 py-0.5 rounded-sm opacity-45" style={{ color: eraColor, background: `${eraColor}10`, border: `1px solid ${eraColor}18` }}>
-                📍 {entry.content.location_name}
+                <Icon name="map" size={12} decorative /> {entry.content.location_name}
               </span>
             )}
             {entry.content?.event_date && (

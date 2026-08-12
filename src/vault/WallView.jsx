@@ -388,12 +388,12 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
       <div className="flex flex-wrap gap-1 mt-2">
         {timeStr && (
           <span className="text-[8px] px-1.5 py-0.5 rounded-sm opacity-40" style={{ color: ac, border: `1px solid ${ac}22` }}>
-            ☀ {timeStr}
+            <Icon name="sparkles" size={10} decorative /> {timeStr}
           </span>
         )}
         {entry.content?.location_name && (
           <span className="text-[8px] px-1.5 py-0.5 rounded-sm opacity-40" style={{ color: ac, border: `1px solid ${ac}22` }}>
-            📍 {entry.content.location_name}
+            <Icon name="map" size={10} decorative /> {entry.content.location_name}
           </span>
         )}
       </div>
@@ -477,7 +477,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
           ))}
         </div>
         <span className="text-[9px] opacity-20" style={{ color: ac }}>
-          pinch ↕ zoom
+          <Icon name="arrowUp" size={10} decorative /><Icon name="arrowDown" size={10} decorative /> zoom
         </span>
       </div>
 

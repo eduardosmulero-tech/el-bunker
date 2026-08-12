@@ -102,11 +102,10 @@ export const UnauthorizedScreen = ({ userEmail }) => (
       style={{ boxShadow: "0 0 30px rgba(255, 59, 59, 0.2)" }}
     >
       <h1 className="text-3xl font-black mb-4 tracking-tighter" style={{ color: "#ff3b3b" }}>
-        [!] ACCESO NO AUTORIZADO
+        SIN ACCESO
       </h1>
       <p className="text-sm mb-6 leading-relaxed" style={{ color: "#ff8080" }}>
-        La identidad <span className="underline">{userEmail}</span> no tiene privilegios
-        de lectura en este búnker. Los protocolos de seguridad han sido activados.
+        La cuenta <span className="underline">{userEmail}</span> no está en la whitelist.
       </p>
       <button
         onClick={() => window.location.reload()}
