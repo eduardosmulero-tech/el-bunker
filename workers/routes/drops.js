@@ -6,6 +6,7 @@
 import { json, err } from "../utils/response.js";
 import { canManageParticipant } from "../utils/authorization.js";
 import { isValidUserId } from "../utils/validation.js";
+import { isVisitMode, loadClassifiedIds, sanitizeDrop } from "../utils/visit-filter.js";
 
 export default async function handleDrops(request, env, url, userId) {
   const method = request.method;
@@ -19,6 +20,14 @@ export default async function handleDrops(request, env, url, userId) {
       "SELECT * FROM drops ORDER BY created_at DESC LIMIT 200"
     ).all();
     const mapped = results.map(r => ({ ...r, from: r.from_user, to: r.to_user }));
+    // A3: en modo visita, vaciar los drops clasificados (sin nota ni
+    // destinatario). Los no clasificados se devuelven tal cual.
+    if (isVisitMode(request)) {
+      const classifiedIds = await loadClassifiedIds(env, "drop", mapped.map((d) => d.id));
+      if (classifiedIds.size) {
+        return json(mapped.map((drop) => classifiedIds.has(drop.id) ? sanitizeDrop(drop) : drop));
+      }
+    }
     return json(mapped);
   }
 

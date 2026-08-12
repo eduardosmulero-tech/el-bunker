@@ -4,6 +4,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { isVisitMode, loadClassifiedIds, sanitizeCapsule } from "../utils/visit-filter.js";
 
 function parseJson(value, fallback = null) {
   if (typeof value !== "string") return value ?? fallback;
@@ -126,7 +127,16 @@ export default async function handleCapsules(request, env, url, userId) {
       "SELECT * FROM time_capsules ORDER BY created_at DESC LIMIT 100"
     ).all();
     await persistDueUnlocks(results, env, userId);
-    return json(await enrichCapsuleRows(results, env));
+    const enriched = await enrichCapsuleRows(results, env);
+    // A3: en modo visita, vaciar las cápsulas clasificadas y su contenido
+    // (sin título ni nota). Las no clasificadas se devuelven tal cual.
+    if (isVisitMode(request)) {
+      const classifiedIds = await loadClassifiedIds(env, "capsule", enriched.map((c) => c.id));
+      if (classifiedIds.size) {
+        return json(enriched.map((capsule) => classifiedIds.has(capsule.id) ? sanitizeCapsule(capsule) : capsule));
+      }
+    }
+    return json(enriched);
   }
 
   // POST /api/time_capsules
