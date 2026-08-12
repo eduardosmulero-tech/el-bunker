@@ -7,6 +7,7 @@
 // ============================================================
 
 import { json, err } from "../utils/response.js";
+import { isVisitMode, loadClassifiedIds } from "../utils/visit-filter.js";
 
 export default async function handleStats(_request, env, url, _userId) {
   const path = url.pathname;
@@ -58,6 +59,30 @@ export default async function handleStats(_request, env, url, _userId) {
      LIMIT 1`
   ).bind(since, until).first();
 
+  // A4 — En modo visita, el top track clasificado no revela identidad:
+  // se vacía (topTrack null) pero los recuentos siguen sin mentir (§6).
+  let topTrack = null;
+  if (topTrackRow) {
+    if (isVisitMode(_request)) {
+      const classifiedTracks = await loadClassifiedIds(env, "track", [topTrackRow.id]);
+      topTrack = classifiedTracks.has(topTrackRow.id)
+        ? null
+        : {
+            id: topTrackRow.id,
+            title: topTrackRow.title || "(sin título)",
+            artist: topTrackRow.artist || "",
+            plays: topTrackRow.plays,
+          };
+    } else {
+      topTrack = {
+        id: topTrackRow.id,
+        title: topTrackRow.title || "(sin título)",
+        artist: topTrackRow.artist || "",
+        plays: topTrackRow.plays,
+      };
+    }
+  }
+
   // ─── Q3: top day (fecha con más eventos del periodo) ──────
   const topDayRow = await env.DB.prepare(
     `SELECT date(created_at) AS date, COUNT(*) AS count
@@ -94,14 +119,7 @@ export default async function handleStats(_request, env, url, _userId) {
     topDay: topDayRow
       ? { date: topDayRow.date, count: topDayRow.count }
       : null,
-    topTrack: topTrackRow
-      ? {
-          id: topTrackRow.id,
-          title: topTrackRow.title || "(sin título)",
-          artist: topTrackRow.artist || "",
-          plays: topTrackRow.plays,
-        }
-      : null,
+    topTrack,
     topUser: topUserRow
       ? { id: topUserRow.id, name: topUserRow.name, events: topUserRow.events }
       : null,
