@@ -78,9 +78,10 @@
         <h3>Qué cambia con este parche <span class="badge" style="background:rgba(52,211,153,0.15);color:#34d399;">se ve en la app</span></h3>
       </div>
       <ul>
-        <li><span class="nuevo">NUEVO</span> — <strong>Consola de SALUD en el panel:</strong> en <code>/admin</code> hay una vista nueva que muestra los recuentos reales de la bóveda (fotos, canciones activas y eliminadas, referencias rotas) leídos directamente de la base de datos. Sirve para detectar datos huérfanos de un vistazo.</li>
-        <li><span class="nuevo">NUEVO</span> — <strong>Consola de AUDITORÍA en el panel:</strong> un lector del registro de actividad de la app (eventos), con filtros por tipo, usuario y fechas, y paginación — para ver qué ha pasado y cuándo.</li>
-        <li><span class="nuevo">NUEVO</span> — <strong>Modo Visita reforzado por el servidor:</strong> la censura de lo clasificado (sin título, sin nota, sin archivo) ahora la aplica el servidor en los listados y en el feed cuando se entra en modo visita. Ya no se puede saltar el candado guardando una copia antigua de la sesión: manda el servidor, no el navegador.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Tres consolas nuevas en el panel</strong> (<code>/admin</code>): <strong>SALUD</strong> (recuentos reales de la bóveda: fotos, canciones activas y eliminadas, referencias rotas), <strong>AUDITORÍA</strong> (registro de actividad con filtros por tipo, usuario y fechas) y <strong>ACCESOS</strong> (quién tiene acceso y revocación de sesiones al momento).</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Revocación de sesiones:</strong> desde la consola de ACCESOS se puede cortar la sesión de cualquier dispositivo al instante. El servidor deja de aceptar los tokens antiguos (responde 401) hasta que se vuelva a entrar. Funciona igual para David (Google) y para las claves de acceso.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Modo Visita con interfaz propia:</strong> interruptor en la cabecera y tesela esmerilada para el contenido clasificado en la galería y el visor. La censura (sin título, sin nota, sin archivo) la aplica el servidor: guardar una copia antigua de la sesión no sirve para saltársela.</li>
+        <li><span class="nuevo">NUEVO</span> — <strong>Pantalla de inicio rediseñada para el escritorio:</strong> mejor aprovechamiento del espacio, los títulos largos se limitan a dos líneas en vez de cortarse, e iconografía nueva. Por debajo de 1280px no cambia nada.</li>
       </ul>
     </div>
 
@@ -91,10 +92,11 @@
       </div>
       <ul>
         <li><strong>Saneamiento server-side del modo visita</strong> en las rutas de contenido y en el feed (fotos, canciones, cápsulas, gotas).</li>
+        <li><strong>Revocación por "epoch" de usuario:</strong> un contador por persona en la base de datos; cada token lleva el contador y el servidor comprueba que siga vigente en cada petición. Revocar = subir el contador. Sin tablas nuevas ni limpieza de caducados.</li>
         <li><strong>Medición de textos truncados reproducida y comparada:</strong> primera línea base de auditoría (24 hallazgos documentados) y primer delta contra la versión anterior: <strong>10 truncados resueltos, 0 agravados</strong>, 6 mediciones nuevas en escritorio.</li>
         <li><strong>El harness de auditoría ahora mide también el escritorio</strong> (antes solo móvil).</li>
-        <li><strong>Arreglada la fecha de la "aventura en curso":</strong> la app ya no inventa una fecha falsa cuando la real no está disponible — se queda sin fecha hasta que exista.</li>
-        <li><strong>Iconografía declarada:</strong> la tabla de iconos del diseño HUD ahora documenta las 20 líneas reales que usan iconos (fuente de verdad para futuros cambios visuales).</li>
+        <li><strong>Arreglada la fecha de la "aventura en curso":</strong> la app ya no inventa una fecha falsa cuando la real no está disponible — el contador se queda en ceros.</li>
+        <li><strong>Iconografía declarada y alineada:</strong> la tabla de iconos del diseño HUD documenta las 20 líneas reales que usan iconos y todas quedan alineadas al registro único.</li>
       </ul>
     </div>
 
@@ -104,10 +106,9 @@
         <h3>Qué viene en los próximos parches</h3>
       </div>
       <ul>
-        <li><strong>La pantalla de inicio rediseñada para el escritorio</strong>: títulos sin recortar y mejor aprovechamiento del espacio (trabajo en curso, pendiente de integrar).</li>
-        <li><strong>Interfaz del Modo Visita</strong> (desenfoque y control) y <strong>revocación de sesiones</strong> (diseñada, pendiente de implementar).</li>
         <li><strong>Móvil y PWA</strong>: prueba real en pantalla pequeña (390x844) y la app instalable con funcionamiento sin conexión.</li>
         <li><strong>Recarga de /admin con la app instalada</strong>: comprobación de que la Terminal de Mando sobrevive a un F5 con el servicio en segundo plano.</li>
+        <li><strong>Despliegue del servidor</strong> con las rutas nuevas y verificación autenticada en producción.</li>
       </ul>
     </div>
 
@@ -116,7 +117,7 @@
         <div class="card-dot slate"></div>
         <h3>Nota de despliegue</h3>
       </div>
-      <p>Este parche llega a la web con la actualización de hoy (12 de agosto). El servidor (API) se despliega aparte: las rutas nuevas de salud y auditoría del panel se verifican vivas en producción tras el despliegue del worker.</p>
+      <p>Este parche llega a la web con la actualización de hoy (12 de agosto). El servidor (API) se despliega aparte: las rutas nuevas de salud, auditoría y accesos del panel se verifican vivas en producción tras el despliegue del worker.</p>
     </div>
 
     <p class="footer">
