@@ -22,7 +22,6 @@ import { useToast } from "../core/ToastContext";
 const VaultGallery = lazy(() => import("./VaultGallery"));
 
 // ─── CONSTANTS ───────────────────────────────────────────────
-const DEFAULT_ADVENTURE_DATE = new Date(Date.now() - 500 * 86400000).toISOString();
 
 // FASE C.2.1 (veredicto V1 Fable S147): fallback demo de eras eliminado, estado vacío elegante.
 
@@ -743,7 +742,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         transition={{ duration: 0.5 }}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
       >
-        <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date ?? DEFAULT_ADVENTURE_DATE} />
+        <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date} />
         <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
       </motion.div>
 

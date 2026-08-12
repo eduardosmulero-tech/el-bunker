@@ -78,9 +78,9 @@ describe("service boundaries", () => {
     const vault = read("src/core/VaultContext.jsx");
     expect(vault).toContain('import { buildDbFromWorker } from "./WorkerDataService";');
     // V-6: sin fallback de fecha — adventures_start_date es dato de usuario,
-    // el cliente no lo fabrica (DEFAULT_ADVENTURE_DATE eliminado).
+    // el cliente no lo fabrica (constante de fecha falsa eliminada).
     expect(vault).toContain("buildDbFromWorker(workerClient)");
-    expect(vault).not.toContain("DEFAULT_ADVENTURE_DATE");
+    expect(vault).not.toMatch(/Date\.now\(\)\s*-\s*500/);
     expect(vault).not.toContain("const parsedEntries = (entries || []).map");
   });
 
