@@ -15,7 +15,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { Icon } from "../core/ui";
 import { CATEGORY_FILTERS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, getImageUrl } from "./VaultHelpers";
+import { ENTRY_CATEGORY, getImageUrl, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
+import ClassifiedTile from "./ClassifiedTile";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
 const LONG_PRESS_MS = 500;
@@ -42,10 +43,10 @@ const buildMasonryColumns = (items, columnCount) => {
   return columns;
 };
 
-// FASE C.2.2 — Helper: rango de fechas de un grupo de entries (event_date > created_at).
+// FASE C.2.2 — Helper: rango de fechas de un grupo de entries (event_date > created_at > fecha saneada).
 const computeDateRange = (eraEntries) => {
   const ts = eraEntries
-    .map((e) => e.content?.event_date || e.created_at)
+    .map((e) => e.content?.event_date || resolveEntryDate(e))
     .filter(Boolean)
     .map((d) => new Date(d).getTime())
     .filter((t) => !isNaN(t));
@@ -68,9 +69,10 @@ const groupEntriesByEra = (entries, eras) => {
   const byEra = new Map();
   const sinEra = [];
   for (const entry of entries) {
-    if (entry.era_id && eraOrder.includes(entry.era_id)) {
-      if (!byEra.has(entry.era_id)) byEra.set(entry.era_id, []);
-      byEra.get(entry.era_id).push(entry);
+    const eraId = resolveEraId(entry);
+    if (eraId && eraOrder.includes(eraId)) {
+      if (!byEra.has(eraId)) byEra.set(eraId, []);
+      byEra.get(eraId).push(entry);
     } else {
       sinEra.push(entry);
     }
@@ -236,7 +238,9 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor 
           }}
           whileHover={{ borderColor: `${era?.color || ac}66`, boxShadow: `0 0 12px ${era?.color || ac}11` }}
         >
-          {imgUrl ? (
+          {isClassified(entry) ? (
+            <ClassifiedTile entry={entry} era={era} accentColor={ac} />
+          ) : imgUrl ? (
             <img
               src={imgUrl}
               alt={entry.title || ""}
@@ -372,7 +376,11 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
         </span>
       </div>
 
-      {imgUrl ? (
+      {isClassified(entry) ? (
+        <div className="rounded-sm overflow-hidden mb-2" style={{ maxHeight: 180 }}>
+          <ClassifiedTile entry={entry} era={era} accentColor={ac} />
+        </div>
+      ) : imgUrl ? (
         <div className="rounded-sm overflow-hidden mb-2" style={{ maxHeight: 180 }}>
           <img src={imgUrl} alt={entry.title || ""} className="w-full object-cover" style={{ maxHeight: 180 }} loading="lazy" decoding="async" />
         </div>
