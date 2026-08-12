@@ -1,0 +1,2 @@
+-- Rollback for 0004_token_epoch.sql — local/reviewed execution only.
+ALTER TABLE users DROP COLUMN token_epoch;

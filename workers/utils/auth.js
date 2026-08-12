@@ -54,20 +54,38 @@ export async function verifyJWT(token, secret) {
     if (!ok) return null;
     const payload = JSON.parse(new TextDecoder().decode(base64urlDecode(parts[1])));
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-    return payload.sub;
+    return payload;
   } catch { return null; }
+}
+
+// ADR-031 — frescura del token: todo JWT emitido lleva el claim `epoch` con el
+// contador users.token_epoch vigente en la firma. Un token solo vale mientras su
+// epoch coincida con el del usuario en D1: revocar = incrementar el contador.
+// Un token sin el claim `epoch` (emitido antes del despliegue de ADR-031) nunca
+// coincide con un entero y queda rechazado: desplegar esta versión mata las
+// sesiones previas, que es el comportamiento de una rotación implícita.
+async function checkEpochFreshness(env, payload) {
+  if (!payload?.sub) return false;
+  const row = await env.DB.prepare(
+    "SELECT token_epoch FROM users WHERE id = ?1"
+  ).bind(payload.sub).first();
+  if (!row) return false;
+  return row.token_epoch === payload.epoch;
 }
 
 export async function authenticate(request, env) {
   const auth = request.headers.get("Authorization");
   if (!auth?.startsWith("Bearer ")) return null;
-  const secret = env.JWT_SECRET;
+  let secret = env.JWT_SECRET;
   if (!secret) {
     if (env.ENVIRONMENT === "production") {
       console.error("[Búnker] ⛔ JWT_SECRET no configurado en producción");
       return null;
     }
-    return verifyJWT(auth.slice(7), "dev-secret-change-me");
+    secret = "dev-secret-change-me";
   }
-  return verifyJWT(auth.slice(7), secret);
+  const payload = await verifyJWT(auth.slice(7), secret);
+  if (!payload) return null;
+  if (!(await checkEpochFreshness(env, payload))) return null;
+  return payload.sub;
 }

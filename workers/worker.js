@@ -30,6 +30,7 @@ import handleConfig from "./routes/config.js";
 import handleAdminG2 from "./routes/admin-g2.js";
 import handleAdminHealth from "./routes/admin-health.js";
 import handleAdminAudit from "./routes/admin-audit.js";
+import handleAdminAccess from "./routes/admin-access.js";
 import handleAdmin from "./routes/admin.js";
 import handleClassify from "./routes/classify.js";
 
@@ -56,6 +57,8 @@ export const ROUTES = [
   ["/api/admin/g2",        handleAdminG2,     true],
   ["/api/admin/health",    handleAdminHealth, true],
   ["/api/admin/audit",     handleAdminAudit,  true],
+  // Specific access console ahead of the generic admin skeleton (same rule as g2/audit).
+  ["/api/admin/access",    handleAdminAccess, true],
   ["/api/admin/",          handleAdmin,       true],
   ["/api/classify",        handleClassify,    true],
 ];

@@ -17,23 +17,25 @@ import {
 } from "../utils/access-keys.js";
 
 /** Usuario completo desde D1 — fuente única de identidad (schema.sql: tabla users).
+ *  Incluye token_epoch (ADR-031): el claim `epoch` del JWT se firma con este valor.
  *  Exportado para session.js (A2): el Modo Visita reutiliza el emisor de ADR-028. */
 export async function loadUser(env, userId) {
   return env.DB.prepare(
-    "SELECT id, email, name, role FROM users WHERE id = ?1"
+    "SELECT id, email, name, role, token_epoch FROM users WHERE id = ?1"
   ).bind(userId).first();
 }
 
 /** Firma el JWT y registra la emisión en events (ADR-019). Único punto de firma.
  *  Exportado para session.js (A2): extraClaims permite añadir el claim `visit`
- *  (diseño Modo Visita §5). Los emisores de login/token no cambian ({} por defecto). */
+ *  (diseño Modo Visita §5). Los emisores de login/token no cambian ({} por defecto).
+ *  ADR-031: el payload incorpora `epoch` con el contador vigente del usuario. */
 export async function issueToken(env, request, user, method, extraClaims = {}) {
   const secret = env.JWT_SECRET;
   if (!secret && env.ENVIRONMENT === "production") {
     return err("JWT_SECRET not configured", 500);
   }
   const token = await signJWT(
-    { sub: user.id, email: user.email, method, ...extraClaims },
+    { sub: user.id, email: user.email, method, ...extraClaims, epoch: user.token_epoch ?? 0 },
     secret || "dev-secret-change-me"
   );
   await emitEvent(env, "auth_login", user.id, "session", null, {
