@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, useMemo } from "react";
+import { useRef, useEffect, useCallback, useState, useMemo, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
 import { Icon } from "../core/ui";
@@ -47,7 +47,7 @@ function detectBeat(freqData, history, threshold) {
   return histAvg > 0 && avg > histAvg * (threshold || 1.4);
 }
 
-export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen: _onRequestFullscreen }) => {
+export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen, ref }) => {
   const ac = accentColor || ACID;
   const canvasRef    = useRef(null);
   const analyserRef  = useRef(null);
@@ -106,19 +106,34 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
     resetHideTimer();
   }, [preset.mode, resetHideTimer]);
 
+  // ── Entrada al modo pantalla completa (puerta hacia fuera) ─
+  // El boton del reproductor (WinampPlayer) la invoca via ref; el tap sobre el
+  // canvas tambien la usa (se anade una puerta, no se sustituye la que hay).
+  // Si el exterior conecta onRequestFullscreen, la entrada delega en ese mando
+  // (ADR-029 P4: "el mando que onRequestFullscreen esperaba"); si no, usa la nativa.
+  const requestFullscreen = useCallback(() => {
+    if (typeof onRequestFullscreen === "function") {
+      onRequestFullscreen();
+      return;
+    }
+    setIsFullscreen(true);
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } catch { /* noop */ }
+  }, [onRequestFullscreen]);
+
+  useImperativeHandle(ref, () => ({ requestFullscreen }), [requestFullscreen]);
+
   // ── Tap: fullscreen API + mode cycling ────────────────────
   const handleTap = useCallback(() => {
     if (isFullscreen) {
       if (!showControls) resetHideTimer(); else cycleMode();
     } else {
-      setIsFullscreen(true);
-      try {
-        const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      } catch { /* noop */ }
+      requestFullscreen();
     }
-  }, [isFullscreen, showControls, resetHideTimer, cycleMode]);
+  }, [isFullscreen, showControls, resetHideTimer, cycleMode, requestFullscreen]);
 
   // Listen for browser fullscreen exit (back button, ESC)
   useEffect(() => {

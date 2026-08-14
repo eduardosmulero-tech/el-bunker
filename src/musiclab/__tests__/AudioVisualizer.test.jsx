@@ -77,4 +77,20 @@ describe("AudioVisualizer lifecycle", () => {
     });
     expect(canvas).toHaveAttribute("title", "Tap para visualizador a pantalla completa");
   });
+
+  it("expone la entrada requestFullscreen que usa el botón del reproductor", () => {
+    const ref = { current: null };
+    const view = render(<AudioVisualizer ref={ref} audioRef={audioRef} isPlaying={false} />);
+    const requestFullscreen = vi.fn(() => Promise.resolve());
+    document.documentElement.requestFullscreen = requestFullscreen;
+
+    // F2a (ADR-029 P4): el boton de WinampPlayer llama a esta entrada via ref.
+    act(() => {
+      ref.current.requestFullscreen();
+    });
+
+    expect(requestFullscreen).toHaveBeenCalledTimes(1);
+    const canvas = view.container.querySelector("canvas");
+    expect(canvas).toHaveAttribute("title", expect.stringContaining("ESC"));
+  });
 });
