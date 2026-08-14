@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, PURPLE_BG, PURPLE_BORDER, stringToColor } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
+import { useSecondLevelNav } from "../layout/Layout";
 
 import { AudioVisualizer } from "./AudioVisualizer";
 import { WinampPlayer } from "./WinampPlayer";
@@ -92,7 +93,12 @@ export default function MusicLab({
   const [showDelete,        setShowDelete]         = useState(false);
   const [showEdit,          setShowEdit]           = useState(false);
   const [editingTrack,      setEditingTrack]       = useState(null);
-  const [activeTab,         setActiveTab]          = useState("tracks");
+  // ADR-029 §6 P2: la vista activa se eleva al shell (Layout) para que el rail
+  // la lea y la controle. La barra de tabs del lienzo escribe el mismo estado.
+  const { secondLevel, setSecondLevel } = useSecondLevelNav();
+  const activeTab = secondLevel.music ?? "tracks";
+  // useCallback: identidad estable para el efecto del swipe-up (deps []).
+  const setActiveTab = useCallback((value) => setSecondLevel("music", value), [setSecondLevel]);
   const [viewMode,          setViewMode]            = useState(() => {
     try { return localStorage.getItem(`bunker_viewmode_${db?.currentUser?.id ?? "default"}`) ?? "list"; }
     catch { return "list"; }
@@ -124,7 +130,7 @@ export default function MusicLab({
     const handleSwipeUp = () => setActiveTab("queue");
     window.addEventListener("bunker_swipe_up_queue", handleSwipeUp);
     return () => window.removeEventListener("bunker_swipe_up_queue", handleSwipeUp);
-  }, []);
+  }, [setActiveTab]);
 
   // ── Estado de reproducción — viene de PlayerContext ───────
   const {
