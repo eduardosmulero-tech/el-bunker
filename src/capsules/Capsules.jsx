@@ -12,6 +12,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { useToast } from "../core/ToastContext";
 import { Icon } from "../core/ui";
+import { useSecondLevelNav } from "../layout/Layout";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
@@ -25,7 +26,11 @@ const SUB_TABS = [
 ];
 
 export default function Capsules({ db: _db, userId: _userId, activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
-  const [subTab, setSubTab] = useState("timeline");
+  // ADR-029 §6 P2: el subTab se eleva al shell (Layout) para que el rail lo lea
+  // y lo controle. El subnav del lienzo escribe en el mismo estado real.
+  const { secondLevel, setSecondLevel } = useSecondLevelNav();
+  const subTab = secondLevel.capsules ?? "timeline";
+  const setSubTab = (value) => setSecondLevel("capsules", value);
   const [events, setEvents] = useState([]);
   const [capsules, setCapsules] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
