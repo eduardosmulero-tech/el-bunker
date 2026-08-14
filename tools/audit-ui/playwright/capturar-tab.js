@@ -63,8 +63,15 @@ try {
 
   // V-3 del diseño. Contar etiquetas NO basta: un destino puede aparecer una sola vez y aun así
   // ser inalcanzable si quien lo pinta es un <span> decorativo. Se separan las dos cosas.
-  const navegaciones = await page.evaluate(() => {
-    const etiquetas = ['TIMELINE', 'SMOKE', 'TIME CAPSULES', 'RECAP'];
+  const navegaciones = await page.evaluate((tab) => {
+    // Los destinos de segundo nivel dependen de la pestaña (ADR-029 §6 P2).
+    // VAULT no tiene todavía: sus secciones llegan con ADR-033.
+    const POR_PESTANA = {
+      CAPSULES: ['TIMELINE', 'SMOKE', 'TIME CAPSULES', 'RECAP'],
+      MUSIC: ['COLA', 'TRACKS', 'LISTS', 'DROPS'],
+      VAULT: [],
+    };
+    const etiquetas = POR_PESTANA[tab.toUpperCase()] ?? [];
     const visible = (el) => {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(el).display !== 'none';
@@ -89,7 +96,7 @@ try {
       anchoLienzo: canvas ? Math.round(canvas.getBoundingClientRect().width) : null,
       scrollHorizontal: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     };
-  });
+  }, tabArg);
 
   const ruta = join('report', 'screenshots', `${nombre}.png`);
   await page.screenshot({ path: ruta });
