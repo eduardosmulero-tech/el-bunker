@@ -139,7 +139,7 @@ describe("PlayerContext — Core", () => {
     expect(pauseSpy).not.toHaveBeenCalled();
   });
 
-  it("10. createSession conserva el id y activa al usuario como host", async () => {
+  it("10. createSession crea la sesión personal del host SIN marcar sesión compartida (t_9d4f2e6c)", async () => {
     const originalHasToken = workerClient.hasToken;
     const originalPost = workerClient.post;
     workerClient.hasToken = () => true;
@@ -150,9 +150,12 @@ describe("PlayerContext — Core", () => {
       let created;
       await act(async () => { created = await ctx().createSession(); });
       expect(created).toBe("session-1");
-      expect(ctx().sessionId).toBe("session-1");
+      // La sesión personal del host NO es sesión compartida: sessionId local queda null
+      // (el id vive en el ref interno para el long-polling del host). El falso positivo
+      // anterior marcaba sessionId/sharedListening con David ausente.
+      expect(ctx().sessionId).toBe(null);
       expect(ctx().isHost).toBe(true);
-      expect(ctx().sharedListening).toBe(true);
+      expect(ctx().sharedListening).toBe(false);
     } finally {
       workerClient.hasToken = originalHasToken;
       workerClient.post = originalPost;
@@ -210,5 +213,286 @@ describe("PlayerContext — Gapless + Restore", () => {
   it("15. MAX_QUEUE_SIZE está definido y es 75", () => {
     const { ctx } = renderPlayer();
     expect(ctx().MAX_QUEUE_SIZE).toBe(75);
+  });
+});
+
+describe("PlayerContext — P0 self-echo (t_0cd2d7a6)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    workerClient.clearToken();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    workerClient.clearToken();
+  });
+
+  it("16. el self-echo del long-polling NO re-aplica la posición remota (audio no se congela)", async () => {
+    // Reproducir el P0: createSession setea sessionId local → el long-polling SC4 se monta
+    // → workers/routes/sync.js devuelve el estado completo SIN filtrar por action_by
+    // → el cliente recibe SU PROPIO play/sync como acción remota y re-aplica currentTime
+    // (posición vieja) → el audio se congela repitiendo el mismo segundo.
+    // Fix: ignorar acciones donde action_by === userId (self-echo).
+    const tracks = MOCK_TRACKS.map((t) => ({ ...t, r2_key: `music/${t.id}.mp3` }));
+    const playSpy = vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    const currentTimeSetSpy = vi.spyOn(window.HTMLMediaElement.prototype, "currentTime", "set");
+
+    const originalHasToken = workerClient.hasToken;
+    const originalPost = workerClient.post;
+    const originalFetch = workerClient.fetch;
+    workerClient.hasToken = () => true;
+    // create → sesión personal; resto de sync actions → ok
+    workerClient.post = vi.fn(async (url, body) => {
+      if (body?.action === "create") return { session_id: "s1", active: true, host_id: "edu" };
+      return { ok: true };
+    });
+    // Long-polling: self-echo con la propia acción del usuario (action_by === userId)
+    workerClient.fetch = vi.fn(async (_url, _opts) => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        active: true,
+        session_id: "s1",
+        host_id: "edu",
+        guest_id: null,
+        action: "play",
+        action_by: "edu",
+        position: 5,
+        is_playing: true,
+        updated_at: "2026-08-13T00:00:00Z",
+      }),
+    }));
+
+    try {
+      const { ctx } = renderPlayer({ userId: "edu", tracks });
+      // Reproducir → isPlaying → auto-create sesión personal → long-polling montado
+      act(() => ctx().playTrack(tracks[0]));
+      await tick();
+      await tick();
+      // Dar tiempo al poll para procesar el echo
+      await new Promise((r) => setTimeout(r, 100));
+      await tick();
+
+      // El self-echo NO debe haber re-aplicado currentTime = 5 (posición vieja).
+      // Sin el fix, currentTimeSetSpy se invoca al menos una vez con 5.
+      const calls = currentTimeSetSpy.mock.calls.filter((c) => c[0] === 5);
+      expect(calls.length).toBe(0);
+      expect(playSpy).toHaveBeenCalled(); // el audio sí arrancó (no bloqueado)
+    } finally {
+      workerClient.hasToken = originalHasToken;
+      workerClient.post = originalPost;
+      workerClient.fetch = originalFetch;
+    }
+  });
+
+  it("17. la acción REMOTA real del partner SÍ se aplica (sin regresión SC4)", async () => {
+    const tracks = MOCK_TRACKS.map((t) => ({ ...t, r2_key: `music/${t.id}.mp3` }));
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    const currentTimeSetSpy = vi.spyOn(window.HTMLMediaElement.prototype, "currentTime", "set");
+
+    const originalHasToken = workerClient.hasToken;
+    const originalPost = workerClient.post;
+    const originalFetch = workerClient.fetch;
+    workerClient.hasToken = () => true;
+    workerClient.post = vi.fn(async (url, body) => {
+      if (body?.action === "create") return { session_id: "s1", active: true, host_id: "edu" };
+      return { ok: true };
+    });
+    // Echo del PARTNER (action_by = david ≠ edu) → debe aplicarse el seek/posición
+    workerClient.fetch = vi.fn(async (_url, _opts) => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        active: true,
+        session_id: "s1",
+        host_id: "edu",
+        guest_id: "david",
+        action: "seek",
+        action_by: "david",
+        position: 42,
+        is_playing: true,
+        updated_at: "2026-08-13T00:00:00Z",
+      }),
+    }));
+
+    try {
+      const { ctx } = renderPlayer({ userId: "edu", tracks });
+      act(() => ctx().playTrack(tracks[0]));
+      await tick();
+      await tick();
+      await new Promise((r) => setTimeout(r, 100));
+      await tick();
+
+      const calls = currentTimeSetSpy.mock.calls.filter((c) => c[0] === 42);
+      expect(calls.length).toBeGreaterThan(0);
+    } finally {
+      workerClient.hasToken = originalHasToken;
+      workerClient.post = originalPost;
+      workerClient.fetch = originalFetch;
+    }
+  });
+});
+
+describe("PlayerContext — sesión compartida falsa / no deja salir (t_9d4f2e6c)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    workerClient.clearToken();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    workerClient.clearToken();
+  });
+
+  it("18. leaveSession limpia sessionId/partnerId y NO reaparece la sesión personal como compartida", async () => {
+    const tracks = MOCK_TRACKS.map((t) => ({ ...t, r2_key: `music/${t.id}.mp3` }));
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+    const originalHasToken = workerClient.hasToken;
+    const originalPost = workerClient.post;
+    const originalFetch = workerClient.fetch;
+    workerClient.hasToken = () => true;
+    // create → sesión personal; join → sesión compartida real (guest); leave → ok
+    workerClient.post = vi.fn(async (_url, body) => {
+      if (body?.action === "create") return { session_id: "s1", active: true, host_id: "edu" };
+      if (body?.action === "join") return { active: true, host_id: "david", position: 0, is_playing: false };
+      if (body?.action === "leave") return { ok: true };
+      return { ok: true };
+    });
+    // Long-polling: la sesión personal existe pero NO hay guest (David ausente)
+    workerClient.fetch = vi.fn(async (_url, _opts) => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        active: true,
+        session_id: "s1",
+        host_id: "edu",
+        guest_id: null,
+        action: "created",
+        action_by: "edu",
+        position: 0,
+        is_playing: true,
+        updated_at: "2026-08-13T00:00:00Z",
+      }),
+    }));
+
+    try {
+      const { ctx } = renderPlayer({ userId: "edu", tracks });
+      // Reproducir → auto-create sesión personal (host) → sessionId local NO debe marcarse
+      act(() => ctx().playTrack(tracks[0]));
+      await tick();
+      await tick();
+      await new Promise((r) => setTimeout(r, 50));
+      await tick();
+
+      // Sin guest: no hay sesión compartida activa (antes marcaba sessionId y sharedListening=true)
+      expect(ctx().sessionId).toBe(null);
+      expect(ctx().sharedListening).toBe(false);
+
+      // Unirse a sesión real como guest: joinSession setea sessionId (sesión compartida real)
+      await act(async () => { await ctx().joinSession("s1"); });
+      await tick();
+      expect(ctx().sessionId).toBe("s1");
+      expect(ctx().sharedListening).toBe(true);
+
+      // Salir: leaveSession limpia sessionId/partnerId
+      await act(async () => { await ctx().leaveSession(); });
+      await tick();
+      expect(ctx().sessionId).toBe(null);
+      expect(ctx().sharedListening).toBe(false);
+    } finally {
+      workerClient.hasToken = originalHasToken;
+      workerClient.post = originalPost;
+      workerClient.fetch = originalFetch;
+    }
+  });
+
+  it("19. el host detecta joined del guest por el poll y vuelve a null cuando el guest hace left (SC10)", async () => {
+    const tracks = MOCK_TRACKS.map((t) => ({ ...t, r2_key: `music/${t.id}.mp3` }));
+    vi.spyOn(window.HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+
+    const originalHasToken = workerClient.hasToken;
+    const originalPost = workerClient.post;
+    const originalFetch = workerClient.fetch;
+    workerClient.hasToken = () => true;
+    workerClient.post = vi.fn(async (_url, body) => {
+      if (body?.action === "create") return { session_id: "s1", active: true, host_id: "edu" };
+      return { ok: true };
+    });
+    // Secuencia del poll controlada con promesas manuales: primero joined (David entra),
+    // luego left (David sale). El mock imita el long-polling del server: cada respuesta
+    // se resuelve solo cuando el test la libera (evita el bucle apretado de joined/left
+    // que hacen `continue` sin esperar → worker crash).
+    const resolvers = [];
+    workerClient.fetch = vi.fn(() => new Promise((resolve) => resolvers.push(resolve)));
+    const joinedResp = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        active: true,
+        session_id: "s1",
+        host_id: "edu",
+        guest_id: "david",
+        action: "joined",
+        action_by: "david",
+        position: 10,
+        is_playing: true,
+        updated_at: "2026-08-13T00:00:01Z",
+      }),
+    };
+    const leftResp = {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        active: true,
+        session_id: "s1",
+        host_id: "edu",
+        guest_id: null,
+        action: "left",
+        action_by: "david",
+        position: 10,
+        is_playing: true,
+        updated_at: "2026-08-13T00:00:02Z",
+      }),
+    };
+    const waitForFetch = async (n, timeoutMs = 1000) => {
+      const t0 = Date.now();
+      while (resolvers.length < n && Date.now() - t0 < timeoutMs) {
+        await new Promise((r) => setTimeout(r, 10));
+      }
+      expect(resolvers.length).toBeGreaterThanOrEqual(n);
+    };
+
+    try {
+      const { ctx } = renderPlayer({ userId: "edu", tracks });
+      act(() => ctx().playTrack(tracks[0]));
+      await tick();
+      await tick();
+      // El poll del host está montado (sesión personal) → liberar joined
+      await waitForFetch(1);
+      resolvers.shift()(joinedResp);
+      await tick();
+      await tick();
+
+      expect(ctx().sessionId).toBe("s1");
+      expect(ctx().partnerId).toBe("david");
+      expect(ctx().sharedListening).toBe(true);
+
+      // Al setear sessionId el efecto del poll se re-monta: quedan 2 fetch pendientes
+      // (el del poll viejo, abortado, y el del poll nuevo). El viejo descarta la respuesta
+      // por active=false; el nuevo procesa left → el host vuelve a sin sesión compartida.
+      await waitForFetch(2);
+      resolvers.shift()(leftResp); // poll viejo (abortado) → se descarta
+      resolvers.shift()(leftResp); // poll nuevo → procesa left
+      await tick();
+      await tick();
+      expect(ctx().sessionId).toBe(null);
+      expect(ctx().partnerId).toBe(null);
+      expect(ctx().sharedListening).toBe(false);
+    } finally {
+      workerClient.hasToken = originalHasToken;
+      workerClient.post = originalPost;
+      workerClient.fetch = originalFetch;
+    }
   });
 });

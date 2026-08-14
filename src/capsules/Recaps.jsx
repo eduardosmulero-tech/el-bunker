@@ -88,7 +88,7 @@ export default function Recaps({ accentColor = ACID }) {
   const sections = [
     { icon: "book", label: "PORTADA", content: `Tu ${PERIODS.find(p => p.id === period)?.label} en El Búnker`,
       detail: `${stats.total} eventos · ${stats.uniqueDays} días activos`,
-      color: ACID },
+      color: accent },
     { icon: "music", label: "MÚSICA", content: `${stats.plays} reproducciones`,
       detail: stats.topTrack
         ? `${stats.topTrack.title}${stats.topTrack.artist ? " — " + stats.topTrack.artist : ""} · ${stats.topTrack.plays}x`
@@ -105,7 +105,7 @@ export default function Recaps({ accentColor = ACID }) {
       color: "#aaff44" },
     { icon: "sparkles", label: "CIERRE", content: `${stats.completed} sesiones completadas`,
       detail: "Lo vivido queda guardado. Hasta el próximo RECAP.",
-      color: ACID },
+      color: accent },
   ];
 
   return (

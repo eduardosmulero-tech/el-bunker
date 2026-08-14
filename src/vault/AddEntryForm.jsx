@@ -7,7 +7,7 @@
 // ============================================================
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
+import { ACID, FONT_MONO, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
 import { Icon, Input } from "../core/ui";
 import LocationSearch from "./LocationSearch";
@@ -205,7 +205,7 @@ const getUploadFolder = (type) => {
 
 // Sub-componente: grupo de botones de tipo por categoría (14 categorías)
 // headerOpacity baja con el número de categoría para dar jerarquía visual.
-function TypeGroup({ category, currentType, onSelect }) {
+function TypeGroup({ category, currentType, onSelect, accentColor = ACID }) {
   const types = ENTRY_TYPES.filter((t) => t.category === category);
   if (!types.length) return null;
   const catNum = parseInt(category);
@@ -214,7 +214,7 @@ function TypeGroup({ category, currentType, onSelect }) {
     <div className="flex flex-col gap-1">
       <span
         className="text-[9px] tracking-[0.25em] uppercase px-1"
-        style={{ color: ACID, fontFamily: FONT_MONO, opacity: headerOpacity }}
+        style={{ color: accentColor, fontFamily: FONT_MONO, opacity: headerOpacity }}
       >
         {CATEGORY_LABELS[category] ?? category}
       </span>
@@ -225,8 +225,8 @@ function TypeGroup({ category, currentType, onSelect }) {
             onClick={() => onSelect(t.id)}
             className={`text-xs px-3 py-2.5 min-h-[11px] transition-all ${currentType === t.id ? "" : "opacity-25 hover:opacity-50"}`}
             style={{
-              color: currentType === t.id ? ACID : `${ACID}88`,
-              borderBottom: currentType === t.id ? `1px solid ${ACID}` : "1px solid transparent",
+              color: currentType === t.id ? accentColor : `${accentColor}88`,
+              borderBottom: currentType === t.id ? `1px solid ${accentColor}` : "1px solid transparent",
               fontFamily: FONT_MONO,
             }}
           >
@@ -245,7 +245,7 @@ const SELECT_STYLE = (color = ACID) => ({
   backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: 30,
 });
 
-export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel }) {
+export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel, accentColor = ACID }) {
   const isEditing = !!entry;
   const [type, setType] = useState(entry?.type ?? "note");
   const [title, setTitle] = useState(entry?.title ?? "");
@@ -367,14 +367,14 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-3 p-4 max-w-md mx-auto" style={{ fontFamily: FONT_MONO, background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
+      className="flex flex-col gap-3 p-4 max-w-md mx-auto" style={{ fontFamily: FONT_MONO, background: `${accentColor}08`, border: `1px solid ${accentColor}22` }}>
       {/* Header con título de edición */}
       {isEditing && (
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: ACID, fontFamily: FONT_MONO }}>
+          <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: accentColor, fontFamily: FONT_MONO }}>
             <Icon name="edit" size={14} decorative /> EDITANDO ENTRADA
           </span>
-          <span className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>
+          <span className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>
             {entry.id?.slice(0, 8)}…
           </span>
         </div>
@@ -387,6 +387,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
             category={cat}
             currentType={type}
             onSelect={setType}
+            accentColor={accentColor}
           />
         ))}
       </div>
@@ -402,7 +403,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                   value={extraValues[f.key] || ""}
                   onChange={(e) => setExtraValue(f.key, e.target.value)}
                   className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px] appearance-none"
-                  style={SELECT_STYLE(ACID)}
+                  style={SELECT_STYLE(accentColor)}
                 >
                   {(f.options ?? []).map((opt) => (
                     <option key={opt} value={opt === "—" ? "" : opt} style={{ background: "#050505" }}>{opt}</option>
@@ -418,7 +419,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                 onChange={(e) => setExtraValue(f.key, e.target.value)}
                 placeholder={f.placeholder ?? f.label}
                 className="flex-1 min-w-[100px]"
-                accentColor={ACID}
+                accentColor={accentColor}
               />
             );
           })}
@@ -426,7 +427,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       )}
 
       {/* Campos */}
-      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={ACID} />
+      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={accentColor} />
 
       {FILE_UPLOAD_TYPES.has(type) ? (
         <>
@@ -443,42 +444,42 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <div
             onClick={() => fileInputRef.current?.click()}
             className="relative flex flex-col items-center justify-center p-6 cursor-pointer rounded-sm"
-            style={{ border: `1px dashed ${ACID}44`, minHeight: 160, background: photoPreview ? "transparent" : `${ACID}04` }}>
+            style={{ border: `1px dashed ${accentColor}44`, minHeight: 160, background: photoPreview ? "transparent" : `${accentColor}04` }}>
             {photoPreview ? (
               <img src={photoPreview} alt="preview" className="max-h-40 object-contain rounded-sm" />
             ) : (
               <>
-                <span className="text-3xl mb-2 opacity-40" style={{ color: ACID }}>
+                <span className="text-3xl mb-2 opacity-40" style={{ color: accentColor }}>
                   <Icon name={currentMeta?.icon ?? "camera"} size={30} decorative />
                 </span>
-                <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
+                <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor, fontFamily: FONT_MONO }}>
                   TAP PARA SELECCIONAR {currentMeta?.label ?? "ARCHIVO"}
                 </p>
               </>
             )}
           </div>
           {photoFile && (
-            <p className="text-xs opacity-40 truncate" style={{ color: ACID, fontFamily: FONT_MONO }}>
+            <p className="text-xs opacity-40 truncate" style={{ color: accentColor, fontFamily: FONT_MONO }}>
               {photoFile.name} ({(photoFile.size / 1024).toFixed(1)}KB)
             </p>
           )}
         </>
       ) : (
         <Input multiline value={text} onChange={e => setText(e.target.value)}
-          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={ACID} />
+          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={accentColor} />
       )}
 
       {/* Era + Destinatario */}
       <div className="flex gap-2">
         <select value={eraId || ""} onChange={e => setEraId(e.target.value || null)}
           className="bg-transparent text-xs p-3 min-h-[44px] flex-1 appearance-none"
-          style={SELECT_STYLE(ACID)}>
+          style={SELECT_STYLE(accentColor)}>
           <option value="" style={{ background: "#050505" }}>Sin Era</option>
           {eras.map(e => <option key={e.id} value={e.id} style={{ background: "#050505" }}>{e.name}</option>)}
         </select>
         <select value={toUser} onChange={e => setToUser(e.target.value)}
           className="bg-transparent text-xs p-3 min-h-[44px] appearance-none"
-          style={SELECT_STYLE(ACID)}>
+          style={SELECT_STYLE(accentColor)}>
           <option value="both" style={{ background: "#050505" }}>PARA AMBOS</option>
           <option value="edu" style={{ background: "#050505" }}>PARA EDU</option>
           <option value="david" style={{ background: "#050505" }}>PARA DAVID</option>
@@ -490,6 +491,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
         value={locationName}
         lat={locationLat}
         lng={locationLng}
+        accentColor={accentColor}
         onSelect={({ place_name, lat, lng }) => {
           setLocationName(place_name);
           setLocationLat(lat);
@@ -509,8 +511,8 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <button key={tag.id} onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
             className="text-xs px-3 py-2.5"
             style={{
-              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}44`,
-              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}22`}`,
+              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? accentColor) : `${accentColor}44`,
+              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? accentColor) : `${accentColor}22`}`,
               fontFamily: FONT_MONO,
             }}>
             {tag.icon} {tag.label}
@@ -527,12 +529,12 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {/* Botones */}
       <div className="flex gap-2">
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting}
-          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
+          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: accentColor, border: `1px solid ${accentColor}44`, fontFamily: FONT_MONO }}>
           {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : FILE_UPLOAD_TYPES.has(type) ? `SUBIR ${currentMeta?.label ?? "ARCHIVO"}` : "GUARDAR"}
         </motion.button>
         {onCancel && (
           <motion.button whileTap={{ scale: 0.95 }} onClick={onCancel}
-            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: accentColor, border: `1px solid ${accentColor}33`, fontFamily: FONT_MONO }}>
             CANCELAR
           </motion.button>
         )}

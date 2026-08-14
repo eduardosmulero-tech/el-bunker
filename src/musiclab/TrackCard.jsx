@@ -12,7 +12,7 @@ const FONT_MONO    = "'JetBrains Mono', 'Courier New', monospace";
 
 export const VibeTagBar = ({ activeVibe, onVibeChange, VIBE_TAGS, onOpenTagManager, isTagManagerOpen, accentColor = ACID }) => (
   <div style={{ position: "relative", width: "100%", minWidth: 0, paddingBottom: 8 }}>
-    <div style={{
+    <div className="vibe-tag-bar" style={{
       display: "flex", gap: 8,
       overflowX: "auto", paddingBottom: 6, paddingTop: 4,
       scrollbarWidth: "none", touchAction: "pan-x",

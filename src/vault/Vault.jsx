@@ -39,7 +39,7 @@ const AdventureCounter = ({ startDate, accentColor = ACID }) => {
 
   return (
     <motion.div
-      className="relative rounded-sm overflow-hidden p-5"
+      className="relative rounded-sm overflow-hidden p-5 flex flex-col items-center justify-center text-center"
       style={{
         background: GLASS_BG,
         border: `1px solid ${GLASS_BORDER}`,
@@ -53,7 +53,7 @@ const AdventureCounter = ({ startDate, accentColor = ACID }) => {
       </p>
 
       {/* Ticker */}
-      <div className="flex items-end gap-1 mb-3">
+      <div className="flex items-end justify-center gap-1 mb-3">
         {digits.map((d, i) => (
           <motion.span
             key={i}
@@ -76,7 +76,7 @@ const AdventureCounter = ({ startDate, accentColor = ACID }) => {
       </div>
 
       {/* Sub-breakdown */}
-      <div className="flex gap-4 text-xs opacity-40" style={{ color: accentColor }}>
+      <div className="flex justify-center gap-4 text-xs opacity-40" style={{ color: accentColor }}>
         <span>{time.years}Y</span>
         <span className="opacity-30">·</span>
         <span>{time.months}M</span>
@@ -147,7 +147,7 @@ const HeartbeatWidget = ({ lastHeartbeat }) => {
           className="text-xs tracking-[0.3em] uppercase font-bold"
           style={{ color, textShadow: `0 0 8px ${color}66` }}
         >
-          <Icon name={atRisk ? "alert" : "circle"} size={14} decorative /> {atRisk ? "EN RIESGO" : "SEGURO"}
+          {atRisk ? <Icon name="alert" size={14} decorative /> : null} {atRisk ? "EN RIESGO" : "SEGURO"}
         </p>
         {atRisk && (
           <motion.p
@@ -268,7 +268,7 @@ const EraCard = ({ era, isActive, onClick }) => {
   return (
     <motion.div
       onClick={onClick}
-      className="relative flex-shrink-0 cursor-pointer rounded-sm overflow-hidden"
+      className={`relative flex-shrink-0 cursor-pointer rounded-sm overflow-hidden ${isActive ? "xl:!h-[150px]" : "xl:!h-[125px]"}`}
       style={{
         width: isActive ? 280 : 220,
         height: isActive ? 200 : 160,
@@ -734,7 +734,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         accentColor="#ff3b3b"
       />
     <div
-      className="flex flex-col gap-6 px-4 py-6 w-full max-w-6xl mx-auto"
+      className="flex flex-col gap-6 px-4 py-6 w-full max-w-6xl mx-auto xl:gap-4 xl:py-4"
       style={{ fontFamily: FONT_MONO }}
     >
 
@@ -756,7 +756,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         transition={{ duration: 0.5, delay: 0.1 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center justify-between mb-3 px-1 xl:mb-2">
           <div className="flex items-center gap-2">                      <Icon name="archive" size={14} decorative />
             <h2
               className="text-xs tracking-[0.35em] uppercase font-bold"
@@ -824,7 +824,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         {/* Horizontal Slider */}
         <div
           ref={sliderRef}
-          className="flex gap-3 overflow-x-auto pb-3 select-none"
+          className="flex gap-3 overflow-x-auto pb-3 select-none xl:pb-2"
           style={{
             cursor: "grab",
             scrollbarWidth: "none",
@@ -858,7 +858,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center justify-between mb-3 px-1 xl:mb-2">
             <div className="flex items-center gap-2">
               <Icon name="target" size={14} decorative />
               <h2
@@ -924,6 +924,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
                   eras={displayEras}
                   onAdd={handleAddEntry}
                   onCancel={() => setShowAddEntry(false)}
+                  accentColor={accent}
                 />
               )}
               <EraDetailPanel
@@ -952,6 +953,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
                       entry={editingEntry}
                       onUpdate={handleEditEntry}
                       onCancel={() => setEditingEntry(null)}
+                      accentColor={accent}
                     />
                   </motion.div>
                 </motion.div>

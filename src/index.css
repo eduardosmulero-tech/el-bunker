@@ -101,6 +101,13 @@ body.vibe-pulse {
 @media (min-width: 1280px) {
   .desktop-only { display: flex !important; }
   .mobile-status-bar, .mobile-bottom-nav, .mobile-mini-player { display: none !important; }
+  /* X-3 (DISENO_INTERIOR_LIENZO_2026-08-14 §9): la copia del segundo nivel NO se puede ocultar
+     todavía. El raíl aún no es dueño de ese nivel: sus hijos son <span> decorativos sin onClick
+     (Layout.jsx:435-440) y marcan como activo el índice 0 siempre. Ocultar esta barra dejaba
+     SMOKE, TIME CAPSULES y RECAP inalcanzables en escritorio. Se recupera la rejilla a una sola
+     columna, que sí es seguro: la barra pasa arriba a ancho completo en vez de embutida en 14rem. */
+  .capsules-layout { display: block !important; }
+  .capsules-content { max-width: none !important; width: 100% !important; align-self: stretch !important; }
   .desktop-topbar {
     position: fixed;
     inset: 0 0 auto 0;
@@ -122,7 +129,7 @@ body.vibe-pulse {
   .desktop-topbar__pulse { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
   .desktop-topbar__presence { flex: 1; justify-content: center; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .desktop-topbar__actions { white-space: nowrap; opacity: 0.75; }
-  .desktop-topbar__actions button { min-width: 32px; min-height: 32px; color: inherit; background: transparent; border: 1px solid currentColor; opacity: 0.65; }
+  .desktop-topbar__actions button { min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; color: inherit; background: transparent; border: 1px solid currentColor; opacity: 0.65; }
   .desktop-rail {
     position: fixed;
     inset: 44px auto 28px 0;
@@ -141,6 +148,15 @@ body.vibe-pulse {
   .desktop-rail__child { min-height: 25px; font: 10px/25px 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.12em; }
   .desktop-rail__child--active { font-weight: 700; }
   .desktop-rail__hint { padding: 0 16px; font: 10px 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.12em; }
+  .desktop-rail__hint--actionable { width: 100%; border: 0; background: transparent; text-align: left; cursor: pointer; opacity: 0.75; transition: opacity 0.15s ease; }
+  .desktop-rail__hint--actionable:hover { opacity: 1; }
+  /* t_0d0b936b: entrada ADMIN del rail — filete separador sobre la pista de atajos (DISENO_ADMIN_EN_LA_APP §4.1) */
+  .desktop-rail__admin { display: flex; flex-direction: column; padding-top: 8px; }
+  .desktop-rail__divider { height: 1px; margin: 0 16px 6px; background: color-mix(in srgb, var(--vibe-accent, #bfff00) 18%, transparent); }
+  /* t_006ace5f: en desktop la barra de vibes hace wrap (sin scroll horizontal).
+     El scroll solo se mantiene en movil (<1280px). */
+  .vibe-tag-bar { flex-wrap: wrap !important; overflow-x: visible !important; }
+  .capsules-subnav { flex-wrap: wrap !important; overflow-x: visible !important; }
   .desktop-dock {
     position: fixed;
     inset: 44px 0 28px auto;
@@ -175,7 +191,7 @@ body.vibe-pulse {
     height: 100dvh !important;
     min-height: 0 !important;
     margin: 0 336px 0 208px !important;
-    padding: 60px 32px 44px !important;
+    padding: 48px 32px 36px !important;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;

@@ -635,7 +635,14 @@ return () => cancelAnimationFrame(raf);
                 </div>
               );
             })()}
-            <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
+            {/* La carátula es la capa BASE (decisión 1, OPCIÓN B). Sus capas son `absolute`, y
+                en CSS lo posicionado pinta por encima de lo que está en flujo normal sea cual sea
+                el orden del DOM: sin este contexto de apilamiento propio, la carátula tapaba las
+                barras y se comía el tap que abre la pantalla completa (auditoría de Edu 13-ago,
+                medido en tools/audit-ui/playwright/verificar-visualizador-fullscreen.js). */}
+            <div className="relative z-10">
+              <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
+            </div>
           </div>
 
       {/* PLIEGO-230: Track info opaco — antes rgba(0,0,0,0.3) colapsaba el texto sobre el fondo */}
@@ -791,6 +798,7 @@ return () => cancelAnimationFrame(raf);
         {showDrop && (
           <DropComposeModal track={track} onClose={() => setShowDrop(false)}
             currentMinute={currentT} trackDuration={duration}
+            recipientName={userId === "edu" ? "david" : "edu"}
             onSend={(dropData) => { onDropSend?.(dropData); setShowDrop(false); }} />
         )}
       </AnimatePresence>

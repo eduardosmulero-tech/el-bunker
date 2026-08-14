@@ -238,6 +238,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const _isRemoteActionRef      = useRef(false);       // Previene bucles: ignora cambios locales durante sync remoto
   const _wasDisconnectedRef     = useRef(false);       // SC8: se perdió conexión durante sesión
   const _pendingSessionIdRef    = useRef(null);       // Último pending_session_id detectado
+  // t_9d4f2e6c: sesión personal del host (server-side). sessionId local solo refleja sesión
+  // COMPARTIDA activa; el id de la sesión personal vive aquí para que el host monte su poll
+  // (detectar "joined"/"left") sin marcar sesión compartida falsa al reproducir solo.
+  const _personalSessionIdRef   = useRef(null);
 
   const partnerName = partnerId === "edu" ? "Edu" : partnerId === "david" ? "David" : partnerId || null;
 
@@ -247,12 +251,15 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
   // Crear sesión personal (server-side) para que el partner nos detecte via pending_session_id.
   // NO setea sessionId local — esa variable solo refleja una sesión compartida activa.
+  // t_9d4f2e6c: el id de la sesión personal vive en _personalSessionIdRef (el host lo usa para
+  // su long-polling y para detectar "joined"), pero sessionId local NO se setea: reproducir solo
+  // no puede marcar "sesión compartida activa" (falso positivo) si el partner no se ha unido.
   const createSession = useCallback(async () => {
     if (!workerClient.hasToken()) return;
     try {
       const data = await workerClient.post("/api/sync", { action: "create" });
       if (!data?.session_id) throw new Error("create session response missing session_id");
-      setSessionId(data.session_id);
+      _personalSessionIdRef.current = data.session_id;
       setIsHost(true);
       setHasPersonalSession(true);
       console.info("[Búnker] 🔗 Sesión personal creada (server)", data.session_id);
@@ -317,6 +324,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     setPartnerId(null);
     setPartnerTrack(null);
     _lastSyncTsRef.current = 0;
+    // t_9d4f2e6c: al salir, el poll de la sesión compartida muere (sessionId null → cleanup).
+    // El ref de la sesión personal también se limpia: si el usuario sigue reproduciendo,
+    // el auto-create creará una sesión personal NUEVA (ref nuevo) sin marcar sesión compartida.
+    _personalSessionIdRef.current = null;
     console.info("[Búnker] 🔗 Sesión finalizada");
   }, [sessionId]);
 
@@ -382,7 +393,11 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
   // Long-polling: recibir cambios del partner (SC4)
   useEffect(() => {
-    if (!sessionId) return;
+    // t_9d4f2e6c: el poll se monta con la sesión personal del host (ref) aunque sessionId local
+    // siga null — así el host detecta "joined" sin marcar sesión compartida falsa al reproducir
+    // solo. sessionId local SOLO se setea cuando la sesión es compartida de verdad (joined).
+    const pollSid = sessionId || _personalSessionIdRef.current;
+    if (!pollSid) return;
     let active = true;
     const controller = new AbortController();
     _sessionPollRef.current = controller;
@@ -392,7 +407,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       while (active) {
         try {
           const since = _lastSyncTsRef.current;
-          const url = `/api/sync?session_id=${sessionId}&since=${since}`;
+          const url = `/api/sync?session_id=${pollSid}&since=${since}`;
           const res = await workerClient.fetch(url, { signal: controller.signal });
           if (!active) break;
           data = await res.json();
@@ -430,13 +445,33 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           }
 
           if (data.action === "joined" && isHost && data.guest_id) {
-            // SC5: partner joined the session — show toast on host side
+            // SC5: partner joined the session — show toast on host side.
+            // t_9d4f2e6c: ahora SÍ hay sesión compartida real → sessionId local se setea
+            // (el corazón del header y sharedListening dependen de él; antes quedaba
+            // marcado desde createSession, de ahí el falso positivo al reproducir solo).
             setPartnerId(data.guest_id);
+            setSessionId(data.session_id || pollSid);
             setSessionToast(`${data.guest_id === "edu" ? "Edu" : "David"} se ha unido a la sesión`);
             continue;
           }
 
-          if (!data.unchanged && data.session_id && data.action && data.action !== "created" && data.action !== "joined") {
+          // t_9d4f2e6c: el guest abandonó (SC10) — volver a estado "sin sesión compartida":
+          // limpiar sessionId/partnerId; el poll sigue vivo con la sesión personal (ref).
+          if (data.action === "left" && isHost) {
+            setPartnerId(null);
+            setPartnerTrack(null);
+            setSessionId(null);
+            setSessionToast(`${data.action_by === "edu" ? "Edu" : "David"} ha abandonado la sesión`);
+            continue;
+          }
+
+          // P0 (t_0cd2d7a6): el long-polling recibe el estado completo de la sesión SIN
+          // filtrar por quién originó la acción (workers/routes/sync.js). Con la sesión
+          // personal falsa (createSession setea sessionId local), el propio cliente recibe
+          // su propio echo (play/sync con la posición vieja) y re-aplica currentTime → el
+          // audio se congela repitiendo el mismo segundo. Ignorar self-echo: solo aplicar
+          // acciones originadas por el partner.
+          if (!data.unchanged && data.session_id && data.action && data.action !== "created" && data.action !== "joined" && data.action_by !== userId) {
             _isRemoteActionRef.current = true;
 
             // SC4: aplicar acción remota

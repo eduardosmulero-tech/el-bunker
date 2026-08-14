@@ -29,6 +29,7 @@ import {
   LockKeyhole,
   Mail,
   MapPin,
+  Maximize,
   Menu,
   Mic,
   MoreHorizontal,
@@ -88,6 +89,9 @@ const ICONS = {
   lock: LockKeyhole,
   mail: Mail,
   map: MapPin,
+  // F2a: pantalla completa del visualizador. No se reutiliza `grid`, que en esta app ya significa
+  // "vista en rejilla" (la spec propone menu/grid/archive para los modos de vista, UI-M25).
+  maximize: Maximize,
   menu: Menu,
   mic: Mic,
   more: MoreHorizontal,

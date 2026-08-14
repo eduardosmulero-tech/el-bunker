@@ -26,8 +26,12 @@ coordine y cierre), B1 con diseño entregado y ejecución pendiente.
   medir solo este árbol.
 
 ## ▶ Madrugada del 5-ago (06:00-06:30, carril `opus` tras reinicio accidental)
-- **`done` = INTEGRADO EN MAIN** (regla de Edu). Dos tarjetas incumplían: B1 (`t_0a8cf470`, 19
-  ficheros de `src/admin/`) y P0 (`t_e19b5128`). A1, B2 y FIX-SB **sí** están integradas.
+- ~~**`done` = INTEGRADO EN MAIN**~~ **CORREGIDO por Edu el 12-ago y reafirmado el 14-ago:
+  `done` = PENDIENTE DE MERGE. Lo mergeado es `archived`.** Una tarjeta en `done` cuyo trabajo aún
+  no está en `master` **no es un desfase del board**: es el estado normal entre que el carril
+  entrega y alguien integra. La redacción anterior de esta línea hizo que el 14-ago se reportara
+  como incumplimiento algo que era funcionamiento correcto. En su día, B1 (`t_0a8cf470`) y P0
+  (`t_e19b5128`) estaban pendientes de merge; A1, B2 y FIX-SB ya integradas.
   Tarjeta de merge: `t_8b21aec7` (carril `edu`).
 - **Gateway de Hermes instalado y arrancado** (fallback carpeta Inicio, no Tarea Programada: pide
   UAC). Sin él no hay dispatcher: un worker muerto dejaba la tarjeta clavada en `running`.
@@ -36,7 +40,7 @@ coordine y cierre), B1 con diseño entregado y ejecución pendiente.
 - **Clave de zen rotada por Edu** antes del reinicio; verificado que los 3 `.env` llevan la nueva.
   Queda confirmar que la vieja está *revocada* y revisar `config.yaml:240` (`t_3564265b`).
 - **Canon de paralelismo:** P13 (cuota por proveedor, no por perfil), P14 (lo del chat va a la
-  tarjeta), P15 (`done` = integrado) y §12 — el board ya implementaba media docena de reglas que
+  tarjeta), P15 (`done` = **pendiente de merge**; `archived` = mergeado — corregido 12-ago) y §12 — el board ya implementaba media docena de reglas que
   el canon escribía a mano (`swarm`, columna `review`, `triage/specify/decompose`, `diagnostics`).
 
 ## ✅ Cerrado

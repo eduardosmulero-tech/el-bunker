@@ -11,7 +11,9 @@ import { useToast } from "../core/ToastContext";
 import { Icon } from "../core/ui";
 
 // S74: Opening animation component for unlocked capsules
-const CapsuleReveal = ({ capsule, onClose }) => (
+const CapsuleReveal = ({ capsule, onClose, accentColor = ACID }) => {
+  const accent = accentColor ?? ACID;
+  return (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -39,24 +41,26 @@ const CapsuleReveal = ({ capsule, onClose }) => (
       <p className="text-lg font-bold mb-2" style={{ color: PURPLE, fontFamily: FONT_MONO }}>
         {capsule.title}
       </p>
-      <p className="text-sm opacity-60 mb-3" style={{ color: ACID, fontFamily: FONT_MONO }}>
+      <p className="text-sm opacity-60 mb-3" style={{ color: accent, fontFamily: FONT_MONO }}>
         {capsule.description || "Tu cápsula se ha abierto."}
       </p>
-      <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>
+      <p className="text-xs opacity-30" style={{ color: accent, fontFamily: FONT_MONO }}>
         Sellada {capsule.created_at ? new Date(capsule.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : ""}
       </p>
       {capsule.content_snapshot && (
         <div className="mt-3 pt-3 border-t" style={{ borderColor: `${PURPLE}22` }}>
-          <p className="text-xs opacity-40" style={{ color: ACID, fontFamily: FONT_MONO }}>
+          <p className="text-xs opacity-40" style={{ color: accent, fontFamily: FONT_MONO }}>
             {capsule.entry_ids?.length || 0} entradas · {capsule.playlist_ids?.length || 0} playlists
           </p>
         </div>
       )}
     </motion.div>
   </motion.div>
-);
+  );
+};
 
-export default function TimeCapsules({ capsules: initialCapsules = [], entries = [], playlists = [] }) {
+export default function TimeCapsules({ capsules: initialCapsules = [], entries = [], playlists = [], accentColor = ACID }) {
+  const accent = accentColor ?? ACID;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [unlockAt, setUnlockAt] = useState("");
@@ -127,18 +131,18 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       {/* Formulario */}
       <div className="flex flex-col gap-2 p-3" style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
         <input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO DE LA CÁPSULA"
-          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }} />
         <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Descripción"
-          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }} />
         <input type="datetime-local" value={unlockAt} onChange={e => setUnlockAt(e.target.value)}
-          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }} />
+          className="bg-transparent text-xs p-3 min-h-[44px] outline-none" style={{ color: accent, border: `1px solid ${accent}33`, fontFamily: FONT_MONO }} />
 
         {/* S74: Content picker toggle */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={() => setShowContentPicker(p => !p)}
           className="text-xs p-3 min-h-[44px] text-left"
-          style={{ color: ACID, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO, background: showContentPicker ? `${ACID}08` : "transparent" }}
+          style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO, background: showContentPicker ? `${accent}08` : "transparent" }}
         >
           <Icon name="archive" size={14} label="Contenido" /> {selectedEntryIds.length + selectedPlaylistIds.length > 0
             ? `${selectedEntryIds.length} entradas + ${selectedPlaylistIds.length} playlists`
@@ -157,14 +161,14 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
               <div className="flex flex-col gap-2 pt-1">
                 {availableEntries.length > 0 && (
                   <>
-                    <p className="text-xs opacity-30" style={{ color: ACID }}>ENTRADAS</p>
+                    <p className="text-xs opacity-30" style={{ color: accent }}>ENTRADAS</p>
                     <div className="flex flex-wrap gap-1">
                       {availableEntries.map(e => {
                         const sel = selectedEntryIds.includes(e.id);
                         return (
                           <button key={e.id} onClick={() => setSelectedEntryIds(prev => sel ? prev.filter(id => id !== e.id) : [...prev, e.id])}
                             className="text-xs px-3 py-2.5 min-h-[44px] rounded-sm"
-                            style={{ color: sel ? ACID : `${ACID}44`, border: `1px solid ${sel ? ACID : `${ACID}18`}`, background: sel ? `${ACID}0d` : "transparent" }}>
+                            style={{ color: sel ? accent : `${accent}44`, border: `1px solid ${sel ? accent : `${accent}18`}`, background: sel ? `${accent}0d` : "transparent" }}>
                             {sel && <Icon name="check" size={13} decorative />}{e.title?.slice(0, 18) || e.id?.slice(0, 8)}
                           </button>
                         );
@@ -174,7 +178,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
                 )}
                 {availablePlaylists.length > 0 && (
                   <>
-                    <p className="text-xs opacity-30 mt-1" style={{ color: ACID }}>PLAYLISTS</p>
+                    <p className="text-xs opacity-30 mt-1" style={{ color: accent }}>PLAYLISTS</p>
                     <div className="flex flex-wrap gap-1">
                       {availablePlaylists.map(p => {
                         const sel = selectedPlaylistIds.includes(p.id);
@@ -195,7 +199,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
         </AnimatePresence>
 
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleCreate} disabled={isCreating || !title || !unlockAt}
-          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px]" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO, opacity: isCreating ? 0.5 : 1 }}>
+          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px]" style={{ color: accent, border: `1px solid ${accent}44`, fontFamily: FONT_MONO, opacity: isCreating ? 0.5 : 1 }}>
           {isCreating ? "SELLANDO..." : "SELLAR CÁPSULA"}
         </motion.button>
         {error && (
@@ -210,9 +214,9 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
           {locked.map(c => (
             <div key={c.id} className="p-3 text-xs" style={{ background: GLASS_BG, border: `1px solid ${PURPLE}33` }}>
               <span style={{ color: PURPLE }}>{c.title}</span>
-              <span className="opacity-40 ml-2" style={{ color: ACID }}>— abre {new Date(c.unlock_at).toLocaleDateString()}</span>
+              <span className="opacity-40 ml-2" style={{ color: accent }}>— abre {new Date(c.unlock_at).toLocaleDateString()}</span>
               {((c.content_counts?.entries || c.entry_ids?.length || 0) + (c.content_counts?.playlists || c.playlist_ids?.length || 0)) > 0 && (
-                <span className="opacity-20 ml-2" style={{ color: ACID }}>
+                <span className="opacity-20 ml-2" style={{ color: accent }}>
                   ({c.content_counts?.entries ?? c.entry_ids?.length ?? 0}E + {c.content_counts?.playlists ?? c.playlist_ids?.length ?? 0}P)
                 </span>
               )}
@@ -224,15 +228,15 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       {/* Capsulas desbloqueadas */}
       {unlocked.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-xs tracking-[0.3em] uppercase flex items-center gap-2" style={{ color: ACID }}><Icon name="unlock" size={14} label="Desbloqueadas" /> DESBLOQUEADAS</h3>
+          <h3 className="text-xs tracking-[0.3em] uppercase flex items-center gap-2" style={{ color: accent }}><Icon name="unlock" size={14} label="Desbloqueadas" /> DESBLOQUEADAS</h3>
           {unlocked.map(c => (
             <motion.div key={c.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
               className="p-3 text-xs cursor-pointer hover:scale-[1.01] transition-transform"
-              style={{ background: GLASS_BG, border: `1px solid ${ACID}44` }}
+              style={{ background: GLASS_BG, border: `1px solid ${accent}44` }}
               onClick={() => setOpeningCapsule(c)}
             >
-              <span style={{ color: ACID }}>{c.title}</span>
-              <p className="opacity-40 mt-1" style={{ color: ACID }}>{c.description}</p>
+              <span style={{ color: accent }}>{c.title}</span>
+              <p className="opacity-40 mt-1" style={{ color: accent }}>{c.description}</p>
             </motion.div>
           ))}
         </div>
@@ -241,7 +245,7 @@ export default function TimeCapsules({ capsules: initialCapsules = [], entries =
       {/* S74: Capsule opening animation */}
       <AnimatePresence>
         {openingCapsule && (
-          <CapsuleReveal capsule={openingCapsule} onClose={() => setOpeningCapsule(null)} />
+          <CapsuleReveal capsule={openingCapsule} onClose={() => setOpeningCapsule(null)} accentColor={accent} />
         )}
       </AnimatePresence>
     </div>

@@ -690,13 +690,13 @@ export default function MusicLab({
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 16 }} transition={{ duration: 0.25 }}
             style={{ position: "fixed", bottom: 90, left: 16, right: 16,
-              background: `${ACID}18`, border: `1px solid ${ACID}55`, color: ACID,
+              background: `${accentColor}18`, border: `1px solid ${accentColor}55`, color: accentColor,
               fontFamily: FONT_MONO, fontSize: 11, letterSpacing: "0.25em",
               padding: "8px 20px", borderRadius: 2, zIndex: 9999, textAlign: "center" }}>
             {typeof toast === "string" ? toast : toast?.msg}
             {toast?.action && (
               <button onClick={() => { toast.action(); setToast(null); }}
-                style={{ marginLeft: 12, color: ACID, background: `${ACID}25`, border: `1px solid ${ACID}66`,
+                style={{ marginLeft: 12, color: accentColor, background: `${accentColor}25`, border: `1px solid ${accentColor}66`,
                   borderRadius: 2, fontSize: 10, padding: "8px 12px", cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em", minHeight: 44 }}>
                 {toast.actionLabel}
               </button>
@@ -1126,9 +1126,9 @@ export default function MusicLab({
                     }}
                     title={`Ordenar: ${SORT_OPTIONS.find((o) => o.id === trackSort)?.label ?? "?"}`}
                     aria-label="Cambiar ordenación"
-                    className="w-11 h-11 flex-shrink-0 flex items-center justify-center"
+                    className="h-11 flex-shrink-0 flex items-center justify-center"
                   >
-                    <span className="text-[10px] px-2 py-1.5 rounded-sm transition-all flex items-center gap-1"
+                    <span className="text-[10px] px-2 py-1.5 rounded-sm transition-all flex items-center gap-1 whitespace-nowrap"
                       style={{
                         color: accentColor,
                         border: `1px solid ${accentColor}33`,
@@ -1235,8 +1235,8 @@ export default function MusicLab({
                       value={trackSearch}
                       onChange={(e) => setTrackSearch(e.target.value)}
                       placeholder="BUSCAR TRACK..."
-                      style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                        color: ACID, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
+                      style={{ width: "100%", background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
+                        color: accentColor, fontSize: 11, padding: "7px 12px", fontFamily: FONT_MONO,
                         letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
                     />
                   </motion.div>
@@ -1356,7 +1356,7 @@ export default function MusicLab({
                   ) : (
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
-                      style={{ color: ACID }}>
+                      style={{ color: accentColor }}>
                       — sin tracks para este vibe —
                     </motion.p>
                   )}
@@ -1367,9 +1367,9 @@ export default function MusicLab({
                     onClick={() => setVisibleCount((c) => c + 50)}
                     className="w-full py-3 text-xs tracking-[0.25em] uppercase font-bold rounded-sm mt-1"
                     style={{
-                      color: `${ACID}88`,
-                      border: `1px solid ${ACID}22`,
-                      background: `${ACID}06`,
+                      color: `${accentColor}88`,
+                      border: `1px solid ${accentColor}22`,
+                      background: `${accentColor}06`,
                       fontFamily: FONT_MONO,
                     }}
                   >
@@ -1734,9 +1734,9 @@ export default function MusicLab({
         {/* Footer */}
         <motion.footer initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
           className="flex items-center justify-between pt-2 pb-4 px-1">
-          <span className="text-xs opacity-15 tracking-widest uppercase" style={{ color: ACID }}>MUSIC LAB v1.0</span>
+          <span className="text-xs opacity-15 tracking-widest uppercase" style={{ color: accentColor }}>MUSIC LAB v1.0</span>
           <motion.span animate={{ opacity: [0.15, 0.4, 0.15] }} transition={{ duration: 3, repeat: Infinity }}
-            className="text-xs tracking-widest uppercase" style={{ color: ACID }}>
+            className="text-xs tracking-widest uppercase" style={{ color: accentColor }}>
             <Icon name="music" size={13} decorative /> WEB AUDIO API
           </motion.span>
         </motion.footer>

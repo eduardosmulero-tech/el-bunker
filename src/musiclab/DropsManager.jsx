@@ -4,7 +4,7 @@ import { ACID, PURPLE, PURPLE_BG, PURPLE_BORDER } from "../tokens";
 import { Icon } from "../core/ui";
 const FONT_MONO     = "'JetBrains Mono', 'Courier New', monospace";
 
-export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, trackDuration = 0 }) => {
+export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, trackDuration = 0, recipientName }) => {
   const [message, setMessage] = useState("");
   const [minute, setMinute] = useState(Math.floor(currentMinute));
   const fmtTime = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
@@ -22,7 +22,7 @@ export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, tr
         onClick={(e) => e.stopPropagation()}>
         <p className="text-xs tracking-[0.35em] uppercase font-bold mb-1"
           style={{ color: PURPLE, textShadow: `0 0 12px ${PURPLE}` }}><Icon name="zap" size={14} decorative /> THE DROP</p>
-        <p className="text-xs opacity-50 mb-4" style={{ color: PURPLE }}>Lanza esta canción a tu persona</p>
+        <p className="text-xs opacity-50 mb-4" style={{ color: PURPLE }}>Lánzale este drop a {recipientName}</p>
         <div className="flex items-center gap-3 p-3 mb-4 rounded-sm"
           style={{ background: `${PURPLE}10`, border: `1px solid ${PURPLE}22` }}>
           <Icon name="music" size={20} decorative />
@@ -49,10 +49,11 @@ export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, tr
         <div className="flex gap-2 mt-3">
           <motion.button whileTap={{ scale: 0.95 }}
             onClick={() => onSend({ track_id: track?.id, memory: message, mood: track?.vibe ?? "all", date: new Date().toISOString(), minute_mark: trackDuration > 0 ? minute : undefined })}
-            className="flex-1 py-2.5 min-h-[44px] text-xs tracking-widest uppercase font-bold rounded-sm"
+            className="flex-1 py-2.5 min-h-[44px] text-xs tracking-widest uppercase font-bold rounded-sm flex items-center justify-center gap-1.5"
             style={{ background: `${PURPLE}22`, border: `1px solid ${PURPLE}66`, color: PURPLE,
               textShadow: `0 0 10px ${PURPLE}`, boxShadow: `0 0 20px ${PURPLE}33` }}>
-            <Icon name="zap" size={14} decorative /> DROP IT
+            <Icon name="zap" size={14} decorative />
+            <span>DROP IT</span>
           </motion.button>
           <motion.button whileTap={{ scale: 0.95 }} onClick={onClose}
             className="px-4 py-3 text-xs rounded-sm opacity-40 hover:opacity-70"

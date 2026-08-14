@@ -3,9 +3,14 @@
 // AdminShell); con la raíz se renderiza el shell de tabs (TabShell → Layout).
 // Los contextos de datos se mockean (Vault/Player/WorkerClient) pero los SHELLS
 // son reales: TERMINAL DE MANDO viene de AdminShell, los tabs de BottomNav.
-import { describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import App from "../App";
+
+// t_0d0b936b: usuario mutable por test (la entrada ADMIN del rail depende de user.id).
+const vaultState = vi.hoisted(() => ({
+  user: { id: "u1", email: "test@el-bunker.test", name: "Tester" },
+}));
 
 vi.mock("../../core/VaultContext", () => {
   const vault = {
@@ -13,7 +18,7 @@ vi.mock("../../core/VaultContext", () => {
     isLoading: false,
     bootPhase: "ready",
     bootError: null,
-    user: { id: "u1", email: "test@el-bunker.test", name: "Tester" },
+    user: vaultState.user,
     db: { music_lab: { tracks: [], tags: [] }, eras: [], entries: [] },
     jwtToken: "mock-token",
     activeTab: "vault",
@@ -30,7 +35,7 @@ vi.mock("../../core/VaultContext", () => {
   };
   return {
     VaultProvider: ({ children }) => children,
-    useVault: () => vault,
+    useVault: () => ({ ...vault, user: vaultState.user }),
   };
 });
 
@@ -114,6 +119,61 @@ describe("INT-Ola2 — enchufe del panel admin (DoD 2)", () => {
     expect(names).toContain("CAPSULES");
     // El shell del panel NO está en la raíz.
     expect(screen.queryByText("TERMINAL DE MANDO")).not.toBeInTheDocument();
+    cleanup();
+  });
+});
+
+// t_0d0b936b — entrada ADMIN del rail desktop (DISENO_ADMIN_EN_LA_APP §4.1):
+// cuarta entrada con icono shield, separada por filete, solo para user.id === "admin",
+// clic navega a /admin.
+describe("Rail desktop — entrada ADMIN (t_0d0b936b)", () => {
+  const originalLocation = window.location;
+
+  beforeEach(() => {
+    vaultState.user = { id: "admin", email: "admin@el-bunker.test", name: "Admin" };
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: { ...originalLocation, assign: vi.fn(), href: "http://localhost/" },
+    });
+  });
+
+  afterEach(() => {
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      writable: true,
+      value: originalLocation,
+    });
+    cleanup();
+  });
+
+  it("con user.id === 'admin' el rail muestra la entrada ADMIN con icono shield y filete", async () => {
+    setPathname("/");
+    render(<App />);
+    await wait(300);
+    const adminBtn = screen.getByRole("button", { name: "ADMIN" });
+    // Icono shield (SVG) dentro del botón — cero emoji (regla 6-ago).
+    expect(adminBtn.querySelector("svg")).not.toBeNull();
+    // Separado por filete: el bloque .desktop-rail__admin contiene el divisor.
+    expect(adminBtn.closest(".desktop-rail__admin").querySelector(".desktop-rail__divider")).not.toBeNull();
+    cleanup();
+  });
+
+  it("con user.id !== 'admin' la entrada ADMIN NO aparece", async () => {
+    vaultState.user = { id: "edu", email: "edu@el-bunker.test", name: "Edu" };
+    setPathname("/");
+    render(<App />);
+    await wait(300);
+    expect(screen.queryByRole("button", { name: "ADMIN" })).not.toBeInTheDocument();
+    cleanup();
+  });
+
+  it("clic en la entrada ADMIN navega a /admin (sin recarga dura del LoginScreen)", async () => {
+    setPathname("/");
+    render(<App />);
+    await wait(300);
+    fireEvent.click(screen.getByRole("button", { name: "ADMIN" }));
+    expect(window.location.assign).toHaveBeenCalledWith("/admin");
     cleanup();
   });
 });

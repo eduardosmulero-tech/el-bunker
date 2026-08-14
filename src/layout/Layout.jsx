@@ -411,9 +411,11 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
  *   activeTab         — string
  *   onTabChange       — (tabId: string) => void
  */
-const DesktopRail = ({ activeTab, onTabChange, accentColor }) => {
+const DesktopRail = ({ activeTab, onTabChange, accentColor, isAdmin }) => {
+  // Los modos de vista del vault los controla su panel interno;
+  // el rail ya no los repite (clasificaciones redundantes eliminadas).
   const destinations = [
-    { id: "vault", label: "VAULT", icon: "archive", children: ["WALL", "CINEMA", "MAP", "DIALOGUE", "EXHIBITION", "REEL"] },
+    { id: "vault", label: "VAULT", icon: "archive" },
     { id: "music", label: "MUSIC LAB", icon: "music", children: ["COLA", "TRACKS", "LISTS", "DROPS"] },
     { id: "capsules", label: "CAPSULES", icon: "lock", children: ["TIMELINE", "SMOKE", "TIME CAPSULES", "RECAP"] },
   ];
@@ -430,7 +432,7 @@ const DesktopRail = ({ activeTab, onTabChange, accentColor }) => {
                 <Icon name={destination.icon} size={16} decorative />
                 <span>{destination.label}</span>
               </button>
-              {active && <div className="desktop-rail__children">
+              {active && destination.children?.length > 0 && <div className="desktop-rail__children">
                 {destination.children.map((child, index) => (
                   <span key={child} className={index === 0 ? "desktop-rail__child desktop-rail__child--active" : "desktop-rail__child"}
                     style={{ color: index === 0 ? accentColor : `${accentColor}66` }}>{child}</span>
@@ -439,8 +441,35 @@ const DesktopRail = ({ activeTab, onTabChange, accentColor }) => {
             </div>
           );
         })}
+        {isAdmin && (
+          <div className="desktop-rail__admin">
+            <div className="desktop-rail__divider" aria-hidden="true" />
+            <button
+              type="button"
+              onClick={() => { window.location.assign("/admin"); }}
+              className="desktop-rail__destination"
+              style={{ color: `${accentColor}88` }}
+            >
+              <Icon name="shield" size={16} decorative />
+              <span>ADMIN</span>
+            </button>
+          </div>
+        )}
       </div>
-      <div className="desktop-rail__hint" style={{ color: `${accentColor}88` }}>1 / 2 / 3 · CAMBIAR ZONA</div>
+      <button
+        type="button"
+        className="desktop-rail__hint desktop-rail__hint--actionable"
+        style={{ color: `${accentColor}88` }}
+        onClick={() => {
+          const ZONAS = ["vault", "music", "capsules"];
+          const idx = ZONAS.indexOf(activeTab);
+          onTabChange(ZONAS[(idx + 1) % ZONAS.length]);
+        }}
+        aria-label="Cambiar de zona (1/2/3)"
+        title="Teclas 1 / 2 / 3 · clic para cambiar de zona"
+      >
+        1 / 2 / 3 · CAMBIAR ZONA
+      </button>
     </aside>
   );
 };
@@ -478,7 +507,24 @@ export default function Layout({
   const [tick, setTick] = useState(new Date());
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
   const desktopTracks = useMemo(() => (db?.music_lab?.tracks ?? []).filter((track) => !track.is_deleted), [db?.music_lab?.tracks]);
-  const desktopVibeConf = trackVibe ? { palette: { accent: resolveVibeAccent(trackVibe) ?? ACID } } : undefined;
+  // t_8fbbbac3: el chip de tag/vibe del dock desktop necesita label+icon, no solo accent.
+  // Mismo patron que MusicLab.resolveVibeConf: tag de DB primero, fallback canónico,
+  // y tag huerfano (en tracks pero no en DB) con config sintetica.
+  const desktopVibeConf = useMemo(() => {
+    if (!trackVibe) return undefined;
+    const dbTags = db?.music_lab?.tags ?? [];
+    const found = dbTags.find((t) => t.id === trackVibe);
+    if (found && found.id !== "all") {
+      const accent = found.palette?.accent ?? found.seedColor ?? found.color ?? resolveVibeAccent(trackVibe) ?? ACID;
+      return { ...found, palette: { accent } };
+    }
+    const canon = getVibeConfig(trackVibe);
+    if (canon && canon.id === trackVibe) return canon;
+    // Tag huerfano: config sintetica para que el chip siempre tenga label/icon/color
+    const label = trackVibe.replace(/_/g, " ").toUpperCase();
+    const accent = resolveVibeAccent(trackVibe) ?? ACID;
+    return { id: trackVibe, label, icon: "circle", color: accent, palette: { accent } };
+  }, [trackVibe, db?.music_lab?.tags, resolveVibeAccent]);
   const handleDesktopDrop = (dropData) => {
     const to = user?.id === "edu" ? "david" : "edu";
     return onAddDrop?.({ ...dropData, id: crypto.randomUUID(), from: user?.id, to, created_at: new Date().toISOString() });
@@ -544,7 +590,7 @@ export default function Layout({
         partnerTrack={partnerTrack}
         tick={tick}
       />
-      <DesktopRail activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
+      <DesktopRail activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} isAdmin={user?.id === "admin"} />
       <aside className="desktop-only desktop-dock" aria-label="Reproductor permanente">
         {desktopViewport && <>
           <WinampPlayer tracks={desktopTracks} vibeConf={desktopVibeConf} onDropSend={handleDesktopDrop} />

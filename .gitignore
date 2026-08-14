@@ -10,6 +10,10 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Salidas del harness de auditoria UI: build efimero y capturas de evidencia.
+# Se regeneran en cada pase y cada carril tiene el suyo; no van al repo.
+tools/audit-ui/.dist-audit/
+report/
 *.local
 
 # Editor directories and files

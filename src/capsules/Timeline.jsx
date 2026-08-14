@@ -46,7 +46,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-12" style={{ fontFamily: FONT_MONO }}>
         <motion.div animate={{ opacity: [0.3, 0.7, 0.3] }} transition={{ duration: 2.5, repeat: Infinity }}
-          className="text-3xl" style={{ color: ACID }}><Icon name="circle" size={28} label="Sin eventos" /></motion.div>
+          className="text-3xl" style={{ color: accent }}><Icon name="circle" size={28} label="Sin eventos" /></motion.div>
         <p className="text-xs tracking-[0.3em] uppercase opacity-30" style={{ color: accent }}>
           SIN EVENTOS AÚN
         </p>
@@ -93,7 +93,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
               UN DÍA COMO HOY
             </span>
           </div>
-          <p className="text-xs opacity-50" style={{ color: ACID }}>
+          <p className="text-xs opacity-50" style={{ color: accent }}>
             {todayEvents.length} evento{todayEvents.length > 1 ? "s" : ""} en esta fecha de años anteriores
           </p>
           <div className="flex gap-1 mt-1.5 flex-wrap">
