@@ -97,6 +97,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   const [showVolume,   setShowVolume]   = useState(false);
   const [shouldScroll, setShouldScroll] = useState(false);
   const titleRef = useRef(null);
+  // F2a (ADR-029 P4): entrada al modo pantalla completa expuesta por AudioVisualizer.
+  // La usan el boton de la fila de secundarios y la tecla F.
+  const visualizerRef = useRef(null);
 
   // trackVibe → acento visual del reproductor (ADR-011)
   // vibeConfProp viene de MusicLab (resuelto desde DB, incluye tags custom)
@@ -199,6 +202,14 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
             e.preventDefault();
             addToQueue?.(track);
           }
+          break;
+        // F2a (ADR-029 P4): F entra en pantalla completa desde el reproductor.
+        // Escape lo gestiona el navegador + el listener fullscreenchange de
+        // AudioVisualizer.jsx:123-133; no se duplica.
+        case "f":
+        case "F":
+          e.preventDefault();
+          visualizerRef.current?.requestFullscreen();
           break;
         default:
           return;
@@ -635,7 +646,7 @@ return () => cancelAnimationFrame(raf);
                 </div>
               );
             })()}
-            <AudioVisualizer audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
+            <AudioVisualizer ref={visualizerRef} audioRef={audioRef} isPlaying={playing} accentColor={accentColor} vibeId={track?.tag ?? track?.vibe ?? null} />
           </div>
 
       {/* PLIEGO-230: Track info opaco — antes rgba(0,0,0,0.3) colapsaba el texto sobre el fondo */}
@@ -741,6 +752,11 @@ return () => cancelAnimationFrame(raf);
           <WinampBtn size="sm" label={<Icon name="zap" size={14} decorative />} color={PURPLE} fullColor onClick={() => setShowDrop(true)} title="Lanzar drop" aria-label="Lanzar drop" />
         )}
         <WinampBtn size="sm" label={<Icon name="music" size={14} decorative />} active={showVolume} color={accentColor} onClick={() => setShowVolume((p) => !p)} title="Volumen" aria-label="Volumen" />
+        {/* F2a (ADR-029 P4): boton dedicado de pantalla completa en la fila de secundarios.
+            Icono del registro de Icon.jsx: no existe fullscreen/maximize, se usa "grid"
+            (Grid2X2, el mas cercano a expandir). Conecta la puerta onRequestFullscreen
+            que AudioVisualizer expone via ref. */}
+        <WinampBtn size="sm" label={<Icon name="grid" size={14} decorative />} color={accentColor} onClick={() => visualizerRef.current?.requestFullscreen()} title="Abrir pantalla completa" aria-label="Abrir pantalla completa" />
 
         <AnimatePresence>
           {showVolume && (
