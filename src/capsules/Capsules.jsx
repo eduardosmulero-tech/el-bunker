@@ -12,6 +12,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { useToast } from "../core/ToastContext";
 import { Icon } from "../core/ui";
+import { useSecondLevelNav } from "../layout/Layout";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
@@ -25,7 +26,11 @@ const SUB_TABS = [
 ];
 
 export default function Capsules({ db: _db, userId: _userId, activeTrack: _activeTrack, masterVolume, onVolumeChange }) {
-  const [subTab, setSubTab] = useState("timeline");
+  // ADR-029 §6 P2: el subTab se eleva al shell (Layout) para que el rail lo lea
+  // y lo controle. El subnav del lienzo escribe en el mismo estado real.
+  const { secondLevel, setSecondLevel } = useSecondLevelNav();
+  const subTab = secondLevel.capsules ?? "timeline";
+  const setSubTab = (value) => setSecondLevel("capsules", value);
   const [events, setEvents] = useState([]);
   const [capsules, setCapsules] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -74,9 +79,11 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       {null}
       <div className="capsules-layout lg:grid lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
       {/* Sub-tab bar — swipeable en móvil, sin scrollbar.
-          NO se oculta en escritorio: hoy es el ÚNICO control real del segundo nivel. El raíl los
-          pinta como <span> sin onClick (Layout.jsx:435-440), así que sigue siendo navegación viva
-          hasta que el raíl la asuma de verdad. Ver X-3 en DISENO_INTERIOR_LIENZO_2026-08-14.md. */}
+          Desde el 14-ago el raíl SÍ controla el segundo nivel (botones reales sobre el mismo
+          estado elevado que lee esta barra), así que en escritorio las dos son navegación viva y
+          están duplicadas a propósito y en tránsito. La retirada de esta copia es la ley L-2 y va
+          en su propia tarjeta: quitarla antes de que el raíl funcionase dejó SMOKE, TIME CAPSULES
+          y RECAP inalcanzables. Ver X-3 en DISENO_INTERIOR_LIENZO_2026-08-14.md. */}
       <nav
         className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none lg:max-w-sm"
         style={{

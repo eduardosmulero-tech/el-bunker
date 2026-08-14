@@ -4,7 +4,7 @@
 //  Stack: React + Tailwind CSS + Framer Motion
 // ============================================================
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, createContext, useContext, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../core/ToastContext";
 import { usePlayer } from "../core/PlayerContext";
@@ -14,6 +14,22 @@ import { WinampPlayer } from "../musiclab/WinampPlayer";
 import VisitModeControl from "../vault/VisitModeControl";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 import { Icon } from "../core/ui";
+
+// ─── SEGUNDO NIVEL (ADR-029 §6 P2) ───────────────────────────
+// Estado real del segundo nivel elevado desde las páginas al shell:
+// Capsules (subTab) y MusicLab (vista activa). El DesktopRail lo lee
+// para pintar el activo y lo escribe al pulsar. VAULT no lo consume
+// todavia: sus secciones (ADR-033) no existen en el código.
+const DEFAULT_SECOND_LEVEL = { vault: "wall", music: "tracks", capsules: "timeline" };
+const SecondLevelNavContext = createContext({
+  secondLevel: DEFAULT_SECOND_LEVEL,
+  setSecondLevel: () => {},
+});
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useSecondLevelNav() {
+  return useContext(SecondLevelNavContext);
+}
 
 // ─── SCANLINE OVERLAY ────────────────────────────────────────
 // CRT scanline effect via repeating linear gradient
@@ -412,18 +428,44 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
  *   onTabChange       — (tabId: string) => void
  */
 const DesktopRail = ({ activeTab, onTabChange, accentColor, isAdmin }) => {
-  // Los modos de vista del vault los controla su panel interno;
-  // el rail ya no los repite (clasificaciones redundantes eliminadas).
+  const { secondLevel, setSecondLevel } = useSecondLevelNav();
+  // ADR-029 §6 P2: el raíl es dueño del segundo nivel. Los hijos son botones
+  // reales con onClick; el activo sale del estado real elevado, nunca de un índice.
   const destinations = [
-    { id: "vault", label: "VAULT", icon: "archive" },
-    { id: "music", label: "MUSIC LAB", icon: "music", children: ["COLA", "TRACKS", "LISTS", "DROPS"] },
-    { id: "capsules", label: "CAPSULES", icon: "lock", children: ["TIMELINE", "SMOKE", "TIME CAPSULES", "RECAP"] },
+    // ADR-033 (pendiente de firma): VAULT se parte en 4 secciones (MEMORIA,
+    // PALABRAS, LUGARES, LISTAS) + CAJA FUERTE. Las secciones NO existen todavia
+    // en el codigo: pintar hijos en el rail antes seria inventar navegacion que
+    // no lleva a ningun sitio. VAULT queda sin hijos; se anaden en la tarjeta
+    // que implemente las secciones (correccion en caliente del coordinador,
+    // 14-ago: punto 4 del encargo anulado).
+    {
+      id: "vault", label: "VAULT", icon: "archive",
+    },
+    {
+      id: "music", label: "MUSIC LAB", icon: "music",
+      children: [
+        { id: "queue", label: "COLA" },
+        { id: "tracks", label: "TRACKS" },
+        { id: "playlists", label: "LISTS" },
+        { id: "drops", label: "DROPS" },
+      ],
+    },
+    {
+      id: "capsules", label: "CAPSULES", icon: "lock",
+      children: [
+        { id: "timeline", label: "TIMELINE" },
+        { id: "smoke", label: "SMOKE" },
+        { id: "timecapsules", label: "TIME CAPSULES" },
+        { id: "recap", label: "RECAP" },
+      ],
+    },
   ];
   return (
     <aside className="desktop-only desktop-rail" aria-label="Navegación de escritorio">
       <div className="desktop-rail__destinations">
         {destinations.map((destination) => {
           const active = activeTab === destination.id;
+          const currentSecondLevel = secondLevel[destination.id];
           return (
             <div key={destination.id}>
               <button type="button" onClick={() => onTabChange(destination.id)}
@@ -432,11 +474,32 @@ const DesktopRail = ({ activeTab, onTabChange, accentColor, isAdmin }) => {
                 <Icon name={destination.icon} size={16} decorative />
                 <span>{destination.label}</span>
               </button>
-              {active && destination.children?.length > 0 && <div className="desktop-rail__children">
-                {destination.children.map((child, index) => (
-                  <span key={child} className={index === 0 ? "desktop-rail__child desktop-rail__child--active" : "desktop-rail__child"}
-                    style={{ color: index === 0 ? accentColor : `${accentColor}66` }}>{child}</span>
-                ))}
+              {active && (destination.children?.length ?? 0) > 0 && <div className="desktop-rail__children">
+                {destination.children.map((child) => {
+                  const childActive = currentSecondLevel === child.id;
+                  return (
+                    <button
+                      key={child.id}
+                      type="button"
+                      disabled={child.disabled}
+                      onClick={child.disabled ? undefined : () => setSecondLevel(destination.id, child.id)}
+                      aria-current={childActive ? "true" : undefined}
+                      className={`desktop-rail__child${childActive ? " desktop-rail__child--active" : ""}`}
+                      style={{
+                        color: childActive ? accentColor : child.disabled ? `${accentColor}38` : `${accentColor}66`,
+                        border: "0",
+                        background: "transparent",
+                        padding: "0",
+                        textAlign: "left",
+                        width: "100%",
+                        cursor: child.disabled ? "default" : "pointer",
+                        opacity: child.disabled ? 0.55 : 1,
+                      }}
+                    >
+                      {child.label}
+                    </button>
+                  );
+                })}
               </div>}
             </div>
           );
@@ -505,6 +568,12 @@ export default function Layout({
   const { trackVibe, resolveVibeAccent, networkStatus, sessionToast, setSessionToast, partnerListening, partnerName, partnerTrack, localQueue, playHistory } = usePlayer();
   const [desktopViewport, setDesktopViewport] = useState(false);
   const [tick, setTick] = useState(new Date());
+  // ADR-029 §6 P2: segundo nivel elevado — el raíl lo lee y lo escribe.
+  const [secondLevel, setSecondLevel] = useState(DEFAULT_SECOND_LEVEL);
+  const setSecondLevelSafe = useCallback((tab, value) => {
+    setSecondLevel((prev) => (prev[tab] === value ? prev : { ...prev, [tab]: value }));
+  }, []);
+  const secondLevelNav = useMemo(() => ({ secondLevel, setSecondLevel: setSecondLevelSafe }), [secondLevel, setSecondLevelSafe]);
   const accentColor = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
   const desktopTracks = useMemo(() => (db?.music_lab?.tracks ?? []).filter((track) => !track.is_deleted), [db?.music_lab?.tracks]);
   // t_8fbbbac3: el chip de tag/vibe del dock desktop necesita label+icon, no solo accent.
@@ -562,6 +631,7 @@ export default function Layout({
   }, [accentColor]);
 
   return (
+    <SecondLevelNavContext.Provider value={secondLevelNav}>
     <div
       className="relative min-h-screen overflow-hidden"
       style={{ background: BG, color: accentColor }}
@@ -746,6 +816,7 @@ export default function Layout({
 
       {/* Landscape is supported; no global orientation lock. */}
     </div>
+    </SecondLevelNavContext.Provider>
   );
 }
 
