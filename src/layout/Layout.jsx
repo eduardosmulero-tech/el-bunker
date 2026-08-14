@@ -17,10 +17,10 @@ import { Icon } from "../core/ui";
 
 // ─── SEGUNDO NIVEL (ADR-029 §6 P2) ───────────────────────────
 // Estado real del segundo nivel elevado desde las páginas al shell:
-// Capsules (subTab) y MusicLab (vista activa). El DesktopRail lo lee
-// para pintar el activo y lo escribe al pulsar. VAULT no lo consume
-// todavia: sus secciones (ADR-033) no existen en el código.
-const DEFAULT_SECOND_LEVEL = { vault: "wall", music: "tracks", capsules: "timeline" };
+// Capsules (subTab), MusicLab (vista activa) y Vault (sección activa,
+// ADR-033). El DesktopRail lo lee para pintar el activo y lo escribe
+// al pulsar.
+const DEFAULT_SECOND_LEVEL = { vault: "memoria", music: "tracks", capsules: "timeline" };
 const SecondLevelNavContext = createContext({
   secondLevel: DEFAULT_SECOND_LEVEL,
   setSecondLevel: () => {},
@@ -432,14 +432,18 @@ const DesktopRail = ({ activeTab, onTabChange, accentColor }) => {
   // ADR-029 §6 P2: el raíl es dueño del segundo nivel. Los hijos son botones
   // reales con onClick; el activo sale del estado real elevado, nunca de un índice.
   const destinations = [
-    // ADR-033 (pendiente de firma): VAULT se parte en 4 secciones (MEMORIA,
-    // PALABRAS, LUGARES, LISTAS) + CAJA FUERTE. Las secciones NO existen todavia
-    // en el codigo: pintar hijos en el rail antes seria inventar navegacion que
-    // no lleva a ningun sitio. VAULT queda sin hijos; se anaden en la tarjeta
-    // que implemente las secciones (correccion en caliente del coordinador,
-    // 14-ago: punto 4 del encargo anulado).
+    // ADR-033: VAULT se parte en 4 secciones (MEMORIA, PALABRAS, LUGARES,
+    // LISTAS) que son el segundo nivel del raíl. CAJA FUERTE no se pinta:
+    // diseñada pero no construida (§4.3) — nada de una entrada que lleva a
+    // un cajón vacío.
     {
       id: "vault", label: "VAULT", icon: "archive",
+      children: [
+        { id: "memoria", label: "MEMORIA" },
+        { id: "palabras", label: "PALABRAS" },
+        { id: "lugares", label: "LUGARES" },
+        { id: "listas", label: "LISTAS" },
+      ],
     },
     {
       id: "music", label: "MUSIC LAB", icon: "music",

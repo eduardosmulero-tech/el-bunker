@@ -14,8 +14,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO, GLASS_BG, GLASS_BORDER } from "../tokens";
 import { Icon } from "../core/ui";
-import { CATEGORY_FILTERS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, getImageUrl, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
+import { seccionDeEntrada, SECCION_LABEL, SECCION_ICON, getImageUrl, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
 import ClassifiedTile from "./ClassifiedTile";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
@@ -23,8 +22,11 @@ const LONG_PRESS_MS = 500;
 const PINCH_THRESHOLD = 60;
 const OBSERVER_MARGIN = "400px";
 
-const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
-const CAT_ICON  = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
+// ADR-033: los badges enseñan la SECCIÓN, no la categoría muerta de 14.
+const seccionBadge = (entry) => {
+  const seccion = seccionDeEntrada(entry);
+  return seccion ? { icon: SECCION_ICON[seccion] ?? "archive", label: SECCION_LABEL[seccion] ?? seccion } : null;
+};
 
 const DENSITY_CONFIG = {
   compact:  { columns: 4, gap: 6,  minCol: "100px", label: "COMPACT", intrinsicH: 120 },
@@ -300,7 +302,7 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor 
               className="text-[8px] px-1 py-0.5 rounded-sm opacity-70"
               style={{ background: "rgba(0,0,0,0.55)", color: ac, fontFamily: FONT_MONO }}
             >
-              <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative />
+              <Icon name={seccionBadge(entry)?.icon ?? "archive"} size={12} decorative />
             </span>
           </div>
 
@@ -369,7 +371,7 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
           </span>
         )}
         <span className="text-[9px] px-1 py-0.5 rounded-sm opacity-60" style={{ background: `${ac}15`, color: ac }}>
-          <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative /> {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+          {(() => { const b = seccionBadge(entry); return (<><Icon name={b?.icon ?? "archive"} size={12} decorative /> {b?.label ?? entry.type}</>); })()}
         </span>
         <span className="text-xs opacity-30 ml-auto" style={{ color: ac }}>
           {dateStr}
@@ -415,7 +417,7 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
 // ─── MAIN WALL VIEW EXPORT ──────────────────────────────────
 // FASE C.1: ZoomModal reemplazado por onOpenLightbox callback
 // FASE C.2.2: masonry agrupado por era en "salas" con headers curatoriales
-export default function WallView({ entries = [], eras = [], density, setDensity, filterCategory, accentColor = ACID, onOpenLightbox }) {
+export default function WallView({ entries = [], eras = [], density, setDensity, filterCategory: _filterCategory = "all", accentColor = ACID, onOpenLightbox }) {
   const [previewEntry, setPreviewEntry] = useState(null);
   const [previewPos, setPreviewPos] = useState({ x: 0, y: 0 });
 
@@ -541,7 +543,7 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
 
       {!entries.length && (
         <p className="text-xs opacity-30 text-center py-4" style={{ color: ac }}>
-          Sin entradas{filterCategory && filterCategory !== "all" ? ` en ${CAT_LABEL[filterCategory]}` : ""}
+          Sin entradas
         </p>
       )}
 

@@ -60,9 +60,13 @@ describe("service boundaries", () => {
     expect(smoke).toContain('icon: "/icons/icon-192.png"');
     expect(smoke).not.toContain("/manifest-icon-192.png");
 
+    const helpers = read("src/vault/VaultHelpers.js");
+    expect(helpers).toContain('{ id: "wall",       icon: "grid",');
+    // X-5 (ADR-033): los 6 modos los pinta Vault.jsx en la cabecera del lienzo
+    // SOLO en MEMORIA, siempre con iconos del registro (nunca emoji/unicode).
+    const vault = read("src/vault/Vault.jsx");
+    expect(vault).toContain('<Icon name={m.icon} size={14} decorative />');
     const gallery = read("src/vault/VaultGallery.jsx");
-    expect(gallery).toContain('{ id: "wall",       icon: "grid",');
-    expect(gallery).toContain('<Icon name={m.icon} size={14} decorative />');
     expect(gallery).not.toContain('{m.icon} {m.label}');
   });
 

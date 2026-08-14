@@ -10,16 +10,19 @@ import { useVault } from "../core/VaultContext";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { motion, AnimatePresence } from "framer-motion";
-import AddEntryForm, { CATEGORY_FILTERS, CATEGORY_EXTRA_FIELDS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, monthsSince, timeSince, timeUntil } from "./VaultHelpers";
+import AddEntryForm from "./AddEntryForm";
+import { SECCIONES, SECCION_LABEL, seccionDeEntrada, MODES, monthsSince, timeSince, timeUntil } from "./VaultHelpers";
 import { ColorPicker } from "../core/ColorPicker";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 import { Button } from "../core/ui";
 import { useToast } from "../core/ToastContext";
+import { useSecondLevelNav } from "../layout/Layout";
 
 // Code splitting: VaultGallery (el componente más pesado, incluye leaflet) se carga lazy
 const VaultGallery = lazy(() => import("./VaultGallery"));
+// ADR-033: LUGARES es mapa — el MapView (Leaflet) se carga bajo demanda también
+const LugaresMap = lazy(() => import("./VaultGallery").then((m) => ({ default: m.MapView })));
 
 // ─── CONSTANTS ───────────────────────────────────────────────
 // Sin fecha en la BD no hay contador: un contador inventado es un dato falso en pantalla.
@@ -373,153 +376,152 @@ const EraCard = ({ era, isActive, onClick }) => {
 };
 
 // ─── ERA DETAIL PANEL ────────────────────────────────────────
-// S98 — Helper: extrae campos enriquecidos de entry.content como badges inline.
-// Derivado de CATEGORY_EXTRA_FIELDS (AddEntryForm) — single source of truth.
-const EXTRA_BADGE_FORMAT = {
-  event_date: (val) => {
-    if (!val || isNaN(Date.parse(val))) return null;
-    const d = new Date(val);
-    return { icon: "calendar", label: d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase() };
-  },
-  location:  (val) => val ? { icon: "📍", label: val } : null,
-  rating:    (val) => val && val !== "—" ? { icon: "⭐", label: val } : null,
-  url:       (val) => val ? { icon: "🔗", label: val.length > 40 ? val.slice(0, 37) + "…" : val } : null,
-  mood:      (val) => val && val !== "—" ? { icon: null, label: val } : null,
-  amount:    (val) => val ? { icon: "€", label: val } : null,
-};
-const ALL_EXTRA_KEYS = [...new Set(Object.values(CATEGORY_EXTRA_FIELDS).flat().map((f) => f.key))];
-const getExtraBadges = (entry) => {
-  const c = entry.content ?? {};
-  const badges = [];
-  for (const key of ALL_EXTRA_KEYS) {
-    if (c[key] === undefined || c[key] === "") continue;
-    const fmt = EXTRA_BADGE_FORMAT[key];
-    if (!fmt) continue;
-    const badge = fmt(c[key]);
-    if (badge) badges.push({ ...badge, key });
+// ELIMINADO en ADR-033: la columna de 20rem muere; sus datos (días, entradas,
+// fotos) pasan a la cabecera de era como cifras (punto 7 del encargo).
+
+// ─── VISTAS DE SECCIÓN (ADR-033) ─────────────────────────────
+// Cada sección tiene SU forma de mirar; ese es el punto del rediseño.
+// Estado vacío: secciones vacías pero USABLES, con microcopy es-ES en voz
+// activa que invita a crear la primera entrada (coordinador, 14-ago).
+
+/** Estado vacío usable de una sección sin contenido. */
+const SeccionVacia = ({ seccionLabel, microcopy, accent, onCreate }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="flex flex-col items-center justify-center gap-4 py-14 px-4 text-center rounded-sm"
+    style={{ border: `1px dashed ${accent}22`, fontFamily: FONT_MONO }}
+  >
+    <p className="text-xs tracking-[0.35em] uppercase font-bold" style={{ color: accent }}>
+      {seccionLabel}
+    </p>
+    <p className="text-xs leading-relaxed max-w-sm" style={{ color: `${accent}88` }}>
+      {microcopy}
+    </p>
+    <motion.button
+      whileTap={{ scale: 0.95 }}
+      onClick={onCreate}
+      className="text-xs tracking-widest uppercase px-4 py-2.5 min-h-[44px]"
+      style={{ color: accent, border: `1px solid ${accent}44`, fontFamily: FONT_MONO }}
+    >
+      + PRIMERA ENTRADA
+    </motion.button>
+  </motion.div>
+);
+
+/** PALABRAS — lectura a 76ch (régimen de lectura de ADR-029 §5). */
+const PalabrasView = ({ entries = [], accent, onEdit, onDelete, onCreate }) => {
+  if (!entries.length) {
+    return (
+      <SeccionVacia
+        seccionLabel="PALABRAS"
+        microcopy="Todavía no hay palabras en esta era. Escribe la primera carta o nota."
+        accent={accent}
+        onCreate={onCreate}
+      />
+    );
   }
-  return badges;
-};
-
-const EraDetailPanel = ({ era, entries = [], onEditEntry, onDeleteEntry }) => {
-  const eraEntries = entries.filter((e) => e.era_id === era.id && !e.is_deleted);
-
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={era.id}
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="relative rounded-sm overflow-hidden p-5"
-        style={{
-          background: `linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)`,
-          border: `1px solid ${era.color ?? ACID}22`,
-          fontFamily: FONT_MONO,
-        }}
-      >
-
-        {/* Stats row */}
-        <div className="flex gap-6 mb-5 pt-1">
-          {[
-            { label: "ENTRADAS", val: eraEntries.length },
-            { label: "FOTOS",    val: eraEntries.filter((e) => e.content?.images?.length || e.type === "photo").length },
-          ].map(({ label, val }) => (
-            <div key={label} className="text-center">
-              <p
-                className="text-xl font-bold"
-                style={{ color: era.color ?? ACID, textShadow: `0 0 12px ${era.color ?? ACID}66` }}
-              >
-                {val}
-              </p>
-              <p className="text-xs opacity-30 tracking-widest uppercase" style={{ color: era.color ?? ACID }}>
-                {label}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* Recent entries preview */}
-        <div className="space-y-2">
-          {eraEntries.slice(0, 3).map((entry) => (
-            <motion.div
-              key={entry.id}
-              whileHover={{ x: 4 }}
-              className="flex items-center gap-2 py-2 border-b opacity-60 hover:opacity-100 transition-opacity cursor-pointer group"
-              style={{ borderColor: `${era.color ?? ACID}14` }}
-            >
-              {/* S126: badge categoría (S97) removido — el filtro activo arriba ya indica la categoría */}
-              <span className="text-xs opacity-70" style={{ color: era.color ?? ACID }}>
-                <Icon name={entry.type === "photo" || entry.content?.images?.length ? "circle" : "target"} size={14} decorative />
-              </span>
-              <div className="flex flex-col flex-1 min-w-0">
-                <span
-                  className="text-xs tracking-wide truncate"
-                  style={{ color: era.color ?? ACID }}
-                  onClick={() => onEditEntry?.(entry)}
-                >
-                  {entry.title ?? entry.content?.body?.slice(0, 40) ?? "—"}
-                </span>
-                {/* S98/S126 — Badges limitados a 2 + indicador "+N" si hay más */}
-                {(() => {
-                  const badges = getExtraBadges(entry);
-                  if (!badges.length) return null;
-                  const visible = badges.slice(0, 2);
-                  const overflow = badges.length - visible.length;
-                  return (
-                    <span className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
-                      {visible.map((b) => (
-                        <span key={b.key} className="text-[8px] opacity-40 whitespace-nowrap" style={{ color: era.color ?? ACID }}>
-                          {b.icon && <Icon name={b.icon} size={10} decorative />}{b.label}
-                        </span>
-                      ))}
-                      {overflow > 0 && (
-                        <span
-                          className="text-[8px] opacity-25 whitespace-nowrap"
-                          style={{ color: era.color ?? ACID }}
-                          title={badges.slice(2).map(b => b.label).join(" · ")}
-                        >
-                          +{overflow}
-                        </span>
-                      )}
-                    </span>
-                  );
-                })()}
-              </div>
-              <span className="text-xs opacity-40 flex-shrink-0" style={{ color: era.color ?? ACID }}>
-                {new Date(entry.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase()}
-              </span>
-              {/* S65/S126 — mobile siempre visibles (opacity-40 base, hover → 100); desktop solo en group-hover */}
-              <span className="flex gap-1 opacity-40 hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity ml-1">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onEditEntry?.(entry); }}
-                  className="text-xs px-2 py-2 min-h-[44px] hover:scale-110 transition-transform"
-                  style={{ color: era.color ?? ACID }}
-                  title="Editar entrada"
-                >
-                  <Icon name="edit" size={14} decorative />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDeleteEntry?.(entry.id); }}
-                  className="text-xs px-2 py-2 min-h-[44px] hover:scale-110 transition-transform"
-                  style={{ color: "#ff3b3b" }}
-                  title="Eliminar entrada"
-                >
-                  <Icon name="close" size={14} decorative />
-                </button>
-              </span>
-            </motion.div>
-          ))}
-
-          {eraEntries.length === 0 && (
-            <p className="text-xs opacity-20 text-center py-3 tracking-widest uppercase" style={{ color: era.color ?? ACID }}>
-              — sin entradas aún —
+    <div className="w-full flex flex-col gap-6" style={{ maxWidth: "76ch", fontFamily: FONT_MONO }}>
+      {entries.map((entry) => (
+        <motion.article
+          key={entry.id}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-2 pb-4"
+          style={{ borderBottom: `1px solid ${accent}14` }}
+        >
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-sm font-bold tracking-wide" style={{ color: accent }}>
+              {entry.title || "SIN TÍTULO"}
+            </h3>
+            <span className="text-[9px] opacity-30 flex-shrink-0">
+              {new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }).toUpperCase()}
+            </span>
+          </div>
+          {typeof entry.content?.text === "string" && (
+            <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: `${accent}99` }}>
+              {entry.content.text}
             </p>
           )}
-        </div>
-      </motion.div>
-    </AnimatePresence>
+          <div className="flex items-center gap-2 mt-1">
+            <button
+              onClick={() => onEdit?.(entry)}
+              className="text-[9px] px-2 py-2 min-h-[44px] tracking-widest uppercase opacity-40 hover:opacity-100"
+              style={{ color: accent }}
+            >
+              <Icon name="edit" size={12} decorative /> EDITAR
+            </button>
+            <button
+              onClick={() => onDelete?.(entry.id)}
+              className="text-[9px] px-2 py-2 min-h-[44px] tracking-widest uppercase opacity-40 hover:opacity-100"
+              style={{ color: "#ff3b3b" }}
+            >
+              <Icon name="close" size={12} decorative /> ELIMINAR
+            </button>
+          </div>
+        </motion.article>
+      ))}
+    </div>
+  );
+};
+
+/** LISTAS — tabla (L-5: densidad con columnas, no espacio muerto). */
+const ListasView = ({ entries = [], accent, onEdit, onDelete, onCreate }) => {
+  if (!entries.length) {
+    return (
+      <SeccionVacia
+        seccionLabel="LISTAS"
+        microcopy="Todavía no hay listas en esta era. Crea la primera: pelis, libros, recetas…"
+        accent={accent}
+        onCreate={onCreate}
+      />
+    );
+  }
+  return (
+    <div className="w-full overflow-x-auto" style={{ fontFamily: FONT_MONO }}>
+      <table className="w-full text-xs" style={{ borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${accent}33` }}>
+            {["TÍTULO", "TIPO", "FECHA", "PUNTUACIÓN", ""].map((h) => (
+              <th key={h} className="text-left px-2 py-2 uppercase tracking-widest opacity-40 font-normal" style={{ color: accent }}>
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry) => (
+            <tr key={entry.id} style={{ borderBottom: `1px solid ${accent}10` }}>
+              <td className="px-2 py-3">
+                <button
+                  onClick={() => onEdit?.(entry)}
+                  className="text-left hover:underline"
+                  style={{ color: accent }}
+                >
+                  {entry.title || "SIN TÍTULO"}
+                </button>
+              </td>
+              <td className="px-2 py-3 opacity-50">{entry.type}</td>
+              <td className="px-2 py-3 opacity-40">
+                {new Date(entry.created_at).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+              </td>
+              <td className="px-2 py-3 opacity-50">{entry.content?.rating ?? "—"}</td>
+              <td className="px-2 py-3 text-right">
+                <button
+                  onClick={() => onDelete?.(entry.id)}
+                  className="px-2 py-2 min-h-[44px] opacity-40 hover:opacity-100"
+                  style={{ color: "#ff3b3b" }}
+                  aria-label="Eliminar entrada"
+                >
+                  <Icon name="close" size={12} decorative />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 };
 
@@ -544,14 +546,21 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
   // G3: usar trackVibe accent en lugar de ACID fijo
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
+  // ADR-033: la sección activa es el segundo nivel del raíl (estado real elevado
+  // a Layout). En el lienzo se lee y se escribe el mismo estado — un solo mecanismo.
+  const { secondLevel, setSecondLevel } = useSecondLevelNav();
+  const seccionActiva = secondLevel.vault ?? "memoria";
+  const setSeccion = (seccionId) => setSecondLevel("vault", seccionId);
+  // X-5: los 6 modos de galería viven en la cabecera del lienzo, SOLO en MEMORIA.
+  const [galeriaMode, setGaleriaMode] = useState("wall");
   const entries = useMemo(() => db?.entries ?? [], [db?.entries]);
-  // S96 — Filtro por categoría en la vista principal
-  const [filterCategory, setFilterCategory] = useState("all");
   // S100 — Búsqueda por texto en título y contenido
   const [searchQuery, setSearchQuery] = useState("");
+  // ADR-033: el filtro maestro es la SECCIÓN (derivada del type AL LEER), no la
+  // categoría muerta. La búsqueda de texto sigue como filtro secundario.
   const filteredEntries = useMemo(() => {
     let active = entries.filter(e => !e.is_deleted);
-    if (filterCategory !== "all") active = active.filter((e) => ENTRY_CATEGORY[e.type] === filterCategory);
+    active = active.filter((e) => seccionDeEntrada(e) === seccionActiva);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       active = active.filter((e) =>
@@ -560,18 +569,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
       );
     }
     return active;
-  }, [entries, filterCategory, searchQuery]);
-  // S99 — Contadores de entradas por categoría para badges en la barra de filtros
-  const categoryCounts = useMemo(() => {
-    const counts = { all: 0 };
-    for (const e of entries) {
-      if (e.is_deleted) continue;
-      counts.all++;
-      const cat = ENTRY_CATEGORY[e.type];
-      if (cat) counts[cat] = (counts[cat] || 0) + 1;
-    }
-    return counts;
-  }, [entries]);
+  }, [entries, seccionActiva, searchQuery]);
   const eras_arr = (db?.eras ?? []).map((era, i) => ({ ...era, _index: i }));
   const [exporting, setExporting] = useState(false);
   // Toast state — usado por handleDeleteEntry (reemplaza alert) y otros catch.
@@ -722,6 +720,19 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
 
   const activeDisplayEra = displayEras.find((e) => e.id === activeEraId) ?? displayEras[0];
 
+  // ADR-033: cifras de la cabecera (absorben AVENTURA EN CURSO y SEGURO) y
+  // entradas de la sección activa dentro de la era — todo dato real, sin inventar.
+  const eraEntries = activeDisplayEra
+    ? entries.filter((e) => !e.is_deleted && e.era_id === activeDisplayEra.id)
+    : [];
+  const diasAventura = timeSince(db?.adventures_start_date).totalDays;
+  const mesesSeguro = monthsSince(db?.heartbeat ?? new Date().toISOString());
+  const enRiesgo = mesesSeguro >= 18;
+  const fotosEra = eraEntries.filter((e) => e.type === "photo" || e.content?.images?.length).length;
+  const eraSectionEntries = activeDisplayEra
+    ? filteredEntries.filter((e) => e.era_id === activeDisplayEra.id)
+    : [];
+
   return (
     <>
       <ConfirmDialog
@@ -734,55 +745,66 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         accentColor="#ff3b3b"
       />
     <div
-      className="flex flex-col gap-6 px-4 py-6 w-full max-w-6xl mx-auto"
+      className="flex flex-col gap-6 px-4 py-6 w-full"
       style={{ fontFamily: FONT_MONO }}
     >
 
-      {/* ══ SECTION 1: Widgets Row ══════════════════════════════ */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-      >
-        <AdventureCounter accentColor={accent} startDate={db?.adventures_start_date} />
-        <HeartbeatWidget  lastHeartbeat={db?.heartbeat ?? new Date().toISOString()} />
-      </motion.div>
-
-      {/* ══ SECTION 2: Eras Slider ══════════════════════════════ */}
+      {/* ══ CABECERA DE ERA (punto 7): nombre + cifras que absorben
+            AVENTURA EN CURSO y SEGURO + acciones. Un solo punto de corte: 1280. */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">                      <Icon name="archive" size={14} decorative />
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Icon name="target" size={14} decorative />
             <h2
-              className="text-xs tracking-[0.35em] uppercase font-bold"
-              style={{ color: accent }}
+              className="text-xs tracking-[0.35em] uppercase font-bold truncate"
+              style={{ color: activeDisplayEra?.color ?? accent }}
             >
-              ERAS
+              {activeDisplayEra?.name ?? "SIN ERA"}
             </h2>
-            <span
-              className="text-xs opacity-40 ml-1 tabular-nums"
-              style={{ color: accent }}
-            >
-              [{String(displayEras.length).padStart(2, "0")}]
-            </span>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setShowAddEra(p => !p)}
-            className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
-            style={{
-              color: showAddEra ? `${accent}44` : accent,
-              border: `1px solid ${showAddEra ? `${accent}22` : `${accent}44`}`,
-              background: showAddEra ? `${accent}04` : `${accent}08`,
-            }}
-          >
-            {showAddEra ? "CANCELAR" : "+ ERA"}
-          </motion.button>
+          <div className="flex items-center gap-2 flex-none">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowAddEntry(true)}
+              disabled={!activeDisplayEra}
+              className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm"
+              style={{
+                color: showAddEntry ? `${accent}44` : accent,
+                border: `1px solid ${showAddEntry ? `${accent}22` : `${accent}44`}`,
+                opacity: activeDisplayEra ? 1 : 0.4,
+              }}
+            >
+              + ENTRADA
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setShowAddEra(p => !p)}
+              className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm transition-all"
+              style={{
+                color: showAddEra ? `${accent}44` : accent,
+                border: `1px solid ${showAddEra ? `${accent}22` : `${accent}44`}`,
+                background: showAddEra ? `${accent}04` : `${accent}08`,
+              }}
+            >
+              {showAddEra ? "CANCELAR" : "+ ERA"}
+            </motion.button>
+          </div>
+        </div>
+        {/* Cifras reales: días de aventura · entradas · fotos · estado seguro */}
+        <div className="flex items-center gap-3 px-1 text-xs opacity-40" style={{ color: accent }}>
+          <span className="tabular-nums">{diasAventura} días</span>
+          <span style={{ color: `${accent}22` }}>·</span>
+          <span className="tabular-nums">{eraEntries.length} entradas</span>
+          <span style={{ color: `${accent}22` }}>·</span>
+          <span className="tabular-nums">{fotosEra} fotos</span>
+          <span style={{ color: `${accent}22` }}>·</span>
+          <span style={{ color: enRiesgo ? "#ff3b3b" : accent }}>
+            <Icon name={enRiesgo ? "alert" : "circle"} size={12} decorative /> {enRiesgo ? `EN RIESGO ${mesesSeguro}M` : "SEGURO"}
+          </span>
         </div>
 
         {/* G2: Formulario inline para crear era */}
@@ -794,7 +816,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="flex flex-col gap-2 p-3 mb-3 rounded-sm"
+              <div className="flex flex-col gap-2 p-3 mt-3 rounded-sm"
                 style={{ background: `${accent}06`, border: `1px solid ${accent}22` }}>
                 <input
                   value={newEraName}
@@ -820,11 +842,38 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
             </motion.div>
           )}
         </AnimatePresence>
+      </motion.section>
 
-        {/* Horizontal Slider */}
+      {/* ══ SECTION 2: Eras — fila con wrap por encima de 1280 (punto 7),
+            carrusel intacto por debajo (L-1: no cambia un pixel). ══ */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <Icon name="archive" size={14} decorative />
+            <h2
+              className="text-xs tracking-[0.35em] uppercase font-bold"
+              style={{ color: accent }}
+            >
+              ERAS
+            </h2>
+            <span
+              className="text-xs opacity-40 ml-1 tabular-nums"
+              style={{ color: accent }}
+            >
+              [{String(displayEras.length).padStart(2, "0")}]
+            </span>
+          </div>
+        </div>
+
+        {/* Eras: wrap en escritorio, carrusel en móvil */}
         <div
           ref={sliderRef}
-          className="flex gap-3 overflow-x-auto pb-3 select-none"
+          className="flex gap-3 overflow-x-auto pb-3 select-none xl:flex-wrap xl:overflow-visible"
           style={{
             cursor: "grab",
             scrollbarWidth: "none",
@@ -851,127 +900,148 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         <style>{`.vault-slider::-webkit-scrollbar { display: none; }`}</style>
       </motion.section>
 
-      {/* ══ SECTION 3: Active Era Detail ════════════════════════ */}
-      {activeDisplayEra && (
+      {/* ══ SECCIONES (ADR-033): en móvil (<1280) el lienzo pinta el selector;
+            en escritorio manda el raíl (L-2) — mismo estado, un solo mecanismo. ══ */}
+      <nav className="flex gap-1 overflow-x-auto xl:hidden" aria-label="Secciones de VAULT">
+        {SECCIONES.map((s) => {
+          const activa = seccionActiva === s.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSeccion(s.id)}
+              aria-current={activa ? "page" : undefined}
+              className={`text-xs px-3 py-2.5 uppercase whitespace-nowrap ${activa ? "" : "opacity-30"}`}
+              style={{ color: accent, borderBottom: activa ? `1px solid ${accent}` : "1px solid transparent", fontFamily: FONT_MONO }}
+            >
+              <Icon name={s.icon} size={14} decorative /> {s.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ══ FLUJO DE AÑADIR / EDITAR (L-4): el lienzo ES el formulario, con el
+            marco intacto. Crear y editar comparten camino y ancho (60-76ch). ══ */}
+      {(showAddEntry || editingEntry) && activeDisplayEra && (
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full flex flex-col gap-4"
+        >
+          <button
+            type="button"
+            onClick={() => { setShowAddEntry(false); setEditingEntry(null); }}
+            className="text-xs tracking-widest uppercase self-start px-2 py-2 min-h-[44px] opacity-50"
+            style={{ color: accent, fontFamily: FONT_MONO }}
+          >
+            <Icon name="arrowLeft" size={14} decorative /> VOLVER A {SECCION_LABEL[seccionActiva] ?? seccionActiva.toUpperCase()}
+          </button>
+          <AddEntryForm
+            section={seccionActiva}
+            sectionLabel={SECCION_LABEL[seccionActiva] ?? seccionActiva.toUpperCase()}
+            eraName={activeDisplayEra?.name}
+            eras={displayEras}
+            entry={editingEntry}
+            onAdd={handleAddEntry}
+            onUpdate={handleEditEntry}
+            onCancel={() => { setShowAddEntry(false); setEditingEntry(null); }}
+          />
+        </motion.section>
+      )}
+
+      {/* ══ CONTENIDO DE LA SECCIÓN ACTIVA ═════════════════════ */}
+      {!(showAddEntry || editingEntry) && activeDisplayEra && (
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex items-center gap-2">
-              <Icon name="target" size={14} decorative />
-              <h2
-                className="text-xs tracking-[0.35em] uppercase font-bold"
-                style={{ color: activeDisplayEra.color ?? ACID }}
-              >
-                {activeDisplayEra.name}
-              </h2>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setShowAddEntry(prev => !prev)}
-              className="text-xs tracking-widest uppercase px-3 py-2.5 rounded-sm"
-              style={{
-                color: showAddEntry ? `${accent}44` : accent,
-                border: `1px solid ${showAddEntry ? `${accent}22` : `${accent}44`}`,
-              }}
-            >
-              {showAddEntry ? "CANCELAR" : "+ ENTRADA"}
-            </motion.button>
-          </div>
-        {/* S96 — Filtro por categoría (14 categorías) · S99 — count badges */}
-        <div className="flex gap-0.5 overflow-x-auto pb-1 mb-1" style={{ scrollbarWidth: "none" }}>
-          {CATEGORY_FILTERS.map((cat) => {
-            const count = categoryCounts[cat.id] ?? 0;
-            const isActive = filterCategory === cat.id;
-            return (
-            <button
-              key={cat.id}
-              onClick={() => setFilterCategory(cat.id)}
-              className={`text-[10px] px-2.5 py-2 rounded-sm whitespace-nowrap flex-shrink-0 flex items-center gap-0.5 ${isActive ? "" : "opacity-25 hover:opacity-50"}`}
-              style={{
-                color: isActive ? accent : `${accent}88`,
-                borderBottom: isActive ? `1px solid ${accent}` : "1px solid transparent",
-                fontFamily: FONT_MONO,
-              }}
-              title={`${cat.label}${count > 0 ? ` (${count})` : ""}`}
-            >
-              <Icon name={cat.icon} size={12} decorative />
-              {count > 0 && (
-                <span className="text-[7px] opacity-60 tabular-nums" style={{ fontFamily: FONT_MONO }}>
-                  {count}
-                </span>
-              )}
-            </button>
-          )})}
-        </div>
-        {/* S100 — Búsqueda por texto */}
-        <div className="px-1 mb-1">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="BUSCAR…"
-            className="bg-transparent text-xs p-3 min-h-[44px] w-full outline-none"
-            style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO }}
-          />
-        </div>
-          <div className="lg:grid lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
-            <div className="min-w-0 flex flex-col gap-4">
-              {showAddEntry && (
-                <AddEntryForm
-                  eras={displayEras}
-                  onAdd={handleAddEntry}
-                  onCancel={() => setShowAddEntry(false)}
-                />
-              )}
-              <EraDetailPanel
-                era={activeDisplayEra}
-                entries={filteredEntries}
-                onEditEntry={setEditingEntry}
-                onDeleteEntry={(entryId) => setPendingDeleteEntryId(entryId)}
-              />
-            </div>
-            {/* S65: Modal de edición */}
-            <AnimatePresence>
-              {editingEntry && (
-                <motion.div
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
-                  style={{ background: "rgba(0,0,0,0.85)" }}
-                  onClick={() => setEditingEntry(null)}
+          {/* X-5: los 6 modos de galería viven en la cabecera del lienzo,
+               SOLO dentro de MEMORIA. No van al raíl. */}
+          {seccionActiva === "memoria" && (
+            <nav className="flex gap-1 overflow-x-auto mb-3" aria-label="Modos de galería">
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setGaleriaMode(m.id)}
+                  className={`text-xs px-3 py-2.5 uppercase whitespace-nowrap ${galeriaMode === m.id ? "" : "opacity-30"}`}
+                  style={{ color: accent, borderBottom: galeriaMode === m.id ? `1px solid ${accent}` : "1px solid transparent", fontFamily: FONT_MONO }}
                 >
-                  <motion.div
-                    initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
-                    className="w-full max-w-md"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <AddEntryForm
-                      eras={displayEras}
-                      entry={editingEntry}
-                      onUpdate={handleEditEntry}
-                      onCancel={() => setEditingEntry(null)}
-                    />
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {/* Galería de la Era activa — lazy loaded */}
-            <div className="min-w-0 mt-4 lg:mt-0">
+                  <Icon name={m.icon} size={14} decorative /> {m.label}
+                </button>
+              ))}
+            </nav>
+          )}
+
+          {/* S100 — Búsqueda por texto (filtro del lienzo, L-3) */}
+          <div className="px-1 mb-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="BUSCAR…"
+              className="bg-transparent text-xs p-3 min-h-[44px] w-full outline-none"
+              style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO }}
+            />
+          </div>
+
+          {/* El contenido de la sección activa, a ancho completo */}
+          {seccionActiva === "memoria" && (
+            <div className="w-full">
               <ChunkErrorBoundary>
                 <Suspense fallback={<Skeleton.VaultGallery />}>
                   <VaultGallery
-                    entries={filteredEntries.filter(e => e.era_id === activeDisplayEra.id)}
+                    entries={eraSectionEntries}
                     eras={displayEras}
-                    filterCategory={filterCategory}
+                    mode={galeriaMode}
+                    setMode={setGaleriaMode}
                     onEditEntry={setEditingEntry}
                     onDeleteEntry={(entryId) => setPendingDeleteEntryId(entryId)}
                   />
                 </Suspense>
               </ChunkErrorBoundary>
             </div>
-          </div>
+          )}
+
+          {seccionActiva === "palabras" && (
+            <PalabrasView
+              entries={eraSectionEntries}
+              accent={accent}
+              onEdit={setEditingEntry}
+              onDelete={(entryId) => setPendingDeleteEntryId(entryId)}
+              onCreate={() => setShowAddEntry(true)}
+            />
+          )}
+
+          {seccionActiva === "lugares" && (
+            eraSectionEntries.length === 0 ? (
+              <SeccionVacia
+                seccionLabel="LUGARES"
+                microcopy="Todavía no hay lugares en esta era. Marca el primero."
+                accent={accent}
+                onCreate={() => setShowAddEntry(true)}
+              />
+            ) : (
+              <div className="w-full">
+                <ChunkErrorBoundary>
+                  <Suspense fallback={<Skeleton.VaultGallery />}>
+                    <LugaresMap entries={eraSectionEntries} eras={displayEras} />
+                  </Suspense>
+                </ChunkErrorBoundary>
+              </div>
+            )
+          )}
+
+          {seccionActiva === "listas" && (
+            <ListasView
+              entries={eraSectionEntries}
+              accent={accent}
+              onEdit={setEditingEntry}
+              onDelete={(entryId) => setPendingDeleteEntryId(entryId)}
+              onCreate={() => setShowAddEntry(true)}
+            />
+          )}
         </motion.section>
       )}
 

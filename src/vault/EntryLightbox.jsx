@@ -10,8 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO } from "../tokens";
 import { Icon } from "../core/ui";
 import { useVault } from "../core/VaultContext";
-import { CATEGORY_FILTERS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, getImageUrl, getMediaType, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
+import { seccionDeEntrada, SECCION_LABEL, SECCION_ICON, getImageUrl, getMediaType, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
 import ClassifiedTile from "./ClassifiedTile";
 
 // ─── CONSTANTS ──────────────────────────────────────────────
@@ -21,8 +20,11 @@ const ZOOM_IN_SCALE = 2.5;
 const MAX_SCALE = 4;
 const MIN_SCALE = 1;
 
-const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
-const CAT_ICON = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
+// ADR-033: los badges enseñan la SECCIÓN, no la categoría muerta de 14.
+const seccionBadge = (entry) => {
+  const seccion = seccionDeEntrada(entry);
+  return seccion ? { icon: SECCION_ICON[seccion] ?? "archive", label: SECCION_LABEL[seccion] ?? seccion } : null;
+};
 
 // ─── UTIL ────────────────────────────────────────────────────
 const getDistance = (t1, t2) => {
@@ -356,7 +358,7 @@ export default function EntryLightbox({ entries = [], startIndex = 0, onClose, o
               <span className="text-xs px-2 py-0.5 rounded-sm" style={{ background: `${eraColor}22`, color: eraColor }}>{era.name}</span>
             )}
             <span className="text-[9px] px-1.5 py-0.5 rounded-sm opacity-60" style={{ background: `${ac}15`, color: ac }}>
-              <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative /> {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+              {(() => { const b = seccionBadge(entry); return (<><Icon name={b?.icon ?? "archive"} size={12} decorative /> {b?.label ?? entry.type}</>); })()}
             </span>
             {dateStr && <span className="text-[9px] opacity-35 ml-auto" style={{ color: ac }}>{dateStr}</span>}
           </div>

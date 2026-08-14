@@ -15,25 +15,18 @@ import EntryLightbox from "./EntryLightbox"; // FASE C.1: lightbox unificado
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
-import { CATEGORY_FILTERS } from "./AddEntryForm";
-import { ENTRY_CATEGORY, getImageUrl, getMediaType, isClassified, resolveEraId, resolveEntryDate } from "./VaultHelpers";
+import { getImageUrl, getMediaType, isClassified, resolveEraId, resolveEntryDate, seccionDeEntrada, SECCION_LABEL, SECCION_ICON } from "./VaultHelpers";
 import ClassifiedTile from "./ClassifiedTile";
 
-// ─── MODES ──────────────────────────────────────────────────
-const MODES = [
-  { id: "wall",       icon: "grid",    label: "WALL" },
-  { id: "cinema",     icon: "play",    label: "CINEMA" },
-  { id: "map",        icon: "map",     label: "MAP" },
-  { id: "dialogue",   icon: "heart",   label: "DIALOGUE" },
-  { id: "exhibition", icon: "star",    label: "EXHIBITION" },
-  { id: "reel",       icon: "circle",  label: "REEL" },
-];
+// X-5: MODES vive en VaultHelpers (sin leaflet) para que Vault.jsx pinte la
+// barra de modos en la cabecera del lienzo sin cargar esta galería lazy.
 
-// S95 — CATEGORY_FILTERS importado de AddEntryForm (single source of truth)
-
-// Mapa category→label para badges rápidos
-const CAT_LABEL = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.label]));
-const CAT_ICON  = Object.fromEntries(CATEGORY_FILTERS.map((c) => [c.id, c.icon]));
+// ADR-033: los badges enseñan la SECCIÓN (MEMORIA/PALABRAS/LUGARES/LISTAS),
+// no la categoría muerta de la taxonomía de 14.
+const seccionBadge = (entry) => {
+  const seccion = seccionDeEntrada(entry);
+  return seccion ? { icon: SECCION_ICON[seccion] ?? "archive", label: SECCION_LABEL[seccion] ?? seccion } : null;
+};
 
 // ─── UTILIDADES ────────────────────────────────────────────
 // ─── CINEMA VIEW (S122-A: full-bleed + swipe + Ken Burns + overlay emocional) ──
@@ -205,7 +198,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
         )}
         <div className="flex items-center gap-1 mt-2">
           <span className="text-[9px] opacity-40" style={{ color: eraColor, fontFamily: FONT_MONO }}>
-            <Icon name={CAT_ICON[ENTRY_CATEGORY[entry.type]] ?? "archive"} size={12} decorative /> {CAT_LABEL[ENTRY_CATEGORY[entry.type]] ?? entry.type}
+            {(() => { const b = seccionBadge(entry); return b ? (<><Icon name={b.icon} size={12} decorative /> {b.label}</>) : entry.type; })()}
           </span>
         </div>
       </motion.div>
@@ -600,7 +593,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
                           <img src={url} alt={e.title || ""} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <div className="w-full h-full flex flex-col items-center justify-center gap-1 p-1" style={{ background: `${eraColor}08` }}>
-                            <span className="text-xs opacity-30" style={{ color: eraColor }}><Icon name={CAT_ICON[ENTRY_CATEGORY[e.type]] || "archive"} size={12} decorative /></span>
+                            <span className="text-xs opacity-30" style={{ color: eraColor }}>{(() => { const b = seccionBadge(e); return <Icon name={b?.icon ?? "archive"} size={12} decorative />; })()}</span>
                             <span className="text-[7px] text-center leading-tight opacity-40 truncate" style={{ color: eraColor, fontFamily: FONT_MONO }}>{e.title || ""}</span>
                           </div>
                         )}
@@ -1101,7 +1094,7 @@ const MapView = ({ entries = [], eras = [] }) => {
                         </div>
                       )}
                       <div style={{ fontSize: 8, opacity: 0.4, marginTop: 4, color: "#000" }}>
-                        <Icon name={CAT_ICON[ENTRY_CATEGORY[e.type]] ?? "archive"} size={10} decorative /> {CAT_LABEL[ENTRY_CATEGORY[e.type]] ?? e.type}
+                        {(() => { const b = seccionBadge(e); return (<><Icon name={b?.icon ?? "archive"} size={10} decorative /> {b?.label ?? e.type}</>); })()}
                       </div>
                       {/* Fase 7: carrusel horizontal de fotos de esta ubicación */}
                       {(() => {
@@ -1167,8 +1160,9 @@ const MapView = ({ entries = [], eras = [] }) => {
 };
 
 // ─── MAIN COMPONENT ──────────────────────────────────────────
-export default function VaultGallery({ entries = [], eras = [], filterCategory = "all", onOpenEntry: _onOpenEntry, onEditEntry, onDeleteEntry }) {
-  const [mode, setMode] = useState("wall");
+// X-5: el modo vive en Vault.jsx (cabecera del lienzo, SOLO en MEMORIA) y se
+// pasa como prop controlada. La barra de modos NO se pinta aquí.
+export default function VaultGallery({ entries = [], eras = [], filterCategory = "all", mode = "wall", setMode: _setMode = () => {}, onOpenEntry: _onOpenEntry, onEditEntry, onDeleteEntry }) {
   const [density, setDensity] = useState("normal");
 
   // VB9: vibe accent from current track — propagates to mode bar, category filter, etc.
@@ -1246,19 +1240,8 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
       <div className="text-[8px] text-center opacity-15 tracking-[0.3em] uppercase" style={{ color: vibeAccent, fontFamily: FONT_MONO }}>
         {mode.toUpperCase()} · {entriesWithMedia.length} elementos
       </div>
-      {/* Mode bar — VB9: vibe-reactive accent */}
-      <nav className="flex gap-1 overflow-x-auto">
-        {MODES.map(m => (
-          <button key={m.id} onClick={() => setMode(m.id)}
-            className={`text-xs px-3 py-2.5 uppercase whitespace-nowrap ${mode === m.id ? "" : "opacity-30"}`}
-            style={{ color: vibeAccent, borderBottom: mode === m.id ? `1px solid ${vibeAccent}` : "1px solid transparent", fontFamily: FONT_MONO }}>
-            <Icon name={m.icon} size={14} decorative /> {m.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* S95 — Filtro por categoría: eliminado de VaultGallery (duplicado con Vault.jsx).
-           El filtro maestro está en Vault.jsx:892 — VaultGallery recibe entries ya filtradas. */}
+      {/* X-5: la barra de modos ya no vive aquí — la pinta Vault.jsx en la
+          cabecera del lienzo, SOLO dentro de MEMORIA. */}
 
       {/* Content */}
       <AnimatePresence mode="wait">
@@ -1289,3 +1272,7 @@ export default function VaultGallery({ entries = [], eras = [], filterCategory =
     </div>
   );
 }
+
+// ADR-033: LUGARES es mapa — se reutiliza el MapView (Leaflet real + clustering)
+// con las entradas de la sección activa.
+export { MapView };
