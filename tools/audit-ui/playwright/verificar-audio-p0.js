@@ -28,7 +28,7 @@ function fixturePara(pathname) {
 
 const browser = await chromium.launch({ channel: 'msedge', headless: true });
 try {
-  const baseUrl = 'http://localhost:4317';
+  const baseUrl = 'http://localhost:5174';
   const contexto = await browser.newContext({ viewport: { width: 1440, height: 900 }, serviceWorkers: 'block' });
   const page = await contexto.newPage();
   await page.addInitScript(() => {
