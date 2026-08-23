@@ -75,6 +75,27 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
     { id: "edu", label: "EDU" },
     { id: "david", label: "DAVID" },
   ];
+  const desktopFilters = [
+    { id: "module", label: "MODULO", value: filterModule, onChange: setFilterModule, options: MODULES },
+    { id: "user", label: "QUIEN", value: filterUser, onChange: setFilterUser, options: USERS },
+    ...(eventTypes.length > 2 ? [{
+      id: "type",
+      label: "TIPO",
+      value: filterType,
+      onChange: setFilterType,
+      options: [{ id: "all", label: "TODOS" }, ...eventTypes.slice(0, 10).map((type) => ({
+        id: type,
+        label: type.replace(/_/g, " ").slice(0, 18).toUpperCase(),
+      }))],
+    }] : []),
+    ...(eras.length > 0 ? [{
+      id: "era",
+      label: "ERA",
+      value: filterEra,
+      onChange: setFilterEra,
+      options: [{ id: "all", label: "TODAS" }, ...eras.slice(0, 6).map((era) => ({ id: era.id, label: era.name }))],
+    }] : []),
+  ];
 
   return (
     <>
@@ -110,8 +131,49 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
         </motion.div>
       )}
 
+      {/* F5: desktop filter bar — one row; mobile keeps the original stacked controls. */}
+      <div className="hidden xl:flex items-center min-h-[56px]" style={{ borderTop: `1px solid ${accent}14`, borderBottom: `1px solid ${accent}14` }}>
+        {desktopFilters.map((filter) => (
+          <label key={filter.id} className="relative flex items-center gap-2 px-3 py-2 border-r min-w-0" style={{ borderColor: `${accent}14` }}>
+            <span className="text-[9px] tracking-[0.18em] opacity-40 whitespace-nowrap" style={{ color: accent }}>{filter.label}</span>
+            <select
+              value={filter.value}
+              onChange={(event) => filter.onChange(event.target.value)}
+              aria-label={`Filtrar por ${filter.label.toLowerCase()}`}
+              className="min-w-0 max-w-[9rem] bg-transparent text-xs uppercase outline-none cursor-pointer"
+              style={{ color: accent, fontFamily: FONT_MONO }}
+            >
+              {filter.options.map((option) => <option key={option.id} value={option.id} style={{ background: "#0a0a0a", color: accent }}>{option.label}</option>)}
+            </select>
+          </label>
+        ))}
+        <div className="ml-auto flex items-center gap-3 px-3 shrink-0">
+          <span className="text-xs tabular-nums opacity-40" style={{ color: accent }}>{visibleEvents.length}/{filteredEvents.length}</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setViewMode("timeline")}
+              aria-label="Vista timeline"
+              aria-pressed={viewMode === "timeline"}
+              title="Vista timeline"
+              className="w-8 h-8 flex items-center justify-center rounded-sm"
+              style={{ color: accent, border: `1px solid ${viewMode === "timeline" ? `${accent}66` : `${accent}18`}`, opacity: viewMode === "timeline" ? 1 : 0.4 }}
+            ><Icon name="clock" size={14} decorative /></button>
+            <button
+              type="button"
+              onClick={() => setViewMode("compact")}
+              aria-label="Vista compacta"
+              aria-pressed={viewMode === "compact"}
+              title="Vista compacta"
+              className="w-8 h-8 flex items-center justify-center rounded-sm"
+              style={{ color: accent, border: `1px solid ${viewMode === "compact" ? `${accent}66` : `${accent}18`}`, opacity: viewMode === "compact" ? 1 : 0.4 }}
+            ><Icon name="more" size={14} decorative /></button>
+          </div>
+        </div>
+      </div>
+
       {/* S72: Filter bar */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 xl:hidden">
         {/* Module filters */}
         <div className="flex gap-1 overflow-x-auto">
           {MODULES.map(m => (
@@ -209,7 +271,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
       </div>
 
       {/* View mode toggle + count */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 xl:hidden">
         <div className="flex gap-1">
           {[
             { id: "timeline", icon: "clock", label: "TIMELINE" },
@@ -237,14 +299,22 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             const label = e.event_type?.replace(/_/g, " ").toUpperCase() ?? "EVENTO";
             return (
               <motion.div key={e.id || `tev-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
-                className="flex items-center gap-2 px-2 py-1 text-xs"
+                className="flex items-center gap-2 px-2 py-1 text-xs xl:grid xl:grid-cols-[5rem_minmax(10rem,14rem)_8rem_minmax(0,1fr)] xl:gap-4"
                 style={{ borderBottom: `1px solid ${accent}11` }}>
-                <Icon name={icon} size={14} label={label} />
-                <span className="opacity-30" style={{ color: accent, fontFamily: FONT_MONO }}>
-                  {e.created_at?.slice(11, 16) ?? "--:--"}
-                </span>
-                <span className="xl:min-w-0 xl:flex-1 opacity-50 truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: accent, fontFamily: FONT_MONO }}>{label}</span>
-                <span className="opacity-20 ml-auto text-xs" style={{ color: accent }}>{e.user_id}</span>
+                <div className="contents xl:hidden">
+                  <Icon name={icon} size={14} label={label} />
+                  <span className="opacity-30" style={{ color: accent, fontFamily: FONT_MONO }}>
+                    {e.created_at?.slice(11, 16) ?? "--:--"}
+                  </span>
+                  <span className="opacity-50 truncate" style={{ color: accent, fontFamily: FONT_MONO }}>{label}</span>
+                  <span className="opacity-20 ml-auto text-xs" style={{ color: accent }}>{e.user_id}</span>
+                </div>
+                <div className="hidden xl:contents">
+                  <span className="tabular-nums opacity-50" style={{ color: accent }}>{e.created_at?.slice(11, 16) ?? "--:--"}</span>
+                  <span className="flex items-center gap-2 min-w-0 truncate" style={{ color: accent }}><Icon name={icon} size={14} decorative /> {label}</span>
+                  <span className="truncate opacity-50" style={{ color: accent }}>{e.user_id || "SISTEMA"}</span>
+                  <span className="min-w-0 truncate opacity-70" style={{ color: accent }}>{e.title || e.track_id || e.era_name || ""}</span>
+                </div>
               </motion.div>
             );
           })}
@@ -262,16 +332,25 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             try {
               detail = e.payload ? (typeof e.payload === "string" ? JSON.parse(e.payload) : e.payload) : {};
             } catch { /* keep empty */ }
+            const subject = detail.title || detail.track_id || detail.era_name || "";
             return (
               <motion.div key={e.id || `${day}-${i}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-3 px-3 py-2 text-xs"
+                className="flex items-center gap-3 px-3 py-2 text-xs xl:grid xl:grid-cols-[5rem_minmax(10rem,14rem)_8rem_minmax(0,1fr)] xl:gap-4"
                 style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
-                <Icon name={icon} size={14} label={label} />
-                <span className="opacity-50" style={{ color: accent }}>{label}</span>
-                <span className="xl:min-w-0 ml-auto opacity-30 truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: accent }}>
-                  {e.user_id} {detail.title || detail.track_id || detail.era_name || ""}
-                </span>
+                <div className="contents xl:hidden">
+                  <Icon name={icon} size={14} label={label} />
+                  <span className="opacity-50" style={{ color: accent }}>{label}</span>
+                  <span className="ml-auto opacity-30 truncate" style={{ color: accent }}>
+                    {e.user_id} {subject}
+                  </span>
+                </div>
+                <div className="hidden xl:contents">
+                  <span className="tabular-nums opacity-50" style={{ color: accent }}>{e.created_at?.slice(11, 16) ?? "--:--"}</span>
+                  <span className="flex items-center gap-2 min-w-0 truncate" style={{ color: accent }}><Icon name={icon} size={14} decorative /> {label}</span>
+                  <span className="truncate opacity-50" style={{ color: accent }}>{e.user_id || "SISTEMA"}</span>
+                  <span className="min-w-0 truncate opacity-70" style={{ color: accent }}>{subject}</span>
+                </div>
               </motion.div>
             );
           })}

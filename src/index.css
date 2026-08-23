@@ -201,7 +201,6 @@ body.vibe-pulse {
     max-width: none !important;
     margin-inline: 0 !important;
   }
-  .desktop-canvas .max-w-6xl { max-width: none !important; }
 }
 
 @media (orientation: landscape) and (max-width: 767px) {

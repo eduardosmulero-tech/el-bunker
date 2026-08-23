@@ -777,11 +777,11 @@ export default function MusicLab({
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col gap-5 px-4 py-6 w-full max-w-6xl mx-auto" style={{ fontFamily: FONT_MONO }}>
+      <div className="flex flex-col gap-5 px-4 py-6 w-full" style={{ fontFamily: FONT_MONO }}>
 
-        <div className={`lg:grid ${isDesktopViewport ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"} lg:items-start lg:gap-6`}>
+        <div className={`xl:grid ${isDesktopViewport ? "xl:grid-cols-1" : "xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"} xl:items-start xl:gap-6`}>
         {/* ══ Player: mobile/tablet content; desktop lives in Layout's permanent dock ══ */}
-        {!isDesktopViewport && <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="lg:sticky lg:top-6 lg:self-start">
+        {!isDesktopViewport && <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="xl:sticky xl:top-6 xl:self-start">
           <WinampPlayer
             tracks={filteredTracks}
             onDropSend={handleDropSend}

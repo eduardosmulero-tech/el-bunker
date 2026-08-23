@@ -15,7 +15,14 @@ function withAlpha(color, alpha) {
 }
 
 // ─── VISUALIZER MODES (cycle in fullscreen) ──────────────────
-const ALL_MODES = ["bars", "oscilloscope", "wave", "radial", "vinyl", "tunnel"];
+const ALL_MODES = ["bars", "oscilloscope", "wave", "radial", "vinyl", "tunnel", "vu", "plasma", "particles"];
+
+const MODE_LABELS = {
+  bars: "BARRAS", oscilloscope: "OSCILOSCOPIO", wave: "ONDA",
+  radial: "RADIAL", vinyl: "VINILO", tunnel: "TUNEL",
+  vu: "VU METERS", plasma: "PLASMA", particles: "PARTICULAS",
+};
+
 
 // S108 — Presets de visualizador por vibe (ampliado con modos 2000s)
 const VIBE_PRESETS = {
@@ -24,11 +31,6 @@ const VIBE_PRESETS = {
   dnb:         { mode: "oscilloscope", barCount: 28, fftSize: 256, smoothing: 0.60, particleCount: 40, speed: 1.5 },
   romantiqueo: { mode: "vinyl",        barCount: 24, fftSize: 128, smoothing: 0.88, particleCount: 15, speed: 0.7 },
   "420_chill": { mode: "wave",         barCount: 20, fftSize: 128, smoothing: 0.90, particleCount: 12, speed: 0.6 },
-};
-
-const MODE_LABELS = {
-  bars: "BARRAS", oscilloscope: "OSCILOSCOPIO", wave: "ONDA",
-  radial: "RADIAL", vinyl: "VINILO", tunnel: "TUNEL",
 };
 
 function getPreset(vibeId) {
@@ -64,6 +66,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
   const hideTimerRef = useRef(null);
   const vinylStateRef = useRef({ angle: 0, speed: 0 });
   const tunnelTimeRef = useRef(0);
+  const plasmaTimeRef = useRef(0);
 
   const preset = useMemo(() => getPreset(vibeId), [vibeId]);
   const effectiveMode = isFullscreen && fullscreenMode ? fullscreenMode : preset.mode;
@@ -336,6 +339,129 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
       ctx.lineWidth = 2; ctx.shadowBlur = 20; ctx.shadowColor = ac; ctx.stroke(); ctx.shadowBlur = 0;
     };
 
+    // ═══ VU METERS (stereo-style segmented meters) ═══════════
+    const drawVuMeters = (data, W, H) => {
+      if (!data?.length) return;
+      const meterCount = 24;
+      const segmentGap = Math.max(1, H * 0.012);
+      const segmentHeight = Math.max(2, (H * 0.72) / meterCount - segmentGap);
+      const meterWidth = Math.max(4, Math.min(14, W * 0.035));
+      const leftX = W * 0.2 - meterWidth / 2;
+      const rightX = W * 0.8 - meterWidth / 2;
+      const top = H * 0.14;
+      const sample = (offset) => {
+        let sum = 0;
+        const end = Math.max(offset + 1, Math.floor(data.length * (offset + 0.25)));
+        for (let i = Math.floor(data.length * offset); i < end; i++) sum += data[i];
+        return sum / Math.max(1, end - Math.floor(data.length * offset)) / 255;
+      };
+      const levels = [sample(0), sample(0.25)];
+
+      ctx.fillStyle = withAlpha(ac, 0.06);
+      ctx.fillRect(leftX - 5, top - 6, meterWidth + 10, H * 0.72 + 12);
+      ctx.fillRect(rightX - 5, top - 6, meterWidth + 10, H * 0.72 + 12);
+      ctx.font = `${Math.max(8, Math.floor(H * 0.07))}px monospace`;
+      ctx.fillStyle = withAlpha(ac, 0.5);
+      ctx.textAlign = "center";
+      ctx.fillText("L", leftX + meterWidth / 2, top - 12);
+      ctx.fillText("R", rightX + meterWidth / 2, top - 12);
+
+      for (let meter = 0; meter < 2; meter++) {
+        const x = meter === 0 ? leftX : rightX;
+        const level = levels[meter];
+        for (let segment = 0; segment < meterCount; segment++) {
+          const threshold = (segment + 1) / meterCount;
+          const y = top + (meterCount - segment - 1) * (segmentHeight + segmentGap);
+          const active = level >= threshold * 0.9;
+          ctx.fillStyle = active ? withAlpha(ac, 0.35 + level * 0.6) : withAlpha(ac, 0.07);
+          ctx.fillRect(x, y, meterWidth, segmentHeight);
+        }
+      }
+      ctx.textAlign = "start";
+    };
+
+    // ═══ PLASMA / HUMO (audio-driven layered fields) ════════
+    const drawPlasma = (data, W, H) => {
+      if (!data?.length) return;
+      let energy = 0;
+      const count = Math.max(1, Math.floor(data.length * 0.35));
+      for (let i = 0; i < count; i++) energy += data[i] / 255;
+      energy /= count;
+      plasmaTimeRef.current += 0.018 * preset.speed;
+      const time = plasmaTimeRef.current;
+
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < 5; i++) {
+        const phase = time * (0.7 + i * 0.11) + i * 1.7;
+        const x = W * (0.5 + Math.sin(phase) * 0.42);
+        const y = H * (0.5 + Math.cos(phase * 1.23) * 0.42);
+        const radius = Math.min(W, H) * (0.28 + energy * 0.28 + i * 0.025);
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        glow.addColorStop(0, withAlpha(ac, 0.16 + energy * 0.22));
+        glow.addColorStop(0.5, withAlpha(ac, 0.07 + energy * 0.12));
+        glow.addColorStop(1, "transparent");
+        ctx.fillStyle = glow;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      ctx.strokeStyle = withAlpha(ac, 0.2 + energy * 0.3);
+      ctx.lineWidth = 1 + energy * 2;
+      ctx.shadowBlur = 10 + energy * 16;
+      ctx.shadowColor = ac;
+      for (let row = 0; row < 8; row++) {
+        const baseY = (row + 0.5) * H / 8;
+        ctx.beginPath();
+        for (let x = 0; x <= W; x += 8) {
+          const wave = Math.sin(x * 0.018 + time * 2 + row) * H * (0.018 + energy * 0.035);
+          const drift = Math.cos(x * 0.009 - time + row * 0.7) * H * 0.025;
+          if (x === 0) ctx.moveTo(x, baseY + wave + drift);
+          else ctx.lineTo(x, baseY + wave + drift);
+        }
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+    };
+
+    // ═══ PARTICULAS (audio-reactive field) ═══════════════════
+    const drawParticles = (data, W, H) => {
+      if (!data?.length) return;
+      let energy = 0;
+      for (let i = 0; i < Math.max(1, Math.floor(data.length * 0.3)); i++) energy += data[i] / 255;
+      energy /= Math.max(1, Math.floor(data.length * 0.3));
+      const time = performance.now() * 0.001 * preset.speed;
+      const count = Math.max(24, preset.particleCount);
+      const cx = W / 2;
+      const cy = H / 2;
+
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.fillRect(0, 0, W, H);
+      for (let i = 0; i < count; i++) {
+        const bin = Math.floor((i / count) * data.length);
+        const level = data[bin] / 255;
+        const angle = (i / count) * Math.PI * 2 + time * (0.12 + level * 0.35);
+        const distance = Math.min(W, H) * (0.1 + ((i * 37) % 100) / 160 + level * 0.18);
+        const x = cx + Math.cos(angle) * distance;
+        const y = cy + Math.sin(angle) * distance * 0.72;
+        const radius = 1 + level * (2 + energy * 5);
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = withAlpha(ac, 0.25 + level * 0.7);
+        ctx.shadowBlur = 4 + level * 12;
+        ctx.shadowColor = ac;
+        ctx.fill();
+        if (level > 0.45) {
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(angle) * distance * 0.88, cy + Math.sin(angle) * distance * 0.63);
+          ctx.lineTo(x, y);
+          ctx.strokeStyle = withAlpha(ac, level * 0.2);
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+      ctx.shadowBlur = 0;
+    };
+
     // ═══ TUNNEL (hypnotic expanding rings) ═══════════════════
     const drawTunnel = (data, W, H) => {
       if (!data?.length) return;
@@ -392,9 +518,12 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
       else if (renderMode === "radial") drawRadial(fArr, W, H);
       else if (renderMode === "vinyl") drawVinyl(fArr, W, H);
       else if (renderMode === "tunnel") drawTunnel(fArr, W, H);
+      else if (renderMode === "vu") drawVuMeters(fArr, W, H);
+      else if (renderMode === "plasma") drawPlasma(fArr, W, H);
+      else if (renderMode === "particles") drawParticles(fArr, W, H);
       else drawBars(fArr, W, H);
 
-      if (beatGlow && renderMode !== "vinyl" && renderMode !== "tunnel") {
+      if (beatGlow && renderMode !== "vinyl" && renderMode !== "tunnel" && renderMode !== "plasma" && renderMode !== "particles") {
         ctx.beginPath();
         ctx.arc(W / 2, H / 2, Math.min(W, H) * 0.45, 0, Math.PI * 2);
         ctx.strokeStyle = `${ac}44`;

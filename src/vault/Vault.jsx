@@ -734,7 +734,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         accentColor="#ff3b3b"
       />
     <div
-      className="flex flex-col gap-6 px-4 py-6 w-full max-w-6xl mx-auto xl:gap-4 xl:py-4"
+      className="flex flex-col gap-6 px-4 py-6 w-full xl:gap-4 xl:py-4"
       style={{ fontFamily: FONT_MONO }}
     >
 
@@ -917,7 +917,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
             style={{ color: accent, border: `1px solid ${accent}22`, fontFamily: FONT_MONO }}
           />
         </div>
-          <div className="lg:grid lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
+          <div className="xl:grid xl:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] xl:items-start xl:gap-6">
             <div className="min-w-0 flex flex-col gap-4">
               {showAddEntry && (
                 <AddEntryForm
@@ -960,7 +960,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
               )}
             </AnimatePresence>
             {/* Galería de la Era activa — lazy loaded */}
-            <div className="min-w-0 mt-4 lg:mt-0">
+            <div className="min-w-0 mt-4 xl:mt-0">
               <ChunkErrorBoundary>
                 <Suspense fallback={<Skeleton.VaultGallery />}>
                   <VaultGallery

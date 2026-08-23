@@ -75,9 +75,9 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
   }, [toast]);
 
   return (
-    <div className="w-full px-4 py-6 max-w-6xl mx-auto flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
+    <div className="w-full px-4 py-6 flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
       {null}
-      <div className="capsules-layout lg:grid lg:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
+      <div className="capsules-layout">
       {/* Sub-tab bar — swipeable en móvil, sin scrollbar.
           Desde el 14-ago el raíl SÍ controla el segundo nivel (botones reales sobre el mismo
           estado elevado que lee esta barra), así que en escritorio las dos son navegación viva y
@@ -85,7 +85,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
           en su propia tarjeta: quitarla antes de que el raíl funcionase dejó SMOKE, TIME CAPSULES
           y RECAP inalcanzables. Ver X-3 en DISENO_INTERIOR_LIENZO_2026-08-14.md. */}
       <nav
-        className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none lg:max-w-sm"
+        className="capsules-subnav flex gap-1 pb-1 overflow-x-auto select-none xl:hidden"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
@@ -144,7 +144,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       <AnimatePresence mode="wait">
         <motion.div
           key={subTab}
-          className="capsules-content min-w-0 lg:max-w-5xl lg:w-full lg:self-end"
+          className="capsules-content min-w-0"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}

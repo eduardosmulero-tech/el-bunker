@@ -26,7 +26,7 @@ cruzarlo aparecieron 3 contradicciones, 10 correcciones y 11 huecos.
 | Reproductor, cola, historial, aleatorio, bucle, playback, vibe, tags de música, transiciones de color, visualizador, MediaSession, Cast, atajos y gestos del reproductor | `el_bunker_reproductor_spec_v2.md` | `S` sesión · `Q` cola · `VB` vibe y tags · `C`/`EC-C` contexto · `P`/`EC-P` playback · `SH` aleatorio · `L` bucle · `A` Android · `M` MediaSession · `CAST` · `UX`/`UX-G` · `VIZ` visualizador · `T` transiciones |
 | Galería del VAULT: los 6 modos, capa ambiental por Era, panel de detalle de una foto, virtualización, edge cases de fotos | `galeria_vault_spec.md` | Sin numerar. Secciones por modo: WALL, CINEMA, MAP, DIALOGUE, REEL, EXHIBITION. Fases A/B/C al final |
 | CAPSULES: las 4 sub-tabs (Timeline, Smoke, Time Capsules, RECAP) | `capsulas_spec.md` | `SS` smoke · `TC` cápsulas del tiempo |
-| Tipos de entrada del VAULT, categorías de contenido | `taxonomia_vault.md` | Numeración `1.1`-`14.4`, 14 categorías |
+| Tipos de entrada del VAULT, categorías de contenido | ⛔ **`taxonomia_vault.md` ya NO es el catálogo vigente** — lo sustituye **ADR-033** (14-ago-2026): cuatro secciones MEMORIA / PALABRAS / LUGARES / LISTAS + CAJA FUERTE aparte. La spec pasa a histórico y se consulta solo por trazabilidad | Numeración `1.1`-`14.4` (histórica) |
 | Tracks, playlists, escucha compartida, drops, estadísticas, y el reparto Fase A/B/C del proyecto | `el_bunker_specs_externas_y_fases.md` | `TR` tracks · `LI` playlists · `SC` escucha compartida · `D` drops · `STAT` |
 | Contraste entre lo especificado de VAULT y de MusicLab | `auditoria_cruzada_vault_musiclab.md` | — |
 | Acceso por clave para test y admin | `SPEC_ACCESO_TEST_ADMIN_2026-08-02.md` | Implementado y cerrado (ADR-028). Consulta, no diseño |
@@ -44,6 +44,16 @@ cruzarlo aparecieron 3 contradicciones, 10 correcciones y 11 huecos.
    escritorio como segundo cliente de primera clase"; `UX8` (forzar portrait) queda limitada al
    móvil; el selector de 6 modos de galería sigue horizontal en móvil y pasa al raíl en escritorio;
    y la regla de cero emoji prevalece sobre la iconografía de caracteres dibujada en las specs.
+4. **Enmiendas de ADR-032 y ADR-033** (14-ago-2026):
+   - `VIZ2` deja de decir *"no configurable manualmente por el usuario"*: el preset por vibe es
+     punto de partida y la elección del usuario manda mientras dure la sesión (ADR-032, decisión
+     X-1 de Edu). El placeholder `VIZ-M13` sigue abierto y ahora es consecuencia directa de esto.
+   - `UX6` se completa con los tres modos que faltaban: VU meters, fondo plasma/humo y partículas
+     reactivas (ADR-032).
+   - **`taxonomia_vault.md` deja de ser spec viva** y la sustituye ADR-033.
+   - `galeria_vault_spec.md:46` (*"barra horizontal en cabecera"*) **vuelve a estar vigente también
+     en escritorio**, dentro de la sección MEMORIA: la enmienda X-5 de ADR-033 deshace en ese punto
+     lo que ADR-029 había mandado al raíl, porque el raíl pasa a alojar las cuatro secciones.
 
 ## Placeholders abiertos
 

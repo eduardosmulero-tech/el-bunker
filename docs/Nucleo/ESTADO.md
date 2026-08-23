@@ -7,6 +7,15 @@
 decía que no existía, y llevaba un día desfasada). **La re-entrada es
 `hermes kanban --board el-bunker list`, no este archivo.**
 
+## ▶ 20-ago — GATE 1 COMPLETADO: ADR-030 y ADR-031 subidos al CONTRATO
+**ADR-030 y ADR-031 firmados y subidos a CONTRATO.md. Total: 33 ADRs vigentes.**
+**El frente de escritorio queda sin bloqueos de diseño.** Los dos ADR están escritos en
+`CONTRATO.md` (sin commit: acto de Edu) y `docs/spec/INDEX.md` actualizado — `taxonomia_vault.md`
+deja de ser spec viva. Diseño completo: `docs/disenos/DISENO_INTERIOR_LIENZO_2026-08-14.md`.
+Las 3 tarjetas de `opus` (`t_703e99c7`, `t_6997adaa`, `t_b08e83a5`) están cerradas y su
+implementación repartida en fases con contrato propio. `t_0ea27342` sale de `blocked`.
+**Plan de olas para la flota: `docs/planes/HANDOFF_FLOTA_2026-08-14.md`.**
+
 ## ▶ SIGUIENTE (5-ago — se lee del board, no de aquí)
 **el-bunker es la PRIORIDAD GLOBAL del workspace**, por encima de vinos y empleo.
 Ola 1 del piloto de paralelismo ejecutada: A1 y B2 en `done` (Luna, pendientes de que Sonnet las
