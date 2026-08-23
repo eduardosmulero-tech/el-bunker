@@ -1,6 +1,6 @@
 # Auditoría integral de producto — el-bunker
 
-> Pase reproducible ejecutado el 23-ago-2026 con fixtures locales. Auditoría de producto, no aceptación final de despliegue.
+> Pase post-merge reproducible ejecutado el 23-ago-2026 con fixtures locales. Auditoría de producto, no aceptación final de despliegue.
 
 ## Cobertura
 
@@ -13,33 +13,31 @@
 
 ## Estado de integración
 
-Este pase se ejecutó desde el árbol principal basado en `master` (`f6a0099`), con cambios locales sin commit presentes; no se ejecutó sobre worktrees ni se incorporaron cambios pendientes mediante cherry-pick.
+Este pase se ejecutó desde `master` en `0556ea0`, publicado en `origin/master`. No se ejecutó sobre worktrees.
 
-- `t_0ea27342` entregó VAULT en cuatro secciones en `a432654`, pero `a432654` **no es ancestro de `master`** (`git merge-base --is-ancestor a432654 master` devuelve `1`). Por tanto, el P0 de este informe es válido para el árbol auditado: `AddEntryForm.jsx` seguía exponiendo el formulario histórico; el commit `a432654` no estaba presente en ese árbol. Tras integrar ese commit, hay que repetir la auditoría completa, porque cambia `src/vault/*`, `Layout.jsx`, varios tests y parte del harness.
-- `t_a8de002d` (reproductor grande en MUSIC LAB) y `t_7700824f` (profundidad visual del HUD) siguen en `triage` y bloqueadas por decisión/spec. No se consideran merges pendientes ni cambios aplicables al pase hasta que Edu confirme la enmienda a ADR-029 y exista una entrega verificable.
+- `t_0ea27342` queda integrado: `a432654` es ancestro de `master` (`git merge-base --is-ancestor a432654 master` devuelve `0`). El formulario post-merge ya ofrece las cuatro secciones vigentes y las pastillas de tipos por sección; el P0 histórico queda resuelto en este árbol.
+- `t_a8de002d` (reproductor grande en MUSIC LAB) y `t_7700824f` (profundidad visual del HUD) siguen en `triage` y bloqueadas por decisión/spec. No se consideran cambios aplicables a este pase hasta que Edu confirme la enmienda a ADR-029 y exista una entrega verificable.
 - Las revisiones hijas `t_b617c6b3` y `t_e687ed00` siguen pendientes y no deben cerrarse usando capturas de un árbol que no contiene sus padres.
 
-**Regla de repetición:** después de cualquier merge que toque `src/vault/*`, `src/layout/*`, `src/musiclab/*`, `src/capsules/*` o `tools/audit-ui/*`, se debe ejecutar un nuevo pase sobre el `master` resultante y comparar capturas, clipping, navegación y batería técnica. Este informe no es una aceptación post-merge.
+**Regla de repetición:** después de cualquier merge adicional que toque `src/vault/*`, `src/layout/*`, `src/musiclab/*`, `src/capsules/*` o `tools/audit-ui/*`, se debe ejecutar un nuevo pase sobre el `master` resultante y comparar capturas, clipping, navegación y batería técnica.
 
 ## Resultado ejecutivo
 
-El marco desktop de ADR-029 no presenta overflow horizontal en este pase y las rutas de app llegan a sus tabs y modos principales. El producto no está listo para declararse premium ni para cerrar la revisión arquitectónica: hay una contradicción canónica directa en el formulario de VAULT, una superficie de MUSIC LAB inalcanzable en móvil y problemas repetidos de texto que incumplen el contrato de no truncar ni desbordar contenido.
+El marco desktop de ADR-029 no presenta overflow horizontal en este pase y las rutas de app llegan a sus tabs y modos principales. El producto todavía no está listo para declararse premium ni para cerrar la revisión arquitectónica: `COLA` sigue inalcanzable en móvil y permanecen problemas de contención de texto que incumplen el contrato de no truncar ni desbordar contenido.
 
-El pase definitivo registró `117` elementos con clipping detectado, `0` errores de consola, `0` respuestas HTTP erróneas y `0` casos de overflow horizontal del documento. El clipping incluye fixtures diseñados para estresar títulos sin espacios, CJK, RTL, nombres de archivo y textos largos; no debe tratarse como 117 bugs independientes, sino como evidencia de fallos de contención en los componentes que los renderizan.
+El pase post-merge registró `71` elementos con clipping detectado, `0` errores de consola, `0` respuestas HTTP erróneas y `0` casos de overflow horizontal del documento. El clipping incluye fixtures diseñados para estresar títulos sin espacios, CJK, RTL, nombres de archivo y textos largos; no debe tratarse como 71 bugs independientes, sino como evidencia de fallos de contención en los componentes que los renderizan.
 
 ## Hallazgos priorizados
 
-### P0 — El formulario de VAULT sigue ofreciendo la taxonomía histórica
+### P0 — RESUELTO POST-MERGE — El formulario de VAULT ya usa ADR-033
 
-**Evidencia:** `vault-add-entry-mobile.png` y `vault-add-entry-desktop.png` muestran las 14 categorías y sus subtipos, incluyendo línea temporal, datos, integraciones, playlists con historia y caja fuerte como opciones del mismo formulario.
+**Evidencia post-merge:** `vault-add-entry-mobile.png` y `vault-add-entry-desktop.png` muestran la navegación `MEMORIA`, `PALABRAS`, `LUGARES`, `LISTAS` y, dentro de MEMORIA, las cuatro opciones `FOTO`, `VIDEO`, `AUDIO`, `CAPTURA`. `CAJA FUERTE` no aparece como destino paseable ni como tipo del formulario.
 
-**Contrato incumplido:** ADR-033 sustituye la taxonomía por `MEMORIA`, `PALABRAS`, `LUGARES`, `LISTAS` y `CAJA FUERTE` aparte. Las funciones cuyo destino ya existe en CAPSULES, RECAP o MUSIC LAB no deben volver a aparecer en VAULT.
-
-**Criterio de cierre:** el flujo de crear y editar usa únicamente las cuatro secciones vigentes; CAJA FUERTE no aparece como categoría paseable; los datos existentes se resuelven al leer sin migración destructiva; las 14 categorías históricas quedan fuera del UI vigente.
+**Resultado:** el P0 queda resuelto en `0556ea0`. El flujo de crear/editar usa `SECCION_TIPOS` y el mapeo de datos se mantiene al leer; no hay migración destructiva.
 
 ### P1 — COLA no es alcanzable en móvil
 
-**Evidencia:** `music-queue-mobile.png` tiene `navigation.subReached: false`; el mismo estado llega en escritorio. La auditoría intentó primero navegar por la subnavegación y después añadir un track a cola para revelar el destino.
+**Evidencia post-merge:** `music-queue-mobile.png` mantiene `navigation.subReached: false`; en escritorio `subReached: true`. La auditoría intentó primero navegar por la subnavegación y después añadir un track a cola para revelar el destino, pero el estado móvil sigue sin abrirse.
 
 **Impacto:** la cola es una superficie central de ADR-002/ADR-009 y no puede depender de que exista previamente un elemento visible o de una acción lateral no indicada al usuario.
 
@@ -74,9 +72,9 @@ El pase definitivo registró `117` elementos con clipping detectado, `0` errores
 La tarjeta solo puede pasar a revisión humana cuando se cumpla todo lo siguiente:
 
 1. El informe contiene 52 capturas válidas, sin capturas de boot clasificadas como pantalla estable.
-2. Los 16 estados de app llegan a su tab y subvista/mode; `music-queue` llega en móvil y escritorio.
-3. El formulario VAULT refleja ADR-033 y no expone la taxonomía histórica.
-4. La medición registra `overflowX = false` en todos los estados.
+2. Los 16 estados de app llegan a su tab y subvista/mode; `music-queue` llega en móvil y escritorio. **Falla en móvil** (`subReached: false`).
+3. El formulario VAULT refleja ADR-033 y no expone la taxonomía histórica. **Cumplido post-merge**.
+4. La medición registra `overflowX = false` en todos los estados. **Cumplido**.
 5. No quedan casos de clipping de contenido real en las fixtures de estrés de texto.
 6. Admin se navega y se captura de forma independiente en móvil y desktop.
 7. No hay errores de consola ni HTTP en el pase.
