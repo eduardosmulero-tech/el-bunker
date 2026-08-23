@@ -7,14 +7,18 @@
 // ============================================================
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ACID, FONT_MONO, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
+import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
 import { uploadFile } from "../core/FileUploadService";
 import { Icon, Input } from "../core/ui";
 import LocationSearch from "./LocationSearch";
 
-// Fase 8.3 — Taxonomía completa 14 categorías (docs/spec/taxonomia_vault.md)
+// Fase 8.3 — Tipos por entrada (docs/spec/taxonomia_vault.md, histórico desde ADR-033).
 // Cada tipo: { id, category, icon, label, accept?, capture? }
 // Tipos con `accept` → file upload (multimedia/docs). Resto → textarea.
+// ADR-033: el catálogo de 14 categorías deja de ser el eje del selector; las
+// SECCIONES (MEMORIA/PALABRAS/LUGARES/LISTAS) eligen qué tipos se ofrecen al
+// crear. ENTRY_TYPES se conserva como tabla de mapeo AL LEER (type -> categoría
+// -> sección) — el campo type original no se toca nunca.
 
 // Fase 8.4 — Campos extra por categoría (S94). Cada key → campo en content JSON.
 // Exportado para Vault.jsx (S98) — render enriquecido de badges en EraDetailPanel
@@ -155,43 +159,46 @@ export const ENTRY_TYPES = [
 
 // Conjuntos rápidos para ramas de render condicional
 const FILE_UPLOAD_TYPES = new Set(ENTRY_TYPES.filter((t) => t.accept).map((t) => t.id));
-const ALL_CATEGORIES = [...new Set(ENTRY_TYPES.map((t) => t.category))].sort((a, b) => parseInt(a) - parseInt(b));
 
-// S96 — Filtro de categorías (exportado para Vault.jsx + VaultGallery.jsx)
+// ADR-033 — Tipos ofertables al crear por sección, con el label de la pastilla (diseño §4.2):
+// MEMORIA: foto, vídeo, audio, captura · PALABRAS: carta, nota, diario, abrir cuando…
+// LUGARES: sitio, viaje · LISTAS: películas, libros, recetas, bucket list, ideas de regalo.
 // eslint-disable-next-line react-refresh/only-export-components
-export const CATEGORY_FILTERS = [
-  { id: "all",  icon: "archive", label: "TODO" },
-  { id: "1",    icon: "camera", label: "MULTIMEDIA" },
-  { id: "2",    icon: "edit",  label: "ESCRITURA" },
-  { id: "3",    icon: "document", label: "DOCUMENTOS" },
-  { id: "4",    icon: "map", label: "GEOGRAFÍA" },
-  { id: "5",    icon: "timer", label: "TEMPORAL" },
-  { id: "6",    icon: "document", label: "LISTAS" },
-  { id: "7",    icon: "heart", label: "COMUNICACIÓN" },
-  { id: "8",    icon: "send", label: "CONOCIMIENTO" },
-  { id: "9",    icon: "sparkles", label: "CREATIVO" },
-  { id: "10",   icon: "analytics", label: "FINANZAS" },
-  { id: "11",   icon: "sparkles",  label: "RITUALES" },
-  { id: "12",   icon: "shield", label: "SEGURIDAD" },
-  { id: "13",   icon: "analytics", label: "DATOS" },
-  { id: "14",   icon: "refresh", label: "INTEGRACIÓN" },
-];
+export const SECCION_TIPOS = {
+  memoria: [
+    { id: "photo", label: "FOTO" },
+    { id: "video", label: "VIDEO" },
+    { id: "audio", label: "AUDIO" },
+    { id: "screenshot", label: "CAPTURA" },
+  ],
+  palabras: [
+    { id: "letter", label: "CARTA" },
+    { id: "note", label: "NOTA" },
+    { id: "shared_diary", label: "DIARIO" },
+    { id: "open_when", label: "ABRIR CUANDO…" },
+  ],
+  lugares: [
+    { id: "place", label: "SITIO" },
+    { id: "travel", label: "VIAJE" },
+  ],
+  listas: [
+    { id: "movies", label: "PELIS" },
+    { id: "books", label: "LIBROS" },
+    { id: "recipes", label: "RECETAS" },
+    { id: "bucket_list", label: "BUCKET LIST" },
+    { id: "gift_ideas", label: "IDEAS DE REGALO" },
+  ],
+};
 
-const CATEGORY_LABELS = {
-  "1":  "1 · MULTIMEDIA",
-  "2":  "2 · ESCRITURA ÍNTIMA",
-  "3":  "3 · DOCUMENTOS",
-  "4":  "4 · GEOGRAFÍA",
-  "5":  "5 · LÍNEA TEMPORAL",
-  "6":  "6 · LISTAS Y COLECCIONES",
-  "7":  "7 · COMUNICACIÓN",
-  "8":  "8 · CONOCIMIENTO EXTERNO",
-  "9":  "9 · IDENTIDAD CREATIVA",
-  "10": "10 · FINANZAS",
-  "11": "11 · RITUALES",
-  "12": "12 · SEGURIDAD",
-  "13": "13 · DATOS",
-  "14": "14 · INTEGRACIONES",
+/** Tipos de una sección; si el tipo actual (edición) no está, se antepone para no perderlo. */
+// eslint-disable-next-line react-refresh/only-export-components
+export const tiposDeSeccion = (seccion, currentType) => {
+  const base = SECCION_TIPOS[seccion] ?? [];
+  if (currentType && !base.some((t) => t.id === currentType)) {
+    const meta = ENTRY_TYPES.find((t) => t.id === currentType);
+    return [{ id: currentType, label: meta?.label ?? currentType.toUpperCase() }, ...base];
+  }
+  return base;
 };
 
 // Subcarpeta R2 — multimedia tiene subcarpetas dedicadas, el resto va a vault/files
@@ -205,38 +212,8 @@ const getUploadFolder = (type) => {
 
 // Sub-componente: grupo de botones de tipo por categoría (14 categorías)
 // headerOpacity baja con el número de categoría para dar jerarquía visual.
-function TypeGroup({ category, currentType, onSelect, accentColor = ACID }) {
-  const types = ENTRY_TYPES.filter((t) => t.category === category);
-  if (!types.length) return null;
-  const catNum = parseInt(category);
-  const headerOpacity = Math.max(0.12, 0.45 - catNum * 0.02);
-  return (
-    <div className="flex flex-col gap-1">
-      <span
-        className="text-[9px] tracking-[0.25em] uppercase px-1"
-        style={{ color: accentColor, fontFamily: FONT_MONO, opacity: headerOpacity }}
-      >
-        {CATEGORY_LABELS[category] ?? category}
-      </span>
-      <div className="flex flex-wrap gap-1.5">
-        {types.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => onSelect(t.id)}
-            className={`text-xs px-3 py-2.5 min-h-[11px] transition-all ${currentType === t.id ? "" : "opacity-25 hover:opacity-50"}`}
-            style={{
-              color: currentType === t.id ? accentColor : `${accentColor}88`,
-              borderBottom: currentType === t.id ? `1px solid ${accentColor}` : "1px solid transparent",
-              fontFamily: FONT_MONO,
-            }}
-          >
-            <Icon name={t.icon} size={14} decorative /> {t.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+// ADR-033: ELIMINADO — la tira de 14 iconos muere; el selector de tipos lo
+// ofrecen las SECCIONES (MEMORIA/PALABRAS/LUGARES/LISTAS), ver AddEntryForm.
 
 const SELECT_ARROW_SVG = (c) => `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23${c.slice(1)}' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")`;
 const SELECT_STYLE = (color = ACID) => ({
@@ -245,9 +222,15 @@ const SELECT_STYLE = (color = ACID) => ({
   backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", paddingRight: 30,
 });
 
-export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel, accentColor = ACID }) {
+export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel, section = "memoria", eraName = "", sectionLabel = "MEMORIA" }) {
   const isEditing = !!entry;
-  const [type, setType] = useState(entry?.type ?? "note");
+  // ADR-033: el selector de tipos ofrece SOLO los de la sección activa. En
+  // creación arranca abierto (fila de pastillas); al elegir se contrae a
+  // 'FOTO · cambiar'. En edición el tipo ya existe → contraído desde el inicio.
+  const [typePickerOpen, setTypePickerOpen] = useState(!isEditing);
+  const [type, setType] = useState(entry?.type ?? null);
+  const tipoOpciones = tiposDeSeccion(section, type);
+  const tipoActual = tipoOpciones.find((t) => t.id === type) ?? tipoOpciones[0] ?? { id: null, label: "" };
   const [title, setTitle] = useState(entry?.title ?? "");
   const [text, setText] = useState(typeof entry?.content?.text === "string" ? entry.content.text : "");
   const [eraId, setEraId] = useState(entry?.era_id ?? eras[0]?.id ?? null);
@@ -271,8 +254,20 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
   const [locationLng, setLocationLng] = useState(entry?.content?.lng ?? null);
   const [locationName, setLocationName] = useState(entry?.content?.place_name ?? entry?.content?.location ?? "");
   const fileInputRef = useRef(null);
+
+  // L-4: se sale con Escape o cancelar. El lienzo vuelve donde estaba.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === "Escape" && onCancel) {
+        e.stopPropagation();
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [onCancel]);
     // Fase 8.1 — Meta del tipo actual (evita 4× O(n) lookups en el render)
-  const currentMeta = ENTRY_TYPES.find((t) => t.id === type);
+  const currentMeta = ENTRY_TYPES.find((t) => t.id === (tipoActual?.id ?? type));
   const currentCategory = currentMeta?.category;
   const extraFields = CATEGORY_EXTRA_FIELDS[currentCategory] ?? [];
 
@@ -312,7 +307,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
   };
 
   const handleSubmit = async () => {
-    if (!text.trim() && !title.trim() && !photoFile && !isEditing) return;
+    if (!type || (!text.trim() && !title.trim() && !photoFile && !isEditing)) return;
     setSubmitError("");
     setIsSubmitting(true);
     try {
@@ -367,31 +362,61 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
 
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-3 p-4 max-w-md mx-auto" style={{ fontFamily: FONT_MONO, background: `${accentColor}08`, border: `1px solid ${accentColor}22` }}>
-      {/* Header con título de edición */}
-      {isEditing && (
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: accentColor, fontFamily: FONT_MONO }}>
-            <Icon name="edit" size={14} decorative /> EDITANDO ENTRADA
-          </span>
-          <span className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>
-            {entry.id?.slice(0, 8)}…
-          </span>
-        </div>
-      )}
-      {/* Tipo — Fase 8.3: 14 categorías dinámicas desde ENTRY_TYPES */}
-      <div className="flex flex-col gap-2.5 max-h-[40vh] overflow-y-auto pr-1" style={{ scrollbarWidth: "thin" }}>
-        {ALL_CATEGORIES.map((cat) => (
-          <TypeGroup
-            key={cat}
-            category={cat}
-            currentType={type}
-            onSelect={setType}
-            accentColor={accentColor}
-          />
-        ))}
+      className="flex flex-col gap-3 p-4 w-full mx-auto"
+      style={{
+        fontFamily: FONT_MONO,
+        background: GLASS_BG,
+        border: `1px solid ${GLASS_BORDER}`,
+        // L-4: el formulario ocupa el régimen de lectura de ADR-029 §5 (60-76ch)
+        maxWidth: "76ch",
+      }}>
+      {/* Header del flujo — L-4: el lienzo es el formulario, con la sección y la era */}
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: ACID, fontFamily: FONT_MONO }}>
+          <Icon name={isEditing ? "edit" : "plus"} size={14} decorative /> {isEditing ? "EDITANDO" : "NUEVA"} ENTRADA EN {sectionLabel}{eraName ? ` · ${eraName}` : ""}
+        </span>
+        <span className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>
+          {entry?.id?.slice(0, 8)}…
+        </span>
       </div>
+      {/* Selector de tipo — ADR-033: SOLO los tipos de la sección activa, fila de
+          pastillas CON TEXTO de 44px. Al elegir se contrae a 'FOTO · cambiar'. */}
+      {typePickerOpen ? (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de entrada">
+          {tipoOpciones.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => { setType(t.id); setTypePickerOpen(false); }}
+              className="text-xs tracking-widest uppercase px-4 transition-all"
+              style={{
+                minHeight: 44,
+                minWidth: 44,
+                color: type === t.id ? ACID : `${ACID}88`,
+                border: `1px solid ${type === t.id ? ACID : `${ACID}33`}`,
+                background: type === t.id ? `${ACID}0d` : "transparent",
+                fontFamily: FONT_MONO,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setTypePickerOpen(true)}
+          className="text-xs tracking-widest uppercase self-start px-4 transition-all"
+          style={{ minHeight: 44, color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}
+        >
+          {tipoActual.label} · cambiar
+        </button>
+      )}
 
+      {/* El formulario del tipo elegido — L-4: queda como único elemento en el lienzo.
+          En creación solo aparece tras elegir tipo; en edición el tipo ya existe. */}
+      {type && (
+      <>
       {/* Fase 8.4 — Campos extra por categoría (fecha, url, rating, etc.) */}
       {extraFields.length > 0 && (
         <div className="flex flex-wrap gap-2">
@@ -403,7 +428,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                   value={extraValues[f.key] || ""}
                   onChange={(e) => setExtraValue(f.key, e.target.value)}
                   className="bg-transparent text-xs p-3 min-h-[44px] flex-1 min-w-[100px] appearance-none"
-                  style={SELECT_STYLE(accentColor)}
+                  style={SELECT_STYLE(ACID)}
                 >
                   {(f.options ?? []).map((opt) => (
                     <option key={opt} value={opt === "—" ? "" : opt} style={{ background: "#050505" }}>{opt}</option>
@@ -419,7 +444,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                 onChange={(e) => setExtraValue(f.key, e.target.value)}
                 placeholder={f.placeholder ?? f.label}
                 className="flex-1 min-w-[100px]"
-                accentColor={accentColor}
+                accentColor={ACID}
               />
             );
           })}
@@ -427,7 +452,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       )}
 
       {/* Campos */}
-      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={accentColor} />
+      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={ACID} />
 
       {FILE_UPLOAD_TYPES.has(type) ? (
         <>
@@ -444,42 +469,42 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <div
             onClick={() => fileInputRef.current?.click()}
             className="relative flex flex-col items-center justify-center p-6 cursor-pointer rounded-sm"
-            style={{ border: `1px dashed ${accentColor}44`, minHeight: 160, background: photoPreview ? "transparent" : `${accentColor}04` }}>
+            style={{ border: `1px dashed ${ACID}44`, minHeight: 160, background: photoPreview ? "transparent" : `${ACID}04` }}>
             {photoPreview ? (
               <img src={photoPreview} alt="preview" className="max-h-40 object-contain rounded-sm" />
             ) : (
               <>
-                <span className="text-3xl mb-2 opacity-40" style={{ color: accentColor }}>
+                <span className="text-3xl mb-2 opacity-40" style={{ color: ACID }}>
                   <Icon name={currentMeta?.icon ?? "camera"} size={30} decorative />
                 </span>
-                <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor, fontFamily: FONT_MONO }}>
+                <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
                   TAP PARA SELECCIONAR {currentMeta?.label ?? "ARCHIVO"}
                 </p>
               </>
             )}
           </div>
           {photoFile && (
-            <p className="text-xs opacity-40 truncate" style={{ color: accentColor, fontFamily: FONT_MONO }}>
+            <p className="text-xs opacity-40 truncate" style={{ color: ACID, fontFamily: FONT_MONO }}>
               {photoFile.name} ({(photoFile.size / 1024).toFixed(1)}KB)
             </p>
           )}
         </>
       ) : (
         <Input multiline value={text} onChange={e => setText(e.target.value)}
-          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={accentColor} />
+          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={ACID} />
       )}
 
       {/* Era + Destinatario */}
       <div className="flex gap-2">
         <select value={eraId || ""} onChange={e => setEraId(e.target.value || null)}
           className="bg-transparent text-xs p-3 min-h-[44px] flex-1 appearance-none"
-          style={SELECT_STYLE(accentColor)}>
+          style={SELECT_STYLE(ACID)}>
           <option value="" style={{ background: "#050505" }}>Sin Era</option>
           {eras.map(e => <option key={e.id} value={e.id} style={{ background: "#050505" }}>{e.name}</option>)}
         </select>
         <select value={toUser} onChange={e => setToUser(e.target.value)}
           className="bg-transparent text-xs p-3 min-h-[44px] appearance-none"
-          style={SELECT_STYLE(accentColor)}>
+          style={SELECT_STYLE(ACID)}>
           <option value="both" style={{ background: "#050505" }}>PARA AMBOS</option>
           <option value="edu" style={{ background: "#050505" }}>PARA EDU</option>
           <option value="david" style={{ background: "#050505" }}>PARA DAVID</option>
@@ -491,7 +516,6 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
         value={locationName}
         lat={locationLat}
         lng={locationLng}
-        accentColor={accentColor}
         onSelect={({ place_name, lat, lng }) => {
           setLocationName(place_name);
           setLocationLat(lat);
@@ -511,8 +535,8 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <button key={tag.id} onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
             className="text-xs px-3 py-2.5"
             style={{
-              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? accentColor) : `${accentColor}44`,
-              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? accentColor) : `${accentColor}22`}`,
+              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}44`,
+              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}22`}`,
               fontFamily: FONT_MONO,
             }}>
             {tag.icon} {tag.label}
@@ -529,16 +553,18 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {/* Botones */}
       <div className="flex gap-2">
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting}
-          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: accentColor, border: `1px solid ${accentColor}44`, fontFamily: FONT_MONO }}>
+          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
           {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : FILE_UPLOAD_TYPES.has(type) ? `SUBIR ${currentMeta?.label ?? "ARCHIVO"}` : "GUARDAR"}
         </motion.button>
         {onCancel && (
           <motion.button whileTap={{ scale: 0.95 }} onClick={onCancel}
-            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: accentColor, border: `1px solid ${accentColor}33`, fontFamily: FONT_MONO }}>
+            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
             CANCELAR
           </motion.button>
         )}
       </div>
+      </>
+      )}
     </motion.div>
   );
 }

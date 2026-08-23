@@ -62,6 +62,12 @@ vi.mock("../AddEntryForm", () => ({
   ENTRY_TYPES: [],
   CATEGORY_FILTERS: [],
   CATEGORY_EXTRA_FIELDS: {},
+  SECCION_TIPOS: {},
+  tiposDeSeccion: () => [],
+}));
+
+vi.mock("../../layout/Layout", () => ({
+  useSecondLevelNav: () => ({ secondLevel: { vault: "memoria" }, setSecondLevel: () => {} }),
 }));
 
 const NOW = new Date("2026-08-04T12:00:00.000Z");
@@ -101,9 +107,11 @@ describe("AdventureCounter — fecha real o null, nunca fabricada", () => {
 });
 
 describe("cableado en Vault.jsx — sin constante ni fallback de fecha fabricada", () => {
-  it("pasa db?.adventures_start_date y no queda ninguna fecha fabricada", () => {
+  it("deriva la cifra de días de la cabecera desde db?.adventures_start_date y no fabrica fecha", () => {
     const source = readFileSync(resolve(process.cwd(), "src/vault/Vault.jsx"), "utf8");
-    expect(source).toContain("startDate={db?.adventures_start_date}");
+    // ADR-033 (punto 7): la cabecera de era absorbe AVENTURA EN CURSO como cifra
+    // derivada de db?.adventures_start_date (nunca fabricada por el cliente).
+    expect(source).toContain("timeSince(db?.adventures_start_date)");
     expect(source).not.toMatch(/Date\.now\(\)\s*-\s*500/);
   });
 });

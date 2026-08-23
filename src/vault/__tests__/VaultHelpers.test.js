@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ENTRY_CATEGORY, getImageUrl, getMediaType, isClassified, monthsSince, resolveEraId, resolveEntryDate, timeSince, timeUntil } from "../VaultHelpers";
+import { ENTRY_CATEGORY, SECCIONES, SECCION_LABEL, seccionDeEntrada, getImageUrl, getMediaType, isClassified, monthsSince, resolveEraId, resolveEntryDate, timeSince, timeUntil, MODES } from "../VaultHelpers";
 
 const NOW = new Date("2026-08-04T12:00:00.000Z");
 
@@ -66,5 +66,45 @@ describe("VaultHelpers", () => {
     expect(resolveEntryDate({ fecha: null })).toBeNull();
     expect(resolveEntryDate({})).toBeNull();
     expect(resolveEntryDate(null)).toBeNull();
+  });
+
+  // ── ADR-033: cuatro secciones y mapeo AL LEER (nunca UPDATE en D1) ──
+  it("define exactamente las 4 secciones de ADR-033 sin la caja fuerte", () => {
+    expect(SECCIONES.map((s) => s.id)).toEqual(["memoria", "palabras", "lugares", "listas"]);
+    expect(SECCION_LABEL).toEqual({ memoria: "MEMORIA", palabras: "PALABRAS", lugares: "LUGARES", listas: "LISTAS" });
+  });
+
+  it("mapea AL LEER por la tabla explícita: 1->MEMORIA, 2->PALABRAS, 4->LUGARES, 6->LISTAS", () => {
+    expect(seccionDeEntrada({ type: "photo" })).toBe("memoria");       // categoría 1
+    expect(seccionDeEntrada({ type: "video" })).toBe("memoria");       // categoría 1
+    expect(seccionDeEntrada({ type: "audio" })).toBe("memoria");       // categoría 1
+    expect(seccionDeEntrada({ type: "note" })).toBe("palabras");       // categoría 2
+    expect(seccionDeEntrada({ type: "letter" })).toBe("palabras");     // categoría 2
+    expect(seccionDeEntrada({ type: "place" })).toBe("lugares");       // categoría 4
+    expect(seccionDeEntrada({ type: "travel" })).toBe("lugares");      // categoría 4
+    expect(seccionDeEntrada({ type: "movies" })).toBe("listas");       // categoría 6
+    expect(seccionDeEntrada({ type: "books" })).toBe("listas");        // categoría 6
+  });
+
+  it("mapea 3 y 12 a CAJA FUERTE (no construida: se queda sin sección visible)", () => {
+    expect(seccionDeEntrada({ type: "legal_doc" })).toBe("cajafuerte");
+    expect(seccionDeEntrada({ type: "safe_box" })).toBe("cajafuerte");
+  });
+
+  it("no toca el campo type original: el mapeo solo lee, nunca escribe", () => {
+    const entrada = { type: "photo", title: "original" };
+    seccionDeEntrada(entrada);
+    expect(entrada.type).toBe("photo");
+  });
+
+  it("lo que no mapea (categorías retiradas) devuelve null y no inventa sección", () => {
+    expect(seccionDeEntrada({ type: "milestone" })).toBeNull();   // categoría 5 retirada
+    expect(seccionDeEntrada({ type: "budget" })).toBeNull();      // categoría 10 retirada
+    expect(seccionDeEntrada({})).toBeNull();
+    expect(seccionDeEntrada(null)).toBeNull();
+  });
+
+  it("MODES conserva los 6 modos de ADR-021 para la cabecera de MEMORIA (X-5)", () => {
+    expect(MODES.map((m) => m.id)).toEqual(["wall", "cinema", "map", "dialogue", "exhibition", "reel"]);
   });
 });
