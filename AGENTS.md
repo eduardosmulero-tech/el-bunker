@@ -35,6 +35,7 @@
 - Cambios de código por contenedor lógico completo
 - NO coautoría IA en commits (R4)
 - NO IA en repos públicos (R10)
+- Integración verificable: `docs/operacional/CANON_WORKFLOW_INTEGRACION_HERMES.md`; `done` no equivale a integrado/aceptado.
 
 ## ▶ PIPELINE
 
@@ -55,4 +56,4 @@ Este archivo NO almacena estado de tareas.
 ESTADO.md/BACKLOG.md están en transición a kanban.
 Paralelismo (varios agentes a la vez): `cerebro/normas/loop-agentico/CANON_PARALELISMO_2026-08-04.md`.
 
-Para re-entrar: (1) leer AGENTS.md, (2) `hermes kanban --board el-bunker list`, (3) primera tarjeta ready.
+Para re-entrar: (1) leer AGENTS.md, (2) `hermes kanban --board el-bunker list`, (3) primera tarjeta ready. Reconciliar siempre `done` contra `master` antes de fusionar.

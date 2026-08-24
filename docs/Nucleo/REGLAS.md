@@ -72,6 +72,7 @@ Loop es triestado.
 - **Personalización:** lo que el usuario puede personalizar se lee del dato (D1), nunca se escribe
   en el código. La ley del vibe es el mecanismo (la interfaz sigue a lo que suena), no el catálogo:
   qué vibes existen, su nombre, color e icono son del usuario.
+- **Integración verificable:** `done` significa implementación terminada en worktree, no integración ni aceptación. Toda tarjeta debe reconciliarse contra `master` con SHA, diff, evidencia y veredicto antes de merge/archivo. Procedimiento completo: `docs/operacional/CANON_WORKFLOW_INTEGRACION_HERMES.md`.
 
 ## MAPA DE ARCHIVOS JSX (actual)
 
@@ -125,6 +126,7 @@ Loop es triestado.
 4. Sonnet verifica el resultado contra el código real (Regla de Oro) antes de darlo por bueno —
    "hecho" no se cree sin verificar.
 5. Build/lint para confirmar (`npm run build`), commit sin coautoría, push si Edu lo pide.
+6. Para una tarjeta `done`, comprobar ancestro de `master`; si no lo es, revisar semánticamente el diff contra el árbol actual antes de integrar. Documentar `INTEGRADO`, `INTEGRABLE`, `DUPLICADO`, `OBSOLETO`, `BLOQUEADO` o `NO VERIFICABLE`; nunca fusionar todas las `done` en bloque.
 
 Sonnet no edita código de `src/`/`workers/` directamente salvo instrucción explícita de Edu —
 su rol es coordinar, redactar el encargo y verificar, no ejecutar. Docs (`docs/`, `CLAUDE.md`,
