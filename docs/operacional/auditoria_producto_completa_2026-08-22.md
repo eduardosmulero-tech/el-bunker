@@ -23,9 +23,9 @@ Este pase se ejecutó desde `master` en `0556ea0`, publicado en `origin/master`.
 
 ## Resultado ejecutivo
 
-El marco desktop de ADR-029 no presenta overflow horizontal en este pase y las rutas de app llegan a sus tabs y modos principales. El producto todavía no está listo para declararse premium ni para cerrar la revisión arquitectónica: `COLA` sigue inalcanzable en móvil y permanecen problemas de contención de texto que incumplen el contrato de no truncar ni desbordar contenido.
+El marco desktop de ADR-029 no presenta overflow horizontal en este pase y las rutas de app llegan a sus tabs y modos principales. `COLA` ya es alcanzable en móvil incluso vacía y ADMIN se navega desde el viewport desktop real. El producto todavía no está listo para declararse premium ni para cerrar la revisión arquitectónica: el pase automatizado queda sin overflow ni clipping medido; siguen fuera de este pase la aceptación real, Android/PWA, offline/sync y la validación con API/credenciales reales.
 
-El pase post-merge registró `71` elementos con clipping detectado, `0` errores de consola, `0` respuestas HTTP erróneas y `0` casos de overflow horizontal del documento. El clipping incluye fixtures diseñados para estresar títulos sin espacios, CJK, RTL, nombres de archivo y textos largos; no debe tratarse como 71 bugs independientes, sino como evidencia de fallos de contención en los componentes que los renderizan.
+El pase final de implementación registró `0` elementos con clipping detectado, `0` errores de consola, `0` respuestas HTTP erróneas y `0` casos de overflow horizontal del documento, frente a `71` clipping en la línea base post-merge. Los títulos de estrés, las filas de Timeline y el masonry móvil quedan contenidos en los dos viewports.
 
 ## Hallazgos priorizados
 
@@ -35,29 +35,29 @@ El pase post-merge registró `71` elementos con clipping detectado, `0` errores 
 
 **Resultado:** el P0 queda resuelto en `0556ea0`. El flujo de crear/editar usa `SECCION_TIPOS` y el mapeo de datos se mantiene al leer; no hay migración destructiva.
 
-### P1 — COLA no es alcanzable en móvil
+### P1 — RESUELTO — COLA alcanzable en móvil
 
-**Evidencia post-merge:** `music-queue-mobile.png` mantiene `navigation.subReached: false`; en escritorio `subReached: true`. La auditoría intentó primero navegar por la subnavegación y después añadir un track a cola para revelar el destino, pero el estado móvil sigue sin abrirse.
+**Evidencia del pase actual:** `music-queue-mobile.png` y `music-queue-desktop.png` registran `navigation.subReached: true`. COLA ya aparece como destino persistente aunque esté vacía; no depende del contador ni de que exista previamente un elemento en la cola.
 
-**Impacto:** la cola es una superficie central de ADR-002/ADR-009 y no puede depender de que exista previamente un elemento visible o de una acción lateral no indicada al usuario.
+**Cambio aplicado:** la barra de MUSIC LAB siempre pinta COLA y conserva el estado elevado `secondLevel.music`, tanto en móvil como en escritorio.
 
 **Criterio de cierre:** desde MUSIC LAB móvil se puede abrir COLA con estado vacío y con estado poblado; el estado vacío conserva una acción clara para añadir el primer track; la ruta no depende de un contador o de que la cola tenga elementos.
 
-### P1 — Contención de títulos y textos largos incumple el contrato visual
+### P1 — RESUELTO EN PASE AUTOMATIZADO — Contención de títulos y textos largos
 
-**Evidencia:** clipping en WALL y en los modos de VAULT, nombres de archivo y pistas largas en MUSIC LAB, y textos de detalle en móvil. Los casos incluyen cadenas sin espacios, CJK, RTL, emoji ZWJ y nombres de archivo largos.
+**Evidencia del pase final:** no queda ningún elemento medido con clipping. Los títulos largos, las filas de Timeline y el masonry móvil se envuelven o reducen sus mínimos flexibles sin ocultar contenido.
 
 **Contrato incumplido:** las instrucciones de interfaz exigen que el texto quepa en su contenedor y que las cadenas largas se adapten sin ocultar contenido ni romper la composición.
 
 **Criterio de cierre:** los componentes de tarjeta, track, historial, lightbox y detalle aplican una política consistente para `overflow-wrap:anywhere`/clamp accesible/tooltip o expansión; ningún caso de fixture queda visualmente cortado en los dos viewports; no se tapa contenido previo o posterior.
 
-### P1 — La auditoría desktop no prueba navegación desktop propia de admin
+### P1 — RESUELTO — La auditoría desktop prueba navegación propia de admin
 
-**Evidencia:** el harness selecciona la sección y el recurso con viewport móvil, y después redimensiona a `1440x900` para capturar. Las capturas desktop demuestran el render del estado, pero no una interacción de navegación propia del escritorio.
+**Evidencia del pase actual:** el harness inicia cada estado admin en el viewport de captura. En `1440x900` ejerce la navegación de sección y recurso mediante la navegación desktop visible, y registra `viewportNavigation: "desktop"`.
 
-**Clasificación:** hueco de evidencia del harness, no fallo funcional declarado sin una prueba de interacción independiente.
+**Resultado:** hueco de evidencia cerrado por el harness; la aceptación funcional de ADMIN sigue limitada a fixtures locales y no sustituye la prueba con API/credenciales reales.
 
-**Criterio de cierre:** capturar y medir cada consola admin iniciando la navegación en `1440x900`; verificar que el rail, las secciones y los recursos son operables con teclado y puntero en desktop.
+**Criterio de cierre:** mantener esta prueba en cada cambio de `src/admin/*` y añadir aceptación con API/credenciales reales.
 
 ### P2 — La captura de login estaba contaminada por el fixture GIS
 
@@ -72,11 +72,11 @@ El pase post-merge registró `71` elementos con clipping detectado, `0` errores 
 La tarjeta solo puede pasar a revisión humana cuando se cumpla todo lo siguiente:
 
 1. El informe contiene 52 capturas válidas, sin capturas de boot clasificadas como pantalla estable.
-2. Los 16 estados de app llegan a su tab y subvista/mode; `music-queue` llega en móvil y escritorio. **Falla en móvil** (`subReached: false`).
+2. Los 16 estados de app llegan a su tab y subvista/mode; `music-queue` llega en móvil y escritorio. **Cumplido** (`subReached: true` en ambos viewports).
 3. El formulario VAULT refleja ADR-033 y no expone la taxonomía histórica. **Cumplido post-merge**.
 4. La medición registra `overflowX = false` en todos los estados. **Cumplido**.
-5. No quedan casos de clipping de contenido real en las fixtures de estrés de texto.
-6. Admin se navega y se captura de forma independiente en móvil y desktop.
+5. Los títulos de estrés y las filas de Timeline se envuelven; el informe actual registra 0 clipping residual; la revisión/merge y la aceptación humana siguen siendo obligatorias.
+6. Admin se navega y se captura de forma independiente en móvil y desktop. **Cumplido por el harness actualizado**.
 7. No hay errores de consola ni HTTP en el pase.
 8. Build, tests y lint quedan verdes, o cada excepción queda registrada con causa y tarjeta derivada.
 

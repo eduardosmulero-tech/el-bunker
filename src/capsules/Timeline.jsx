@@ -299,7 +299,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             const label = e.event_type?.replace(/_/g, " ").toUpperCase() ?? "EVENTO";
             return (
               <motion.div key={e.id || `tev-${i}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.01 }}
-                className="flex items-center gap-2 px-2 py-1 text-xs xl:grid xl:grid-cols-[5rem_minmax(10rem,14rem)_8rem_minmax(0,1fr)] xl:gap-4"
+                className="flex items-center gap-2 px-2 py-1 text-xs min-w-0 xl:grid xl:grid-cols-[5rem_minmax(10rem,14rem)_8rem_minmax(0,1fr)] xl:gap-4"
                 style={{ borderBottom: `1px solid ${accent}11` }}>
                 <div className="contents xl:hidden">
                   <Icon name={icon} size={14} label={label} />
@@ -307,7 +307,7 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
                     {e.created_at?.slice(11, 16) ?? "--:--"}
                   </span>
                   <span className="opacity-50 truncate" style={{ color: accent, fontFamily: FONT_MONO }}>{label}</span>
-                  <span className="opacity-20 ml-auto text-xs" style={{ color: accent }}>{e.user_id}</span>
+                  <span className="opacity-20 ml-auto text-xs min-w-0" style={{ color: accent, overflowWrap: "anywhere", whiteSpace: "normal" }}>{e.user_id}</span>
                 </div>
                 <div className="hidden xl:contents">
                   <span className="tabular-nums opacity-50" style={{ color: accent }}>{e.created_at?.slice(11, 16) ?? "--:--"}</span>
@@ -336,12 +336,12 @@ export default function Timeline({ events = [], accentColor = ACID, eras = [] })
             return (
               <motion.div key={e.id || `${day}-${i}`} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.03 }}
-                className="flex items-center gap-3 px-3 py-2 text-xs xl:grid xl:grid-cols-[5rem_minmax(10rem,14rem)_8rem_minmax(0,1fr)] xl:gap-4"
+                className="flex items-center gap-3 px-3 py-2 text-xs min-w-0 xl:grid xl:grid-cols-[5rem_minmax(10rem,14rem)_8rem_minmax(0,1fr)] xl:gap-4"
                 style={{ background: GLASS_BG, border: `1px solid ${GLASS_BORDER}` }}>
                 <div className="contents xl:hidden">
                   <Icon name={icon} size={14} label={label} />
                   <span className="opacity-50" style={{ color: accent }}>{label}</span>
-                  <span className="ml-auto opacity-30 truncate" style={{ color: accent }}>
+                  <span className="ml-auto opacity-30 min-w-0" style={{ color: accent, overflowWrap: "anywhere", whiteSpace: "normal" }}>
                     {e.user_id} {subject}
                   </span>
                 </div>

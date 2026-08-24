@@ -128,8 +128,8 @@ const EraSectionHeader = ({ era, eraEntries, dateRange, vibeCount, accentColor =
             title={eraName}
           />
           <span
-            className="text-sm font-bold tracking-wide truncate xl:line-clamp-2 xl:whitespace-normal"
-            style={{ color: eraColor, textShadow: `0 0 10px ${eraColor}44` }}
+            className="text-sm font-bold tracking-wide min-w-0"
+            style={{ color: eraColor, textShadow: `0 0 10px ${eraColor}44`, overflowWrap: "anywhere", whiteSpace: "normal" }}
           >
             {eraName}
           </span>
@@ -266,12 +266,12 @@ const WallItem = ({ entry, era, density, index, onLongPress, onTap, accentColor 
             style={{ background: "linear-gradient(transparent, rgba(0,0,0,0.85))" }}
           >
             {entry.title && (
-              <p className="text-xs truncate xl:line-clamp-2 xl:whitespace-normal leading-tight" style={{ color: ac, fontFamily: FONT_MONO }}>
+              <p className="text-xs leading-tight" style={{ color: ac, fontFamily: FONT_MONO, overflowWrap: "anywhere", whiteSpace: "normal" }}>
                 {entry.title}
               </p>
             )}
             {entry.content?.text && (
-              <p className="text-xs opacity-50 truncate xl:line-clamp-2 xl:whitespace-normal mt-0.5" style={{ color: ac, fontFamily: FONT_MONO }}>
+              <p className="text-xs opacity-50 mt-0.5" style={{ color: ac, fontFamily: FONT_MONO, overflowWrap: "anywhere", whiteSpace: "normal" }}>
                 {entry.content.text.slice(0, 60)}
               </p>
             )}
@@ -390,9 +390,9 @@ const LongPressPreview = ({ entry, era, position, onClose, accentColor = ACID })
         <div className="flex items-center justify-center h-24 mb-2 text-4xl opacity-20" style={{ color: ac }}><Icon name="camera" size={36} label="Sin imagen" /></div>
       )}
 
-      <p className="text-xs font-bold truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: ac }}>{entry.title || "Sin título"}</p>
+      <p className="text-xs font-bold" style={{ color: ac, overflowWrap: "anywhere", whiteSpace: "normal" }}>{entry.title || "Sin título"}</p>
       {entry.content?.text && (
-        <p className="text-xs opacity-50 mt-1 line-clamp-3 xl:line-clamp-2" style={{ color: ac }}>{entry.content.text}</p>
+        <p className="text-xs opacity-50 mt-1" style={{ color: ac, overflowWrap: "anywhere", whiteSpace: "normal" }}>{entry.content.text}</p>
       )}
 
       <div className="flex flex-wrap gap-1 mt-2">
@@ -508,9 +508,9 @@ export default function WallView({ entries = [], eras = [], density, setDensity,
           {(() => {
             const cols = buildMasonryColumns(group.eraEntries, config.columns);
             return (
-              <div style={{ display: "flex", gap: `${config.gap}px` }}>
+              <div className="min-w-0 w-full" style={{ display: "flex", gap: `${config.gap}px` }}>
                 {cols.map((colItems, colIdx) => (
-                  <div key={colIdx} style={{ flex: 1, display: "flex", flexDirection: "column", gap: `${config.gap}px`, minWidth: config.minCol }}>
+                  <div key={colIdx} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: `${config.gap}px` }}>
                     {colItems.map((entry, itemIdx) => {
                       // startIndex acumulado → stagger delay global, no se resetea entre salas
                       const idx = group.startIndex + itemIdx * config.columns + colIdx;

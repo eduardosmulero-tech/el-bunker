@@ -670,14 +670,14 @@ export default function Layout({
             <div className="desktop-dock__section-title" style={{ color: accentColor }}>COLA [{localQueue?.length ?? 0}]</div>
             {(localQueue ?? []).slice(0, 5).map((track, index) => (
               <div key={`${track.id}-${index}`} className="desktop-dock__queue-row" style={{ color: track.color || `${accentColor}aa` }}>
-                <span>{String(index + 1).padStart(2, "0")}</span><span className="truncate">{track.title || "SIN TÍTULO"}</span>
+                <span>{String(index + 1).padStart(2, "0")}</span><span style={{ minWidth: 0, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title || "SIN TÍTULO"}</span>
               </div>
             ))}
             {(localQueue ?? []).length === 0 && <div className="desktop-dock__empty" style={{ color: `${accentColor}55` }}>COLA VACÍA</div>}
             <div className="desktop-dock__section-title desktop-dock__section-title--history" style={{ color: `${accentColor}88` }}>HISTORIAL [5]</div>
             {(playHistory ?? []).slice(-5).reverse().map((track, index) => (
               <div key={`${track.id || track.title}-${index}`} className="desktop-dock__queue-row desktop-dock__queue-row--history" style={{ color: `${accentColor}55` }}>
-                <span>−</span><span className="truncate">{track.title || "SIN TÍTULO"}</span>
+                <span>−</span><span style={{ minWidth: 0, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title || "SIN TÍTULO"}</span>
               </div>
             ))}
           </section>

@@ -86,11 +86,11 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
               display: "flex", alignItems: "center", gap: 10 }}>
               <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
               <div style={{ minWidth: 0 }}>
-                <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
+                <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em", overflowWrap: "anywhere", whiteSpace: "normal",
                   fontWeight: "bold", margin: 0 }}>
                   {track.title}
                 </p>
-                <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em",
+                <p style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em", overflowWrap: "anywhere", whiteSpace: "normal",
                   margin: 0 }}>
                   {track.artist}
                 </p>
@@ -148,12 +148,12 @@ export const TrackCardGrid = ({ track, vc, vibeColor, isActive, onClick, onAddTo
               animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
           )}
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "6px 8px" }}>
-            <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: "#fff", fontSize: 10, fontWeight: "bold",
+            <p style={{ color: "#fff", fontSize: 10, fontWeight: "bold", overflowWrap: "anywhere", whiteSpace: "normal",
               letterSpacing: "0.08em", margin: 0,
               textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
               {track.title}
             </p>
-            <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: "rgba(255,255,255,0.5)", fontSize: 9,
+            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, overflowWrap: "anywhere", whiteSpace: "normal",
               letterSpacing: "0.06em", margin: 0 }}>
               {track.artist}
             </p>
@@ -206,11 +206,11 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
               display: "flex", alignItems: "center", gap: 10 }}>
               <UserGlyph glyph={vibe?.icon} size={14} label={vibe?.label} />
               <div style={{ minWidth: 0 }}>
-                <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em",
+                <p style={{ color: vibeColor, fontSize: 11, letterSpacing: "0.2em", overflowWrap: "anywhere", whiteSpace: "normal",
                   fontWeight: "bold", margin: 0 }}>
                   {track.title}
                 </p>
-                <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em",
+                <p style={{ color: `${vibeColor}66`, fontSize: 10, letterSpacing: "0.15em", overflowWrap: "anywhere", whiteSpace: "normal",
                   margin: 0 }}>
                   {track.artist}
                 </p>
@@ -270,12 +270,12 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             )}
           </div>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center", gap: 3 }}>
-            <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: vibeColor, fontSize: 12, fontWeight: "bold", margin: 0,
+            <p style={{ color: vibeColor, fontSize: 12, fontWeight: "bold", margin: 0, overflowWrap: "anywhere", whiteSpace: "normal",
               opacity: isActive ? 1 : 0.85,
               textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
               {track.title}
             </p>
-            <p className="truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: vibeColor, fontSize: 10, opacity: 0.45, margin: 0 }}>
+            <p style={{ color: vibeColor, fontSize: 10, opacity: 0.45, margin: 0, overflowWrap: "anywhere", whiteSpace: "normal" }}>
               {track.artist}
             </p>
             {track.note && (
@@ -349,15 +349,15 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold truncate xl:line-clamp-2 xl:whitespace-normal"
-            style={{ color: vibeColor,
+          <p className="text-xs font-bold"
+            style={{ color: vibeColor, overflowWrap: "anywhere", whiteSpace: "normal",
               opacity: isActive ? 1 : 0.75,
               textShadow: isActive ? `0 0 8px ${vibeColor}88` : "none" }}>
             {track.title}
           </p>
-          <p className="text-xs opacity-40 truncate xl:line-clamp-2 xl:whitespace-normal" style={{ color: vibeColor }}>{track.artist}</p>
+          <p className="text-xs opacity-40" style={{ color: vibeColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
           {track.note && (
-            <p className="text-xs opacity-25 truncate xl:line-clamp-2 xl:whitespace-normal mt-0.5 italic" style={{ color: vibeColor }}>{track.note}</p>
+            <p className="text-xs opacity-25 mt-0.5 italic" style={{ color: vibeColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.note}</p>
           )}
           {multiTags.length > 0 && (
             <div className="flex gap-1 flex-wrap mt-1">

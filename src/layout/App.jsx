@@ -122,6 +122,33 @@ const AdminPanel = () => {
           </button>
         ))}
       </nav>
+      <nav
+        aria-label="SECCIONES DEL PANEL"
+        className="hidden md:flex"
+        style={{ overflowX: "auto", borderBottom: `1px solid ${ACID}22`, gap: 4, padding: "8px 16px" }}
+      >
+        {ADMIN_SECTIONS.map((s) => (
+          <button
+            key={s.key}
+            type="button"
+            onClick={() => setSection(s.key)}
+            style={{
+              minHeight: 40,
+              padding: "0 12px",
+              color: s.key === active.key ? ACID : `${ACID}88`,
+              background: "transparent",
+              border: `1px solid ${s.key === active.key ? ACID : `${ACID}33`}`,
+              fontFamily: FONT,
+              letterSpacing: "0.16em",
+              fontSize: 10,
+              whiteSpace: "nowrap",
+              cursor: "pointer",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </nav>
       <Screen key={active.key} client={client} user={user} />
     </div>
   );

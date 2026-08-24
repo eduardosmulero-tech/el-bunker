@@ -34,7 +34,7 @@ export default function AdminShell({
         <div style={{ letterSpacing: "0.3em", fontSize: 12 }}><span>{title}</span>{active && <span> · {active.label}</span>}</div>
         {user?.id && <div style={{ color: `${accentColor}88`, fontSize: 10 }}>{user.id}</div>}
       </header>
-      {resources.length > 0 && <nav className="flex md:hidden" style={{ overflowX: "auto", borderBottom: `1px solid ${accentColor}18` }}>{resources.map(resourceButton)}</nav>}
+      {resources.length > 0 && <nav aria-label="RECURSOS DEL PANEL" className="flex md:hidden" style={{ overflowX: "auto", borderBottom: `1px solid ${accentColor}18` }}>{resources.map(resourceButton)}</nav>}
       <div className="flex">
         {resources.length > 0 && <aside className="hidden md:flex" style={{ width: 210, minHeight: "calc(100dvh - 64px)", flexDirection: "column", gap: 4, padding: "16px 0", borderRight: `1px solid ${accentColor}18` }}>{resources.map(resourceButton)}</aside>}
         <main style={{ flex: 1, minWidth: 0, padding: 16 }}>

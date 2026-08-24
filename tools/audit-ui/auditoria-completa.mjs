@@ -190,21 +190,21 @@ async function openAppState(page, state, viewport) {
 }
 
 async function openAdminState(page, state, viewport) {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize(viewport);
   await page.goto(`${BASE_URL}/admin`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await page.waitForTimeout(1200);
-  // El selector global del panel es móvil. Se selecciona primero y después se
-  // redimensiona para obtener la misma pantalla en escritorio; que el panel no
-  // exponga navegación desktop queda registrado como hallazgo.
-  await clickVisible(page, 'nav[aria-label="SECCIONES DEL PANEL"] button', state.label);
+  // La navegación se ejerce en el mismo viewport que se captura. Esto evita
+  // que una captura desktop herede una selección realizada solo en móvil.
+  await clickVisible(page, 'nav[aria-label="SECCIONES DEL PANEL"]:visible button', state.label);
   await page.waitForTimeout(700);
   if (state.resource) {
-    await clickVisible(page, "nav:nth-of-type(2) button", state.resource, true);
+    const resourceNav = viewport.width >= 1280
+      ? 'aside button'
+      : 'nav[aria-label="RECURSOS DEL PANEL"] button';
+    await clickVisible(page, resourceNav, state.resource, true);
     await page.waitForTimeout(700);
   }
-  await page.setViewportSize(viewport);
-  await page.waitForTimeout(700);
-  return { adminSectionReached: true };
+  return { adminSectionReached: true, viewportNavigation: viewport.width >= 1280 ? "desktop" : "mobile" };
 }
 
 async function measure(page, state, viewport, consoleErrors, httpErrors) {
@@ -217,7 +217,11 @@ async function measure(page, state, viewport, consoleErrors, httpErrors) {
       if (!visible(el) || !el.textContent?.trim()) return false;
       const cs = getComputedStyle(el);
       return ["hidden", "clip"].includes(cs.overflowX) && el.scrollWidth > el.clientWidth + 7;
-    }).slice(0, 30).map((el) => ({ tag: el.tagName, text: el.textContent.trim().slice(0, 140), needed: el.scrollWidth, available: el.clientWidth }));
+    }).slice(0, 30).map((el) => ({ tag: el.tagName, id: el.id || null, className: typeof el.className === "string" ? el.className : null, text: el.textContent.trim().slice(0, 140), needed: el.scrollWidth, available: el.clientWidth }));
+    const overflowSources = [...document.querySelectorAll("*")].filter((el) => {
+      if (!visible(el)) return false;
+      return el.scrollWidth > el.clientWidth + 7;
+    }).slice(0, 20).map((el) => ({ tag: el.tagName, id: el.id || null, className: typeof el.className === "string" ? el.className : null, needed: el.scrollWidth, available: el.clientWidth }));
     return {
       id: state.id,
       viewport,
@@ -225,6 +229,7 @@ async function measure(page, state, viewport, consoleErrors, httpErrors) {
       document: { clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight },
       overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       clipped,
+      overflowSources,
       headings: [...document.querySelectorAll("h1,h2,h3")].filter(visible).map((el) => el.textContent.trim()).slice(0, 20),
       buttons: [...document.querySelectorAll("button")].filter(visible).map((el) => (el.textContent || el.getAttribute("aria-label") || "").trim()).filter(Boolean).slice(0, 80),
       consoleErrors,

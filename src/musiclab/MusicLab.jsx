@@ -797,7 +797,7 @@ export default function MusicLab({
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}
           className="flex gap-0 rounded-sm overflow-hidden" style={{ border: `1px solid ${GLASS_BORDER}` }}>
           {[
-            ...(localQueue.length > 0 ? [{ id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "play" }] : []),
+            { id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "play" },
             { id: "tracks",    label: "TRACKS",                        icon: "circle" },
             { id: "playlists", label: "LISTS",                         icon: "archive" },
             ...(userDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${userDrops.length}]`, icon: "zap" }] : []),
@@ -913,8 +913,8 @@ export default function MusicLab({
                                 : <UserGlyph glyph={hVibe?.icon} size={12} label={hVibe?.label} />}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold truncate" style={{ color: hVibe?.color ?? accentColor }}>{track.title}</p>
-                              <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
+                              <p className="text-xs font-bold" style={{ color: hVibe?.color ?? accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title}</p>
+                              <p className="text-xs opacity-40" style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
                             </div>
                             <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                               style={{ color: hVibe?.color ?? accentColor, background: `${hVibe?.color ?? accentColor}15`, border: `1px solid ${hVibe?.color ?? accentColor}33` }}>
@@ -987,7 +987,7 @@ export default function MusicLab({
                               : <Icon name="search" size={12} decorative />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate flex items-center gap-1" style={{ color: trackColor }}>
+                            <p className="text-xs font-bold flex items-center gap-1" style={{ color: trackColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>
                               {track.title}
                               {track._added_by && (
                                 <span className="text-[8px] px-1 py-0.5 rounded-sm uppercase tracking-wider font-bold flex-none"
@@ -1000,7 +1000,7 @@ export default function MusicLab({
                                 </span>
                               )}
                             </p>
-                            <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
+                            <p className="text-xs opacity-40" style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: trackColor, background: `${trackColor}15`, border: `1px solid ${trackColor}33` }}>
@@ -1070,8 +1070,8 @@ export default function MusicLab({
                               : <Icon name="search" size={12} decorative />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate" style={{ color: accentColor }}>{track.title}</p>
-                            <p className="text-xs opacity-40 truncate" style={{ color: accentColor }}>{track.artist}</p>
+                            <p className="text-xs font-bold" style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title}</p>
+                            <p className="text-xs opacity-40" style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
                           </div>
                           <span className="text-xs px-1.5 py-0.5 rounded-sm flex-shrink-0"
                             style={{ color: accentColor, background: `${accentColor}15`, border: `1px solid ${accentColor}33` }}>
@@ -1518,9 +1518,9 @@ export default function MusicLab({
                                 style={{ width: "100%", background: "transparent", border: `1px solid ${accentColor}44`, borderRadius: 2,
                                   color: accentColor, fontSize: 11, padding: "2px 6px", fontFamily: FONT_MONO, outline: "none" }} />
                             ) : (
-                              <span className="text-xs font-bold truncate block" style={{ color: accentColor }}>{pl.name}</span>
+                              <span className="text-xs font-bold block min-w-0" style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>{pl.name}</span>
                             )}
-                            <span className="text-xs opacity-30 truncate block" style={{ color: accentColor }}>
+                            <span className="text-xs opacity-30 block" style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal" }}>
                               {pl.track_ids.length} tracks{durStr ? ` · ${durStr}` : ""}
                             </span>
                           </div>

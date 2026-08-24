@@ -760,8 +760,8 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
           <div className="flex items-center gap-2 min-w-0">
             <Icon name="target" size={14} decorative />
             <h2
-              className="text-xs tracking-[0.35em] uppercase font-bold truncate"
-              style={{ color: activeDisplayEra?.color ?? accent }}
+              className="text-xs tracking-[0.35em] uppercase font-bold min-w-0"
+              style={{ color: activeDisplayEra?.color ?? accent, overflowWrap: "anywhere", whiteSpace: "normal" }}
             >
               {activeDisplayEra?.name ?? "SIN ERA"}
             </h2>
@@ -873,7 +873,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
         {/* Eras: wrap en escritorio, carrusel en móvil */}
         <div
           ref={sliderRef}
-          className="flex gap-3 overflow-x-auto pb-3 select-none xl:flex-wrap xl:overflow-visible"
+          className="flex gap-3 overflow-x-auto pb-3 select-none min-w-0 xl:flex-wrap xl:overflow-visible"
           style={{
             cursor: "grab",
             scrollbarWidth: "none",
@@ -988,7 +988,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
 
           {/* El contenido de la sección activa, a ancho completo */}
           {seccionActiva === "memoria" && (
-            <div className="w-full">
+            <div className="w-full min-w-0">
               <ChunkErrorBoundary>
                 <Suspense fallback={<Skeleton.VaultGallery />}>
                   <VaultGallery
@@ -1023,7 +1023,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
                 onCreate={() => setShowAddEntry(true)}
               />
             ) : (
-              <div className="w-full">
+              <div className="w-full min-w-0">
                 <ChunkErrorBoundary>
                   <Suspense fallback={<Skeleton.VaultGallery />}>
                     <LugaresMap entries={eraSectionEntries} eras={displayEras} />

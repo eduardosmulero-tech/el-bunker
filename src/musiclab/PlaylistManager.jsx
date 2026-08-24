@@ -142,7 +142,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
         <div style={{ padding: "12px 16px", borderBottom: `1px solid ${ACID}15`,
           display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <p style={{ color: ACID, fontSize: 12, letterSpacing: "0.25em", fontWeight: "bold" }}>
+            <p style={{ color: ACID, fontSize: 12, letterSpacing: "0.25em", fontWeight: "bold", overflowWrap: "anywhere", whiteSpace: "normal" }}>
               <Icon name="music" size={14} decorative /> {playlist.name}
             </p>
             <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.15em" }}>
@@ -239,9 +239,8 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                   onClick={() => handlePlayFromTrack(track, plTracks.indexOf(track))}
                   title="Reproducir desde aquí"
                 >
-                  <p style={{ color: ACID, fontSize: 11, letterSpacing: "0.1em",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.title}</p>
-                  <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.1em" }}>{track.artist}</p>
+                  <p style={{ color: ACID, fontSize: 11, letterSpacing: "0.1em", overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title}</p>
+                  <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.1em", overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
                 </div>
                 <motion.button whileTap={{ scale: 0.85 }}
                   onClick={() => onRemoveTrack(playlist.id, track.id)}
