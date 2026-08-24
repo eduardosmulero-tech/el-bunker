@@ -19,6 +19,16 @@ function canJoinSharedSession(userId) {
   return userId === "edu" || userId === "david";
 }
 
+function parseQueueJson(value) {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default async function handleSync(request, env, url, userId) {
   if (!userId) return err("Unauthorized", 401);
 
@@ -91,7 +101,7 @@ export default async function handleSync(request, env, url, userId) {
           is_playing: session.is_playing === 1,
           action: session.last_action,
           action_by: session.last_action_by,
-          queue_json: session.queue_json ? JSON.parse(session.queue_json) : [],
+          queue_json: parseQueueJson(session.queue_json),
           updated_at: session.updated_at,
         });
       }
@@ -169,7 +179,7 @@ export default async function handleSync(request, env, url, userId) {
         active_track_id: session.active_track_id,
         position: session.position,
         is_playing: session.is_playing === 1,
-        queue_json: session.queue_json ? JSON.parse(session.queue_json) : [],
+        queue_json: parseQueueJson(session.queue_json),
       });
     }
 

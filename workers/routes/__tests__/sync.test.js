@@ -156,6 +156,28 @@ describe("shared listening sync route", () => {
     }
   });
 
+  it("does not fail when a session queue is malformed during join", async () => {
+    const session = {
+      id: "session-1",
+      host_user_id: "edu",
+      guest_user_id: null,
+      active_track_id: null,
+      position: 0,
+      is_playing: 0,
+      queue_json: "{malformed",
+    };
+    const db = makeDb({ session });
+    const response = await handleSync(
+      request("POST", "/api/sync", { action: "join", session_id: "session-1" }),
+      { DB: db },
+      new URL("https://bunker.test/api/sync"),
+      "david",
+    );
+
+    expect(response.status).toBe(200);
+    expect(await body(response)).toMatchObject({ active: true, queue_json: [] });
+  });
+
   it("returns host identity and current state when a guest joins", async () => {
     const session = {
       id: "session-1",
