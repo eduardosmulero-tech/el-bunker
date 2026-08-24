@@ -360,14 +360,13 @@ export function VaultProvider({ children }) {
     let data = jwt ? await _buildDbFromWorker(jwt) : null;
     if (data) {
       data.libraries = [];
-      data.heartbeat = new Date().toISOString();
       console.info("[Búnker] DB cargada desde Worker API (D1) ✓");
     } else {
       console.info("[Búnker] Worker no disponible, usando DB vacía como fallback...");
       data = EMPTY_DB();
     }
     setDb(data);
-    setLastHeartbeat(data.heartbeat ?? new Date().toISOString());
+    setLastHeartbeat(data.heartbeat ?? null);
     setDbStatus("ONLINE");
     setBootPhase(BOOT.READY);
     _scheduleHeartbeat();
@@ -661,9 +660,8 @@ export function VaultProvider({ children }) {
       }
       if (!data) data = EMPTY_DB();
       data.libraries = data.libraries ?? [];
-      data.heartbeat = data.heartbeat ?? new Date().toISOString();
       setDb(data);
-      setLastHeartbeat(data.heartbeat);
+      setLastHeartbeat(data.heartbeat ?? null);
       setDbStatus("ONLINE");
     } catch (err) {
       console.error("[Búnker] refreshDb failed:", err);
