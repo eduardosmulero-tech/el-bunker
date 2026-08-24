@@ -24,13 +24,13 @@ const baseResponses = {
 describe("WorkerDataService", () => {
   it("returns null without a Worker token and performs no reads", async () => {
     const worker = makeWorker(baseResponses, { hasToken: false });
-    await expect(buildDbFromWorker(worker, "fallback")).resolves.toBeNull();
+    await expect(buildDbFromWorker(worker)).resolves.toBeNull();
     expect(worker.get).not.toHaveBeenCalled();
   });
 
   it("loads all collections and preserves frontend compatibility mappings", async () => {
     const worker = makeWorker(baseResponses);
-    const db = await buildDbFromWorker(worker, "fallback");
+    const db = await buildDbFromWorker(worker);
 
     expect(db).toMatchObject({
       eras: [{ id: "era-1" }],
@@ -46,10 +46,11 @@ describe("WorkerDataService", () => {
     expect(worker.get).toHaveBeenCalledTimes(8);
   });
 
-  it("uses the fallback adventure date when config is unavailable", async () => {
+  it("does not fabricate adventure date or heartbeat when config is unavailable", async () => {
     const worker = makeWorker({ ...baseResponses, "/api/config": new Error("offline") });
-    const db = await buildDbFromWorker(worker, "fallback-date");
-    expect(db.adventures_start_date).toBe("fallback-date");
+    const db = await buildDbFromWorker(worker);
+    expect(db.adventures_start_date).toBeUndefined();
+    expect(db.heartbeat).toBeNull();
   });
 
   it("keeps malformed JSON content as the original string", () => {
@@ -59,6 +60,6 @@ describe("WorkerDataService", () => {
 
   it("returns null when a required collection read fails", async () => {
     const worker = makeWorker({ ...baseResponses, "/api/tracks": new Error("401") });
-    await expect(buildDbFromWorker(worker, "fallback")).resolves.toBeNull();
+    await expect(buildDbFromWorker(worker)).resolves.toBeNull();
   });
 });

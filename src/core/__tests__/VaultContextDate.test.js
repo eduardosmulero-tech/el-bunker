@@ -47,6 +47,21 @@ describe("V-6 — adventures_start_date no se fabrica en el estado", () => {
     expect(db.adventures_start_date).toBe(realDate);
   });
 
+  it("sin heartbeat en D1: no fabrica un timestamp de actividad", async () => {
+    const worker = makeWorker({ ...baseResponses, "/api/config": {} });
+    const db = await buildDbFromWorker(worker);
+
+    expect(db.heartbeat).toBeNull();
+  });
+
+  it("cuando D1 trae heartbeat: se conserva tal cual", async () => {
+    const realHeartbeat = "2026-08-24T20:00:00.000Z";
+    const worker = makeWorker({ ...baseResponses, "/api/config": { heartbeat: realHeartbeat } });
+    const db = await buildDbFromWorker(worker);
+
+    expect(db.heartbeat).toBe(realHeartbeat);
+  });
+
   it("si /api/config falla y no hay fallback: el estado queda sin fecha", async () => {
     const worker = makeWorker({ ...baseResponses, "/api/config": new Error("offline") });
     const db = await buildDbFromWorker(worker);

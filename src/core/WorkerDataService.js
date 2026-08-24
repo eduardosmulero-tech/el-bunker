@@ -13,7 +13,7 @@ const rejectWithLabel = (label) => (error) => (
   Promise.reject(`${label}: ${error.message}`)
 );
 
-export async function buildDbFromWorker(worker, defaultAdventureDate) {
+export async function buildDbFromWorker(worker) {
   if (!worker?.hasToken?.()) return null;
 
   try {
@@ -30,7 +30,7 @@ export async function buildDbFromWorker(worker, defaultAdventureDate) {
       }),
     ]);
     const appConfig = await worker.get("/api/config").catch(() => null);
-    const realAdventureDate = appConfig?.adventures_start_date || defaultAdventureDate;
+    const realAdventureDate = appConfig?.adventures_start_date;
     const parsedEntries = (entries || []).map((entry) => ({
       ...entry,
       content: safeParse(entry.content),
@@ -54,7 +54,7 @@ export async function buildDbFromWorker(worker, defaultAdventureDate) {
       files: files || [],
       libraries: [],
       schema_version: "5.0.0",
-      heartbeat: new Date().toISOString(),
+      heartbeat: appConfig?.heartbeat ?? null,
       adventures_start_date: realAdventureDate,
     };
   } catch (error) {
