@@ -97,6 +97,13 @@ body.vibe-pulse {
   }
 }
 
+/* El chrome desktop (topbar, rail, dock, footer) no existe en movil.
+   Sin esta regla base, topbar/rail/dock se pintan como bloques estaticos
+   arriba de cada pestana — residuos desktop visibles en movil, medidos con
+   tools/audit-ui/probe-texto-movil.mjs (28-ago-2026). El media query de
+   abajo re-activa el chrome a partir de 1280px. */
+.desktop-only { display: none !important; }
+
 /* The desktop HUD owns the viewport from 1280px upward. */
 @media (min-width: 1280px) {
   .desktop-only { display: flex !important; }

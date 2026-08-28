@@ -548,7 +548,7 @@ const DesktopTopbar = ({ isAuthenticated, onSignOut, activeTab, accentColor, par
     </div>
     <div className="desktop-topbar__actions">
       <VisitModeControl accentColor={accentColor} />
-      <span>{tick.toLocaleDateString("en-US", { month: "short", day: "2-digit" }).toUpperCase()} · {tick.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" })}</span>
+      <span>{tick.toLocaleDateString("es-ES", { month: "short", day: "2-digit" }).toUpperCase()} · {tick.toLocaleTimeString("es-ES", { hour12: false, hour: "2-digit", minute: "2-digit" })}</span>
       <button type="button" onClick={() => window.location.reload()} aria-label="Recargar"><Icon name="refresh" size={14} decorative /></button>
       {onSignOut && <button type="button" onClick={onSignOut} aria-label="Cerrar sesión"><Icon name="unlock" size={14} decorative /></button>}
     </div>
