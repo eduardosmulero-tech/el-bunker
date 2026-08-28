@@ -7,6 +7,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID } from "../tokens";
+import { useVibeAccent } from "../core/useVibeAccent";
 import { ColorPicker } from "../core/ColorPicker";
 import { useToast } from "../core/ToastContext";
 import { Icon, UserGlyph } from "../core/ui";
@@ -17,6 +18,7 @@ const GLASS_BG     = "rgba(191,255,0,0.03)";
 const emptyForm = () => ({ label: "", icon: "", color: "#00ffcc" });
 
 export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, onReorder, onFilterByTag }) => {
+  const accentColor = useVibeAccent();
   const [showForm,      setShowForm]      = useState(false);
   const [editingId,     setEditingId]     = useState(null);
   const [form,          setForm]          = useState(emptyForm);
@@ -79,14 +81,14 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
 
       {/* Cabecera */}
       <div className="flex items-center justify-between">
-        <span className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: ACID }}>
+        <span className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: accentColor }}>
           <Icon name="tag" size={14} decorative /> TAGS [{String(tags.length).padStart(2, "0")}]
         </span>
         <motion.button whileTap={{ scale: 0.9 }}
           onClick={() => { if (showForm && !editingId) { handleCancel(); } else { openForm(); } }}
           className="w-11 h-11 flex items-center justify-center rounded-sm text-sm"
-          style={{ color: ACID, border: `1px solid ${showForm && !editingId ? ACID + "66" : ACID + "33"}`,
-            background: showForm && !editingId ? `${ACID}15` : `${ACID}06` }}>
+          style={{ color: accentColor, border: `1px solid ${showForm && !editingId ? accentColor + "66" : accentColor + "33"}`,
+            background: showForm && !editingId ? `${accentColor}15` : `${accentColor}06` }}>
           {showForm && !editingId ? <Icon name="close" size={14} decorative /> : <Icon name="plus" size={14} decorative />}
         </motion.button>
       </div>
@@ -96,24 +98,24 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
         {showForm && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
             className="flex flex-col gap-3 p-3 rounded-sm"
-            style={{ background: `${ACID}04`, border: `1px solid ${ACID}22` }}>
-            <p className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: ACID }}>
+            style={{ background: `${accentColor}04`, border: `1px solid ${accentColor}22` }}>
+            <p className="text-xs tracking-[0.3em] uppercase font-bold" style={{ color: accentColor }}>
               <Icon name={editingId ? "edit" : "plus"} size={14} decorative /> {editingId ? "EDITAR TAG" : "NUEVO TAG"}
             </p>
 
             {/* Nombre */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Nombre</span>
+              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor }}>Nombre</span>
               <input value={form.label} onChange={(e) => setForm((p) => ({ ...p, label: e.target.value }))}
                 placeholder="mi tag"
-                style={{ background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                  color: ACID, fontSize: 11, padding: "12px 12px", fontFamily: FONT_MONO,
+                style={{ background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
+                  color: accentColor, fontSize: 11, padding: "12px 12px", fontFamily: FONT_MONO,
                   letterSpacing: "0.15em", outline: "none" }} />
             </div>
 
             {/* Icono — input directo */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Icono (emoji)</span>
+              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor }}>Icono (emoji)</span>
               <div className="flex items-center gap-2">
                 <span style={{ fontSize: 20, color: form.color, lineHeight: 1, minWidth: 28, textAlign: "center" }}>
                   <UserGlyph glyph={form.icon} size={20} decorative />
@@ -121,15 +123,15 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                 <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))}
                   placeholder="archive"
                   maxLength={4}
-                  style={{ flex: 1, background: `${ACID}06`, border: `1px solid ${ACID}33`, borderRadius: 2,
-                    color: ACID, fontSize: 18, padding: "12px 12px", fontFamily: FONT_MONO,
+                  style={{ flex: 1, background: `${accentColor}06`, border: `1px solid ${accentColor}33`, borderRadius: 2,
+                    color: accentColor, fontSize: 18, padding: "12px 12px", fontFamily: FONT_MONO,
                     letterSpacing: "0.1em", outline: "none", textAlign: "center" }} />
               </div>
             </div>
 
             {/* Color */}
             <div className="flex flex-col gap-1">
-              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID }}>Color</span>
+              <span className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor }}>Color</span>
               <ColorPicker value={form.color} onChange={(c) => setForm((p) => ({ ...p, color: c }))} />
             </div>
 
@@ -148,15 +150,15 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
             {/* Acciones */}
             <div className="flex gap-2">
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={!isValid}
-                style={{ flex: 1, padding: "14px 0", background: isValid ? `${ACID}18` : `${ACID}06`,
-                  border: `1px solid ${isValid ? ACID + "55" : ACID + "22"}`,
-                  color: isValid ? ACID : `${ACID}44`, fontSize: 10, letterSpacing: "0.2em",
+                style={{ flex: 1, padding: "14px 0", background: isValid ? `${accentColor}18` : `${accentColor}06`,
+                  border: `1px solid ${isValid ? accentColor + "55" : accentColor + "22"}`,
+                  color: isValid ? ACID : `${accentColor}44`, fontSize: 10, letterSpacing: "0.2em",
                   borderRadius: 2, cursor: isValid ? "pointer" : "not-allowed", fontFamily: FONT_MONO }}>
                 {editingId ? "GUARDAR" : "CREAR TAG"}
               </motion.button>
               <motion.button whileTap={{ scale: 0.95 }} onClick={handleCancel}
-                style={{ padding: "14px 16px", background: "transparent", border: `1px solid ${ACID}22`,
-                  color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                style={{ padding: "14px 16px", background: "transparent", border: `1px solid ${accentColor}22`,
+                  color: `${accentColor}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
                 CANCELAR
               </motion.button>
             </div>
@@ -167,7 +169,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
       {/* Lista de tags */}
       <div className="flex flex-col gap-2">
         {tags.length === 0 ? (
-          <p className="text-xs opacity-20 tracking-widest text-center py-4 uppercase" style={{ color: ACID }}>
+          <p className="text-xs opacity-20 tracking-widest text-center py-4 uppercase" style={{ color: accentColor }}>
             — sin tags —
           </p>
         ) : (
@@ -190,7 +192,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                   <motion.button whileTap={{ scale: 0.95 }}
                     onClick={() => onFilterByTag?.(tag.id)}
                     style={{ background: "none", border: "none", padding: "12px 8px", cursor: onFilterByTag ? "pointer" : "default",
-                      color: `${ACID}40`, fontSize: 12, letterSpacing: "0.15em", fontFamily: FONT_MONO }}>
+                      color: `${accentColor}40`, fontSize: 12, letterSpacing: "0.15em", fontFamily: FONT_MONO }}>
                     {inUse} track{inUse !== 1 ? "s" : ""}{isSystem ? " · sistema" : ""}
                     {onFilterByTag && inUse > 0 && <><span className="ml-1"><Icon name="arrowRight" size={11} decorative /></span></>}
                   </motion.button>
@@ -198,7 +200,7 @@ export const TagManager = ({ tags = [], tracks = [], onAdd, onUpdate, onDelete, 
                 <div style={{ width: 20, height: 20, borderRadius: 2, background: tag.color, flexShrink: 0,
                   border: `1px solid ${tag.color}88` }} />
                   <motion.button whileTap={{ scale: 0.9 }} onClick={() => handleEdit(tag)}
-                    style={{ color: ACID, background: `${ACID}0a`, border: `1px solid ${ACID}22`,
+                    style={{ color: accentColor, background: `${accentColor}0a`, border: `1px solid ${accentColor}22`,
                       borderRadius: 2, fontSize: 12, padding: "12px 14px", fontFamily: FONT_MONO, flexShrink: 0 }}>
                     <Icon name="edit" size={14} decorative />
                   </motion.button>

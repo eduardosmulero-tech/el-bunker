@@ -6,6 +6,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ACID, PURPLE, FONT_MONO } from "../tokens";
+import { useVibeAccent } from "../core/useVibeAccent";
 import { usePlayer } from "../core/PlayerContext"; // VB9: vibe accent propagation
 import { Icon } from "../core/ui";
 import WallView from "./WallView"; // Fase 1: WALL virtualizado
@@ -31,6 +32,7 @@ const seccionBadge = (entry) => {
 // ─── UTILIDADES ────────────────────────────────────────────
 // ─── CINEMA VIEW (S122-A: full-bleed + swipe + Ken Burns + overlay emocional) ──
 const CinemaView = ({ entries, eras, onZoom }) => {
+  const accentColor = useVibeAccent();
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const pauseTimerRef = useRef(null);
@@ -77,13 +79,13 @@ const CinemaView = ({ entries, eras, onZoom }) => {
     return () => { if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current); };
   }, [currentIdx, entries.length]);
 
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   const safeIdx = ((currentIdx % entries.length) + entries.length) % entries.length;
   const entry = entries[safeIdx];
   const era = eras.find(e => e.id === resolveEraId(entry));
   const imgUrl = getImageUrl(entry);
-  const eraColor = era?.color ?? ACID;
+  const eraColor = era?.color ?? accentColor;
   const eraName = era?.name ?? "";
   const dateStr = resolveEntryDate(entry)
     ? new Date(resolveEntryDate(entry)).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" })
@@ -250,6 +252,7 @@ const CinemaView = ({ entries, eras, onZoom }) => {
 // ─── DIALOGUE VIEW (S122-B: emparejamiento temporal + hilos conectores + asimetría) ──
 // FASE C.1: zoomImage modal reemplazado por onOpenLightbox
 const DialogueView = ({ entries, eras, onOpenLightbox }) => {
+  const accentColor = useVibeAccent();
   const [filterMode, setFilterMode] = useState("all"); // "all" | "conversations"
 
   // FASE C.1: handler unificado para abrir lightbox desde cualquier bubble
@@ -288,7 +291,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
     return { pairs: result, eduCount: eduEntries.length, davidCount: davidEntries.length };
   }, [entries]);
 
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   const displayPairs = filterMode === "conversations"
     ? pairs.pairs.filter(p => p.paired)
@@ -328,10 +331,10 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
 
       {/* Stats */}
       <div className="flex gap-2">
-        <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${ACID}08`, border: `1px solid ${ACID}22` }}>
-          <span className="text-lg block" style={{ color: ACID }}><Icon name="user" size={20} decorative /></span>
-          <p className="text-[10px] font-bold mt-1" style={{ color: ACID }}>EDU</p>
-          <p className="text-[9px] opacity-40" style={{ color: ACID }}>{pairs.eduCount} momentos</p>
+        <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${accentColor}08`, border: `1px solid ${accentColor}22` }}>
+          <span className="text-lg block" style={{ color: accentColor }}><Icon name="user" size={20} decorative /></span>
+          <p className="text-[10px] font-bold mt-1" style={{ color: accentColor }}>EDU</p>
+          <p className="text-[9px] opacity-40" style={{ color: accentColor }}>{pairs.eduCount} momentos</p>
         </div>
         <div className="flex items-center text-lg opacity-30" style={{ color: PURPLE }}><Icon name="arrowRight" size={20} decorative /></div>
         <div className="flex-1 p-3 rounded-sm text-center" style={{ background: `${PURPLE}08`, border: `1px solid ${PURPLE}22` }}>
@@ -347,9 +350,9 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
       {/* Asimetría poética */}
       {onlyEdu && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="p-6 rounded-sm text-center" style={{ background: `${ACID}05`, border: `1px dashed ${ACID}22` }}>
-          <span className="text-3xl block mb-3 opacity-50" style={{ color: ACID }}><Icon name="sparkles" size={30} decorative /></span>
-          <p className="text-xs leading-relaxed opacity-40" style={{ color: ACID }}>
+          className="p-6 rounded-sm text-center" style={{ background: `${accentColor}05`, border: `1px dashed ${accentColor}22` }}>
+          <span className="text-3xl block mb-3 opacity-50" style={{ color: accentColor }}><Icon name="sparkles" size={30} decorative /></span>
+          <p className="text-xs leading-relaxed opacity-40" style={{ color: accentColor }}>
             Solo un eco en la sala — David no capturó este momento.
           </p>
         </motion.div>
@@ -384,7 +387,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                   <div className="flex justify-center">
                     <motion.div
                       className="h-8 w-px"
-                      style={{ background: `linear-gradient(${ACID}44, ${PURPLE}44)` }}
+                      style={{ background: `linear-gradient(${accentColor}44, ${PURPLE}44)` }}
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
                       transition={{ duration: 0.6, delay: idx * 0.05 }}
@@ -394,7 +397,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                     </span>
                     <motion.div
                       className="h-8 w-px"
-                      style={{ background: `linear-gradient(${ACID}44, ${PURPLE}44)` }}
+                      style={{ background: `linear-gradient(${accentColor}44, ${PURPLE}44)` }}
                       initial={{ scaleY: 0 }}
                       animate={{ scaleY: 1 }}
                       transition={{ duration: 0.6, delay: idx * 0.05 }}
@@ -407,24 +410,24 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                   <div className="flex gap-3 items-start">
                     <div className="flex-1 flex gap-2 items-start">
                       <div className="w-12 h-12 flex-shrink-0 rounded-sm overflow-hidden"
-                        style={{ border: `1px solid ${ACID}33` }}>
+                        style={{ border: `1px solid ${accentColor}33` }}>
                         {isClassified(pair.edu) ? (
-                          <ClassifiedTile entry={pair.edu} era={eraEdu} size="mini" accentColor={ACID} />
+                          <ClassifiedTile entry={pair.edu} era={eraEdu} size="mini" accentColor={accentColor} />
                         ) : eduImg ? (
                           <img src={eduImg} alt="" className="w-full h-full object-cover cursor-pointer" loading="lazy" decoding="async" onClick={() => handleImageTap(pair.edu)} />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${ACID}10`, color: ACID }}><Icon name="camera" size={22} label="Sin imagen" /></div>
+                          <div className="w-full h-full flex items-center justify-center text-lg opacity-30" style={{ background: `${accentColor}10`, color: accentColor }}><Icon name="camera" size={22} label="Sin imagen" /></div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-[10px] font-bold" style={{ color: ACID }}>EDU</span>
-                          <span className="text-[8px] opacity-30" style={{ color: ACID }}>
+                          <span className="text-[10px] font-bold" style={{ color: accentColor }}>EDU</span>
+                          <span className="text-[8px] opacity-30" style={{ color: accentColor }}>
                             {pair.edu.created_at ? new Date(pair.edu.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}
                           </span>
                         </div>
                         {pair.edu.title && (
-                          <p className="text-xs italic opacity-60 line-clamp-2" style={{ color: ACID }}>
+                          <p className="text-xs italic opacity-60 line-clamp-2" style={{ color: accentColor }}>
                             "{pair.edu.title}"
                           </p>
                         )}
@@ -482,7 +485,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
                 {/* Solo entry — centered without pair */}
                 {!pair.paired && pair.edu && !pair.david && (
                   <div className="flex justify-center">
-                    <span className="text-[8px] opacity-15" style={{ color: ACID }}>— sin eco —</span>
+                    <span className="text-[8px] opacity-15" style={{ color: accentColor }}>— sin eco —</span>
                   </div>
                 )}
                 {!pair.paired && !pair.edu && pair.david && (
@@ -510,6 +513,7 @@ const DialogueView = ({ entries, eras, onOpenLightbox }) => {
 // ─── EXHIBITION VIEW (S122-C: agrupación por Era + vibe breakdown + layout museo) ──
 // FASE C.1: tap-to-open lightbox en entries expandidas
 const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
+  const accentColor = useVibeAccent();
   // Fase 9: expansion — tap era card to expand and show all entries
   const [expandedEra, setExpandedEra] = useState(null);
 
@@ -523,7 +527,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
     return Object.entries(groups).sort(([, a], [, b]) => b.length - a.length);
   }, [entries]);
 
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   return (
     <div className="flex flex-col gap-6" style={{ fontFamily: FONT_MONO }}>
@@ -535,7 +539,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
       <div className="flex flex-col gap-5">
         {eraGroups.map(([eraId, eraEntries]) => {
           const era = eras.find(e => e.id === eraId);
-          const eraColor = era?.color ?? ACID;
+          const eraColor = era?.color ?? accentColor;
           const eraName = era?.name ?? "Sin Era";
           const firstImg = getImageUrl(eraEntries[0]);
           const vibeCounts = {};
@@ -613,6 +617,7 @@ const ExhibitionView = ({ entries, eras, onOpenLightbox }) => {
 // ─── REEL VIEW (S122-D: auto-generación secuencias por día + pinning) ──
 // FASE C.1: tap-to-open lightbox en entries del reel activo
 const ReelView = ({ entries, eras, onOpenLightbox }) => {
+  const accentColor = useVibeAccent();
   // Fase 8: REEL soundtrack — ambient volume when viewing REEL detail
   const { masterVolume, setMasterVolume } = usePlayer();
   const reelVolRef = useRef(null);
@@ -647,7 +652,7 @@ const ReelView = ({ entries, eras, onOpenLightbox }) => {
     };
   }, [isViewingReel, masterVolume, setMasterVolume]);
 
-  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>Sin entradas</p>;
+  if (!entries.length) return <p className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>Sin entradas</p>;
 
   return (
     <div className="w-full flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>

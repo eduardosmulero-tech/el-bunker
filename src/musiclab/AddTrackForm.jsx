@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { ACID } from "../tokens";
+import { useVibeAccent } from "../core/useVibeAccent";
 import { Icon, Input, UserGlyph } from "../core/ui";
 // S90 EC-TR6: extraer metadatos ID3 al seleccionar MP3
 import jsmediatags from "jsmediatags";
@@ -9,6 +10,7 @@ const GLASS_BG  = "rgba(191,255,0,0.03)";
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 
 export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) => {
+  const accentColor = useVibeAccent();
   const [form, setForm] = useState(
     initialData
       ? {
@@ -35,36 +37,36 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
     <motion.div
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 10 }} className="relative p-4 rounded-sm"
-      style={{ background: GLASS_BG, border: `1px solid ${ACID}22`, fontFamily: FONT_MONO }}
+      style={{ background: GLASS_BG, border: `1px solid ${accentColor}22`, fontFamily: FONT_MONO }}
     >
-      <p className="text-xs tracking-[0.3em] uppercase font-bold mb-4" style={{ color: ACID }}>
+      <p className="text-xs tracking-[0.3em] uppercase font-bold mb-4" style={{ color: accentColor }}>
         <Icon name={initialData ? "edit" : "archive"} size={14} decorative /> {initialData ? "EDITAR TRACK" : "AÑADIR TRACK"}
       </p>
 
       <div className="flex flex-col gap-3">
-        <Input label="Título *" accentColor={ACID} value={form.title} onChange={set("title")} placeholder="Nombre del track..." />
-        <Input label="Artista" accentColor={ACID} value={form.artist} onChange={set("artist")} placeholder="Nombre del artista..." />
-        <Input label="Nota" accentColor={ACID} value={form.note} onChange={set("note")} placeholder="¿Por qué este track?" />
+        <Input label="Título *" accentColor={accentColor} value={form.title} onChange={set("title")} placeholder="Nombre del track..." />
+        <Input label="Artista" accentColor={accentColor} value={form.artist} onChange={set("artist")} placeholder="Nombre del artista..." />
+        <Input label="Nota" accentColor={accentColor} value={form.note} onChange={set("note")} placeholder="¿Por qué este track?" />
         {/* S90 EC-TR6: File input para MP3 con extracción ID3 */}
         {!initialData && (
           <div>
-            <label style={{ color: `${ACID}55`, fontSize: 10, fontFamily: FONT_MONO, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Archivo MP3</label>
+            <label style={{ color: `${accentColor}55`, fontSize: 10, fontFamily: FONT_MONO, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Archivo MP3</label>
             <div className="flex items-center gap-2">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => fileInputRef.current?.click()}
                 className="text-xs px-3 py-3 rounded-sm"
                 style={{
-                  color: selectedFile ? ACID : `${ACID}55`,
-                  border: `1px solid ${selectedFile ? ACID + "44" : ACID + "22"}`,
-                  background: selectedFile ? `${ACID}08` : "transparent",
+                  color: selectedFile ? ACID : `${accentColor}55`,
+                  border: `1px solid ${selectedFile ? accentColor + "44" : accentColor + "22"}`,
+                  background: selectedFile ? `${accentColor}08` : "transparent",
                   fontFamily: FONT_MONO,
                 }}
               >
                 {selectedFile ? selectedFile.name : "SELECCIONAR MP3..."}
               </motion.button>
               {readingId3 && (
-                <span className="text-xs opacity-40" style={{ color: ACID }}>LEYENDO ID3...</span>
+                <span className="text-xs opacity-40" style={{ color: accentColor }}>LEYENDO ID3...</span>
               )}
               {selectedFile && (
                 <motion.button
@@ -108,7 +110,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           </div>
         )}
         <div>
-          <label style={{ color: `${ACID}55`, fontSize: 10, fontFamily: FONT_MONO, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Vibe <span style={{ color: "#ff4444", marginLeft: 2 }}>*</span></label>
+          <label style={{ color: `${accentColor}55`, fontSize: 10, fontFamily: FONT_MONO, letterSpacing: "0.2em", textTransform: "uppercase", display: "block", marginBottom: 4 }}>Vibe <span style={{ color: "#ff4444", marginLeft: 2 }}>*</span></label>
           <div className="flex flex-wrap gap-2 mt-1">
             {VIBE_TAGS.filter((v) => v.id !== "all").map((vibe) => (
               <motion.button
@@ -135,10 +137,10 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
           disabled={!form.tag}
           className="flex-1 py-3 text-xs tracking-widest uppercase font-bold rounded-sm"
           style={{
-            background:  form.tag ? `${ACID}18` : "rgba(255,255,255,0.04)",
-            border:      `1px solid ${form.tag ? ACID + "44" : "rgba(255,255,255,0.1)"}`,
+            background:  form.tag ? `${accentColor}18` : "rgba(255,255,255,0.04)",
+            border:      `1px solid ${form.tag ? accentColor + "44" : "rgba(255,255,255,0.1)"}`,
             color:       form.tag ? ACID : "rgba(255,255,255,0.2)",
-            textShadow:  form.tag ? `0 0 8px ${ACID}66` : "none",
+            textShadow:  form.tag ? `0 0 8px ${accentColor}66` : "none",
             cursor:      form.tag ? "pointer" : "not-allowed",
           }}
         >
@@ -147,7 +149,7 @@ export const AddTrackForm = ({ onAdd, onClose, initialData = null, VIBE_TAGS }) 
         <motion.button
           whileTap={{ scale: 0.95 }} onClick={onClose}
           className="px-4 py-3 text-xs tracking-widest uppercase rounded-sm opacity-40 hover:opacity-70 transition-opacity"
-          style={{ color: ACID, border: `1px solid ${ACID}22` }}
+          style={{ color: accentColor, border: `1px solid ${accentColor}22` }}
         >
           CANCELAR
         </motion.button>

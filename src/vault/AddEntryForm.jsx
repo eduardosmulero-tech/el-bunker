@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ACID, FONT_MONO, GLASS_BG, GLASS_BORDER, VIBE_TAGS, R2_PUBLIC_BASE } from "../tokens";
+import { useVibeAccent } from "../core/useVibeAccent";
 import { uploadFile } from "../core/FileUploadService";
 import { Icon, Input } from "../core/ui";
 import LocationSearch from "./LocationSearch";
@@ -223,6 +224,7 @@ const SELECT_STYLE = (color = ACID) => ({
 });
 
 export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate, onCancel, section = "memoria", eraName = "", sectionLabel = "MEMORIA" }) {
+  const accentColor = useVibeAccent();
   const isEditing = !!entry;
   // ADR-033: el selector de tipos ofrece SOLO los de la sección activa. En
   // creación arranca abierto (fila de pastillas); al elegir se contrae a
@@ -372,10 +374,10 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       }}>
       {/* Header del flujo — L-4: el lienzo es el formulario, con la sección y la era */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: ACID, fontFamily: FONT_MONO }}>
+        <span className="text-xs tracking-[0.3em] uppercase opacity-50" style={{ color: accentColor, fontFamily: FONT_MONO }}>
           <Icon name={isEditing ? "edit" : "plus"} size={14} decorative /> {isEditing ? "EDITANDO" : "NUEVA"} ENTRADA EN {sectionLabel}{eraName ? ` · ${eraName}` : ""}
         </span>
-        <span className="text-xs opacity-30" style={{ color: ACID, fontFamily: FONT_MONO }}>
+        <span className="text-xs opacity-30" style={{ color: accentColor, fontFamily: FONT_MONO }}>
           {entry?.id?.slice(0, 8)}…
         </span>
       </div>
@@ -392,9 +394,9 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
               style={{
                 minHeight: 44,
                 minWidth: 44,
-                color: type === t.id ? ACID : `${ACID}88`,
-                border: `1px solid ${type === t.id ? ACID : `${ACID}33`}`,
-                background: type === t.id ? `${ACID}0d` : "transparent",
+                color: type === t.id ? ACID : `${accentColor}88`,
+                border: `1px solid ${type === t.id ? ACID : `${accentColor}33`}`,
+                background: type === t.id ? `${accentColor}0d` : "transparent",
                 fontFamily: FONT_MONO,
               }}
             >
@@ -407,7 +409,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           type="button"
           onClick={() => setTypePickerOpen(true)}
           className="text-xs tracking-widest uppercase self-start px-4 transition-all"
-          style={{ minHeight: 44, color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}
+          style={{ minHeight: 44, color: accentColor, border: `1px solid ${accentColor}44`, fontFamily: FONT_MONO }}
         >
           {tipoActual.label} · cambiar
         </button>
@@ -444,7 +446,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
                 onChange={(e) => setExtraValue(f.key, e.target.value)}
                 placeholder={f.placeholder ?? f.label}
                 className="flex-1 min-w-[100px]"
-                accentColor={ACID}
+                accentColor={accentColor}
               />
             );
           })}
@@ -452,7 +454,7 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       )}
 
       {/* Campos */}
-      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={ACID} />
+      <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="TÍTULO" accentColor={accentColor} />
 
       {FILE_UPLOAD_TYPES.has(type) ? (
         <>
@@ -469,29 +471,29 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <div
             onClick={() => fileInputRef.current?.click()}
             className="relative flex flex-col items-center justify-center p-6 cursor-pointer rounded-sm"
-            style={{ border: `1px dashed ${ACID}44`, minHeight: 160, background: photoPreview ? "transparent" : `${ACID}04` }}>
+            style={{ border: `1px dashed ${accentColor}44`, minHeight: 160, background: photoPreview ? "transparent" : `${accentColor}04` }}>
             {photoPreview ? (
               <img src={photoPreview} alt="preview" className="max-h-40 object-contain rounded-sm" />
             ) : (
               <>
-                <span className="text-3xl mb-2 opacity-40" style={{ color: ACID }}>
+                <span className="text-3xl mb-2 opacity-40" style={{ color: accentColor }}>
                   <Icon name={currentMeta?.icon ?? "camera"} size={30} decorative />
                 </span>
-                <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: ACID, fontFamily: FONT_MONO }}>
+                <p className="text-xs opacity-40 tracking-widest uppercase" style={{ color: accentColor, fontFamily: FONT_MONO }}>
                   TAP PARA SELECCIONAR {currentMeta?.label ?? "ARCHIVO"}
                 </p>
               </>
             )}
           </div>
           {photoFile && (
-            <p className="text-xs opacity-40 truncate" style={{ color: ACID, fontFamily: FONT_MONO }}>
+            <p className="text-xs opacity-40 truncate" style={{ color: accentColor, fontFamily: FONT_MONO }}>
               {photoFile.name} ({(photoFile.size / 1024).toFixed(1)}KB)
             </p>
           )}
         </>
       ) : (
         <Input multiline value={text} onChange={e => setText(e.target.value)}
-          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={ACID} />
+          placeholder={PLACEHOLDER_BY_TYPE[type] ?? "Escribe aquí…"} accentColor={accentColor} />
       )}
 
       {/* Era + Destinatario */}
@@ -535,8 +537,8 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
           <button key={tag.id} onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
             className="text-xs px-3 py-2.5"
             style={{
-              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}44`,
-              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? ACID) : `${ACID}22`}`,
+              color: tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? accentColor) : `${accentColor}44`,
+              border: `1px solid ${tags.includes(tag.id) ? (tag.palette?.accent ?? tag.seedColor ?? accentColor) : `${accentColor}22`}`,
               fontFamily: FONT_MONO,
             }}>
             {tag.icon} {tag.label}
@@ -553,12 +555,12 @@ export default function AddEntryForm({ eras = [], entry = null, onAdd, onUpdate,
       {/* Botones */}
       <div className="flex gap-2">
         <motion.button whileTap={{ scale: 0.95 }} onClick={handleSubmit} disabled={isSubmitting}
-          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: ACID, border: `1px solid ${ACID}44`, fontFamily: FONT_MONO }}>
+          className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] flex-1" style={{ color: accentColor, border: `1px solid ${accentColor}44`, fontFamily: FONT_MONO }}>
           {isSubmitting ? "GUARDANDO..." : isEditing ? "ACTUALIZAR" : FILE_UPLOAD_TYPES.has(type) ? `SUBIR ${currentMeta?.label ?? "ARCHIVO"}` : "GUARDAR"}
         </motion.button>
         {onCancel && (
           <motion.button whileTap={{ scale: 0.95 }} onClick={onCancel}
-            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: ACID, border: `1px solid ${ACID}33`, fontFamily: FONT_MONO }}>
+            className="text-xs tracking-[0.2em] uppercase p-3 min-h-[44px] opacity-40" style={{ color: accentColor, border: `1px solid ${accentColor}33`, fontFamily: FONT_MONO }}>
             CANCELAR
           </motion.button>
         )}

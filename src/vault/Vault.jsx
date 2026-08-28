@@ -14,6 +14,7 @@ import AddEntryForm from "./AddEntryForm";
 import { SECCIONES, SECCION_LABEL, seccionDeEntrada, MODES, monthsSince, timeSince, timeUntil } from "./VaultHelpers";
 import { ColorPicker } from "../core/ColorPicker";
 import { ACID, PURPLE, GLASS_BG, GLASS_BORDER, FONT_MONO } from "../tokens";
+import { useVibeAccent } from "../core/useVibeAccent";
 import ChunkErrorBoundary from "../core/ChunkErrorBoundary";
 import { Button } from "../core/ui";
 import { useToast } from "../core/ToastContext";
@@ -98,9 +99,10 @@ const AdventureCounter = ({ startDate, accentColor = ACID }) => {
  * "At-risk" state (>18 months) → fast, erratic pulse, red + warning glyph
  */
 const HeartbeatWidget = ({ lastHeartbeat }) => {
+  const accentColor = useVibeAccent();
   const monthsAgo = monthsSince(lastHeartbeat);
   const atRisk    = monthsAgo >= 18;
-  const color     = atRisk ? "#ff3b3b" : ACID;
+  const color     = atRisk ? "#ff3b3b" : accentColor;
 
   // Beat speed: 1.2s (safe) → 0.35s (at-risk)
   const beatDuration = atRisk
@@ -173,6 +175,7 @@ const HeartbeatWidget = ({ lastHeartbeat }) => {
  * Locked: shows countdown. Unlocked: shows glitch-reveal animation.
  */
 const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE }) => {
+  const accentColor = useVibeAccent();
   const countdown = timeUntil(unlockDate);
   const isLocked  = countdown && !countdown.unlocked;
 
@@ -194,7 +197,7 @@ const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE 
       <div className="flex items-center justify-between mb-3">
         <p
           className="text-xs tracking-[0.3em] uppercase font-bold"
-          style={{ color: isLocked ? PURPLE : ACID }}
+          style={{ color: isLocked ? PURPLE : accentColor }}
         >
           <Icon name={isLocked ? "timer" : "archive"} size={14} decorative /> {title}
         </p>
@@ -251,7 +254,7 @@ const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE 
           animate={{ opacity: 1, filter: "blur(0px)" }}
           transition={{ duration: 1, ease: "easeOut" }}
           className="text-sm opacity-70"
-          style={{ color: ACID }}
+          style={{ color: accentColor }}
         >
           {content}
         </motion.div>
@@ -266,6 +269,7 @@ const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE 
  * Glassmorphism + colored accent border based on era.color.
  */
 const EraCard = ({ era, isActive, onClick }) => {
+  const accentColor = useVibeAccent();
   const time = timeSince(era.start_date);
 
   return (
@@ -278,9 +282,9 @@ const EraCard = ({ era, isActive, onClick }) => {
         background: `linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)`,
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
-        border: `1px solid ${isActive ? era.color ?? ACID : "rgba(255,255,255,0.06)"}`,
+        border: `1px solid ${isActive ? era.color ?? accentColor : "rgba(255,255,255,0.06)"}`,
         boxShadow: isActive
-          ? `0 0 30px ${era.color ?? ACID}22, inset 0 0 30px ${era.color ?? ACID}08`
+          ? `0 0 30px ${era.color ?? accentColor}22, inset 0 0 30px ${era.color ?? accentColor}08`
           : "none",
         fontFamily: FONT_MONO,
         transition: "width 0.4s ease, height 0.4s ease",
@@ -301,7 +305,7 @@ const EraCard = ({ era, isActive, onClick }) => {
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{
-            background: `radial-gradient(ellipse at 30% 30%, ${era.color ?? ACID} 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse at 30% 30%, ${era.color ?? accentColor} 0%, transparent 70%)`,
           }}
         />
       )}
@@ -312,7 +316,7 @@ const EraCard = ({ era, isActive, onClick }) => {
         <div className="flex items-center justify-between">
           <span
             className="text-xs tracking-[0.3em] uppercase opacity-40"
-            style={{ color: era.color ?? ACID }}
+            style={{ color: era.color ?? accentColor }}
           >
             ERA_{String(era._index ?? 0).padStart(2, "0")}
           </span>
@@ -321,7 +325,7 @@ const EraCard = ({ era, isActive, onClick }) => {
               animate={{ opacity: [0.4, 1, 0.4] }}
               transition={{ duration: 1.5, repeat: Infinity }}
               className="text-xs"
-              style={{ color: era.color ?? ACID }}
+              style={{ color: era.color ?? accentColor }}
             >
               <Icon name="archive" size={14} decorative /> ACTIVA
             </motion.span>
@@ -333,8 +337,8 @@ const EraCard = ({ era, isActive, onClick }) => {
           <h3
             className="text-base font-bold tracking-wide leading-tight mb-1 truncate"
             style={{
-              color: era.color ?? ACID,
-              textShadow: `0 0 12px ${era.color ?? ACID}66`,
+              color: era.color ?? accentColor,
+              textShadow: `0 0 12px ${era.color ?? accentColor}66`,
             }}
           >
             {era.name}
@@ -344,7 +348,7 @@ const EraCard = ({ era, isActive, onClick }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.5 }}
               className="text-xs line-clamp-2 leading-relaxed"
-              style={{ color: era.color ?? ACID }}
+              style={{ color: era.color ?? accentColor }}
             >
               {era.description}
             </motion.p>
@@ -353,10 +357,10 @@ const EraCard = ({ era, isActive, onClick }) => {
 
         {/* Bottom: Metadata */}
         <div className="flex items-center justify-between">
-          <span className="text-xs opacity-30 tracking-wider" style={{ color: era.color ?? ACID }}>
+          <span className="text-xs opacity-30 tracking-wider" style={{ color: era.color ?? accentColor }}>
             {new Date(era.start_date).toLocaleDateString("en-US", { year: "numeric", month: "short" }).toUpperCase()}
           </span>
-          <span className="text-xs opacity-40" style={{ color: era.color ?? ACID }}>
+          <span className="text-xs opacity-40" style={{ color: era.color ?? accentColor }}>
             {time.totalDays}D
           </span>
         </div>
@@ -366,7 +370,7 @@ const EraCard = ({ era, isActive, onClick }) => {
       {isActive && (
         <motion.div
           className="absolute bottom-0 left-0 right-0 h-px"
-          style={{ background: era.color ?? ACID, boxShadow: `0 0 8px ${era.color ?? ACID}` }}
+          style={{ background: era.color ?? accentColor, boxShadow: `0 0 8px ${era.color ?? accentColor}` }}
           animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 2, repeat: Infinity }}
         />

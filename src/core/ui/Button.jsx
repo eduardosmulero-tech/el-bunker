@@ -2,10 +2,15 @@ import { motion } from "framer-motion";
 import Icon from "./Icon";
 import { FONT_MONO } from "../../tokens";
 
+// Ley del vibe: si nadie pasa accentColor, el botón sigue a --vibe-accent
+// (ADR-030 lo ata al vibe en admin también). El alpha va con color-mix
+// porque los sufijos hex no funcionan sobre var().
+const mix = (c, pct) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+
 const VARIANTS = {
-  primary:   (c) => ({ bg: `${c}15`, border: `1px solid ${c}55`, color: c, hoverBg: `${c}22` }),
-  secondary: (c) => ({ bg: "transparent", border: `1px solid ${c}33`, color: `${c}cc`, hoverBg: `${c}08` }),
-  ghost:     (c) => ({ bg: "transparent", border: "1px solid transparent", color: `${c}88`, hoverBg: `${c}08` }),
+  primary:   (c) => ({ bg: mix(c, 8), border: `1px solid ${mix(c, 33)}`, color: c, hoverBg: mix(c, 13) }),
+  secondary: (c) => ({ bg: "transparent", border: `1px solid ${mix(c, 20)}`, color: mix(c, 80), hoverBg: mix(c, 3) }),
+  ghost:     (c) => ({ bg: "transparent", border: "1px solid transparent", color: mix(c, 53), hoverBg: mix(c, 3) }),
 };
 
 const SIZES = {
@@ -18,7 +23,7 @@ export default function Button({
   children,
   variant = "primary",
   size = "md",
-  accentColor = "#bfff00",
+  accentColor = "var(--vibe-accent, #bfff00)",
   loading = false,
   disabled = false,
   icon,
@@ -51,7 +56,7 @@ export default function Button({
         fontFamily: FONT_MONO,
         background: v.bg,
         border: v.border,
-        color: isDisabled ? `${accentColor}44` : v.color,
+        color: isDisabled ? mix(accentColor, 27) : v.color,
         borderRadius: 2,
         cursor: isDisabled ? "not-allowed" : "pointer",
         display: "inline-flex",

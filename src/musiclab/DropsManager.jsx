@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID, PURPLE, PURPLE_BG, PURPLE_BORDER } from "../tokens";
+import { PURPLE, PURPLE_BG, PURPLE_BORDER } from "../tokens";
 import { Icon } from "../core/ui";
+import { useVibeAccent } from "../core/useVibeAccent";
 const FONT_MONO     = "'JetBrains Mono', 'Courier New', monospace";
 
 export const DropComposeModal = ({ track, onClose, onSend, currentMinute = 0, trackDuration = 0, recipientName }) => {
@@ -212,6 +213,7 @@ const DropCard = ({ drop, track, onPlay, onMarkSeen, onSave, onDelete, isSaved }
 );
 
 export const DropsHistory = ({ drops, tracks, userId, onPlay, onMarkSeen, onSaveDropSeen, onDeleteDrop }) => {
+  const accentColor = useVibeAccent();
   // BUG-054: filtrar drops enviados por el propio usuario (solo ver los recibidos)
   const received = drops.filter((d) => d.from !== userId);
   const pending  = received.filter((d) => !d.seen && !d.favorited);
@@ -219,7 +221,7 @@ export const DropsHistory = ({ drops, tracks, userId, onPlay, onMarkSeen, onSave
 
   if (!received.length) return (
     <p className="text-xs opacity-20 tracking-widest text-center py-6 uppercase"
-      style={{ color: ACID, fontFamily: FONT_MONO }}>— sin drops recibidos —</p>
+      style={{ color: accentColor, fontFamily: FONT_MONO }}>— sin drops recibidos —</p>
   );
 
   return (

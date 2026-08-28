@@ -1,22 +1,23 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ACID } from "../tokens";
+import { useVibeAccent } from "../core/useVibeAccent";
 import { VibeTagBar } from "./TrackCard";
 import { Icon } from "../core/ui";
 
 const FONT_MONO = "'JetBrains Mono', 'Courier New', monospace";
 export const PlaylistNameInput = ({ onConfirm }) => {
+  const accentColor = useVibeAccent();
   const [name, setName] = useState("");
   return (
-    <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15`, display: "flex", gap: 8 }}>
+    <div style={{ padding: "10px 16px", borderTop: `1px solid ${accentColor}15`, display: "flex", gap: 8 }}>
       <input value={name} onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && e.preventDefault()}
         placeholder="Nueva playlist..."
-        style={{ flex: 1, background: "transparent", border: `1px solid ${ACID}33`, borderRadius: 2,
-          color: ACID, fontSize: 11, padding: "12px 12px", fontFamily: FONT_MONO,
+        style={{ flex: 1, background: "transparent", border: `1px solid ${accentColor}33`, borderRadius: 2,
+          color: accentColor, fontSize: 11, padding: "12px 12px", fontFamily: FONT_MONO,
           letterSpacing: "0.15em", outline: "none" }} />
       <button onClick={() => { if (name.trim()) onConfirm(name); }}
-        style={{ background: `${ACID}15`, border: `1px solid ${ACID}44`, color: ACID, fontSize: 11,
+        style={{ background: `${accentColor}15`, border: `1px solid ${accentColor}44`, color: accentColor, fontSize: 11,
           padding: "12px 16px", borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
         OK
       </button>
@@ -24,24 +25,26 @@ export const PlaylistNameInput = ({ onConfirm }) => {
   );
 };
 
-export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, onClose }) => (
+export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, onClose }) => {
+  const accentColor = useVibeAccent();
+  return (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
     style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.85)",
       display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
     onClick={onClose}>
     <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
-      style={{ background: "#0a0a0a", border: `1px solid ${ACID}33`, borderRadius: 2,
+      style={{ background: "#0a0a0a", border: `1px solid ${accentColor}33`, borderRadius: 2,
         width: "100%", maxWidth: 340, fontFamily: FONT_MONO, overflow: "hidden" }}
       onClick={(e) => e.stopPropagation()}>
-      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${ACID}15`,
-        color: ACID, fontSize: 11, letterSpacing: "0.25em" }}>
+      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${accentColor}15`,
+        color: accentColor, fontSize: 11, letterSpacing: "0.25em" }}>
         AÑADIR A PLAYLIST
       </div>
       {playlists.map((pl) => (
         <button key={pl.id}
           style={{ display: "block", width: "100%", padding: "14px 16px", textAlign: "left",
-            color: ACID, fontSize: 11, letterSpacing: "0.2em", background: "transparent",
-            border: "none", borderBottom: `1px solid ${ACID}10`, cursor: "pointer" }}
+            color: accentColor, fontSize: 11, letterSpacing: "0.2em", background: "transparent",
+            border: "none", borderBottom: `1px solid ${accentColor}10`, cursor: "pointer" }}
           onClick={() => onSelectPlaylist(pl.id)}>
           <Icon name="music" size={14} decorative /> {pl.name}
           <span style={{ opacity: 0.3, marginLeft: 8 }}>[{pl.track_ids.length}]</span>
@@ -50,10 +53,12 @@ export const PlaylistModal = ({ playlists, onSelectPlaylist, onCreatePlaylist, o
       <PlaylistNameInput onConfirm={onCreatePlaylist} />
     </motion.div>
   </motion.div>
-);
+  );
+};
 
 // ── PlaylistDetailModal ────────────────────────────────────────────────────────
 export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose, onPlay, onPlayFromTrack, onAddToQueue, onAddAllToQueue, onRemoveTrack, onDeletePlaylist, onReorderTracks, VIBE_TAGS = [] }) => {
+  const accentColor = useVibeAccent();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [orderedIds, setOrderedIds] = useState(playlist?.track_ids ?? []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -134,18 +139,18 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
         display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
       onClick={onClose}>
       <motion.div initial={{ scale: 0.95, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 10 }}
-        style={{ background: "#0a0a0a", border: `1px solid ${ACID}33`, borderRadius: 2,
+        style={{ background: "#0a0a0a", border: `1px solid ${accentColor}33`, borderRadius: 2,
           width: "100%", maxWidth: 360, fontFamily: FONT_MONO, overflow: "hidden", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
         onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${ACID}15`,
+        <div style={{ padding: "12px 16px", borderBottom: `1px solid ${accentColor}15`,
           display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <p style={{ color: ACID, fontSize: 12, letterSpacing: "0.25em", fontWeight: "bold", overflowWrap: "anywhere", whiteSpace: "normal" }}>
+            <p style={{ color: accentColor, fontSize: 12, letterSpacing: "0.25em", fontWeight: "bold", overflowWrap: "anywhere", whiteSpace: "normal" }}>
               <Icon name="music" size={14} decorative /> {playlist.name}
             </p>
-            <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.15em" }}>
+            <p style={{ color: `${accentColor}44`, fontSize: 10, letterSpacing: "0.15em" }}>
               {searchQuery.trim() ? `${visibleTracks.length}/${plTracks.length}` : plTracks.length} track{plTracks.length !== 1 ? "s" : ""}
               {missingIds.length > 0 && (
                 <span style={{ color: "#ff6b35", marginLeft: 6 }}>
@@ -159,13 +164,13 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
               onClick={() => { setShowSearch((p) => !p); setSearchQuery(""); }}
               style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center",
                 borderRadius: 2, fontSize: 15, transition: "all 0.15s",
-                color: ACID, border: `1px solid ${showSearch ? ACID + "66" : ACID + "33"}`,
-                background: showSearch ? `${ACID}15` : `${ACID}06`, cursor: "pointer" }}>
+                color: accentColor, border: `1px solid ${showSearch ? accentColor + "66" : accentColor + "33"}`,
+                background: showSearch ? `${accentColor}15` : `${accentColor}06`, cursor: "pointer" }}>
               <Icon name="search" size={15} decorative />
             </motion.button>
             {plTracks.length > 0 && (
               <motion.button whileTap={{ scale: 0.92 }} onClick={handlePlay}
-                style={{ background: `${ACID}18`, border: `1px solid ${ACID}44`, color: ACID,
+                style={{ background: `${accentColor}18`, border: `1px solid ${accentColor}44`, color: accentColor,
                   fontSize: 11, padding: "12px 16px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.2em" }}>
                 <Icon name="play" size={14} decorative /> PLAY
@@ -174,20 +179,20 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
             {plTracks.length > 0 && onAddAllToQueue && (
               <motion.button whileTap={{ scale: 0.92 }} onClick={() => onAddAllToQueue(plTracks)}
                 title="Añadir toda la playlist a la cola"
-                style={{ background: `${ACID}0d`, border: `1px solid ${ACID}33`, color: ACID,
+                style={{ background: `${accentColor}0d`, border: `1px solid ${accentColor}33`, color: accentColor,
                   fontSize: 10, padding: "12px 14px", borderRadius: 2, cursor: "pointer",
                   fontFamily: FONT_MONO, letterSpacing: "0.15em" }}>
                 <Icon name="arrowRight" size={14} decorative />
               </motion.button>
             )}
             <motion.button whileTap={{ scale: 0.9 }} onClick={onClose}
-              style={{ color: `${ACID}44`, fontSize: 14, padding: "12px 16px", background: "none", border: "none", cursor: "pointer" }}><Icon name="close" size={14} decorative /></motion.button>
+              style={{ color: `${accentColor}44`, fontSize: 14, padding: "12px 16px", background: "none", border: "none", cursor: "pointer" }}><Icon name="close" size={14} decorative /></motion.button>
           </div>
         </div>
 
         {/* Vibe filter */}
         {VIBE_TAGS.length > 0 && (
-          <div style={{ padding: "8px 16px", borderBottom: `1px solid ${ACID}15` }}>
+          <div style={{ padding: "8px 16px", borderBottom: `1px solid ${accentColor}15` }}>
             <VibeTagBar activeVibe={vibeFilter} onVibeChange={setVibeFilter} VIBE_TAGS={VIBE_TAGS} />
           </div>
         )}
@@ -198,14 +203,14 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
             <motion.div
               initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
-              style={{ padding: "8px 16px", borderBottom: `1px solid ${ACID}15` }}>
+              style={{ padding: "8px 16px", borderBottom: `1px solid ${accentColor}15` }}>
               <input
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="BUSCAR EN PLAYLIST..."
-                style={{ width: "100%", background: `${ACID}06`, border: `1px solid ${ACID}33`,
-                  borderRadius: 2, color: ACID, fontSize: 11, padding: "7px 12px",
+                style={{ width: "100%", background: `${accentColor}06`, border: `1px solid ${accentColor}33`,
+                  borderRadius: 2, color: accentColor, fontSize: 11, padding: "7px 12px",
                   fontFamily: FONT_MONO, letterSpacing: "0.15em", outline: "none", boxSizing: "border-box" }}
               />
             </motion.div>
@@ -215,7 +220,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
         {/* Track list */}
         <div style={{ overflowY: "auto", flex: 1 }}>
           {visibleTracks.length === 0 ? (
-            <p style={{ color: `${ACID}30`, fontSize: 10, letterSpacing: "0.2em", textAlign: "center",
+            <p style={{ color: `${accentColor}30`, fontSize: 10, letterSpacing: "0.2em", textAlign: "center",
               padding: "24px 16px", textTransform: "uppercase" }}>
               {searchQuery.trim() ? "— sin resultados —" : "— sin tracks —"}
             </p>
@@ -229,8 +234,8 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                 onDrop={() => handleTrackDrop(i)}
                 style={{ display: "flex", alignItems: "center", gap: 10,
                   padding: "9px 16px",
-                  borderTop: `1px solid ${dragOverIdx === i ? ACID : "transparent"}`,
-                  borderBottom: `1px solid ${dragOverIdx === i ? ACID : ACID + "08"}`,
+                  borderTop: `1px solid ${dragOverIdx === i ? accentColor : "transparent"}`,
+                  borderBottom: `1px solid ${dragOverIdx === i ? accentColor : accentColor + "08"}`,
                   borderStyle: dragOverIdx === i ? "dashed" : "solid",
                   cursor: "grab" }}>
                 <Icon name="more" size={13} decorative />
@@ -239,12 +244,12 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                   onClick={() => handlePlayFromTrack(track, plTracks.indexOf(track))}
                   title="Reproducir desde aquí"
                 >
-                  <p style={{ color: ACID, fontSize: 11, letterSpacing: "0.1em", overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title}</p>
-                  <p style={{ color: `${ACID}44`, fontSize: 10, letterSpacing: "0.1em", overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
+                  <p style={{ color: accentColor, fontSize: 11, letterSpacing: "0.1em", overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.title}</p>
+                  <p style={{ color: `${accentColor}44`, fontSize: 10, letterSpacing: "0.1em", overflowWrap: "anywhere", whiteSpace: "normal" }}>{track.artist}</p>
                 </div>
                 <motion.button whileTap={{ scale: 0.85 }}
                   onClick={() => onRemoveTrack(playlist.id, track.id)}
-                  style={{ color: `${ACID}55`, fontSize: 14, padding: "10px 14px", background: "none", border: "none",
+                  style={{ color: `${accentColor}55`, fontSize: 14, padding: "10px 14px", background: "none", border: "none",
                     cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>−</motion.button>
               </div>
             ))
@@ -276,7 +281,7 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
         )}
 
         {/* Footer — borrar playlist */}
-        <div style={{ padding: "10px 16px", borderTop: `1px solid ${ACID}15` }}>
+        <div style={{ padding: "10px 16px", borderTop: `1px solid ${accentColor}15` }}>
           {confirmDelete ? (
               <div style={{ display: "flex", gap: 8 }}>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={() => { onDeletePlaylist(playlist.id); onClose(); }}
@@ -286,8 +291,8 @@ export const PlaylistDetailModal = ({ playlist, tracks, userId: _userId, onClose
                   CONFIRMAR BORRAR
                 </motion.button>
                 <motion.button whileTap={{ scale: 0.95 }} onClick={() => setConfirmDelete(false)}
-                  style={{ padding: "6px 12px", background: "transparent", border: `1px solid ${ACID}22`,
-                    color: `${ACID}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
+                  style={{ padding: "6px 12px", background: "transparent", border: `1px solid ${accentColor}22`,
+                    color: `${accentColor}55`, fontSize: 10, borderRadius: 2, cursor: "pointer", fontFamily: FONT_MONO }}>
                   CANCELAR
                 </motion.button>
               </div>

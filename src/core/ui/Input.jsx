@@ -1,12 +1,16 @@
 import { FONT_MONO } from "../../tokens";
 
+// Ley del vibe: Input sigue --vibe-accent si nadie pasa accentColor.
+// Los estados de error mantienen su rojo (VB9: fuera del vibe).
+const mix = (c, pct) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+
 export default function Input({
   value,
   onChange,
   placeholder,
   label,
   error,
-  accentColor = "#bfff00",
+  accentColor = "var(--vibe-accent, #bfff00)",
   type = "text",
   multiline = false,
   className = "",
@@ -19,7 +23,7 @@ export default function Input({
     outline: "none",
     fontFamily: FONT_MONO,
     color: accentColor,
-    border: `1px solid ${error ? "#ff3b3b" : `${accentColor}33`}`,
+    border: `1px solid ${error ? "#ff3b3b" : mix(accentColor, 20)}`,
     borderRadius: 2,
     padding: "10px 12px",
     minHeight: 44,
@@ -39,7 +43,7 @@ export default function Input({
             fontSize: 10,
             letterSpacing: "0.25em",
             textTransform: "uppercase",
-            color: error ? "#ff3b3b" : `${accentColor}88`,
+            color: error ? "#ff3b3b" : mix(accentColor, 53),
           }}
         >
           {label}
@@ -57,7 +61,7 @@ export default function Input({
           e.currentTarget.style.borderColor = error ? "#ff3b3b" : accentColor;
         }}
         onBlur={(e) => {
-          e.currentTarget.style.borderColor = error ? "#ff3b3b" : `${accentColor}33`;
+          e.currentTarget.style.borderColor = error ? "#ff3b3b" : mix(accentColor, 20);
         }}
         {...rest}
       />

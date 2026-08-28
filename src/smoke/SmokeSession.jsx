@@ -169,6 +169,8 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     if (!trackVibe) return null;
     return resolveVibeAccent?.(trackVibe) || null;
   }, [trackVibe, resolveVibeAccent]);
+  // Ley del vibe: el chrome de SMOKE sigue al track activo; ACID solo en reposo (VB8).
+  const accentColor = vibeAccent ?? ACID;
 
   // S73: Streak — días consecutivos con sesiones completadas
   const streak = useMemo(() => {
@@ -298,7 +300,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
     ? PURPLE
     : isFading
     ? RED
-    : selectedPreset?.color ?? ACID;
+    : selectedPreset?.color ?? accentColor;
 
   const progress = totalSeconds > 0 ? (totalSeconds - remaining) / totalSeconds : 0;
 
@@ -469,8 +471,8 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
               onClick={() => setShowHistory(p => !p)}
               className="text-xs px-2 py-1 rounded-sm"
               style={{
-                color: showHistory ? ACID : `${ACID}44`,
-                border: `1px solid ${showHistory ? `${ACID}44` : `${ACID}18`}`,
+                color: showHistory ? ACID : `${accentColor}44`,
+                border: `1px solid ${showHistory ? `${accentColor}44` : `${accentColor}18`}`,
                 fontFamily: FONT,
               }}
             >
@@ -499,8 +501,8 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             maxLength={40}
             className="w-full px-3 py-1.5 rounded-sm text-xs bg-transparent outline-none"
             style={{
-              color: ACID,
-              border: `1px solid ${ACID}18`,
+              color: accentColor,
+              border: `1px solid ${accentColor}18`,
               fontFamily: FONT,
               letterSpacing: "0.05em",
             }}
@@ -518,21 +520,21 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
             >
               <div className="pt-2 flex flex-col gap-1" style={{ maxHeight: 180, overflowY: "auto" }}>
                 {history.length === 0 ? (
-                  <p className="text-xs opacity-25 text-center py-2" style={{ color: ACID }}>Sin sesiones aún</p>
+                  <p className="text-xs opacity-25 text-center py-2" style={{ color: accentColor }}>Sin sesiones aún</p>
                 ) : (
                   history.slice(0, 12).map((h, i) => (
                     <div key={h.id || `session-${i}`} className="flex items-center gap-2 text-xs py-1 px-2"
-                      style={{ borderBottom: `1px solid ${ACID}0a`, fontFamily: FONT }}>
-                      <span style={{ color: h.completed ? PURPLE : `${ACID}33` }}>
+                      style={{ borderBottom: `1px solid ${accentColor}0a`, fontFamily: FONT }}>
+                      <span style={{ color: h.completed ? PURPLE : `${accentColor}33` }}>
                         <Icon name={h.completed ? "check" : "more"} size={13} decorative />
                       </span>
-                      <span className="truncate flex-1 opacity-50" style={{ color: ACID }}>
+                      <span className="truncate flex-1 opacity-50" style={{ color: accentColor }}>
                         {h.name || "Sin nombre"}
                       </span>
-                      <span className="opacity-25 flex-shrink-0" style={{ color: ACID }}>
+                      <span className="opacity-25 flex-shrink-0" style={{ color: accentColor }}>
                         {formatTime(h.duration)}
                       </span>
-                      <span className="opacity-15 flex-shrink-0 text-xs" style={{ color: ACID }}>
+                      <span className="opacity-15 flex-shrink-0 text-xs" style={{ color: accentColor }}>
                         {h.date?.slice(0, 10)}
                       </span>
                     </div>
@@ -638,9 +640,9 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           disabled={!isRunning && remaining === totalSeconds && !isDone}
           className="text-xs tracking-widest uppercase px-3 py-2 rounded-sm"
           style={{
-            color: ACID,
-            border: `1px solid ${ACID}30`,
-            background: `${ACID}06`,
+            color: accentColor,
+            border: `1px solid ${accentColor}30`,
+            background: `${accentColor}06`,
             fontFamily: FONT,
             opacity: (!isRunning && remaining === totalSeconds && !isDone) ? 0.3 : 1,
           }}
@@ -687,9 +689,9 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
 
       {/* ── Volume Fade Bar (G6: slider interactivo) ──────── */}
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between text-xs" style={{ color: ACID, opacity: 0.4 }}>
+        <div className="flex items-center justify-between text-xs" style={{ color: accentColor, opacity: 0.4 }}>
           <span className="tracking-widest uppercase">VOLUMEN MASTER</span>
-          <span className="tabular-nums font-bold" style={{ color: isFading ? RED : ACID, opacity: 1 }}>
+          <span className="tabular-nums font-bold" style={{ color: isFading ? RED : accentColor, opacity: 1 }}>
             {Math.round(isFading ? fadedVolume : masterVolume)}%
           </span>
         </div>
@@ -707,8 +709,8 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           className="w-full h-1.5 appearance-none cursor-pointer rounded-full"
           // S125: alpha del un-filled reducido de 15 (~8%) a 08 (~3%) — la barra se ve más limpia
           style={{
-            background: `linear-gradient(90deg, ${isFading ? RED : ACID} ${isFading ? fadedVolume : masterVolume}%, ${ACID}08 ${isFading ? fadedVolume : masterVolume}%)`,
-            accentColor: isFading ? RED : ACID,
+            background: `linear-gradient(90deg, ${isFading ? RED : accentColor} ${isFading ? fadedVolume : masterVolume}%, ${accentColor}08 ${isFading ? fadedVolume : masterVolume}%)`,
+            accentColor: isFading ? RED : accentColor,
             opacity: isFading ? 0.5 : 1,
           }}
           disabled={isFading}
@@ -730,10 +732,10 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
           {/* Divider */}
           <div
             className="h-px w-full"
-            style={{ background: `linear-gradient(90deg, transparent, ${ACID}20, transparent)` }}
+            style={{ background: `linear-gradient(90deg, transparent, ${accentColor}20, transparent)` }}
           />
 
-          <p className="text-xs tracking-[0.35em] uppercase opacity-30 text-center" style={{ color: ACID }}>
+          <p className="text-xs tracking-[0.35em] uppercase opacity-30 text-center" style={{ color: accentColor }}>
             DURACIÓN
           </p>
 
@@ -821,7 +823,7 @@ export default function SmokeSession({ masterVolume: masterVolumeProp, onVolumeC
       )}
 
       {/* ── Fade-out legend ─────────────────────────────────── */}
-      <div className="flex items-center gap-2 text-xs opacity-25" style={{ color: ACID }}>
+      <div className="flex items-center gap-2 text-xs opacity-25" style={{ color: accentColor }}>
         <Icon name="circle" size={13} decorative />
         <span className="tracking-widest uppercase">
           Fade out automático en los últimos 2 min
