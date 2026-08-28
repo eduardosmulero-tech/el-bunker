@@ -22,7 +22,7 @@ const fmtTime = (s) => {
 };
 
 export function MusicLabBigPlayer({ accentColor, vibeConf }) {
-  const { activeTrack, isPlaying, audioRef, skip, localQueue, playTrack } = usePlayer();
+  const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
   const [time, setTime] = useState({ current: 0, duration: 0 });
 
   // Espejo del progreso: mismos eventos que el dock consume, sin estado propio del audio.
@@ -77,20 +77,21 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       aria-label="Reproductor grande de MUSIC LAB"
-      className="w-full min-w-0 grid items-stretch gap-6 rounded-sm"
+      className="w-full min-w-0 grid items-stretch gap-8 rounded-sm"
       style={{
-        gridTemplateColumns: "auto minmax(0, 1fr) minmax(0, 20rem)",
+        /* X-6 enmendada: la cola vive en el dock (única); el lienzo es portada + info + mando. */
+        gridTemplateColumns: "auto minmax(0, 1fr)",
         background: "color-mix(in srgb, var(--vibe-accent, #bfff00) 4%, rgba(5,5,5,0.6))",
         border: `1px solid ${accentColor}2e`,
         boxShadow: `0 0 32px ${accentColor}0f`,
-        padding: 20,
+        padding: 24,
         fontFamily: FONT_MONO,
       }}
     >
       {/* ── Portada grande + visualizador inline (nivel lienzo) ── */}
-      <div className="flex flex-col gap-3 min-w-0">
+      <div className="flex flex-col gap-3 min-w-0 w-72">
         <div
-          className="w-60 h-60 rounded-sm overflow-hidden flex items-center justify-center flex-none"
+          className="w-72 h-72 rounded-sm overflow-hidden flex items-center justify-center flex-none"
           style={{
             background: `${vibeColor}12`,
             border: `1px solid ${vibeColor}44`,
@@ -99,9 +100,9 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
         >
           {activeTrack.thumbnail
             ? <img src={activeTrack.thumbnail} alt="" className="w-full h-full object-cover" />
-            : <Icon name="music" size={56} decorative />}
+            : <Icon name="music" size={64} decorative />}
         </div>
-        <div className="w-60 h-16 min-w-0">
+        <div className="w-72 h-20 min-w-0">
           <AudioVisualizer
             audioRef={audioRef}
             isPlaying={isPlaying}
@@ -178,40 +179,6 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
               {fmtTime(time.current)} / {fmtTime(time.duration)}
             </span>
           </div>
-        </div>
-      </div>
-
-      {/* ── Cola lateral ── */}
-      <div className="flex flex-col min-w-0 gap-2">
-        <span className="text-[10px] tracking-[0.25em] uppercase opacity-60" style={{ color: accentColor }}>
-          Cola [{localQueue?.length ?? 0}]
-        </span>
-        <div className="flex flex-col gap-1 overflow-y-auto min-w-0" style={{ maxHeight: 264 }}>
-          {(localQueue ?? []).map((track, index) => {
-            const isActive = track.id === activeTrack.id;
-            return (
-              <button
-                key={`${track.id}-${index}`}
-                type="button"
-                onClick={() => playTrack(track)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-sm text-left min-w-0"
-                style={{
-                  background: isActive ? `${vibeColor}14` : "transparent",
-                  border: `1px solid ${isActive ? `${vibeColor}3d` : "transparent"}`,
-                  color: isActive ? vibeColor : `${accentColor}aa`,
-                }}
-              >
-                <span className="text-[10px] tabular-nums opacity-50 flex-none">{String(index + 1).padStart(2, "0")}</span>
-                <span className="text-[11px] font-bold truncate min-w-0">{track.title || "Sin título"}</span>
-                <span className="text-[10px] opacity-40 truncate flex-none" style={{ maxWidth: "40%" }}>{track.artist || ""}</span>
-              </button>
-            );
-          })}
-          {(localQueue ?? []).length === 0 && (
-            <span className="text-[10px] tracking-widest uppercase opacity-35 py-2" style={{ color: accentColor }}>
-              Cola vacía
-            </span>
-          )}
         </div>
       </div>
     </motion.section>

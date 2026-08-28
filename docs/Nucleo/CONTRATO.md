@@ -244,13 +244,14 @@ disponible en las tres pestañas»*. Que MUSIC LAB añada además un reproductor
 lo contradice. La regla inamovible 3 (ADR-018, un solo `<audio>` en `PlayerProvider`) no se toca:
 lo que se discute es dónde se pinta el mando, nunca quién posee el audio.
 
-**Aclaración X-6 a ADR-029** (decisión G1 de Edu, 28-ago-2026; cierra `t_a8de002d`): en MUSIC LAB
-el lienzo se convierte en el reproductor grande —portada grande, visualizador de tres niveles de
-ADR-032, cola lateral— mientras el dock permanece como mando permanente en las tres pestañas y en
-`/admin`. No se enmienda la pertenencia del dock al marco: §6 P4 queda en pie (el dock nunca
-aparece ni desaparece, el lienzo no cambia de ancho bajo el cursor). 🔒-3 de ADR-018 intacta:
-un solo `<audio>` en `PlayerProvider`; se decide dónde se pinta el mando, nunca quién posee el
-audio. Desbloquea `t_b617c6b3` bajo esta lectura.
+**Aclaración X-6 a ADR-029** (decisión G1 de Edu, 28-ago-2026; enmendada el mismo día por su
+feedback al verla: «el reproductor está duplicado en MUSIC LAB»; cierra `t_a8de002d`): en MUSIC LAB
+el lienzo ES el reproductor grande —portada grande, visualizador de tres niveles de ADR-032,
+mando prominente— y el dock **oculta su reproductor en esa pestaña** para no duplicarlo. El dock
+conserva COLA/HISTORIAL siempre (única cola), mantiene su ancho de 336px en las tres pestañas y en
+`/admin`, así §6 P4 queda en pie: el dock nunca aparece ni desaparece y el lienzo no cambia de
+ancho bajo el cursor. 🔒-3 de ADR-018 intacta: un solo `<audio>` en `PlayerProvider`; se decide
+dónde se pinta el mando, nunca quién posee el audio. Desbloquea `t_b617c6b3` bajo esta lectura.
 
 ### ✅ ADR-033 — VAULT en cuatro secciones (NUEVO S155)
 > Decisión aprobada por Edu el 14-ago-2026. Diseño y evidencia:

@@ -665,7 +665,10 @@ export default function Layout({
       <DesktopRail activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} isAdmin={user?.id === "admin"} />
       <aside className="desktop-only desktop-dock" aria-label="Reproductor permanente">
         {desktopViewport && <>
-          <WinampPlayer tracks={desktopTracks} vibeConf={desktopVibeConf} onDropSend={handleDesktopDrop} />
+          {/* X-6 enmendada por feedback de Edu (28-ago): en MUSIC LAB el lienzo ES el
+              reproductor grande — el dock oculta su reproductor ahí para no duplicarlo
+              y conserva COLA/HISTORIAL. Ancho del dock constante: el lienzo no se mueve. */}
+          {activeTab !== "music" && <WinampPlayer tracks={desktopTracks} vibeConf={desktopVibeConf} onDropSend={handleDesktopDrop} />}
           <section className="desktop-dock__queue" aria-label="Cola e historial">
             <div className="desktop-dock__section-title" style={{ color: accentColor }}>COLA [{localQueue?.length ?? 0}]</div>
             {(localQueue ?? []).slice(0, 5).map((track, index) => (

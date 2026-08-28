@@ -1336,11 +1336,13 @@ export default function MusicLab({
                 )}
               </AnimatePresence>
 
-              <div className="flex flex-col gap-2">
+              {/* ADR-032 ley 5 (densidad por columnas): en desktop la lista pasa a 2 columnas
+                  y la rejilla a 3 — el lienzo deja de ser una columna de móvil estirada. */}
+              <div className={`flex flex-col gap-2 ${isDesktopViewport ? "xl:grid xl:grid-cols-2 xl:gap-2" : ""}`}>
                 <AnimatePresence>
                   {!editingTrack && filteredTracks.length > 0 ? (
                     viewMode === "grid" ? (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: isDesktopViewport ? "repeat(3, minmax(0, 1fr))" : "1fr 1fr", gap: 8 }}>
                         {filteredTracks.slice(0, visibleCount).map((track) => {
                           const vc = getVibeConfig(track.tag ?? track.vibe);
                           const vibeColor = vc?.color ?? "#555555";
@@ -1372,7 +1374,7 @@ export default function MusicLab({
                     )
                   ) : (
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      className="text-xs opacity-20 tracking-widest text-center py-8 uppercase"
+                      className={`text-xs opacity-20 tracking-widest text-center py-8 uppercase ${isDesktopViewport ? "xl:col-span-2" : ""}`}
                       style={{ color: accentColor }}>
                       — sin tracks para este vibe —
                     </motion.p>
@@ -1382,7 +1384,7 @@ export default function MusicLab({
                   <motion.button
                     whileTap={{ scale: 0.97 }}
                     onClick={() => setVisibleCount((c) => c + 50)}
-                    className="w-full py-3 text-xs tracking-[0.25em] uppercase font-bold rounded-sm mt-1"
+                    className={`w-full py-3 text-xs tracking-[0.25em] uppercase font-bold rounded-sm mt-1 ${isDesktopViewport ? "xl:col-span-2" : ""}`}
                     style={{
                       color: `${accentColor}88`,
                       border: `1px solid ${accentColor}22`,
