@@ -49,7 +49,7 @@ function detectBeat(freqData, history, threshold) {
   return histAvg > 0 && avg > histAvg * (threshold || 1.4);
 }
 
-export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen, ref }) => {
+export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeId = null, onRequestFullscreen, ref, height = 72 }) => {
   const ac = accentColor || ACID;
   const canvasRef    = useRef(null);
   const analyserRef  = useRef(null);
@@ -610,7 +610,7 @@ export const AudioVisualizer = ({ audioRef, isPlaying, accentColor = ACID, vibeI
         ref={canvasRef}
         className={`w-full cursor-pointer ${isFullscreen ? "fixed inset-0 z-50" : ""}`}
         style={{
-          height: isFullscreen ? "100vh" : 72,
+          height: isFullscreen ? "100vh" : height,
           display: "block",
           background: isFullscreen ? "#000000" : "transparent",
           touchAction: "none",

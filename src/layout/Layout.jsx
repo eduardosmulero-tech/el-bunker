@@ -11,6 +11,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { useVault } from "../core/VaultContext";
 import { useMusicActions } from "../musiclab/useMusicActions";
 import { WinampPlayer } from "../musiclab/WinampPlayer";
+import { AudioVisualizer } from "../musiclab/AudioVisualizer";
 import VisitModeControl from "../vault/VisitModeControl";
 import { ACID, PURPLE, BG, getVibeConfig } from "../tokens";
 import { Icon } from "../core/ui";
@@ -277,7 +278,7 @@ const AmbientGlows = ({ accentColor = ACID }) => (
 );
 
 // ─── MINI PLAYER (G7: persistente entre pestañas) ───────────
-const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
+const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80, onOpenFull }) => {
   const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
   // ADR-Refs: refs NO se leen durante el render. Valores inicializados a 0;
   // el useEffect de abajo sincroniza desde el ref vía evento 'timeupdate' en mount.
@@ -321,6 +322,17 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
 
+  // Seek táctil: tap en la barra posiciona la reproducción (mini premium).
+  const handleSeek = (event) => {
+    const audio = audioRef.current;
+    if (!audio?.duration) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * audio.duration;
+  };
+
+  const openFull = () => onOpenFull?.();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -335,31 +347,30 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
           border: `1px solid ${accentColor}44`,
           boxShadow: `0 0 20px ${accentColor}15, 0 2px 8px rgba(0,0,0,0.5)`,
         }}
-        onClick={toggle}
+        onClick={openFull}
+        role="button"
+        aria-label="Abrir reproductor completo"
       >
-        {/* Play/Pause */}
-        <motion.div
-          whileTap={{ scale: 0.88 }}
-          className="flex-shrink-0 w-11 h-11 flex items-center justify-center rounded-sm"
+        {/* Portada con mini-visualizador encima (REV visualizador: barras sobre la portada) */}
+        <div
+          className="relative flex-shrink-0 w-11 h-11 rounded-sm overflow-hidden flex items-center justify-center"
           style={{
             background: `linear-gradient(135deg, ${accentColor}20 0%, ${accentColor}08 100%)`,
             border: `1px solid ${accentColor}55`,
-            boxShadow: `0 0 12px ${accentColor}22`,
           }}
         >
-          <motion.span
-            key={isPlaying ? "pause" : "play"}
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="text-base"
-            style={{ color: accentColor, textShadow: `0 0 8px ${accentColor}88` }}
-          >
-            <Icon name={isPlaying ? "pause" : "play"} size={16} label={isPlaying ? "Pausar" : "Reproducir"} />
-          </motion.span>
-        </motion.div>
+          {activeTrack.thumbnail
+            ? <img src={activeTrack.thumbnail} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            : <Icon name="music" size={18} decorative />}
+          {isPlaying && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-full" style={{ opacity: 0.85 }}>
+              <AudioVisualizer audioRef={audioRef} isPlaying={isPlaying} accentColor={accentColor} height={44} />
+            </div>
+          )}
+        </div>
 
-        {/* Track info */}
-        <div className="flex-1 min-w-0" onClick={toggle}>
+        {/* Track info — tap abre el reproductor completo */}
+        <div className="flex-1 min-w-0">
           <p className="text-[11px] font-bold truncate leading-tight"
             style={{ color: accentColor, textShadow: `0 0 6px ${accentColor}44` }}>
             {activeTrack.title || "Sin título"}
@@ -370,14 +381,8 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
           </p>
         </div>
 
-        {/* S125: time visible en mobile (antes hidden sm:block) */}
-        <span className="text-[9px] opacity-35 tabular-nums flex-shrink-0" style={{ color: accentColor }}>
-          {fmtTime(currentT)}/{fmtTime(duration)}
-        </span>
-
-        {/* S125: cluster prev/skip agrupado (gap-1) en lugar de separados */}
+        {/* Cluster prev / play / skip — taps propios, no abren el reproductor */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Prev */}
           <motion.div
             whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); skip(-1); }}
@@ -387,8 +392,19 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
           >
             <Icon name="arrowLeft" size={14} label="Anterior" />
           </motion.div>
-
-          {/* Skip */}
+          <motion.div
+            whileTap={{ scale: 0.88 }}
+            onClick={(e) => { e.stopPropagation(); toggle(); }}
+            className="w-11 h-11 flex items-center justify-center rounded-sm min-w-[44px] min-h-[44px]"
+            style={{
+              background: `linear-gradient(135deg, ${accentColor}26 0%, ${accentColor}0d 100%)`,
+              border: `1px solid ${accentColor}59`,
+              boxShadow: `0 0 12px ${accentColor}2b`,
+            }}
+            title={isPlaying ? "Pausar" : "Reproducir"}
+          >
+            <Icon name={isPlaying ? "pause" : "play"} size={16} label={isPlaying ? "Pausar" : "Reproducir"} />
+          </motion.div>
           <motion.div
             whileTap={{ scale: 0.85 }}
             onClick={(e) => { e.stopPropagation(); skip(1); }}
@@ -401,14 +417,31 @@ const MiniPlayer = ({ accentColor = ACID, bottomNavHeight = 80 }) => {
         </div>
       </div>
 
-      {/* Progress bar */}
-      <div className="h-[2px] rounded-full overflow-hidden" style={{ background: `${accentColor}15` }}>
-        <motion.div
-          className="h-full rounded-full"
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.3, ease: "linear" }}
-          style={{ background: `linear-gradient(90deg, ${accentColor}cc 0%, ${accentColor} 100%)`, boxShadow: `0 0 6px ${accentColor}88` }}
-        />
+      {/* Barra de progreso con seek táctil + tiempos (S125 conservado) */}
+      <div
+        className="flex items-center gap-2 px-3"
+        style={{ minHeight: 26, paddingTop: 3, paddingBottom: 5, cursor: "pointer" }}
+        onClick={handleSeek}
+        role="slider"
+        aria-label="Buscar posición en el track"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress)}
+      >
+        <span className="text-[9px] opacity-40 tabular-nums flex-none" style={{ color: accentColor }}>
+          {fmtTime(currentT)}
+        </span>
+        <div className="flex-1 h-[3px] rounded-full overflow-hidden" style={{ background: `${accentColor}15` }}>
+          <motion.div
+            className="h-full rounded-full"
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.3, ease: "linear" }}
+            style={{ background: `linear-gradient(90deg, ${accentColor}cc 0%, ${accentColor} 100%)`, boxShadow: `0 0 6px ${accentColor}88` }}
+          />
+        </div>
+        <span className="text-[9px] opacity-40 tabular-nums flex-none" style={{ color: accentColor }}>
+          {fmtTime(duration)}
+        </span>
       </div>
     </motion.div>
   );
@@ -811,7 +844,7 @@ export default function Layout({
       </main>
 
       {/* ── Layer 3.5: Mini Player (G7) ── */}
-      {!desktopViewport && activeTab !== "music" && <MiniPlayer accentColor={accentColor} bottomNavHeight={80} />}
+      {!desktopViewport && activeTab !== "music" && <MiniPlayer accentColor={accentColor} bottomNavHeight={80} onOpenFull={() => onTabChange("music")} />}
 
       {/* ── Layer 4: Bottom Nav ── */}
       <BottomNav activeTab={activeTab} onTabChange={onTabChange} accentColor={accentColor} />
