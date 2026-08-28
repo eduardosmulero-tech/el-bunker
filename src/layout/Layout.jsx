@@ -472,7 +472,7 @@ const DesktopRail = ({ activeTab, onTabChange, accentColor, isAdmin }) => {
             <div key={destination.id}>
               <button type="button" onClick={() => onTabChange(destination.id)}
                 className="desktop-rail__destination" aria-current={active ? "page" : undefined}
-                style={{ color: active ? accentColor : `${accentColor}66`, borderLeftColor: active ? accentColor : "transparent", background: active ? `${accentColor}0d` : "transparent" }}>
+                style={{ color: active ? accentColor : `${accentColor}66`, borderLeftColor: active ? accentColor : "transparent", background: active ? "color-mix(in srgb, var(--vibe-accent, #bfff00) 12%, transparent)" : "transparent" }}>
                 <Icon name={destination.icon} size={16} decorative />
                 <span>{destination.label}</span>
               </button>

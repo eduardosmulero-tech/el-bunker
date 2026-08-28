@@ -139,7 +139,9 @@ body.vibe-pulse {
     justify-content: space-between;
     overflow-y: auto;
     padding: 20px 0 16px;
-    background: rgba(5, 5, 5, 0.84);
+    /* ADR-034: cristal ahumado, no pared — el fondo deja intuir AmbientGlows
+       detrás y lleva una tinta mínima del vibe (color-mix como sus bordes). */
+    background: color-mix(in srgb, var(--vibe-accent, #bfff00) 5%, rgba(5, 5, 5, 0.78));
     border-right: 1px solid color-mix(in srgb, var(--vibe-accent, #bfff00) 14%, transparent);
   }
   .desktop-rail__destinations { display: flex; flex-direction: column; gap: 6px; }
@@ -165,7 +167,8 @@ body.vibe-pulse {
     flex-direction: column;
     overflow-y: auto;
     padding: 16px;
-    background: rgba(5, 5, 5, 0.92);
+    /* ADR-034: mismo cristal ahumado que el raíl; el vibe se intuye, no se pinta. */
+    background: color-mix(in srgb, var(--vibe-accent, #bfff00) 4%, rgba(5, 5, 5, 0.82));
     border-left: 1px solid color-mix(in srgb, var(--vibe-accent, #bfff00) 14%, transparent);
   }
   .desktop-dock__queue { display: flex; flex-direction: column; gap: 3px; margin-top: 12px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--vibe-accent, #bfff00) 14%, transparent); font: 10px 'JetBrains Mono', 'Courier New', monospace; letter-spacing: 0.08em; }
