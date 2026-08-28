@@ -2,7 +2,7 @@
 > ADRs vigentes. Normativo — prevalencia absoluta.
 > Contradicción con este doc → Claude detiene y reporta antes de generar pliego.
 > Solo crece con nuevas decisiones. Los ADRs revertidos nunca desaparecen: se marcan ⛔.
-> Última actualización: S154 — ADR-029 HUD de escritorio (7-ago-2026). Base: S49, refundación del producto.
+> Última actualización: S156 — G1 de escritorio: ADR-034 + aclaraciones X-6/X-7 (28-ago-2026). Base: S49, refundación del producto.
 > Las specs funcionales viven en `docs/spec/`; su índice de enrutado es `docs/spec/INDEX.md`,
 > exigido por el `CANON.manifest`. Este CONTRATO manda sobre ellas (ver ADR-029).
 
@@ -196,10 +196,8 @@ color base fijo en reposo, `VB9` exclusiones del vibe, `VB10` contraste algorít
 formulario de tags con paleta completa), `T1`-`T11`, `Q15`, `UX9` y `UX10`. Enrutado a las specs:
 `docs/spec/INDEX.md`.
 
-> ⚠️ **Hueco de numeración deliberado: ADR-030 y ADR-031 todavía no están aquí.** Sus textos
-> esperan en la tarjeta `t_50b7f0f6` (`ready`, carril `edu`). Los dos de abajo se suben antes
-> porque ADR-033 es el que desbloquea el frente de VAULT y la firma se dio el 14-ago. Al subir
-> 030 y 031 se colocan por número, no al final.
+> ADR-030 y ADR-031 están subidos (S155, cierre del hallazgo ALTA 2 de la auditoría de criterio
+> GLM52). `t_50b7f0f6` queda obsoleta por canonizado; ambos residen al final del fichero.
 
 ### ✅ ADR-032 — El interior del lienzo tiene gramática propia (NUEVO S155)
 > Decisión aprobada por Edu el 14-ago-2026. Diseño completo:
@@ -245,6 +243,14 @@ al marco y está visible en las tres pestañas»*, léase *«el **control** del 
 disponible en las tres pestañas»*. Que MUSIC LAB añada además un reproductor grande en el lienzo no
 lo contradice. La regla inamovible 3 (ADR-018, un solo `<audio>` en `PlayerProvider`) no se toca:
 lo que se discute es dónde se pinta el mando, nunca quién posee el audio.
+
+**Aclaración X-6 a ADR-029** (decisión G1 de Edu, 28-ago-2026; cierra `t_a8de002d`): en MUSIC LAB
+el lienzo se convierte en el reproductor grande —portada grande, visualizador de tres niveles de
+ADR-032, cola lateral— mientras el dock permanece como mando permanente en las tres pestañas y en
+`/admin`. No se enmienda la pertenencia del dock al marco: §6 P4 queda en pie (el dock nunca
+aparece ni desaparece, el lienzo no cambia de ancho bajo el cursor). 🔒-3 de ADR-018 intacta:
+un solo `<audio>` en `PlayerProvider`; se decide dónde se pinta el mando, nunca quién posee el
+audio. Desbloquea `t_b617c6b3` bajo esta lectura.
 
 ### ✅ ADR-033 — VAULT en cuatro secciones (NUEVO S155)
 > Decisión aprobada por Edu el 14-ago-2026. Diseño y evidencia:
@@ -298,6 +304,12 @@ MEMORIA se mira en galería. **No se revierte por error: se revierte porque camb
 efecto neto es que la spec original vuelve a estar vigente para MEMORIA, no que se invente una tercera
 disposición. En móvil no cambia nada.
 
+**Enmienda X-7 a ADR-033** (decisión G1 de Edu, 28-ago-2026; cierra `t_92734f82`): la aglutinación
+de VAULT que motivó la REV del 13-ago la resuelven las cuatro secciones de este ADR. Del diseño
+`DISENO_VAULT_DESKTOP_2026-08-13.md` sobrevive el selector de tipo de MEMORIA como **menú
+compacto** —nunca mayor que el formulario al que abre— y el formulario con espacio real de lectura
+(76ch, ADR-032). El resto del diseño del 13-ago queda histórico donde choque con las secciones.
+
 ---
 
 ## RESUMEN DE ADRs
@@ -332,16 +344,18 @@ disposición. En móvil no cambia nada.
 | ADR-026 | RECAP 4ª cápsula | ✅ NUEVO S49 |
 | ADR-027 | DIALOGUE perspectiva dual | ✅ NUEVO S49 |
 | ADR-028 | Acceso por clave test/admin | ✅ NUEVO S150 |
-|| ADR-029 | HUD: dos arquitecturas (corte 1280px) | ✅ ENMENDADO S155 (X-2 y X-5) ||
+|| ADR-029 | HUD: dos arquitecturas (corte 1280px) | ✅ ENMENDADO S155/S156 (X-2, X-5, X-6) ||
 || ADR-030 | Panel de administración dentro de la app | ✅ NUEVO S155 ||
 || ADR-031 | Revocación de sesiones por epoch de usuario | ✅ NUEVO S155 ||
 | ADR-032 | Gramática del interior del lienzo | ✅ NUEVO S155 |
-| ADR-033 | VAULT en cuatro secciones | ✅ NUEVO S155 |
+| ADR-033 | VAULT en cuatro secciones | ✅ NUEVO S155 (X-7) |
+| ADR-034 | El cromo del marco deja pasar la atmósfera | ✅ NUEVO S156 |
 
-**Total: 33 ADRs firmados · 7 🔒 inamovibles · 3 ⛔ revertidos**
+**Total: 34 ADRs firmados · 7 🔒 inamovibles · 3 ⛔ revertidos**
 
 > ADR-032 enmienda `VIZ2`; ADR-033 sustituye `taxonomia_vault.md` y enmienda `galeria_vault_spec.md`
-> vía X-5. Ambas enmiendas van con nombre y apellidos, como exige `docs/spec/INDEX.md` §2.
+> vía X-5; ADR-034 toma su receta de `DISENO_INTERIOR_LIENZO_2026-08-14.md` §7. Todas las
+> enmiendas van con nombre y apellidos, como exige `docs/spec/INDEX.md` §2.
 
 ### ✅ ADR-030 — Panel de administración dentro de la app (NUEVO S155)
 **Original:** La administración era una aplicación aparte.
@@ -367,3 +381,27 @@ Encender el Modo Visita incrementa el epoch y firma el token de visita con el va
 Toda revocación emite `auth_revoked` en la tabla `events` (ADR-019 🔒-5: la consola de ACCESOS es cliente del motor de eventos, no un agregador nuevo). El estado vive en D1 (🔒-2).
 
 **Alcance de la excepción a "authenticate() no cambia" (ADR-028).** `authenticate()` añade una comprobación de frescura contra D1. Lo que ADR-028 protegía se mantiene entero: la API sigue aceptando exclusivamente JWT firmados con `JWT_SECRET` y sigue habiendo dos emisores del mismo token, no dos formas de entrar.
+
+### ✅ ADR-034 — El cromo del marco deja pasar la atmósfera (NUEVO S156)
+**Original:** ADR-029 levantó el marco de escritorio con fondos casi opacos (barra 0.97, raíl 0.84,
+dock 0.92, línea de estado opaca). GridBackground, AmbientGlows, NoiseOverlay y ScanlineOverlay
+siguen montados, pero el cromo los tapa: la atmósfera solo sobrevive en el lienzo y el escritorio
+se percibe como plantilla plana (`t_7700824f`, `t_e687ed00`).
+
+**Vigente** (decisión G1 de Edu, 28-ago-2026; receta de `DISENO_INTERIOR_LIENZO_2026-08-14.md` §7):
+el marco es **cristal ahumado, no pared**. La geometría de ADR-029 no se toca ni un pixel y por
+debajo de 1280px no cambia nada (V-8 con capturas base):
+
+1. **El cromo deja pasar el vibe.** Raíl y dock bajan su opacidad lo justo para que `AmbientGlows`
+   se intuya detrás, con el mismo `color-mix` sobre `--vibe-accent` que ya usan sus bordes.
+2. **El ruido y las scanlines cubren también el cromo**, no solo el lienzo: suben por encima del
+   marco a opacidad baja y devuelven la textura CRT a la pantalla entera.
+3. **El acento reacciona donde importa.** Los cuatro filetes ya usan `--vibe-accent`; el fondo del
+   destino activo del raíl y el borde del dock también.
+
+**Contención:** el brillo se gana en el borde, no en la superficie. Nada de degradados grandes
+en raíl ni dock. La línea de estado sigue en color base fijo (`VB9`), nunca en color de vibe.
+
+**Aceptación:** en desktop ≥1280 la atmósfera se aprecia a través del cromo sin cambiar tamaños ni
+posiciones; el móvil queda idéntico a la línea base; la auditoría UI se mantiene en 0 overflow,
+0 clipping y 0 errores de consola. Desbloquea `t_7700824f` y su hija `t_e687ed00`.
