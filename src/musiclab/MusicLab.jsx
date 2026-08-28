@@ -19,6 +19,7 @@ import { VibeTagBar, TrackCard, TrackCardGrid } from "./TrackCard";
 import { AddTrackForm } from "./AddTrackForm";
 import { TagManager } from "./TagManager";
 import { DropsHistory } from "./DropsManager";
+import { MusicLabBigPlayer } from "./MusicLabBigPlayer";
 import { Icon, TextPromptDialog, UserGlyph } from "../core/ui";
 import { sortTracks, TRACK_SORT_OPTIONS } from "./TrackTransforms";
 import { reorderQueueByIds } from "../core/QueueTransforms";
@@ -778,6 +779,16 @@ export default function MusicLab({
       </AnimatePresence>
 
       <div className="flex flex-col gap-5 px-4 py-6 w-full" style={{ fontFamily: FONT_MONO }}>
+
+        {/* X-6 (aclaración a ADR-029): el lienzo de MUSIC LAB es el reproductor grande —
+            portada, visualizador de tres niveles y cola lateral. Solo ≥1280px; el dock
+            permanente del marco sigue siendo el mando en las tres pestañas. */}
+        {isDesktopViewport && (
+          <MusicLabBigPlayer
+            accentColor={accentColor}
+            vibeConf={resolveVibeConf(activeTrack?.tag ?? activeTrack?.vibe)}
+          />
+        )}
 
         <div className={`xl:grid ${isDesktopViewport ? "xl:grid-cols-1" : "xl:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]"} xl:items-start xl:gap-6`}>
         {/* ══ Player: mobile/tablet content; desktop lives in Layout's permanent dock ══ */}
