@@ -117,7 +117,7 @@ describe("F2-B — upload y streaming MP3", () => {
     const puts = [];
     const BUNKER = { put: async (...args) => puts.push(args) };
     const response = await handleUpload(
-      request("PUT", "/api/upload/music/song.mp3", new Uint8Array([1, 2, 3]), { "Content-Type": "audio/mpeg" }),
+      request("PUT", "/api/upload/music/song.mp3", new Uint8Array([1, 2, 3]), { "Content-Type": "audio/mpeg", "Content-Length": "3" }),
       { DB, BUNKER },
       new URL("https://bunker.test/api/upload/music/song.mp3"),
       "edu",

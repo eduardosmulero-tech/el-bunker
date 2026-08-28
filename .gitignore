@@ -52,3 +52,8 @@ tools/__pycache__/
 
 # Carpeta externa de trabajo del agente (nunca al repo)
 .trabajo/
+
+# Operacion de datos en D1 (dumps readonly y backups de incidente, nunca al repo)
+incident-backups/
+slowed_*.json
+demo_seleccion_escuchas_slowed.json
