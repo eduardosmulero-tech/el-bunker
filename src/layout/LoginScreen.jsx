@@ -94,14 +94,7 @@ const GridBg = () => (
   <div
     aria-hidden="true"
     className="fixed inset-0 z-0"
-    style={{
-      background: BG,
-      backgroundImage: `
-        linear-gradient(rgba(191,255,0,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(191,255,0,0.04) 1px, transparent 1px)
-      `,
-      backgroundSize: "32px 32px",
-    }}
+    style={{ background: BG }}
   />
 );
 

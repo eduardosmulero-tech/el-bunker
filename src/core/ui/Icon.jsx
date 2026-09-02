@@ -53,6 +53,8 @@ import {
   Unlock,
   Upload,
   Video,
+  Volume2,
+  VolumeX,
   X,
   Zap,
   Target,
@@ -115,6 +117,9 @@ const ICONS = {
   unlock: Unlock,
   upload: Upload,
   video: Video,
+  // Port fastpotify: mute junto al volumen del dock (también tecla M)
+  volumeUp: Volume2,
+  volumeOff: VolumeX,
   close: X,
   zap: Zap,
   target: Target,

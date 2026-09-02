@@ -1338,7 +1338,7 @@ export default function MusicLab({
 
               {/* ADR-032 ley 5 (densidad por columnas): en desktop la lista pasa a 2 columnas
                   y la rejilla a 3 — el lienzo deja de ser una columna de móvil estirada. */}
-              <div className={`flex flex-col gap-2 ${isDesktopViewport ? "xl:grid xl:grid-cols-2 xl:gap-2" : ""}`}>
+              <div className={`flex flex-col gap-2 ${isDesktopViewport ? "xl:grid xl:grid-cols-2 xl:gap-3" : ""}`} style={isDesktopViewport ? { alignItems: "stretch" } : undefined}>
                 <AnimatePresence>
                   {!editingTrack && filteredTracks.length > 0 ? (
                     viewMode === "grid" ? (

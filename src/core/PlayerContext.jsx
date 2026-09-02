@@ -38,6 +38,9 @@ import { getVibeAccent as getVibeAccentCanonical, VIBE_TAGS as CANONICAL_VIBE_TA
 import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 import { workerClient } from "./WorkerClient";
 import { enforceQueueLimit, fisherYatesInPlace } from "./QueueTransforms";
+import { gananciaVolumen, umbralEscucha } from "./playerMath";
+import { getAudioGraph } from "../musiclab/AudioGraph";
+import { applyEqState, normalizeEqGains, FLAT_EQ } from "../musiclab/eq";
 import { loadCastSdk } from "./CastSdkService";
 import { advanceSyncCursor } from "./SyncTransforms";
 
@@ -138,6 +141,48 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   const [autoPlaySignal,   setAutoPlaySignal]   = useState(0);
   const [syncStatus,       setSyncStatus]       = useState("idle");
   const [masterVolume,     setMasterVolume]     = useState(80);
+  // EQ F1+F2: preferencias locales por usuario; el procesamiento vive en el grafo del audio único.
+  const eqStorageKey = userId ? `el_bunker_eq_${userId}` : null;
+  const readEqPreferences = useCallback(() => {
+    if (!eqStorageKey) return { gains: [...FLAT_EQ], enabled: true };
+    try {
+      const parsed = JSON.parse(localStorage.getItem(eqStorageKey) || "null");
+      return {
+        gains: normalizeEqGains(parsed?.gains ?? FLAT_EQ),
+        enabled: parsed?.enabled ?? true,
+      };
+    } catch {
+      return { gains: [...FLAT_EQ], enabled: true };
+    }
+  }, [eqStorageKey]);
+  const [eqGains, setEqGainsState] = useState(() => readEqPreferences().gains);
+  const [eqEnabled, setEqEnabled] = useState(() => readEqPreferences().enabled);
+  const setEqGains = useCallback((next) => {
+    setEqGainsState((previous) => normalizeEqGains(typeof next === "function" ? next(previous) : next));
+  }, []);
+  const toggleEq = useCallback(() => setEqEnabled((enabled) => !enabled), []);
+  useEffect(() => {
+    const preferences = readEqPreferences();
+    setEqGainsState(preferences.gains);
+    setEqEnabled(preferences.enabled);
+  }, [readEqPreferences]);
+  useEffect(() => {
+    if (!eqStorageKey) return;
+    try { localStorage.setItem(eqStorageKey, JSON.stringify({ gains: eqGains, enabled: eqEnabled })); }
+    catch { /* localStorage no disponible */ }
+  }, [eqGains, eqEnabled, eqStorageKey]);
+  // Port fastpotify — mute real con persistencia
+  // (playerMath.gananciaVolumen) se aplica al <audio>; el slider guardado
+  // sigue siendo 0..100 lineal. BUG-22 (volumechange de botones físicos) se
+  // resuelve en los consumers invirtiendo la curva al leer audio.volume.
+  const [isMuted,          setIsMuted]           = useState(() => { try { return localStorage.getItem("el_bunker_muted") === "1"; } catch { return false; } });
+  const volumenEfectivo = isMuted ? 0 : masterVolume;
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      try { localStorage.setItem("el_bunker_muted", prev ? "0" : "1"); } catch { /* noop */ }
+      return !prev;
+    });
+  }, []);
   // playHistory — historial de sesión (Q2/Q3/Q15). Persiste en localStorage por usuario.
   // Se restaura al recargar. Se limpia al vaciar la cola o navegar todo el historial hacia atrás.
   // P2.3 fix: loadHistory ahora filtra reactivamente cuando tracks se cargan.
@@ -168,6 +213,12 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, [userId]);
 
   // S78: Save position periodically for tracks >25min
+  // Port fastpotify — historial honesto: el <audio> emite trackPlay en cada
+  // resume; el play solo se REGISTRA (stats + historial) tras 30s de escucha
+  // o la mitad del track. Los skips dejan de inflar el historial. Declara refs
+  // aquí y registra el motor real donde ya existen audioRef/activeTrackRef.
+  const playRegistradoRef = useRef(null);
+
   useEffect(() => {
     if (!userId || !activeTrack?.id || !audioRef.current) return;
     const DURATION_THRESHOLD = 25 * 60;
@@ -827,6 +878,52 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // activeTrackRef: usado por Chromecast + removeFromQueue (B3 fix S112-A)
   const activeTrackRef = useRef(activeTrack);
   useEffect(() => { activeTrackRef.current = activeTrack; }, [activeTrack]);
+
+  // ── Port fastpotify — motor de escucha real (30s o mitad del track) ──
+  // El <audio> emite onPlay en cada resume; registrar solo ahí inflaba el
+  // historial con skips. La escucha cuenta cuando cruza el umbral, con red
+  // de seguridad al pausar. Requiere audioRef/activeTrackRef ya declarados.
+  const registrarPlayReal = useCallback(() => {
+    const trackId = activeTrackRef.current?.id;
+    if (!trackId || playRegistradoRef.current === trackId) return;
+    const dur = audioRef.current?.duration || 0;
+    const pos = audioRef.current?.currentTime || 0;
+    if (pos >= umbralEscucha(dur)) {
+      playRegistradoRef.current = trackId;
+      trackPlay(trackId, activeTrackRef.current.title);
+      setPlayHistory((h) => (h[h.length - 1]?.id === trackId ? h : [...h, activeTrackRef.current]));
+    }
+  }, [audioRef]);
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return undefined;
+    const onTime = () => registrarPlayReal();
+    const onPause = () => registrarPlayReal();
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("pause", onPause);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("pause", onPause);
+    };
+  }, [registrarPlayReal]);
+
+  // ── Port fastpotify — ganancia perceptual centralizada ──
+  // Aplica la curva + mute al <audio> (volumenEfectivo vive arriba, junto a isMuted).
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const objetivo = gananciaVolumen(volumenEfectivo);
+    if (Math.abs(audio.volume - objetivo) > 0.001) audio.volume = objetivo;
+  }, [volumenEfectivo, audioRef]);
+
+  // ── EQ F1: aplica el estado al grafo Web Audio ya existente ──
+  // Se crea de forma lazy solo al reproducir; nunca añade otro <audio> ni otro contexto.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !isPlaying) return;
+    const graph = getAudioGraph(audio);
+    if (graph?.eqBands?.length) applyEqState(graph, eqGains, eqEnabled);
+  }, [eqGains, eqEnabled, isPlaying]);
 
   const skipRef     = useRef(null);
   const loopModeRef = useRef("off");
@@ -1718,6 +1815,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     <PlayerContext.Provider value={{
       activeTrack, setActiveTrack,
       isPlaying,   setIsPlaying,
+      // Port fastpotify: mute real + registrarPlayReal para consumers que
+      // pausan programáticamente (el pause listener del <audio> ya cubre el caso normal)
+      isMuted, toggleMute, registrarPlayReal,
       localQueue,  setLocalQueue,
       loopMode,    setLoopMode,    toggleLoopMode,
       shuffle,     setShuffle,
@@ -1726,6 +1826,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       trackVibe,
       resolveVibeAccent,
       masterVolume, setMasterVolume,
+      // EQ F1+F2: estado local persistente; la UI futura solo mutará este estado.
+      eqGains, setEqGains, eqEnabled, setEqEnabled, toggleEq,
       audioRef,
       skip, addToQueue, addNext, peekNextTrack, removeFromQueue, playTrack,
       // S141: sincronizar lista filtrada por tag activo (MusicLab) → PlayerContext
@@ -1774,10 +1876,14 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         onPause={() => {
           setIsPlaying(false);
           if (activeTrack) trackPause(activeTrack.id, audioRef.current?.currentTime ?? 0);
+          // Port fastpotify: pausa también puede cerrar una escucha real
+          // (el guard playRegistradoRef evita dobles registros).
+          registrarPlayReal();
         }}
         onPlay={() => {
+          // Port fastpotify: el play ya NO registra — la escucha cuenta tras
+          // 30s o mitad del track (registrarPlayReal en timeupdate/pause).
           setIsPlaying(true);
-          if (activeTrack) trackPlay(activeTrack.id, activeTrack.title);
         }}
         onTimeUpdate={() => {
           // WinampPlayer se suscribe a audioRef.current directamente para progreso visual

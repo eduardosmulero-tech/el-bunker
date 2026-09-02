@@ -22,7 +22,7 @@ const fmtTime = (s) => {
 };
 
 export function MusicLabBigPlayer({ accentColor, vibeConf }) {
-  const { activeTrack, isPlaying, audioRef, skip } = usePlayer();
+  const { activeTrack, isPlaying, audioRef, skip, setIsPlaying, setMasterVolume, masterVolume, shuffle, setShuffle, loopMode, toggleLoopMode } = usePlayer();
   const [time, setTime] = useState({ current: 0, duration: 0 });
 
   // Espejo del progreso: mismos eventos que el dock consume, sin estado propio del audio.
@@ -67,8 +67,42 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
 
   const toggle = () => {
     if (!audioRef?.current) return;
-    if (isPlaying) audioRef.current.pause();
-    else audioRef.current.play().catch(() => { /* reproducción fallida: el dock manda el estado */ });
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying?.(false);
+    } else {
+      audioRef.current.play().then(() => setIsPlaying?.(true)).catch(() => {});
+    }
+  };
+
+  const seek = (event) => {
+    if (!audioRef?.current || !time.duration) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    audioRef.current.currentTime = ((event.clientX - rect.left) / rect.width) * time.duration;
+  };
+
+  // S-bp-a11y: teclado del slider — ±5s con flechas, Home/End para extremos.
+  // Mismo patrón que el slider del dock móvil (WinampPlayer), heredado del
+  // audit fastpotify (borde de foco accesible + ARIA completo).
+  const seekTeclado = (event) => {
+    if (!audioRef?.current || !time.duration) return;
+    const paso = { ArrowLeft: -5, ArrowRight: 5 }[event.key];
+    if (paso != null) {
+      event.preventDefault();
+      audioRef.current.currentTime = Math.min(time.duration, Math.max(0, time.current + paso));
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      audioRef.current.currentTime = 0;
+    } else if (event.key === "End") {
+      event.preventDefault();
+      audioRef.current.currentTime = time.duration - 0.5;
+    }
+  };
+
+  const changeVolume = (event) => {
+    // Port fastpotify: la ganancia perceptual (curva + mute) la aplica el
+    // efecto centralizado del PlayerContext; aquí solo estado.
+    setMasterVolume?.(Number(event.target.value));
   };
 
   return (
@@ -90,6 +124,10 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
     >
       {/* ── Portada grande + visualizador inline (nivel lienzo) ── */}
       <div className="flex flex-col gap-3 min-w-0 w-72">
+        <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.2em]" style={{ color: vibeColor, opacity: 0.65 }}>
+          <span>NOW PLAYING</span>
+          <span>{isPlaying ? "LIVE" : "PAUSED"}</span>
+        </div>
         <div
           className="w-72 h-72 rounded-sm overflow-hidden flex items-center justify-center flex-none"
           style={{
@@ -126,7 +164,13 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
           )}
           <h2
             className="text-xl font-bold leading-tight"
-            style={{ color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal", textShadow: `0 0 18px ${accentColor}33` }}
+            title={activeTrack.title || "Sin título"}
+            style={{
+              color: accentColor, overflowWrap: "anywhere", whiteSpace: "normal", textShadow: `0 0 18px ${accentColor}33`,
+              // Port fastpotify: título largo se trunca a 2 líneas con ellipsis,
+              // el título completo queda en el tooltip nativo
+              display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+            }}
           >
             {activeTrack.title || "Sin título"}
           </h2>
@@ -135,12 +179,44 @@ export function MusicLabBigPlayer({ accentColor, vibeConf }) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 min-w-0">
-          <div className="h-[3px] rounded-full overflow-hidden" style={{ background: `${accentColor}14` }}>
+        <div className="flex flex-col gap-2 min-w-0">          <div
+            className="h-4 rounded-full overflow-hidden cursor-pointer py-1"
+            onClick={seek}
+            onKeyDown={seekTeclado}
+            role="slider"
+            aria-label="Posición de reproducción"
+            aria-valuemin={0}
+            aria-valuemax={time.duration || 0}
+            aria-valuenow={time.current}
+            tabIndex={0} style={{ background: `${accentColor}14` }}>
             <div
               className="h-full rounded-full"
               style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accentColor}cc 0%, ${accentColor} 100%)`, boxShadow: `0 0 8px ${accentColor}88` }}
             />
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setShuffle?.((value) => !value)}
+              className="min-h-[44px] px-3 flex items-center justify-center rounded-sm text-[10px] uppercase tracking-widest"
+              style={{ color: shuffle ? vibeColor : `${accentColor}88`, background: shuffle ? `${vibeColor}18` : `${accentColor}08`, border: `1px solid ${shuffle ? vibeColor : accentColor}30` }}
+              aria-pressed={shuffle}
+            >
+              <Icon name="shuffle" size={15} label="Aleatorio" />
+            </button>
+            <button
+              type="button"
+              onClick={toggleLoopMode}
+              className="min-h-[44px] px-3 flex items-center justify-center rounded-sm text-[10px] uppercase tracking-widest"
+              style={{ color: loopMode !== "off" ? vibeColor : `${accentColor}88`, background: loopMode !== "off" ? `${vibeColor}18` : `${accentColor}08`, border: `1px solid ${loopMode !== "off" ? vibeColor : accentColor}30` }}
+              aria-label={`Repetición: ${loopMode}`}
+            >
+              <Icon name="refresh" size={15} label="Repetir" /> {loopMode === "track" ? "1" : ""}
+            </button>
+            <div className="flex items-center gap-2 min-h-[44px] px-2 rounded-sm" style={{ border: `1px solid ${accentColor}20`, background: `${accentColor}06` }}>
+              <Icon name="music" size={14} decorative />
+              <input type="range" min="0" max="100" value={masterVolume ?? 80} onChange={changeVolume} aria-label="Volumen" className="w-20 accent-current" style={{ accentColor: vibeColor }} />
+            </div>
           </div>
           <div className="flex items-center gap-5">
             <button

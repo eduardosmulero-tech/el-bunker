@@ -1,5 +1,21 @@
 [
   {
+    "id": "ev-a-081",
+    "event_type": "shared_session_started",
+    "user_id": "edu",
+    "title": "Sesión con David",
+    "created_at": "2026-08-29T11:00:00.000Z",
+    "payload": "{}"
+  },
+  {
+    "id": "ev-a-082",
+    "event_type": "shared_session_joined",
+    "user_id": "david",
+    "title": "Sesión con Edu",
+    "created_at": "2026-08-29T10:30:00.000Z",
+    "payload": "{}"
+  },
+  {
     "id": 1,
     "event_type": "track_play",
     "user_id": "edu",
@@ -70,5 +86,645 @@
     "entity_id": "ent-010",
     "payload": "{\"entry_id\": \"ent-010\", \"title\": \"Primer concierto juntos\"}",
     "created_at": "2026-07-05T19:45:00.000Z"
+  },
+  {
+    "id": "ev-a-001",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Midnight City",
+    "created_at": "2026-08-28T00:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-002",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-27T20:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-003",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-27T17:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-004",
+    "event_type": "era_created",
+    "user_id": "david",
+    "title": "Doomsday",
+    "created_at": "2026-08-27T13:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-005",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-27T10:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-006",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-27T06:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-007",
+    "event_type": "playlist_created",
+    "user_id": "david",
+    "title": "Nights",
+    "created_at": "2026-08-27T03:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-008",
+    "event_type": "tag_added",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-26T23:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-009",
+    "event_type": "track_added",
+    "user_id": "edu",
+    "title": "Midnight City",
+    "created_at": "2026-08-26T20:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-010",
+    "event_type": "smoke_session_started",
+    "user_id": "david",
+    "title": "Everlong",
+    "created_at": "2026-08-26T16:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-011",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-26T13:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-012",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Doomsday",
+    "created_at": "2026-08-26T09:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-013",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-26T06:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-014",
+    "event_type": "era_created",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-26T02:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-015",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Nights",
+    "created_at": "2026-08-25T23:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-016",
+    "event_type": "entry_added",
+    "user_id": "david",
+    "title": "Rewind",
+    "created_at": "2026-08-25T19:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-017",
+    "event_type": "playlist_created",
+    "user_id": "edu",
+    "title": "Midnight City",
+    "created_at": "2026-08-25T16:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-018",
+    "event_type": "tag_added",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-25T12:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-019",
+    "event_type": "track_added",
+    "user_id": "david",
+    "title": "La Balada",
+    "created_at": "2026-08-25T09:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-020",
+    "event_type": "smoke_session_started",
+    "user_id": "edu",
+    "title": "Doomsday",
+    "created_at": "2026-08-25T05:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-021",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-25T02:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-022",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-24T22:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-023",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Nights",
+    "created_at": "2026-08-24T19:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-024",
+    "event_type": "era_created",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-24T15:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-025",
+    "event_type": "entry_added",
+    "user_id": "david",
+    "title": "Midnight City",
+    "created_at": "2026-08-24T12:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-026",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-24T08:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-027",
+    "event_type": "playlist_created",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-24T05:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-028",
+    "event_type": "tag_added",
+    "user_id": "david",
+    "title": "Doomsday",
+    "created_at": "2026-08-24T01:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-029",
+    "event_type": "track_added",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-23T22:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-030",
+    "event_type": "smoke_session_started",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-23T18:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-031",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Nights",
+    "created_at": "2026-08-23T15:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-032",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-23T11:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-033",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Midnight City",
+    "created_at": "2026-08-23T08:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-034",
+    "event_type": "era_created",
+    "user_id": "david",
+    "title": "Everlong",
+    "created_at": "2026-08-23T04:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-035",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-23T01:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-036",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Doomsday",
+    "created_at": "2026-08-22T21:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-037",
+    "event_type": "playlist_created",
+    "user_id": "david",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-22T18:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-038",
+    "event_type": "tag_added",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-22T14:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-039",
+    "event_type": "track_added",
+    "user_id": "edu",
+    "title": "Nights",
+    "created_at": "2026-08-22T11:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-040",
+    "event_type": "smoke_session_started",
+    "user_id": "david",
+    "title": "Rewind",
+    "created_at": "2026-08-22T07:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-041",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Midnight City",
+    "created_at": "2026-08-22T04:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-042",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-22T00:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-043",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "La Balada",
+    "created_at": "2026-08-21T21:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-044",
+    "event_type": "era_created",
+    "user_id": "edu",
+    "title": "Doomsday",
+    "created_at": "2026-08-21T17:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-045",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-21T14:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-046",
+    "event_type": "entry_added",
+    "user_id": "david",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-21T10:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-047",
+    "event_type": "playlist_created",
+    "user_id": "edu",
+    "title": "Nights",
+    "created_at": "2026-08-21T07:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-048",
+    "event_type": "tag_added",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-21T03:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-049",
+    "event_type": "track_added",
+    "user_id": "david",
+    "title": "Midnight City",
+    "created_at": "2026-08-21T00:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-050",
+    "event_type": "smoke_session_started",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-20T20:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-051",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-20T17:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-052",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Doomsday",
+    "created_at": "2026-08-20T13:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-053",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-20T10:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-054",
+    "event_type": "era_created",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-20T06:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-055",
+    "event_type": "entry_added",
+    "user_id": "david",
+    "title": "Nights",
+    "created_at": "2026-08-20T03:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-056",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-19T23:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-057",
+    "event_type": "playlist_created",
+    "user_id": "edu",
+    "title": "Midnight City",
+    "created_at": "2026-08-19T20:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-058",
+    "event_type": "tag_added",
+    "user_id": "david",
+    "title": "Everlong",
+    "created_at": "2026-08-19T16:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-059",
+    "event_type": "track_added",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-19T13:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-060",
+    "event_type": "smoke_session_started",
+    "user_id": "edu",
+    "title": "Doomsday",
+    "created_at": "2026-08-19T09:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-061",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-19T06:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-062",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-19T02:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-063",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Nights",
+    "created_at": "2026-08-18T23:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-064",
+    "event_type": "era_created",
+    "user_id": "david",
+    "title": "Rewind",
+    "created_at": "2026-08-18T19:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-065",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Midnight City",
+    "created_at": "2026-08-18T16:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-066",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-18T12:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-067",
+    "event_type": "playlist_created",
+    "user_id": "david",
+    "title": "La Balada",
+    "created_at": "2026-08-18T09:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-068",
+    "event_type": "tag_added",
+    "user_id": "edu",
+    "title": "Doomsday",
+    "created_at": "2026-08-18T05:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-069",
+    "event_type": "track_added",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-18T02:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-070",
+    "event_type": "smoke_session_started",
+    "user_id": "david",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-17T22:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-071",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Nights",
+    "created_at": "2026-08-17T19:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-072",
+    "event_type": "track_play",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-17T15:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
+  },
+  {
+    "id": "ev-a-073",
+    "event_type": "track_play",
+    "user_id": "david",
+    "title": "Midnight City",
+    "created_at": "2026-08-17T12:00:00.000Z",
+    "payload": "{\"title\":\"Midnight City\"}"
+  },
+  {
+    "id": "ev-a-074",
+    "event_type": "era_created",
+    "user_id": "edu",
+    "title": "Everlong",
+    "created_at": "2026-08-17T08:30:00.000Z",
+    "payload": "{\"title\":\"Everlong\"}"
+  },
+  {
+    "id": "ev-a-075",
+    "event_type": "entry_added",
+    "user_id": "edu",
+    "title": "La Balada",
+    "created_at": "2026-08-17T05:00:00.000Z",
+    "payload": "{\"title\":\"La Balada\"}"
+  },
+  {
+    "id": "ev-a-076",
+    "event_type": "entry_added",
+    "user_id": "david",
+    "title": "Doomsday",
+    "created_at": "2026-08-17T01:30:00.000Z",
+    "payload": "{\"title\":\"Doomsday\"}"
+  },
+  {
+    "id": "ev-a-077",
+    "event_type": "playlist_created",
+    "user_id": "edu",
+    "title": "Sunset Lover",
+    "created_at": "2026-08-16T22:00:00.000Z",
+    "payload": "{\"title\":\"Sunset Lover\"}"
+  },
+  {
+    "id": "ev-a-078",
+    "event_type": "tag_added",
+    "user_id": "edu",
+    "title": "Aquel Verano",
+    "created_at": "2026-08-16T18:30:00.000Z",
+    "payload": "{\"title\":\"Aquel Verano\"}"
+  },
+  {
+    "id": "ev-a-079",
+    "event_type": "track_added",
+    "user_id": "david",
+    "title": "Nights",
+    "created_at": "2026-08-16T15:00:00.000Z",
+    "payload": "{\"title\":\"Nights\"}"
+  },
+  {
+    "id": "ev-a-080",
+    "event_type": "smoke_session_started",
+    "user_id": "edu",
+    "title": "Rewind",
+    "created_at": "2026-08-16T11:30:00.000Z",
+    "payload": "{\"title\":\"Rewind\"}"
   }
 ]

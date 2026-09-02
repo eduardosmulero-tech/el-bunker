@@ -403,6 +403,12 @@ debajo de 1280px no cambia nada (V-8 con capturas base):
 **Contención:** el brillo se gana en el borde, no en la superficie. Nada de degradados grandes
 en raíl ni dock. La línea de estado sigue en color base fijo (`VB9`), nunca en color de vibe.
 
+**Enmienda X-8** (Edu, 28-ago-2026): la retícula de fondo se retira de toda la app —principal,
+login y tiles clasificados—. El fondo es atmósfera (halo superior que sigue al vibe, viñeta,
+glows, ruido y scanlines), nunca una cuadrícula. `GridBackground` deja de existir y su sitio lo
+ocupa `AtmosphereBackground`; el vidrio esmerilado de CAJA FUERTE conserva scanlines + blur sin
+rejilla.
+
 **Aceptación:** en desktop ≥1280 la atmósfera se aprecia a través del cromo sin cambiar tamaños ni
 posiciones; el móvil queda idéntico a la línea base; la auditoría UI se mantiene en 0 overflow,
 0 clipping y 0 errores de consola. Desbloquea `t_7700824f` y su hija `t_e687ed00`.

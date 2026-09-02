@@ -322,7 +322,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
       ) : (
       <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 12 }} whileTap={{ scale: 0.98 }} onClick={onClick}
-        className="relative flex items-center gap-3 p-4 rounded-sm cursor-pointer transition-all"
+        className="relative flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-all min-h-[76px]"
         style={{
           background: isActive ? `${vibeColor}18` : `${vibeColor}0e`,
           border: `1px solid ${isActive ? vibeColor + "66" : vibeColor + "33"}`,
@@ -335,7 +335,7 @@ export const TrackCard = ({ track, isActive, onClick, onDrop: _onDrop, onAddToPl
             style={{ background: vibeColor, boxShadow: `0 0 8px ${vibeColor}` }}
             animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 1.2, repeat: Infinity }} />
         )}
-        <div className="w-10 h-10 flex-shrink-0 rounded-sm flex items-center justify-center text-base overflow-hidden"
+        <div className="w-12 h-12 flex-shrink-0 rounded-sm flex items-center justify-center text-base overflow-hidden"
           style={{ background: isActive ? `${vibeColor}18` : `${vibeColor}08`,
             border: `1px solid ${isActive ? vibeColor + "44" : vibeColor + "22"}` }}>
           {track.thumbnail ? (

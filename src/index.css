@@ -58,6 +58,16 @@ html, body {
   }
 }
 
+/* ── Port fastpotify: borde de foco accesible global ──
+   Todo control enfocado por teclado recibe un anillo con el acento del vibe.
+   Solo :focus-visible (no roba el foco por clic) y outline-offset para no
+   tocar la geometría interna de botones/cards. */
+:focus-visible {
+  outline: 2px solid var(--vibe-accent, #bfff00);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* Keep native range hit targets reliable on desktop and touch. */
 input[type="range"] {
   touch-action: pan-x;

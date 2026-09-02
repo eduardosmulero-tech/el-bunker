@@ -20,6 +20,13 @@ function makeAudioContext() {
       this.destination = {};
       this.createAnalyser = vi.fn(() => analyser);
       this.createMediaElementSource = vi.fn(() => source);
+      this.createBiquadFilter = vi.fn(() => ({
+        type: "",
+        frequency: { value: 0 },
+        Q: { value: 0 },
+        gain: { value: 0 },
+        connect: vi.fn(),
+      }));
       MockAudioContext.instances.push(this);
     }
   };
@@ -54,8 +61,28 @@ describe("AudioGraph", () => {
     expect(AudioContext.instances).toHaveLength(2);
   });
 
-  it("returns null when Web Audio is unavailable", () => {
-    expect(getAudioGraph(makeAudioElement(), null)).toBeNull();
+  it("adds ten flat peaking bands before the analyser", () => {
+    const audio = makeAudioElement();
+    const AudioContext = makeAudioContext();
+
+    const graph = getAudioGraph(audio, AudioContext);
+
+    expect(graph.eqBands).toHaveLength(10);
+    expect(graph.eqBands.map((band) => band.frequency.value)).toEqual([31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]);
+    expect(graph.eqBands.every((band) => band.type === "peaking" && band.gain.value === 0)).toBe(true);
+    expect(AudioContext.instances[0].createMediaElementSource).toHaveBeenCalledTimes(1);
+    expect(graph.source.connect).toHaveBeenCalledWith(graph.eqBands[0]);
+    expect(graph.eqBands[9].connect).toHaveBeenCalledWith(graph.analyser);
+  });
+
+  it("does not create a second graph for the same audio element", () => {
+    const audio = makeAudioElement();
+    const AudioContext = makeAudioContext();
+
+    const graph = getAudioGraph(audio, AudioContext);
+
+    expect(getAudioGraph(audio, AudioContext)).toBe(graph);
+    expect(AudioContext.instances).toHaveLength(1);
   });
 
 });

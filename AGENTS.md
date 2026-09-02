@@ -36,6 +36,7 @@
 - NO coautoría IA en commits (R4)
 - NO IA en repos públicos (R10)
 - Integración verificable: `docs/operacional/CANON_WORKFLOW_INTEGRACION_HERMES.md`; `done` no equivale a integrado/aceptado.
+- Testing React: los handlers que disparan re-renders pueden REEMPLAZAR nodos del DOM — re-consulta el nodo antes de cada fireEvent (una referencia vieja queda detached y no llega al listener raíz). Ver WinampPlayerSeek.test.jsx.
 
 ## ▶ PIPELINE
 

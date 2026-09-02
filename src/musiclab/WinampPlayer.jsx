@@ -5,6 +5,7 @@ import { ACID, BG, PURPLE, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
 import { usePlayer } from "../core/PlayerContext";
+import { sliderDesdeGanancia } from "../core/playerMath";
 import { Icon, UserGlyph } from "../core/ui";
 
 // ─── DESIGN TOKENS (local) ───────────────────────────────────
@@ -56,6 +57,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     audioRef,
     skip,
     masterVolume, setMasterVolume,
+    // Port fastpotify: mute real persistente
+    isMuted, toggleMute,
     trackVibe,
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
@@ -166,7 +169,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     setContextTracks?.(tracks);
   }, [tracks, setContextTracks]);
 
-  // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, l=like, q=add to queue.
+  // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, Shift+←/→=seek ±10s
+  // (port fastpotify), m=mute (port fastpotify), l=like, q=add to queue.
   // Agrupado con el resto de useEffects (skipDir/togglePlay ya declaradas arriba).
   // Ignora cuando el foco está en un input/textarea/contenteditable, o si hay
   // modificadores (cmd/ctrl/alt) para no interceptar atajos del navegador.
@@ -182,11 +186,28 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
           break;
         case "ArrowRight":
           e.preventDefault();
-          skipDir(1);
+          // Port fastpotify: Shift+→ seek +10s; flecha sola = skip (comportamiento original)
+          if (e.shiftKey && audioRef.current) {
+            const d = audioRef.current.duration || 0;
+            audioRef.current.currentTime = Math.min(d, (audioRef.current.currentTime || 0) + 10);
+          } else {
+            skipDir(1);
+          }
           break;
         case "ArrowLeft":
           e.preventDefault();
-          skipDir(-1);
+          if (e.shiftKey && audioRef.current) {
+            audioRef.current.currentTime = Math.max(0, (audioRef.current.currentTime || 0) - 10);
+          } else {
+            skipDir(-1);
+          }
+          break;
+        // Port fastpotify: M = mute/unmute con persistencia (el estado y la
+        // ganancia viven en PlayerContext; esto solo dispara el toggle)
+        case "m":
+        case "M":
+          e.preventDefault();
+          toggleMute?.();
           break;
         case "l":
         case "L": {
@@ -217,8 +238,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`
-  }, [track, togglePlay, skipDir, addToQueue, liked]);
+    // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`;
+    // toggleMute y audioRef son estables (useCallback / ref del PlayerContext)
+  }, [track, togglePlay, skipDir, addToQueue, liked, toggleMute, audioRef]);
 
 
   // S78 UX1: Double-tap seek (±10s)
@@ -289,11 +311,33 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     setProgress(pct);
   };
 
+  // S-bp-a11y: seek absoluto en segundos — teclado del slider (heredado del
+  // patrón ARIA del reproductor grande). stopPropagation en el onKeyDown del
+  // slider evita que el atajo global ←/→ (skip de track, ADR-009) se coma el
+  // seek fino cuando el foco está en la barra.
+  const seekAbsoluto = (segundos) => {
+    if (!audioRef.current || !duration) return;
+    const targetTime = Math.min(duration, Math.max(0, segundos));
+    audioRef.current.currentTime = targetTime;
+    currentTRef.current = targetTime;
+    setCurrentT(targetTime);
+    setProgress(duration ? (targetTime / duration) * 100 : 0);
+  };
+
+  const onSeekKeyDown = (e) => {
+    if (!duration) return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); e.stopPropagation(); seekAbsoluto((currentTRef.current || 0) - 5); }
+    else if (e.key === "ArrowRight") { e.preventDefault(); e.stopPropagation(); seekAbsoluto((currentTRef.current || 0) + 5); }
+    else if (e.key === "Home") { e.preventDefault(); e.stopPropagation(); seekAbsoluto(0); }
+    else if (e.key === "End") { e.preventDefault(); e.stopPropagation(); seekAbsoluto(duration - 0.5); }
+  };
+
 
   const changeVolume = (v) => {
     setVolume(v);
     setMasterVolume?.(v);
-    if (audioRef.current) audioRef.current.volume = v / 100;
+    // Port fastpotify: la ganancia perceptual la aplica el efecto centralizado
+    // del PlayerContext (curva + mute); aquí solo estado.
   };
 
   // ── Suscripción a eventos del <audio> centralizado ───────────
@@ -309,7 +353,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     const onLoaded = () => setDuration(audio.duration || 0);
     // BUG-22: botones físicos Android → volumechange en el <audio>
     const onVolumeChange = () => {
-      const newVol = Math.round(audio.volume * 100);
+      // Port fastpotify: la ganancia del <audio> lleva la curva perceptual —
+      // se invierte para reconstruir el slider lineal 0..100.
+      const newVol = sliderDesdeGanancia(audio.volume);
       setVolume(newVol);
       setMasterVolume?.(newVol);
     };
@@ -328,12 +374,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     if (masterVolume == null) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setVolume(masterVolume);
-    if (audioRef.current) {
-      const target = masterVolume / 100;
-      // guarda: evitar re-set cuando el cambio viene de onVolumeChange (feedback loop)
-      if (Math.abs(audioRef.current.volume - target) > 0.001) audioRef.current.volume = target;
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Port fastpotify: la ganancia perceptual (curva + mute) la aplica el
+    // efecto centralizado del PlayerContext; aquí solo se espeja el slider.
   }, [masterVolume]);
 // BUG-29: scroll de título solo si el texto desborda el contenedor
 useLayoutEffect(() => {
@@ -678,14 +720,30 @@ return () => cancelAnimationFrame(raf);
       <div className="px-3 py-2">
         <div className="flex items-center gap-2">
           <span className="text-xs tabular-nums opacity-50" style={{ color: accentColor }}>{fmtTime(currentT)}</span>
-          <div className="relative flex-1 h-4 py-2 group cursor-pointer" onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            seekTo(((e.clientX - rect.left) / rect.width) * 100);
-          }}>
+          {/* S-bp-a11y: slider ARIA — mismo patrón que el reproductor grande:
+              clic para seek + teclado (←/→ ±5s, Home/End) + valores accesibles.
+              stopPropagation: el contenedor raíz interpreta taps como doble-tap
+              seek ±10s (S78 UX1) y no debe dispararse al tocar la barra. */}
+          <div
+            className="relative flex-1 h-4 py-2 group cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = e.currentTarget.getBoundingClientRect();
+              seekTo(((e.clientX - rect.left) / rect.width) * 100);
+            }}
+            onKeyDown={onSeekKeyDown}
+            role="slider"
+            aria-label="Posición de reproducción"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration) || 0}
+            aria-valuenow={Math.round(currentT) || 0}
+            aria-valuetext={`${fmtTime(currentT)} de ${fmtTime(duration)}`}
+            tabIndex={0}
+          >
             <div className="absolute inset-0 rounded-full" style={{ background: withAlpha(accentColor, 0.13) }} />
             <motion.div className="absolute top-0 left-0 h-full rounded-full"
               style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${accentColor} 0%, ${withAlpha(accentColor, 0.67)} 100%)`, boxShadow: `0 0 8px ${withAlpha(accentColor, 0.4)}` }} />
-            <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 opacity-0 group-hover:opacity-100 transition-opacity"
+            <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity"
               style={{ left: `calc(${progress}% - 6px)`, borderColor: accentColor, background: BG, boxShadow: `0 0 8px ${withAlpha(accentColor, 0.8)}` }} />
           </div>
           <span className="text-xs tabular-nums opacity-50" style={{ color: accentColor }}>{fmtTime(duration)}</span>
@@ -780,7 +838,18 @@ return () => cancelAnimationFrame(raf);
                 className="absolute bottom-full right-3 mb-2 px-3 py-2.5 rounded-sm flex items-center gap-2 z-20"
                 style={{ background: "#0a0a0a", border: `1px solid ${withAlpha(accentColor, 0.3)}`, boxShadow: `0 0 16px ${withAlpha(accentColor, 0.2)}` }}
               >
-                <Icon name="music" size={13} decorative />
+                {/* Port fastpotify: mute rápido junto al volumen (también tecla M) */}
+                <button
+                  type="button"
+                  onClick={() => toggleMute?.()}
+                  aria-pressed={isMuted}
+                  aria-label={isMuted ? "Quitar silencio" : "Silenciar"}
+                  title={isMuted ? "Quitar silencio (M)" : "Silenciar (M)"}
+                  className="flex items-center justify-center min-w-[28px] min-h-[28px] rounded-sm"
+                  style={{ color: accentColor, opacity: isMuted ? 0.9 : 0.5, background: isMuted ? `${accentColor}18` : "transparent", border: `1px solid ${isMuted ? accentColor : `${accentColor}30`}` }}
+                >
+                  <Icon name={isMuted ? "volumeOff" : "volumeUp"} size={13} decorative />
+                </button>
                 <input type="range" min={0} max={100} value={volume}
                   onChange={(e) => changeVolume(Number(e.target.value))}
                   className="w-24 h-1.5 appearance-none cursor-pointer rounded-full"

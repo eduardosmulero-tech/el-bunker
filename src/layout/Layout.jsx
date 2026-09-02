@@ -244,22 +244,20 @@ const BottomNav = ({ activeTab, onTabChange, accentColor = ACID }) => {
 };
 
 // ─── GRID BACKGROUND ─────────────────────────────────────────
-const GridBackground = ({ accentColor = ACID }) => {
-  const hex = accentColor.startsWith("#") ? accentColor : ACID;
-  return (
-    <div
-      aria-hidden="true"
-      className="fixed inset-0 z-0 opacity-[0.04]"
-      style={{
-        backgroundImage: `
-          linear-gradient(${hex}99 1px, transparent 1px),
-          linear-gradient(90deg, ${hex}99 1px, transparent 1px)
-        `,
-        backgroundSize: "40px 40px",
-      }}
-    />
-  );
-};
+// X-8 (Edu, 28-ago): la retícula se retira — el fondo es atmósfera,
+// no cuadrícula. Halo superior que sigue al vibe + viñeta profunda.
+const AtmosphereBackground = ({ accentColor = ACID }) => (
+  <div
+    aria-hidden="true"
+    className="fixed inset-0 z-0 pointer-events-none"
+    style={{
+      background: `
+        radial-gradient(120% 55% at 50% -8%, ${accentColor}0a 0%, transparent 55%),
+        radial-gradient(140% 90% at 50% 115%, rgba(0,0,0,0.55) 0%, transparent 60%)
+      `,
+    }}
+  />
+);
 
 // ─── AMBIENT GLOWS ───────────────────────────────────────────
 const AmbientGlows = ({ accentColor = ACID }) => (
@@ -672,7 +670,7 @@ export default function Layout({
       style={{ background: BG, color: accentColor }}
     >
       {/* ── Layer 0: Atmosphere ── */}
-      <GridBackground accentColor={accentColor} />
+      <AtmosphereBackground accentColor={accentColor} />
       <AmbientGlows accentColor={accentColor} />
 
       {/* ── Layer 1: CRT + Noise effects ── */}

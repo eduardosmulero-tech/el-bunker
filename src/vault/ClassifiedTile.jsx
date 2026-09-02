@@ -50,17 +50,15 @@ export default function ClassifiedTile({ entry, era = null, size = "tile", accen
       aria-label={size === "mini" ? "Contenido clasificado" : undefined}
       role={size === "mini" ? "img" : undefined}
     >
-      {/* Vidrio esmerilado: rejilla + scanlines → aspecto "borroso" real */}
+      {/* Vidrio esmerilado: scanlines + blur → aspecto "borroso" real (X-8: sin rejilla) */}
       <div
         aria-hidden="true"
         className="absolute inset-0"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(191,255,0,0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(191,255,0,0.05) 1px, transparent 1px),
             repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.35) 2px, rgba(0,0,0,0.35) 4px)
           `,
-          backgroundSize: size === "mini" ? "16px 16px, 16px 16px, 100% 100%" : "24px 24px, 24px 24px, 100% 100%",
+          backgroundSize: "100% 100%",
           filter: "blur(1.2px)",
         }}
       />

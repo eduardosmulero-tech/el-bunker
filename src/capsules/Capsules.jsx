@@ -10,7 +10,6 @@ import { Skeleton } from "../core/ui";
 import { ACID, FONT_MONO } from "../tokens";
 import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
-import { useToast } from "../core/ToastContext";
 import { Icon } from "../core/ui";
 import { useSecondLevelNav } from "../layout/Layout";
 import SmokeSession from "../smoke/SmokeSession";
@@ -35,7 +34,6 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
   const [capsules, setCapsules] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [fetchError, setFetchError] = useState(null);
-  const { toast } = useToast();
   // G4: usar trackVibe accent en lugar de ACID fijo
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
@@ -63,8 +61,10 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
       } catch (e) {
         console.warn("[Capsules] fetch error:", e.message);
         if (!cancelled) {
-          setFetchError(e.message);
-          toast({ msg: "NO SE PUDO CARGAR", sub: e.message, duration: 3500 });
+          // Estado honesto en español — nunca e.message crudo en inglés (fallos
+          // de red aquí son el caso normal offline, no una excepción de app).
+          const offline = /failed to fetch|networkerror|load failed/i.test(String(e.message));
+          setFetchError(offline ? "SIN CONEXIÓN — se recargará al volver" : "NO SE PUDO CARGAR");
         }
       } finally {
         if (!cancelled) setLoadingEvents(false);
@@ -72,7 +72,7 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
     };
     fetchData();
     return () => { cancelled = true; };
-  }, [toast]);
+  }, []);
 
   return (
     <div className="w-full px-4 py-6 flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>

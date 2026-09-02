@@ -263,6 +263,35 @@ const TimeCapsule = ({ title, unlockDate, content, eraColor: _eraColor = PURPLE 
   );
 };
 
+// ─── ERA CHIP ────────────────────────────────────────────────
+/**
+ * EraChip — fila de eras compacta SOLO en escritorio (≥1280px).
+ * Diseño interior §4.1 punto 5: la fila de eras es wrap; en desktop el muro
+ * debe dominar el pliegue, así que las tarjetas de 200px se convierten en
+ * chips de 44px (táctil). Móvil (<1280) sigue usando EraCard sin cambios (L-1).
+ */
+const EraChip = ({ era, isActive, onClick }) => {
+  const accentColor = useVibeAccent();
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={isActive ? "true" : undefined}
+      className="hidden xl:inline-flex items-center gap-2 flex-shrink-0 min-h-[44px] px-3 rounded-sm text-xs uppercase tracking-wider"
+      style={{
+        color: isActive ? (era.color ?? accentColor) : `${era.color ?? accentColor}aa`,
+        border: `1px solid ${isActive ? era.color ?? accentColor : "rgba(255,255,255,0.10)"}`,
+        background: isActive ? `color-mix(in srgb, ${era.color ?? accentColor} 14%, transparent)` : "transparent",
+        fontFamily: FONT_MONO,
+      }}
+    >
+      <Icon name="archive" size={13} decorative />
+      <span className="truncate max-w-[220px]">{era.name}</span>
+      <span className="opacity-40 tabular-nums">{timeSince(era.start_date).totalDays}D</span>
+    </button>
+  );
+};
+
 // ─── ERA CARD ────────────────────────────────────────────────
 /**
  * EraCard — Individual card in the horizontal slider.
@@ -764,7 +793,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
           <div className="flex items-center gap-2 min-w-0">
             <Icon name="target" size={14} decorative />
             <h2
-              className="text-xs tracking-[0.35em] uppercase font-bold min-w-0"
+              className="text-xs tracking-[0.35em] uppercase font-bold min-w-0 xl:!text-lg"
               style={{ color: activeDisplayEra?.color ?? accent, overflowWrap: "anywhere", whiteSpace: "normal" }}
             >
               {activeDisplayEra?.name ?? "SIN ERA"}
@@ -889,7 +918,7 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
           onMouseLeave={onMouseUp}
         >
           {displayEras.map((era) => (
-            <EraCard
+            <EraChip
               key={era.id}
               era={era}
               isActive={era.id === (activeEraId ?? displayEras[0]?.id)}
@@ -897,6 +926,17 @@ export default function Vault({ db = null, onAddEra = () => {} }) {
                 setActiveEraId(era.id);
               }}
             />
+          ))}
+          {displayEras.map((era) => (
+            <div key={era.id} className="xl:hidden flex-shrink-0">
+              <EraCard
+                era={era}
+                isActive={era.id === (activeEraId ?? displayEras[0]?.id)}
+                onClick={() => {
+                  setActiveEraId(era.id);
+                }}
+              />
+            </div>
           ))}
         </div>
 

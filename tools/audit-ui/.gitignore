@@ -1,3 +1,5 @@
-# Evidencia regenerable del pase de auditoría (AUD-1): audit.json + capturas.
-# Cada ejecución de `npm run audit:ui` regenera tools/audit-ui/report/ entero.
+# Evidencia local de auditoría UI (nunca al repo)
 report/
+.dist-claude-audit/
+.dist-v1/
+.dist-bigplayer/

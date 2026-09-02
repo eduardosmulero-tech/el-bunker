@@ -42,8 +42,13 @@ tools/snapshots/
 # Temp / local state
 .tmp.driveupload/
 .wrangler/
+tmp/
+*.bak
 *.bak_*
 docs.zip
+
+# Paquetes de auditoria y capturas pesadas (nunca al repo)
+*.zip
 
 # Python cache
 __pycache__/
