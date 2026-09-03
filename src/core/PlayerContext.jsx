@@ -39,6 +39,7 @@ import { trackPlay, trackPause, trackSkip } from "./StatsEngine";
 import { workerClient } from "./WorkerClient";
 import { enforceQueueLimit, fisherYatesInPlace } from "./QueueTransforms";
 import { gananciaVolumen, umbralEscucha } from "./playerMath";
+import { readLikedIds, writeLikedIds, toggleLikedId } from "./playerLike";
 import { getAudioGraph } from "../musiclab/AudioGraph";
 import { applyEqState, normalizeEqGains, FLAT_EQ } from "../musiclab/eq";
 import { loadCastSdk } from "./CastSdkService";
@@ -182,7 +183,86 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       try { localStorage.setItem("el_bunker_muted", prev ? "0" : "1"); } catch { /* noop */ }
       return !prev;
     });
-  }, []);
+  }, []);  // Port fastpotify — like unificado (t_like-unificado): estado REAL compartido
+  // dock/deck via playerLike.js (misma implementación que los tests). Antes cada
+  // superficie tenía su useState efímero: el corazón se reseteaba al cambiar de
+  // track, moría al recargar y dock/deck no coincidían. Persistencia local por
+  // usuario hasta que exista backend de track_likes en D1 (tarjeta propia de
+  // Promethe-os; hoy solo drops.favorited tiene servidor).
+  const [likedTrackIds, setLikedTrackIds] = useState(() => readLikedIds(userId));
+  // Rehidratar al cambiar de usuario (login/logout)
+  useEffect(() => { setLikedTrackIds(readLikedIds(userId)); }, [userId]);
+  useEffect(() => {
+    writeLikedIds(userId, likedTrackIds);
+  }, [likedTrackIds, userId]);
+  const isTrackLiked = useCallback((trackId) => !!trackId && likedTrackIds.has(trackId), [likedTrackIds]);
+  // BUG-fix push-on-mount: sin estas banderas, el efecto de push disparaba un PUT
+  // al montar (deps disparan en mount) y sobreescribía D1 con el set viejo de
+  // localStorage ANTES de que el pull aterrizara — pérdida silenciosa de likes
+  // hechos en otro dispositivo. Mismo guard que el save de cola (`!items.length`).
+  const likesDirtyRef = useRef(false);   // hay cambios locales sin pushear
+  const likesSyncedRef = useRef(false);  // el pull inicial ya aterrizó (o falló)
+  const likesPushTimerRef = useRef(null);
+  // Tick para re-armar el push cuando el pull aterriza sobre cambios locales
+  // pendientes: el efecto de push depende de likedTrackIds, pero en ese camino
+  // el estado NO cambia (no merge) — sin este tick, ese primer like jamás se
+  // pushearía hasta el próximo toggle.
+  const [likesPushTick, setLikesPushTick] = useState(0);
+  const toggleTrackLike = useCallback((trackId) => {
+    if (!trackId) return false;
+    const { next, nowLiked } = toggleLikedId(likedTrackIds, trackId);
+    likesDirtyRef.current = true; // cambio local pendiente de push
+    setLikedTrackIds(next);
+    return nowLiked;
+  }, [likedTrackIds]);
+  // t_like-sync: push debounced al Worker (PUT /api/likes/:uid) tras cada toggle.
+  // Solo con JWT; el localStorage sigue siendo la fuente inmediata (optimista).
+
+  // t_like-sync: pull inicial — D1 manda como base y el merge es unión para no
+  // perder likes de otro dispositivo. El push solo se arma DESPUÉS del pull.
+  useEffect(() => {
+    if (!userId || !jwtToken || !workerClient.hasToken()) {
+      likesSyncedRef.current = false;
+      return;
+    }
+    let cancelled = false;
+    workerClient.get(`/api/likes/${userId}`)
+      .then((data) => {
+        // Synced aunque esté cancelado: la nueva sesión hará su propio pull.
+        likesSyncedRef.current = true;
+        if (cancelled || !Array.isArray(data?.liked_track_ids)) return;
+        if (likesDirtyRef.current) {
+          // Cambios locales sin pushear son la verdad más reciente: no merge.
+          // Re-armar el push AHORA que synced=true (el estado no cambió, así
+          // que el efecto de push no se re-ejecutaría solo).
+          setLikesPushTick((n) => n + 1);
+          return;
+        }
+        setLikedTrackIds((prev) => {
+          const merged = new Set(prev);
+          for (const id of data.liked_track_ids) merged.add(id);
+          return merged;
+        });
+      })
+      .catch(() => { likesSyncedRef.current = true; });
+    return () => { cancelled = true; };
+  }, [userId, jwtToken]);
+
+  useEffect(() => {
+    if (!userId || !jwtToken || !workerClient.hasToken()) return;
+    // Solo pushear si el pull ya aterrizó Y hay cambios locales reales.
+    if (!likesSyncedRef.current || !likesDirtyRef.current) return;
+    if (likesPushTimerRef.current) clearTimeout(likesPushTimerRef.current);
+    likesPushTimerRef.current = setTimeout(() => {
+      likesDirtyRef.current = false;
+      workerClient.fetch(`/api/likes/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ liked_track_ids: [...likedTrackIds] }),
+      }).catch(() => { likesDirtyRef.current = true; /* reintento en el próximo toggle */ });
+    }, 2000);
+    return () => clearTimeout(likesPushTimerRef.current);
+  }, [likedTrackIds, userId, jwtToken, likesPushTick]);
   // playHistory — historial de sesión (Q2/Q3/Q15). Persiste en localStorage por usuario.
   // Se restaura al recargar. Se limpia al vaciar la cola o navegar todo el historial hacia atrás.
   // P2.3 fix: loadHistory ahora filtra reactivamente cuando tracks se cargan.
@@ -651,7 +731,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   }, [sessionToast]);
 
   const audioRef        = useRef(null);
-  const preloadAudioRef = useRef(null);  // Fase 1.1 — P-M8: segundo <audio> para precarga silenciosa
   const wakeLockRef     = useRef(null);
   // Fase 1.4 — P2: estado de reintentos por error de red
   const _retryRef = useRef({ trackId: null, attempt: 0, timer: null });
@@ -781,15 +860,16 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         setIsPlaying(false);
         return;
       }
-      // Fase 1.2 — P3: Gapless. Si el preload ya tiene el siguiente track cargado,
+      // Fase 1.2 — P3: Gapless. Si el cache HTTP ya tiene el siguiente track
+      // calentado (t_port-single-audio: fetch() sustituyó al segundo <audio>),
       // inyectar su src en el audio principal antes de actualizar estado.
-      if (next && preloadAudioRef.current && audioRef.current) {
+      // P3.1 fix: normalizar URLs antes de comparar (el browser puede encodear src).
+      if (next && audioRef.current) {
         const nextUrl = getStreamUrl(next);
-        // P3.1 fix: normalizar URLs antes de comparar (el browser puede encodear src vs getStreamUrl).
-        const preloadSrc = preloadAudioRef.current.src;
-        const sameUrl = preloadSrc && nextUrl && (() => {
-          try { return new URL(preloadSrc).href === new URL(nextUrl).href; }
-          catch { return preloadSrc === nextUrl; }
+        const warmedUrl = _nextTrackUrlRef.current;
+        const sameUrl = warmedUrl && nextUrl && (() => {
+          try { return new URL(warmedUrl).href === new URL(nextUrl).href; }
+          catch { return warmedUrl === nextUrl; }
         })();
         if (sameUrl) {
           const isR2 = nextUrl.includes("workers.dev");
@@ -1434,7 +1514,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
 
   // ── onEnded centralizado ──────────────────────────────────────────────
   // S106 — Gapless: skip(1) ya maneja la inyección gapless del src
-  // (via preloadAudioRef en la rama de cola unificada).
+  // (via _nextTrackUrlRef en la rama de cola unificada).
   const handleAudioEnded = useCallback(() => {
     if (loopMode === "track" && audioRef.current) {
       audioRef.current.currentTime = 0;
@@ -1662,8 +1742,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // S106 — Gapless: Precarga del siguiente track.
   // Dos fases: (1) inmediata al arrancar el track actual (1s delay),
   // (2) threshold al 50% como safety net por si la cola cambió.
-  // El segundo <audio> carga la URL en cache del navegador. Silencioso.
-  // Al saltar al siguiente track, el browser ya tiene el archivo → carga instantánea.
+  // t_port-single-audio: sin segundo <audio>. El calentamiento del cache HTTP
+  // (fetch) deja los bytes en cache — R2 ahora responde Cache-Control immutable
+  // (workers/routes/r2.js), así que el salto/seek reutiliza la respuesta.
 
   // ── S106 Fase 1: Precarga inmediata al arrancar un track nuevo ──
   useEffect(() => {
@@ -1671,19 +1752,19 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     // Esperar 1s para que el track actual tenga tiempo de buffer inicial
     const timer = setTimeout(() => {
       const nextUrl = _resolveNextTrackUrl();
-      const preload = preloadAudioRef.current;
-      if (!nextUrl || !preload) return;
-      // Evitar refetch si ya tenemos el mismo URL precargado
-      if (_nextTrackUrlRef.current === nextUrl && preload.src) {
+      if (!nextUrl) return;
+      // Evitar refetch si ya tenemos el mismo URL calentado
+      if (_nextTrackUrlRef.current === nextUrl) {
         console.info("[Búnker] ⏭ Precarga inmediata (ya cached):", nextUrl.slice(-40));
         return;
       }
       _nextTrackUrlRef.current = nextUrl;
-      const isR2 = nextUrl.includes("workers.dev");
-      if (isR2) preload.crossOrigin = "anonymous";
-      else preload.removeAttribute("crossOrigin");
-      preload.src = nextUrl;
-      preload.load();
+      // Sin mode explícito: cors (default) — el <audio> principal ya usa
+      // crossOrigin=anonymous para R2, así que la respuesta cacheable sirve a ambos.
+      fetch(nextUrl, { priority: "low" }).catch(() => {
+        // Fallo de calentamiento inocuo: el skip normal carga sin cache.
+        _nextTrackUrlRef.current = null;
+      });
       console.info("[Búnker] ⏭ Precarga inmediata (1s):", nextUrl.slice(-40));
     }, 1000);
     return () => clearTimeout(timer);
@@ -1693,8 +1774,7 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
   // ── S106 Fase 2: Safety net al 50% (bajado de 80%) ──
   useEffect(() => {
     const audio = audioRef.current;
-    const preload = preloadAudioRef.current;
-    if (!audio || !preload || !isPlaying) return;
+    if (!audio || !isPlaying) return;
 
     let triggered = false;
     const THRESHOLD = 0.5;
@@ -1711,11 +1791,9 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
         const nextUrl = _resolveNextTrackUrl();
         if (nextUrl && _nextTrackUrlRef.current !== nextUrl) {
           _nextTrackUrlRef.current = nextUrl;
-          const isR2 = nextUrl.includes("workers.dev");
-          if (isR2) preload.crossOrigin = "anonymous";
-          else preload.removeAttribute("crossOrigin");
-          preload.src = nextUrl;
-          preload.load();
+          fetch(nextUrl, { priority: "low" }).catch(() => {
+            _nextTrackUrlRef.current = null;
+          });
           console.info("[Búnker] ⏭ Precarga 50% (cola cambió):", nextUrl.slice(-40));
         }
       }
@@ -1725,19 +1803,13 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
     return () => audio.removeEventListener("timeupdate", onTimeUpdate);
   }, [isPlaying, _resolveNextTrackUrl]);
 
-  // S106 — Limpiar precarga cuando cambia el track activo.
-  // Si el src del preloader es el siguiente track, NO limpiar — ya está listo.
+  // t_port-single-audio: el preloader era el único consumer del cleanup de src.
+  // Sin segundo <audio>, _nextTrackUrlRef se invalida aquí para que el calentado
+  // de cache no apunte a un siguiente track ya obsoleto.
   useEffect(() => {
-    const preload = preloadAudioRef.current;
-    if (!preload) return;
     const nextUrl = _resolveNextTrackUrl();
-    // Si el preloader ya tiene el siguiente track, preservarlo para gapless
-    if (nextUrl && preload.src === nextUrl) return;
-    if (preload.src) {
-      _nextTrackUrlRef.current = null;
-      preload.removeAttribute("src");
-      preload.load();
-    }
+    if (nextUrl && _nextTrackUrlRef.current === nextUrl) return;
+    _nextTrackUrlRef.current = null;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrack?.id]);
 
@@ -1818,6 +1890,8 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       // Port fastpotify: mute real + registrarPlayReal para consumers que
       // pausan programáticamente (el pause listener del <audio> ya cubre el caso normal)
       isMuted, toggleMute, registrarPlayReal,
+      // Port fastpotify: like unificado dock/deck (persistencia local por usuario)
+      isTrackLiked, toggleTrackLike, likedTrackIds,
       localQueue,  setLocalQueue,
       loopMode,    setLoopMode,    toggleLoopMode,
       shuffle,     setShuffle,
@@ -1863,7 +1937,10 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
       sessionToast, setSessionToast,
       sharedListening: !!sessionId,
     }}>
-      {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004) */}
+      {/* <audio> persistente — nunca se desmonta al cambiar de pestaña (ADR-004).
+          t_port-single-audio: es el ÚNICO <audio> del DOM. La precarga gapless
+          ya no usa un segundo elemento: el cache HTTP se calienta con fetch()
+          y R2 sirve Cache-Control immutable (workers/routes/r2.js). */}
       <audio
         ref={audioRef}
         crossOrigin={audioCrossOrigin}
@@ -1892,14 +1969,6 @@ export function PlayerProvider({ children, userId, tracks = [], tags = [], jwtTo
           // S78: Restore saved position for long tracks
           if (activeTrack) restorePosition(activeTrack);
         }}
-      />
-      {/* S106 — Precarga silenciosa del siguiente track (gapless).
-          Sin volumen, sin controles. Solo para cache del navegador.
-          El src se asigna en 2 fases: inmediata (1s tras arrancar track) y safety net al 50%. */}
-      <audio
-        ref={preloadAudioRef}
-        preload="none"
-        style={{ display: "none" }}
       />
       {children}
     </PlayerContext.Provider>

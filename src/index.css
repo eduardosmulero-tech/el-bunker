@@ -68,6 +68,46 @@ html, body {
   border-radius: 2px;
 }
 
+/* Music Lab desktop deck controls: stable hit targets, clear hierarchy, and
+   the same acid/vibe glow language as the mobile player. */
+.deck-control {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+.deck-control:hover { transform: translateY(-1px); }
+.deck-control:active { transform: scale(0.94); }
+.deck-control--primary { width: 58px; height: 58px; min-width: 58px; }
+.deck-chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: inherit;
+  background: transparent;
+  font: 9px 'JetBrains Mono', 'Courier New', monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: transform 120ms ease, background 120ms ease, opacity 120ms ease;
+}
+.deck-chip:hover { transform: translateY(-1px); }
+.deck-chip:active { transform: scale(0.96); }
+
+/* Keep the EQ labels readable without making the deck taller than the viewport. */
+@media (min-width: 1280px) {
+  .deck-chip { white-space: nowrap; }
+}
+
 /* Keep native range hit targets reliable on desktop and touch. */
 input[type="range"] {
   touch-action: pan-x;

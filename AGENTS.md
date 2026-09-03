@@ -37,6 +37,7 @@
 - NO IA en repos públicos (R10)
 - Integración verificable: `docs/operacional/CANON_WORKFLOW_INTEGRACION_HERMES.md`; `done` no equivale a integrado/aceptado.
 - Testing React: los handlers que disparan re-renders pueden REEMPLAZAR nodos del DOM — re-consulta el nodo antes de cada fireEvent (una referencia vieja queda detached y no llega al listener raíz). Ver WinampPlayerSeek.test.jsx.
+- Testing Playwright: las rutas de `page.route` se resuelven en LIFO — registra las rutas específicas DESPUÉS del enrutado base (`instalarRutas`) o el catch-all `**/*` las pisa en silencio (la app funciona, la instrumentación ve cero llamadas). Ver auditar-likes-sync.mjs.
 
 ## ▶ PIPELINE
 

@@ -81,6 +81,10 @@ export default async function handleR2(request, env, path) {
   headers.set("Content-Type", obj.httpMetadata?.contentType || metadata.httpMetadata?.contentType || "application/octet-stream");
   headers.set("Content-Length", String(range ? range.length : metadata.size));
   headers.set("Accept-Ranges", "bytes");
+  // t_port-single-audio: los r2_key son inmutables (UUID por upload, workers/routes/upload.js:51),
+  // así que el navegador puede cachear los bytes y las 206. Sustituye el segundo <audio>
+  // precargador: el cache HTTP calienta con fetch() y el seek/skip reutiliza la respuesta.
+  headers.set("Cache-Control", "private, max-age=31536000, immutable");
   if (obj.httpEtag || metadata.httpEtag) headers.set("ETag", obj.httpEtag || metadata.httpEtag);
   if (range) headers.set("Content-Range", rangeHeader(range, metadata.size));
 

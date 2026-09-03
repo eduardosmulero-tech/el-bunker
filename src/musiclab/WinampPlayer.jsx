@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ACID, BG, PURPLE, getVibeConfig } from "../tokens";
 import { AudioVisualizer } from "./AudioVisualizer";
 import { DropComposeModal } from "./DropsManager";
+import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { usePlayer } from "../core/PlayerContext";
 import { sliderDesdeGanancia } from "../core/playerMath";
 import { Icon, UserGlyph } from "../core/ui";
@@ -59,6 +60,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     masterVolume, setMasterVolume,
     // Port fastpotify: mute real persistente
     isMuted, toggleMute,
+    // Port fastpotify: like unificado dock/deck (estado real en PlayerContext)
+    isTrackLiked, toggleTrackLike,
     trackVibe,
     vibrate, softDeletedIds, undoRemoveFromQueue,
     castState, startCasting, stopCasting, isCasting, castDeviceName,
@@ -68,9 +71,9 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     // FASE B: peek del siguiente track (decisión 3)
     peekNextTrack,
   } = usePlayer();
-  // Phase 2.1: estado local de "like" (sin backend todavía — feedback visual).
-  // Se resetea al cambiar de track para que el corazón no quede "pegado".
-  const [liked, setLiked] = useState(false);
+  // Port fastpotify: like unificado — el estado vive en PlayerContext (persistente,
+  // compartido dock/deck). Solo el toast es local.
+  const liked = isTrackLiked?.(track?.id) ?? false;
   const [likeToast, setLikeToast] = useState(null);
   // Phase 2.1: lifecycle del toast — useEffect evita race condition entre
   // clicks rápidos (cada uno disparaba un setTimeout independiente).
@@ -145,8 +148,8 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     setProgress(0);
     setCurrentT(0);
     setDuration(0);
-    // Phase 2.1: resetear "like" al cambiar de track (no persistido aún)
-    setLiked(false);
+    // t_like-unificado: el like ya NO se resetea al cambiar de track —
+    // vive en PlayerContext y persiste por usuario.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [track?.id]);
 
@@ -168,6 +171,11 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
   useEffect(() => {
     setContextTracks?.(tracks);
   }, [tracks, setContextTracks]);
+
+  // Port fastpotify keys.rs: chuleta de atajos — overlay accesible (Escape/"?" cierran).
+  // Declarado antes del efecto de teclado que lo usa (react-hooks: sin TDZ).
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const closeShortcuts = useCallback(() => setShowShortcuts(false), []);
 
   // Phase 2.1.a11y: keyboard shortcuts — space=play, ←/→=prev/next, Shift+←/→=seek ±10s
   // (port fastpotify), m=mute (port fastpotify), l=like, q=add to queue.
@@ -208,12 +216,10 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
         case "M":
           e.preventDefault();
           toggleMute?.();
-          break;
-        case "l":
+          break;        case "l":
         case "L": {
           e.preventDefault();
-          const next = !liked;
-          setLiked(next);
+          const next = toggleTrackLike?.(track?.id);
           setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS");
           break;
         }
@@ -232,6 +238,11 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
           e.preventDefault();
           visualizerRef.current?.requestFullscreen();
           break;
+        // Port fastpotify keys.rs: "?" abre la chuleta de atajos (toggle con la misma tecla).
+        case "?":
+          e.preventDefault();
+          setShowShortcuts((open) => !open);
+          break;
         default:
           return;
       }
@@ -240,7 +251,7 @@ export const WinampPlayer = ({ tracks = [], onDropSend, VIBE_TAGS: _VIBE_TAGS, v
     return () => window.removeEventListener("keydown", onKey);
     // `liked` incluido para que la closure tenga el valor actual al evaluar `!liked`;
     // toggleMute y audioRef son estables (useCallback / ref del PlayerContext)
-  }, [track, togglePlay, skipDir, addToQueue, liked, toggleMute, audioRef]);
+  }, [track, togglePlay, skipDir, addToQueue, liked, toggleMute, audioRef, toggleTrackLike]);
 
 
   // S78 UX1: Double-tap seek (±10s)
@@ -768,7 +779,7 @@ return () => cancelAnimationFrame(raf);
           label={<Icon name="heart" size={16} decorative />}
           active={liked}
           color={"#ff2d55"}
-          onClick={() => { const next = !liked; setLiked(next); setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS"); }}
+          onClick={() => { const next = toggleTrackLike?.(track?.id); setLikeToast(next ? "AÑADIDO A FAVORITOS" : "QUITADO DE FAVORITOS"); }}
           title={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
           aria-label={liked ? "Quitar de favoritos" : "Añadir a favoritos"}
         />
@@ -887,6 +898,13 @@ return () => cancelAnimationFrame(raf);
             currentMinute={currentT} trackDuration={duration}
             recipientName={userId === "edu" ? "david" : "edu"}
             onSend={(dropData) => { onDropSend?.(dropData); setShowDrop(false); }} />
+        )}
+      </AnimatePresence>
+
+      {/* Port fastpotify keys.rs: chuleta de atajos (tecla ?) */}
+      <AnimatePresence>
+        {showShortcuts && (
+          <ShortcutsOverlay accentColor={accentColor} open={showShortcuts} onClose={closeShortcuts} />
         )}
       </AnimatePresence>
     </motion.div>

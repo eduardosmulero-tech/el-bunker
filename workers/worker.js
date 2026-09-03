@@ -20,6 +20,7 @@ import handleEntries from "./routes/entries.js";
 import handleEras from "./routes/eras.js";
 import handleFiles from "./routes/files.js";
 import handleQueue from "./routes/queue.js";
+import handleLikes from "./routes/likes.js"; // t_like-sync — likes de tracks (D1)
 import handleEvents from "./routes/events.js";
 import handleStats from "./routes/stats.js";
 import handleCapsules from "./routes/capsules.js";
@@ -47,6 +48,7 @@ export const ROUTES = [
   ["/api/eras",            handleEras,       true],
   ["/api/files",           handleFiles,      true],
   ["/api/queue",           handleQueue,      true],
+  ["/api/likes",           handleLikes,      true], // t_like-sync
   ["/api/events",          handleEvents,     true],
   ["/api/stats",           handleStats,      true],   // STAT-M9: agregaciones server-side para RECAP
   ["/api/time_capsules",   handleCapsules,   true],

@@ -6,7 +6,9 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   // Wrangler genera bundles temporales bajo .wrangler/; no son código fuente del proyecto.
-  globalIgnores(['dist', '.wrangler']),
+  // audit-ui: builds estáticos y reportes del harness de auditoría (git-ignored) —
+  // son JS minificado de vendor; lintearlos solo produce ruido (374 falsos errores).
+  globalIgnores(['dist', '.wrangler', 'tools/audit-ui/.dist-*', 'tools/audit-ui/report', 'tmp']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

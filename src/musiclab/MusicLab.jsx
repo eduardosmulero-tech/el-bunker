@@ -784,9 +784,10 @@ export default function MusicLab({
             portada, visualizador de tres niveles y cola lateral. Solo ≥1280px; el dock
             permanente del marco sigue siendo el mando en las tres pestañas. */}
         {isDesktopViewport && (
-          <MusicLabBigPlayer
+            <MusicLabBigPlayer
             accentColor={accentColor}
             vibeConf={resolveVibeConf(activeTrack?.tag ?? activeTrack?.vibe)}
+            onDropSend={handleDropSend}
           />
         )}
 
@@ -811,7 +812,7 @@ export default function MusicLab({
             { id: "queue",     label: `COLA [${localQueue.length}]`,   icon: "play" },
             { id: "tracks",    label: "TRACKS",                        icon: "circle" },
             { id: "playlists", label: "LISTS",                         icon: "archive" },
-            ...(userDrops.length > 0 ? [{ id: "drops",     label: `DROPS [${userDrops.length}]`, icon: "zap" }] : []),
+            { id: "drops",     label: `DROPS [${userDrops.length}]`,       icon: "zap" },
           ].map((tab) => {
             const isActive = activeTab === tab.id;
             const tabColor = tab.id === "drops" ? PURPLE : accentColor;

@@ -4,7 +4,7 @@
 //  Timeline · Smoke Session · Time Capsules · RECAP
 //  S59-S70 · Fases 3-4
 // ============================================================
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "../core/ui";
 import { ACID, FONT_MONO } from "../tokens";
@@ -12,6 +12,7 @@ import { usePlayer } from "../core/PlayerContext";
 import { workerClient } from "../core/WorkerClient";
 import { Icon } from "../core/ui";
 import { useSecondLevelNav } from "../layout/Layout";
+import { usePullToRefresh } from "../core/usePullToRefresh";
 import SmokeSession from "../smoke/SmokeSession";
 import Timeline from "./Timeline";
 import TimeCapsules from "./TimeCapsules";
@@ -34,49 +35,92 @@ export default function Capsules({ db: _db, userId: _userId, activeTrack: _activ
   const [capsules, setCapsules] = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [fetchError, setFetchError] = useState(null);
+  // S-prt: pull-to-refresh (port fastpotify-audit). El refetch reutiliza la
+  // misma lógica de carga; el gesto no roba swipes horizontales del subnav.
+  const fetchErrorRef = useRef(false);
+  const fetchDataRef = useRef(() => {});
   // G4: usar trackVibe accent en lugar de ACID fijo
   const { trackVibe, resolveVibeAccent } = usePlayer();
   const accent = trackVibe ? (resolveVibeAccent(trackVibe) ?? ACID) : ACID;
 
   // Fetch real events y time_capsules desde Worker API cuando hay JWT
   // S115-D3: WorkerClient maneja auth — sin prop-drilling de jwtToken
-  useEffect(() => {
+  // S-prt: fetchData extraído como refetch estable — lo consumen el efecto
+  // inicial, el pull-to-refresh y el retry de online/visibility/focus.
+  const fetchData = useCallback(async () => {
     if (!workerClient.hasToken()) return;
-    let cancelled = false;
+    setLoadingEvents(true);
+    setFetchError(null);
+    try {
+      const [eventsData, capsulesData] = await Promise.all([
+        // S140: 500 = ventana amplia para no desplazar eventos de David
+        // cuando Edu acumula muchos plays. Server: min(parseInt, 500).
+        workerClient.get('/api/events?limit=500').catch(e => { throw new Error(`Events: ${e.message}`); }),
+        workerClient.get('/api/time_capsules').catch(e => { throw new Error(`Capsules: ${e.message}`); }),
+      ]);
+      fetchErrorRef.current = false;
+      setEvents(eventsData);
+      setCapsules(capsulesData);
+    } catch (e) {
+      console.warn("[Capsules] fetch error:", e.message);
+      // Estado honesto en español — nunca e.message crudo en inglés (fallos
+      // de red aquí son el caso normal offline, no una excepción de app).
+      const offline = /failed to fetch|networkerror|load failed/i.test(String(e.message));
+      fetchErrorRef.current = true;
+      setFetchError(offline ? "SIN CONEXIÓN — se recargará al volver" : "NO SE PUDO CARGAR");
+    } finally {
+      setLoadingEvents(false);
+    }
+  }, []);
 
-    const fetchData = async () => {
-      setLoadingEvents(true);
-      setFetchError(null);
-      try {
-        const [eventsData, capsulesData] = await Promise.all([
-          // S140: 500 = ventana amplia para no desplazar eventos de David
-          // cuando Edu acumula muchos plays. Server: min(parseInt, 500).
-          workerClient.get('/api/events?limit=500').catch(e => { throw new Error(`Events: ${e.message}`); }),
-          workerClient.get('/api/time_capsules').catch(e => { throw new Error(`Capsules: ${e.message}`); }),
-        ]);
-        if (!cancelled) {
-          setEvents(eventsData);
-          setCapsules(capsulesData);
-        }
-      } catch (e) {
-        console.warn("[Capsules] fetch error:", e.message);
-        if (!cancelled) {
-          // Estado honesto en español — nunca e.message crudo en inglés (fallos
-          // de red aquí son el caso normal offline, no una excepción de app).
-          const offline = /failed to fetch|networkerror|load failed/i.test(String(e.message));
-          setFetchError(offline ? "SIN CONEXIÓN — se recargará al volver" : "NO SE PUDO CARGAR");
-        }
-      } finally {
-        if (!cancelled) setLoadingEvents(false);
-      }
-    };
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+    // set-state-in-effect: fetchData setea loading de forma síncrona al arrancar —
+    // patrón del motor de datos documentado (ver PlayerContext). El estado
+    // skeleton inicial es intencional, no un side-effect accidental.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
-    return () => { cancelled = true; };
+  }, [fetchData]);
+
+  // S-prt: puente de retry — online/visibility/focus solo refetch si la
+  // última carga falló (sesión degradada). El pull-to-refresh siempre puede.
+  const pull = usePullToRefresh({ enabled: true, onRefresh: () => fetchDataRef.current() });
+  useEffect(() => {
+    pull.setOnErrorRetry(() => {
+      if (fetchErrorRef.current) fetchDataRef.current();
+    });
+    return () => pull.setOnErrorRetry(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div className="w-full px-4 py-6 flex flex-col gap-4" style={{ fontFamily: FONT_MONO }}>
-      {null}
+    <div
+      ref={pull.containerRef}
+      onTouchStart={pull.onTouchStart}
+      onTouchMove={pull.onTouchMove}
+      onTouchEnd={pull.onTouchEnd}
+      className="w-full px-4 py-6 flex flex-col gap-4"
+      style={{ fontFamily: FONT_MONO }}
+    >
+      {/* S-prt: indicador de pull-to-refresh — vibe-aware, con resistencia */}
+      {(pull.pullDistance > 0 || pull.refreshing) && (
+        <div
+          className="flex items-center justify-center overflow-hidden"
+          style={{
+            height: pull.refreshing ? 28 : Math.min(pull.pullDistance, pull.threshold),
+            opacity: pull.refreshing ? 1 : Math.min(1, pull.pullDistance / pull.threshold),
+            transition: pull.refreshing ? "none" : "height 60ms linear",
+            color: accent,
+          }}
+          aria-live="polite"
+          aria-label={pull.refreshing ? "Actualizando" : "Suelta para actualizar"}
+        >
+          <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.25em] uppercase">
+            <Icon name={pull.refreshing ? "refresh" : "arrowDown"} size={14} decorative className={pull.refreshing ? "animate-spin" : undefined} />
+            {pull.refreshing ? "ACTUALIZANDO" : pull.pullDistance >= pull.threshold ? "SUELTA PARA ACTUALIZAR" : "TIRA PARA ACTUALIZAR"}
+          </span>
+        </div>
+      )}
       <div className="capsules-layout">
       {/* Sub-tab bar — swipeable en móvil, sin scrollbar.
           Desde el 14-ago el raíl SÍ controla el segundo nivel (botones reales sobre el mismo

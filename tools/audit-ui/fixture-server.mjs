@@ -43,24 +43,28 @@ export async function instalarRutas(page, { baseUrl, fixturesDir, audioFixture =
         const start = Number(m[1]);
         const end = m[2] ? Number(m[2]) : wav.length - 1;
         const slice = wav.subarray(start, end + 1);
-        route.fulfill({
-          status: 206,
-          headers: {
-            "Content-Type": "audio/wav",
-            "Content-Length": String(slice.length),
-            "Content-Range": `bytes ${start}-${end}/${wav.length}`,
-            "Accept-Ranges": "bytes",
-          },
-          body: slice,
-        });
-        return;
-      }
-      route.fulfill({ status: 200, contentType: "audio/wav", headers: { "Accept-Ranges": "bytes", "Content-Length": String(wav.length) }, body: wav });
+      route.fulfill({
+        status: 206,
+        headers: {
+          "Content-Type": "audio/wav",
+          "Content-Length": String(slice.length),
+          "Content-Range": `bytes ${start}-${end}/${wav.length}`,
+          "Accept-Ranges": "bytes",
+          // t_warm-cache: paridad con workers/routes/r2.js (immutable por r2_key UUID)
+          "Cache-Control": "private, max-age=31536000, immutable",
+        },
+        body: slice,
+      });
+      return;
+    }
+    route.fulfill({ status: 200, contentType: "audio/wav", headers: { "Accept-Ranges": "bytes", "Content-Length": String(wav.length), "Cache-Control": "private, max-age=31536000, immutable" }, body: wav });
       return;
     }
     if (url.pathname.startsWith("/api/")) {
       if (url.pathname === "/api/sync") { route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ active: false }) }); return; }
       if (url.pathname.startsWith("/api/queue")) { route.fulfill({ status: 200, contentType: "application/json", body: "[]" }); return; }
+      // t_like-sync: likes vacíos por defecto (pull inicial del PlayerContext)
+      if (url.pathname.startsWith("/api/likes")) { route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ liked_track_ids: [] }) }); return; }
       const fixture = fixturePara(url.pathname, mapa);
       if (fixture) { route.fulfill({ status: 200, contentType: "application/json", body: leerFixture(fixture) }); return; }
       route.fulfill({ status: 404, contentType: "application/json", body: "{}" });

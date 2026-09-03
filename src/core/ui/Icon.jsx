@@ -58,6 +58,7 @@ import {
   X,
   Zap,
   Target,
+  ChevronUp,
 } from "lucide-react";
 
 const ICONS = {
@@ -123,6 +124,7 @@ const ICONS = {
   close: X,
   zap: Zap,
   target: Target,
+  chevronUp: ChevronUp,
 };
 
 const LEGACY_ICON_NAMES = {
